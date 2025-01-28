@@ -711,11 +711,6 @@
                 android:key="use_bundled_emoji"
                 android:summary="@string/pref_use_bundled_emoji_summary"
                 android:title="@string/pref_use_bundled_emoji" />
-            <SwitchPreference
-                android:defaultValue="@bool/hide_donation_snackbar"
-                android:key="hide_donation_snackbar"
-                android:summary="@string/pref_hide_donation_snackbar_summary"
-                android:title="@string/pref_hide_donation_snackbar" />
         </PreferenceCategory>
         <PreferenceCategory android:title="@string/pref_security_settings">
             <SwitchPreference

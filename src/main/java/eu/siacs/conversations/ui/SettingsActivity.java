@@ -91,7 +91,6 @@ public class SettingsActivity extends XmppActivity implements OnSharedPreference
     public static final String BROADCAST_LAST_ACTIVITY = "last_activity";
     public static final String WARN_UNENCRYPTED_CHAT = "warn_unencrypted_chat";
     public static final String HIDE_YOU_ARE_NOT_PARTICIPATING = "hide_you_are_not_participating";
-    public static final String HIDE_DONATION_SNACKBAR = "hide_donation_snackbar";
     public static final String HIDE_WEBXDC_STORE_HINT = "hide_webxdc_store_hint";
     public static final String APP_IS_LOCKED = "app_is_locked";
     public static final String HIDE_MEMORY_WARNING = "hide_memory_warning";

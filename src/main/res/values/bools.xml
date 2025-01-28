@@ -9,7 +9,6 @@
     <bool name="set_text_collapsable">false</bool>
     <bool name="jump_to_commands_tab">false</bool>
     <bool name="enforce_dane">false</bool>
-    <bool name="hide_donation_snackbar">false</bool>
     <bool name="send_link_previews">false</bool>
     <bool name="app_is_locked">false</bool>
     <bool name="app_lock_enabled">false</bool>

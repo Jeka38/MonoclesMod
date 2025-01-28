@@ -141,6 +141,10 @@ ext {
     abiCodes = ['armeabi-v7a': 1, 'x86': 2, 'x86_64': 3, 'arm64-v8a': 4]
 }
 
+
+
+def tags = grgit.tag.list().findAll { it.dateTime != null }.sort { it.dateTime }
+
 android {
     namespace 'eu.siacs.conversations'
     //noinspection GradleCompatible
@@ -157,17 +161,17 @@ android {
 
         archivesBaseName += "-$versionName"
         // archivesBaseName += "$versionNameSuffix"  // activate for beta versions
-        applicationId "de.monocles.mod"
+        applicationId "de.monocles.chat"
         multiDexEnabled true
         //versionName grgit.describe(always: true)
-        buildConfigField("String", "LOGTAG", '"monocles mod"')
+        buildConfigField("String", "LOGTAG", '"monocles chat"')
         buildConfigField("String", "DOMAIN_LOCK", 'null')
         buildConfigField("String", "MAGIC_CREATE_DOMAIN", '"monocles.eu"')
         buildConfigField("boolean", "SHOW_INTRO", 'true')
         buildConfigField("String", "UPDATE_URL", '"https://monocles.eu/chat/update/"')
         resValue "string", "applicationId", applicationId
-        resValue "string", "app_name", "monocles mod"
-        resValue "string", "short_app_name", "monocles mod"
+        resValue "string", "app_name", "monocles chat"
+        resValue "string", "short_app_name", "chat"
     }
     splits {
         abi {

@@ -49,7 +49,6 @@ import android.view.View;
 import android.view.ViewGroup;
 import static androidx.recyclerview.widget.ItemTouchHelper.RIGHT;
 import static eu.siacs.conversations.ui.ConversationsActivity.bottomNavigationView;
-import static eu.siacs.conversations.ui.SettingsActivity.HIDE_DONATION_SNACKBAR;
 import static eu.siacs.conversations.ui.SettingsActivity.HIDE_YOU_ARE_NOT_PARTICIPATING;
 
 import android.app.AlertDialog;
@@ -105,7 +104,6 @@ public class ConversationsOverviewFragment extends XmppFragment {
     private XmppActivity activity;
     private float mSwipeEscapeVelocity = 0f;
     private final PendingActionHelper pendingActionHelper = new PendingActionHelper();
-    private long mLastDonationSnackbar = 0;
 
     private final ItemTouchHelper.SimpleCallback callback = new ItemTouchHelper.SimpleCallback(0, 0) {
         @Override
@@ -325,9 +323,6 @@ public class ConversationsOverviewFragment extends XmppFragment {
         this.binding.list.setAdapter(this.conversationsAdapter);
         this.binding.list.setLayoutManager(new LinearLayoutManager(getActivity(), LinearLayoutManager.VERTICAL, false));
         registerForContextMenu(this.binding.list);
-        if (activity.xmppConnectionService != null && !activity.xmppConnectionService.getBooleanPreference("hide_donation_snackbar", R.bool.hide_donation_snackbar)) {
-            askForDonationSnackbar();
-        }
         return binding.getRoot();
     }
 
@@ -570,25 +565,5 @@ public class ConversationsOverviewFragment extends XmppFragment {
             LinearLayoutManager layoutManager = (LinearLayoutManager) binding.list.getLayoutManager();
             layoutManager.scrollToPositionWithOffset(scrollPosition.position, scrollPosition.offset);
         }
-    }
-
-    public void askForDonationSnackbar() {
-        long msToShow = (mLastDonationSnackbar) - SystemClock.elapsedRealtime();            // (mLastDonationSnackbar + 2629746000L) to show monthly only
-        if (msToShow > 0) return;
-
-        mLastDonationSnackbar = SystemClock.elapsedRealtime();
-
-        Snackbar.make(binding.list, R.string.thanks, Snackbar.LENGTH_INDEFINITE).setBackgroundTint(getResources().getColor(R.color.realblack)).setTextColor(getResources().getColor(R.color.realwhite))
-                .setAction(R.string.donate, new View.OnClickListener() {
-                    @Override
-                    public void onClick(View view) {
-                        Intent browserIntent = new
-                                Intent(Intent.ACTION_VIEW,
-                                Uri.parse(getString(R.string.donation_link)));
-                        startActivity(browserIntent);
-                        SharedPreferences preferences = activity.getPreferences();
-                        preferences.edit().putBoolean(HIDE_DONATION_SNACKBAR, true).apply();
-                    }
-                }).setTextMaxLines(7).setActionTextColor(getResources().getColor(R.color.accent_monocles)).show();
     }
 }
