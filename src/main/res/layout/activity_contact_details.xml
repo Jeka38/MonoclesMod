@@ -1,0 +1,469 @@
+<?xml version="1.0" encoding="utf-8"?>
+<layout xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:app="http://schemas.android.com/apk/res-auto" >
+
+    <LinearLayout
+        android:layout_width="match_parent"
+        android:layout_height="match_parent"
+        android:background="?attr/color_background_secondary"
+        android:orientation="vertical">
+
+        <include
+            android:id="@+id/toolbar"
+            layout="@layout/toolbar" />
+
+        <ScrollView
+            android:layout_width="match_parent"
+            android:layout_height="match_parent">
+
+            <LinearLayout
+                android:id="@+id/details_main_layout"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:orientation="vertical">
+
+                    <LinearLayout
+                        android:layout_width="match_parent"
+                        android:layout_height="wrap_content"
+                        android:orientation="vertical">
+
+                        <LinearLayout
+                            android:layout_width="match_parent"
+                            android:layout_height="wrap_content"
+                            android:gravity="center_horizontal"
+                            android:orientation="vertical"
+                            android:padding="8dp">
+
+                            <RelativeLayout
+                                android:layout_width="match_parent"
+                                android:layout_height="wrap_content">
+
+                                <LinearLayout
+                                    android:id="@+id/details_display"
+                                    android:layout_width="match_parent"
+                                    android:layout_height="wrap_content"
+                                    android:layout_alignParentStart="true"
+                                    android:layout_alignParentLeft="true"
+                                    android:orientation="vertical">
+
+                                    <eu.siacs.conversations.ui.widget.AvatarView
+                                        android:id="@+id/details_contact_badge"
+                                        android:layout_width="80dp"
+                                        android:layout_height="80dp"
+                                        android:adjustViewBounds="true"
+                                        android:layout_margin="2dp"
+                                        android:scaleType="centerCrop"
+                                        android:layout_gravity="center_horizontal"
+                                        android:visibility="gone" />
+
+                                    <TextView
+                                        android:id="@+id/details_contact_name"
+                                        style="@style/TextAppearance.Material3.ActionBar.Title"
+                                        android:layout_width="match_parent"
+                                        android:layout_height="wrap_content"
+                                        android:clickable="true"
+                                        android:ellipsize="end"
+                                        android:gravity="center_horizontal"
+                                        android:onClick="onClick"
+                                        android:paddingTop="1dp"
+                                        android:scrollHorizontally="true"
+                                        android:singleLine="true" />
+
+                                    <TextView
+                                        android:id="@+id/jid"
+                                        android:layout_width="wrap_content"
+                                        android:layout_height="wrap_content"
+                                        android:layout_gravity="center_horizontal"
+                                        android:paddingTop="3dp"
+                                        android:text="@string/account_settings_example_jabber_id"
+                                        android:textAppearance="@style/TextAppearance.Material3.BodyMedium"
+                                        android:textIsSelectable="true" />
+
+                                    <com.wefika.flowlayout.FlowLayout
+                                        android:id="@+id/tags"
+                                        android:layout_width="wrap_content"
+                                        android:layout_height="wrap_content"
+                                        android:layout_gravity="center_horizontal"
+                                        android:layout_marginStart="-2dp"
+                                        android:layout_marginLeft="-2dp"
+                                        android:layout_marginTop="4dp"
+                                        android:layout_marginBottom="27dp"
+                                        android:orientation="horizontal" />
+
+                                    <de.monocles.chat.TagEditorView
+                                        android:id="@+id/edit_tags"
+                                        android:layout_width="match_parent"
+                                        android:layout_height="wrap_content"
+                                        android:layout_marginLeft="-4dp"
+                                        android:layout_marginTop="-4dp"
+                                        android:layout_marginBottom="27dp"
+                                        android:hint="@string/tags"
+                                        android:visibility="gone" />
+
+                                    <View
+                                        android:layout_width="fill_parent"
+                                        android:layout_height="wrap_content"
+                                        android:layout_marginBottom="24dp" />
+
+                                    <TextView
+                                        android:id="@+id/details_lastseen"
+                                        android:layout_width="wrap_content"
+                                        android:layout_height="wrap_content"
+                                        android:layout_marginTop="4dp"
+                                        android:layout_marginBottom="4dp"
+                                        android:textAppearance="@style/TextAppearance.Conversations.Subhead" />
+
+                                    <TextView
+                                        android:id="@+id/resource"
+                                        android:layout_width="wrap_content"
+                                        android:layout_height="wrap_content"
+                                        android:layout_marginTop="4dp"
+                                        android:layout_marginBottom="4dp"
+                                        android:textAppearance="@style/TextAppearance.Conversations.Status" />
+                                </LinearLayout>
+
+                            </RelativeLayout>
+
+                            <RelativeLayout
+                                android:id="@+id/contact_settings"
+                                android:layout_width="match_parent"
+                                android:layout_height="wrap_content">
+
+                                <LinearLayout
+                                    android:id="@+id/details_jidbox"
+                                    android:layout_width="match_parent"
+                                    android:layout_height="wrap_content"
+                                    android:layout_marginTop="4dp"
+                                    android:orientation="vertical">
+
+                                    <com.google.android.material.materialswitch.MaterialSwitch
+                                        android:id="@+id/details_send_presence"
+                                        style="@style/Widget.monocles.Switch"
+                                        android:layout_width="match_parent"
+                                        android:layout_height="wrap_content"
+                                        android:text="@string/send_presence_updates"
+                                        android:textAppearance="@style/TextAppearance.Conversations.Body1" />
+
+                                    <com.google.android.material.materialswitch.MaterialSwitch
+                                        android:id="@+id/details_receive_presence"
+                                        style="@style/Widget.monocles.Switch"
+                                        android:layout_width="match_parent"
+                                        android:layout_height="wrap_content"
+                                        android:text="@string/receive_presence_updates"
+                                        android:textAppearance="@style/TextAppearance.Conversations.Body1" />
+                                </LinearLayout>
+
+                                <RelativeLayout
+                                    android:layout_width="match_parent"
+                                    android:layout_height="wrap_content"
+                                    android:layout_below="@+id/details_jidbox" >
+
+                                    <TextView
+                                        android:layout_width="match_parent"
+                                        android:layout_height="wrap_content"
+                                        android:layout_alignParentStart="true"
+                                        android:layout_alignParentLeft="true"
+                                        android:paddingTop="4dp"
+                                        android:text="@string/pref_notification_settings"
+                                        android:textAppearance="@style/TextAppearance.Conversations.Body1" />
+
+                                    <TextView
+                                        android:id="@+id/notification_status_text"
+                                        android:layout_width="wrap_content"
+                                        android:layout_height="wrap_content"
+                                        android:layout_alignParentStart="true"
+                                        android:layout_alignParentLeft="true"
+                                        android:layout_alignParentBottom="true"
+                                        android:layout_toStartOf="@+id/notification_status_button"
+                                        android:layout_toLeftOf="@+id/notification_status_button"
+                                        android:text="@string/notify_on_all_messages"
+                                        android:textAppearance="@style/TextAppearance.Conversations.Status" />
+
+                                    <ImageButton
+                                        android:id="@+id/notification_status_button"
+                                        style="?android:attr/buttonStyleSmall"
+                                        android:layout_width="wrap_content"
+                                        android:layout_height="wrap_content"
+                                        android:layout_alignParentEnd="true"
+                                        android:layout_alignParentRight="true"
+                                        android:layout_centerVertical="true"
+                                        android:layout_gravity="center_horizontal"
+                                        android:background="?attr/selectableItemBackgroundBorderless"
+                                        android:padding="@dimen/image_button_padding"
+                                        android:src="@drawable/ic_notifications_black_24dp" />
+                                </RelativeLayout>
+                            </RelativeLayout>
+                        </LinearLayout>
+
+                            <Button
+                                android:id="@+id/add_contact_button"
+                                style="@style/Widget.Conversations.Button"
+                                android:layout_width="wrap_content"
+                                android:layout_height="wrap_content"
+                                android:layout_gravity="center_horizontal"
+                                android:layout_marginTop="14dp"
+                                android:text="@string/add_to_contact_list" />
+
+                            <TextView
+                                android:id="@+id/details_account"
+                                android:layout_width="wrap_content"
+                                android:layout_height="wrap_content"
+                                android:layout_gravity="center_horizontal"
+                                android:layout_marginTop="14dp"
+                                android:layout_marginBottom="14dp"
+                                android:text="@string/using_account"
+                                android:textAppearance="@style/TextAppearance.Conversations.Caption"
+                                android:visibility="visible" />
+                    </LinearLayout>
+
+
+                <LinearLayout
+                    android:id="@+id/status_box"
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:orientation="vertical">
+
+                <View
+                    android:layout_width="match_parent"
+                    android:layout_height="0.05dp"
+                    android:background="?attr/text_Color_Main" />
+
+                <TextView
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:padding="12dp"
+                    android:text="@string/status_message"
+                    android:textStyle="bold"
+                    style="@style/TextAppearance.Conversations.Subhead" />
+
+                    <ImageView
+                        android:id="@+id/status_image"
+                        android:layout_width="wrap_content"
+                        android:layout_height="wrap_content"
+                        android:layout_gravity="center_horizontal"
+                        android:maxWidth="120dp"
+                        android:maxHeight="120dp"
+                        android:clickable="true"
+                        android:adjustViewBounds="true"
+                        android:paddingLeft="12dp"
+                        android:paddingRight="12dp"
+                        android:layout_marginTop="4dp"
+                        android:layout_marginBottom="4dp"
+                        android:scaleType="fitCenter"
+                        android:visibility="gone" />
+
+                    <TextView
+                        android:id="@+id/status_message"
+                        android:layout_width="wrap_content"
+                        android:layout_height="wrap_content"
+                        android:layout_gravity="center_horizontal"
+                        android:paddingLeft="12dp"
+                        android:paddingRight="12dp"
+                        android:layout_marginBottom="4dp"
+                        android:autoLink="web"
+                        android:clickable="true"
+                        android:textAppearance="@style/TextAppearance.Conversations.Subhead" />
+
+                </LinearLayout>
+
+            <LinearLayout
+                android:id="@+id/profile"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:visibility="gone"
+                android:orientation="vertical" >
+
+                <View
+                    android:layout_width="match_parent"
+                    android:layout_height="0.05dp"
+                    android:background="?attr/text_Color_Main" />
+
+                <TextView
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:padding="12dp"
+                    android:text="@string/title_activity_about"
+                    android:textStyle="bold"
+                    style="@style/TextAppearance.Conversations.Subhead" />
+
+                <RelativeLayout
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content">
+
+                    <ListView
+                        android:id="@+id/profile_items"
+                        android:layout_width="fill_parent"
+                        android:layout_height="wrap_content"
+                        android:singleLine="false"
+                        android:divider="@android:color/transparent"
+                        android:dividerHeight="0dp" />
+                </RelativeLayout>
+            </LinearLayout>
+
+                <LinearLayout
+                    android:id="@+id/media_wrapper"
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:orientation="vertical">
+
+                    <View
+                        android:layout_width="match_parent"
+                        android:layout_height="0.05dp"
+                        android:background="?attr/text_Color_Main" />
+
+                    <TextView
+                        android:layout_width="wrap_content"
+                        android:layout_height="wrap_content"
+                        android:padding="12dp"
+                        android:text="@string/media"
+                        android:textStyle="bold"
+                        style="@style/TextAppearance.Conversations.Subhead" />
+
+                    <androidx.recyclerview.widget.RecyclerView
+                        android:id="@+id/media"
+                        android:layout_width="match_parent"
+                        android:layout_height="wrap_content"
+                        android:layout_marginStart="-2dp"
+                        android:layout_marginEnd="-2dp"
+                        android:orientation="horizontal"
+                        android:paddingStart="@dimen/card_padding_regular"
+                        android:paddingTop="@dimen/card_padding_regular"
+                        android:paddingEnd="@dimen/card_padding_regular"
+                        android:paddingBottom="@dimen/card_padding_list" />
+
+                    <LinearLayout
+                        android:layout_width="wrap_content"
+                        android:layout_height="match_parent"
+                        android:layout_gravity="end"
+                        android:orientation="horizontal">
+
+                        <Button
+                            android:id="@+id/show_media"
+                            style="@style/Widget.Conversations.Button.Borderless"
+                            android:layout_width="wrap_content"
+                            android:layout_height="wrap_content"
+                            android:minWidth="0dp"
+                            android:paddingStart="16dp"
+                            android:paddingLeft="16dp"
+                            android:paddingEnd="16dp"
+                            android:paddingRight="16dp"
+                            android:text="@string/view_media"
+                            android:textColor="?attr/colorAccent" />
+                    </LinearLayout>
+                </LinearLayout>
+
+            <LinearLayout
+                android:id="@+id/recent_threads_wrapper"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:orientation="vertical">
+
+                <View
+                    android:layout_width="match_parent"
+                    android:layout_height="0.05dp"
+                    android:background="?attr/text_Color_Main" />
+
+                <TextView
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:padding="12dp"
+                    android:text="@string/recent_threads"
+                    android:textStyle="bold"
+                    style="@style/TextAppearance.Conversations.Subhead" />
+
+                    <ListView
+                        android:id="@+id/recent_threads"
+                        android:layout_width="fill_parent"
+                        android:layout_height="wrap_content"
+                        android:divider="@android:color/transparent"
+                        android:dividerHeight="0dp" />
+
+            </LinearLayout>
+
+                <LinearLayout
+                    android:id="@+id/keys_wrapper"
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:orientation="vertical">
+
+                    <View
+                        android:layout_width="match_parent"
+                        android:layout_height="0.05dp"
+                        android:background="?attr/text_Color_Main" />
+
+                    <TextView
+                        android:layout_width="wrap_content"
+                        android:layout_height="wrap_content"
+                        android:padding="12dp"
+                        android:text="@string/security"
+                        android:textStyle="bold"
+                        style="@style/TextAppearance.Conversations.Subhead" />
+
+                    <LinearLayout
+                        android:id="@+id/details_contact_keys"
+                        android:layout_width="match_parent"
+                        android:layout_height="wrap_content"
+                        android:divider="?android:dividerHorizontal"
+                        android:orientation="vertical"
+                        android:padding="@dimen/card_padding_list" />
+
+                    <LinearLayout
+                        android:id="@+id/unverified_warning"
+                        android:layout_width="match_parent"
+                        android:layout_height="wrap_content"
+                        android:paddingHorizontal="@dimen/card_padding_list">
+
+                        <TextView
+                            android:layout_marginHorizontal="@dimen/list_padding"
+                            android:layout_width="wrap_content"
+                            android:layout_height="wrap_content"
+                            android:textAppearance="@style/TextAppearance.Conversations.Body1.Secondary"
+                            android:text="@string/contact_uses_unverified_keys"/>
+
+                    </LinearLayout>
+
+                    <RelativeLayout
+                        android:layout_width="match_parent"
+                        android:layout_height="match_parent"
+                        android:layout_marginTop="8dp"
+                        android:orientation="horizontal">
+
+                        <Button
+                            android:id="@+id/scan_button"
+                            style="@style/Widget.Conversations.Button"
+                            android:layout_width="wrap_content"
+                            android:layout_height="wrap_content"
+                            android:layout_centerInParent="true"
+                            android:layout_marginStart="10dp"
+                            android:layout_marginTop="10dp"
+                            android:layout_marginEnd="10dp"
+                            android:layout_marginBottom="10dp"
+                            android:drawableLeft="@drawable/ic_qrcode_scan_white_24dp"
+                            android:minWidth="0dp"
+                            android:padding="2dp"
+                            android:paddingStart="16dp"
+                            android:paddingLeft="16dp"
+                            android:paddingEnd="16dp"
+                            android:paddingRight="16dp"
+                            android:text="@string/scan_qr_code"
+                            android:textColor="@color/realwhite" />
+
+                        <Button
+                            android:id="@+id/show_inactive_devices"
+                            style="@style/Widget.Conversations.Button.Borderless"
+                            android:layout_width="wrap_content"
+                            android:layout_height="wrap_content"
+                            android:layout_toRightOf="@+id/scan_button"
+                            android:minWidth="0dp"
+                            android:paddingStart="16dp"
+                            android:paddingLeft="16dp"
+                            android:paddingEnd="16dp"
+                            android:paddingRight="16dp"
+                            android:text="@string/show_inactive_devices"
+                            android:textColor="?attr/colorAccent" />
+                    </RelativeLayout>
+                </LinearLayout>
+            </LinearLayout>
+        </ScrollView>
+    </LinearLayout>
+</layout>

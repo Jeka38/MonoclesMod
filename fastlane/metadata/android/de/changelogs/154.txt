@@ -1,0 +1,6 @@
+* Langes Drücken auf Inline-Sticker, um sie zu importieren
+* Sicherheit: Einführung des Backup-Dateiformats v2
+* Übersetzungen aktualisiert
+* Redundantes Menü zum Löschen von Nachrichten entfernt 
+* Import von Monocles-Chat-Backups behoben
+* Behebt Absturz, wenn ein Benutzer SVG-Avatar hat

@@ -1,0 +1,17 @@
+* Verbesserte Handhabung der Emoji-Auswahl
+* Verbessertes Eingabefeld und Kommentarblase
+* Material 3
+* Viele Designverbesserungen
+* Bessere Anzeige der verifizierten Schlüssel per QR-Code
+* Geänderte Schriftart und Styling
+* Optionale Textformatierungs-Tools
+* Verschiedene Korrekturen
+* Private DNS (DoT)
+* Einstellung, um quadratische Avatare zu aktivieren
+* Einstellung zur Aktivierung der Thread-Funktion
+* In SDK 34 verschoben
+* Verbesserte Übersetzungen
+* Aktualisiert auf webrtc m119
+* Sticker vorerst entfernt bis zur besseren Implementierung
+* Sprachrekorder behoben
+* Kleine Leistungsverbesserung

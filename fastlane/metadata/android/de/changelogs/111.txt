@@ -1,0 +1,11 @@
+* Angefangen OTR Verschlüsselung zu integrieren
+* aktualisierter Webrtc-Link
+* Verbesserung der Übersetzungen
+* Möglichkeit versteckten Speicher für Anhänge zu benutzen
+* Verbesserung der Korrekturfunktion
+* Verbesserung der Löschfunktion
+* Verbesserung der A/V-Telefonie
+* Neue Möglichkeit von Textformatierung
+* Änderung der Registrierungsseite
+* Neue Option um den Auto-Download von Dateien in Gruppen Chats zu deaktivieren
+* und vieles mehr

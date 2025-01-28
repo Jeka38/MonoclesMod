@@ -1,0 +1,7 @@
+#### Changelog version 1.3
+ * Always show Quote as last action 
+ * add .opus file extension to mime table
+ * Fixing xmpp:uri bug in channel details. (Inputmice) 
+ * corrected string: Dateien im mobilen Netz annehmen
+ * improved texts 
+ * shorten launcher name

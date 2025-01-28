@@ -1,0 +1,163 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <!-- blue theme -->
+    <color name="primary">#ff0D47A1</color>  <!-- blue 900 -->
+    <color name="primary_dark">#ff1A237E</color>  <!-- indigo 900 -->
+    <color name="accent">#ff0091ea</color> <!-- light blue accent -->
+    <color name="accent_light">#1a0091ea</color> <!-- light blue accent -->
+    <color name="accent_light_disabled">#1a000000</color> <!-- light blue accent for disabled accounts-->
+
+    <!-- monocles theme -->
+    <color name="primary_monocles">#7188C3</color>
+    <color name="primary_dark_monocles">#ff3e5ea2</color>
+    <color name="accent_monocles">#ff7189c5</color>
+    <color name="accent_light_monocles">#4D7fa9c5</color>
+    <color name="accent_light_disabled_monocles">#1a000000</color>
+
+    <!-- orange theme -->
+    <color name="primary_orange">#ffce8500</color>
+    <color name="primary_dark_orange">#ffa06700</color>
+    <color name="primary_orange_dark">#ffb97700</color>
+    <color name="primary_dark_orange_dark">#ffa06700</color>
+    <color name="accent_orange">#ffffa500</color>
+    <color name="accent_light_orange">#1affa500</color>
+    <color name="accent_light_orange_disabled">#1a000000</color>
+
+    <!-- grey theme -->
+    <color name="primary_grey">#ff999999</color>
+    <color name="primary_dark_grey">#ff7f7f7f</color>
+    <color name="primary_grey_dark">#ff323232</color>
+    <color name="primary_dark_grey_dark">#ff191919</color>
+    <color name="accent_grey">#ff999999</color>
+    <color name="accent_light_grey">#1a7f7f7f</color>
+    <color name="accent_light_grey_disabled">#1a000000</color>
+
+    <!-- White theme -->
+    <color name="primary_White">#ffffffff</color>
+    <color name="primary_dark_White">#ffffffff</color>
+    <color name="primary_White_dark">#ff323232</color>
+    <color name="primary_dark_White_dark">#ff191919</color>
+    <color name="accent_White">#ff000000</color>
+    <color name="accent_light_White">#ffffffff</color>
+    <color name="accent_light_White_disabled">#1a000000</color>
+
+    <!-- black theme -->
+    <color name="primary_black">#ff000000</color>
+    <color name="primary_dark_black">#ff000000</color>
+    <color name="accent_black">#ff7189c5</color>
+    <color name="accent_light_black">#1aff9843</color>
+    <color name="accent_light_black_disabled">#1a000000</color>
+
+    <!-- pink theme -->
+    <color name="primary_pink">#ffff80bc</color>
+    <color name="primary_dark_pink">#ffe573a9</color>
+    <color name="primary_pink_dark">#ffcc6696</color>
+    <color name="primary_dark_pink_dark">#ff7f4972</color>
+    <color name="accent_pink">#ffff80bc</color>
+    <color name="accent_light_pink">#1aff80bc</color>
+    <color name="accent_light_pink_disabled">#1a000000</color>
+
+    <!-- bubbles -->
+    <!-- date -->
+    <color name="lightgreen">#ffc8e6c9</color> <!-- green 100 -->
+    <color name="darkgreen">#ff1b5e20</color>  <!-- green 900 -->
+
+    <!-- warning -->
+    <color name="lightred">#ffffcdd2</color> <!-- red 100 -->
+    <color name="darkred">#ffb71c1c</color>  <!-- red 900 -->
+
+    <!-- blue theme -->
+    <color name="lightwhite">#fffafafa</color> <!-- light theme other -->
+    <color name="lightblue">#ffbbdefb</color> <!-- light theme me -->
+    <color name="darkwhite">#ff424242</color> <!-- dark theme other -->
+    <color name="darkblue">#ff37474f</color> <!-- dark theme me -->
+
+    <!-- monocles theme -->
+    <color name="lightmonocles">#fffff4ec</color> <!-- light theme other -->
+    <color name="lightmonocles2">#ffe9eaee</color> <!-- light theme me -->
+    <color name="middlemonocles">#ff2d5092</color> <!-- dark theme other -->
+    <color name="darkmonocles">#ff363839</color> <!-- dark theme me -->
+
+    <!-- orange theme -->
+    <color name="lightorange">#fffff3de</color> <!-- light theme other -->
+    <color name="lightorange2">#FFE0B2</color> <!-- light theme me -->
+    <color name="middleorange">#ff996300</color> <!-- dark theme other -->
+    <color name="darkorange">#ff4c3100</color> <!-- dark theme me -->
+
+    <!-- grey theme -->
+    <color name="lightgrey">#fffcfcfc</color> <!-- light theme other -->
+    <color name="lightgrey2">#ffeaeaea</color> <!-- light theme me -->
+    <color name="middlegrey">#ff5b5b5b</color> <!-- dark theme other -->
+    <color name="darkgrey">#ff444444</color> <!-- dark theme me -->
+
+    <!-- White theme -->
+    <color name="lightWhite">#ffffffff</color> <!-- light theme other -->
+    <color name="lightWhite2">#ffffffff</color> <!-- light theme me -->
+    <color name="middleWhite">#ffffffff</color> <!-- dark theme other -->
+    <color name="darkWhite">#ff000000</color> <!-- dark theme me -->
+
+    <!-- black theme -->
+    <color name="middleblack">#ff323232</color> <!-- dark theme other -->
+    <color name="darkblack">#ff252525</color> <!-- dark theme me -->
+
+    <!-- pink theme -->
+    <color name="lightpink">#fffff2f8</color> <!-- light theme other -->
+    <color name="lightpink2">#ffffd8ea</color> <!-- light theme me -->
+    <color name="middlepink">#ff7f4972</color> <!-- dark theme other -->
+    <color name="darkpink">#ff4c2c44</color> <!-- dark theme me -->
+
+    <!-- main colors -->
+    <color name="realgreen">#ff388e3c</color>  <!-- green 700 -->
+    <color name="header_background">#663e5ea2</color>
+    <color name="black">#ff000000</color>
+    <color name="black87">#de000309</color>
+    <color name="black54">#8a000309</color>
+    <color name="black26">#42000000</color>
+    <color name="black12">#1f000000</color>
+    <color name="deep_purple_a100">#ffB388FF</color> <!-- deep purple accent 100 -->
+    <color name="deep_purple_a200">#ff7C4DFF</color> <!-- deep purple accent 200 -->
+    <color name="deep_purple_a400">#ff651FFF</color> <!-- deep purple accent 400 -->
+    <color name="deep_purple_a700">#ff6200EA</color> <!-- deep purple accent 700 -->
+    <color name="realblack">#ff000000</color> <!-- black -->
+    <color name="white">#ffe2e7f1</color>
+    <color name="white12">#1fffffff</color>
+    <color name="white70">#b2e2e7f1</color>
+    <color name="white87">#deffffff</color>
+    <color name="green500">#ff4CAF50</color>  <!-- green 500 -->
+    <color name="grey50">#fffafafa</color>  <!-- grey 50 -->
+    <color name="grey200">#ffeeeeee</color>  <!-- grey 200 -->
+    <color name="grey300">#ffe0e0e0</color>  <!-- grey 300 -->
+    <color name="grey300_40">#66e0e0e0</color>
+    <color name="grey500">#ff9e9e9e</color>  <!-- grey 500 -->
+    <color name="grey700">#ff616161</color> <!-- grey 700 -->
+    <color name="grey800">#ff424242</color> <!-- grey 800 -->
+    <color name="grey900">#ff212121</color> <!-- grey 900 -->
+    <color name="grey900_40">#66212121</color>
+    <color name="redmissedcall">#ffc94f4f</color>
+    <color name="red800">#ffc62828</color>  <!-- red 800 -->
+    <color name="red500">#fff44336</color>  <!-- red 500 -->
+    <color name="red700">#ffd50000</color> <!-- red 700 -->
+    <color name="orange500">#ffff9800</color> <!-- orange 500 -->
+    <color name="realwhite">#ffffffff</color> <!-- white -->
+    <color name="online">#ff388e3c</color> <!-- green 700 -->
+    <color name="away">#ffff9800</color> <!-- orange 500 -->
+    <color name="notavailable">#fff44336</color> <!-- red 500 -->
+    <color name="warning_button">#ffcdd2</color>  <!-- red 100 -->
+    <color name="warning_button_dark">#ffC62828</color> <!-- red 800 -->
+
+    <!-- scanner -->
+    <color name="scan_result_dots">#ff4caf50</color>
+
+    <!-- Cheogram -->
+    <color name="perpy">#7401CF</color>
+    <color name="black_perpy">#1E0036</color>
+    <color name="yeller">#FFC700</color>
+
+    <color name="custom_theme_primary">@color/perpy</color>
+    <color name="custom_theme_primary_dark">@color/black_perpy</color>
+    <color name="custom_theme_accent">@color/black_perpy</color>
+
+    <!-- photo editor -->
+    <color name="crop_image_view_background">#BB000000</color>
+    <color name="editor_draw_default_color">#000000</color>
+</resources>

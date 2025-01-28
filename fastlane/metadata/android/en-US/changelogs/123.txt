@@ -1,0 +1,6 @@
+* I2P Support
+* SASL 2 improvements
+* updated WebRTC
+* fixed external storage issue
+* fixed sending/downloading files when using external storage
+* Bugfixes

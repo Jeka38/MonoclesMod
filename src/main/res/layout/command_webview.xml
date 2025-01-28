@@ -1,0 +1,36 @@
+<?xml version="1.0" encoding="utf-8"?>
+<layout xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:app="http://schemas.android.com/apk/res-auto">
+
+    <RelativeLayout
+        android:layout_width="fill_parent"
+        android:layout_height="fill_parent">
+
+        <TextView
+            android:id="@+id/desc"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:gravity="center"
+            android:minHeight="?android:attr/listPreferredItemHeightSmall"
+            android:paddingLeft="8dp"
+            android:paddingRight="8dp"
+            android:textAppearance="@style/TextAppearance.Conversations.Body1"
+            android:textColor="?attr/edit_text_color" />
+
+        <WebView
+            android:id="@+id/webview"
+            android:layout_below="@+id/desc"
+            android:layout_width="match_parent"
+            android:layout_height="match_parent" />
+
+        <ProgressBar
+            android:id="@+id/progressbar"
+            android:layout_width="match_parent"
+            android:layout_height="130dp"
+            android:paddingLeft="8dp"
+            android:paddingRight="8dp"
+            android:paddingBottom="16dp" />
+
+    </RelativeLayout>
+
+</layout>

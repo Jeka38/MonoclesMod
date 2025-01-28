@@ -1,0 +1,31 @@
+<layout xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:app="http://schemas.android.com/apk/res-auto">
+
+    <androidx.coordinatorlayout.widget.CoordinatorLayout
+        android:layout_width="match_parent"
+        android:layout_height="match_parent"
+        android:background="?attr/color_background_secondary" >
+
+        <eu.siacs.conversations.ui.ContextMenuRecyclerView
+            android:id="@+id/list"
+            android:layout_width="match_parent"
+            android:layout_height="match_parent"
+            android:background="?attr/color_background_secondary"
+            android:divider="@android:color/transparent"
+            android:dividerHeight="0dp"
+            android:scrollbars="vertical" />
+
+
+        <com.google.android.material.floatingactionbutton.FloatingActionButton
+            android:id="@+id/fab"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:layout_gravity="end|bottom"
+            android:layout_margin="16dp"
+            android:src="@drawable/outline_chat_white_24"
+            app:backgroundTint="?attr/colorAccent"
+            app:tint="@color/realwhite"
+            android:contentDescription="@string/start_conversation" />
+
+    </androidx.coordinatorlayout.widget.CoordinatorLayout>
+</layout>

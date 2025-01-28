@@ -1,0 +1,8 @@
+* Updated webrtc to m117
+* Support ringing jingle message
+* Big redesign of input field and quote message preview
+* Rework on custom background to allow images with alpha channel
+* Fix crash when setting custom background
+* Add system independent emoji picker to input field
+* Open emoji picker for message reactions
+* Fix echo when calling with Fairphone 4

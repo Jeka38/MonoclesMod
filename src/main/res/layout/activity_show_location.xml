@@ -1,0 +1,62 @@
+<?xml version="1.0" encoding="utf-8"?>
+<layout xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:app="http://schemas.android.com/apk/res-auto"
+    xmlns:tools="http://schemas.android.com/tools">
+
+    <RelativeLayout
+        android:layout_width="match_parent"
+        android:layout_height="match_parent"
+        tools:context=".ui.ShowLocationActivity">
+
+        <include
+            android:id="@+id/toolbar"
+            layout="@layout/toolbar" />
+
+        <androidx.coordinatorlayout.widget.CoordinatorLayout
+
+            android:id="@+id/snackbar_coordinator"
+            android:layout_width="match_parent"
+            android:layout_height="match_parent"
+            android:layout_below="@id/toolbar">
+
+            <org.osmdroid.views.MapView
+                android:id="@+id/map"
+                android:layout_width="match_parent"
+                android:layout_height="match_parent"
+                android:layout_below="@id/toolbar" />
+
+            <TextView
+                android:id="@+id/address"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:layout_gravity="center_horizontal"
+                android:layout_marginStart="@dimen/activity_horizontal_margin"
+                android:layout_marginLeft="@dimen/activity_horizontal_margin"
+                android:layout_marginTop="@dimen/activity_vertical_margin"
+                android:layout_marginEnd="@dimen/activity_horizontal_margin"
+                android:layout_marginRight="@dimen/activity_horizontal_margin"
+                android:background="@drawable/snackbar"
+                android:fontFamily="monospace"
+                android:gravity="center_horizontal"
+                android:padding="@dimen/activity_vertical_margin"
+                android:textAppearance="@style/TextAppearance.Conversations.Body1.OnDark"
+                android:textSize="?attr/TextSizeBody"
+                android:typeface="monospace"
+                android:visibility="gone" />
+
+            <com.google.android.material.floatingactionbutton.FloatingActionButton
+                android:id="@+id/fab"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:layout_alignParentEnd="true"
+                android:layout_alignParentRight="true"
+                android:layout_alignParentBottom="true"
+                android:layout_gravity="end|bottom"
+                android:layout_margin="16dp"
+                android:contentDescription="@string/action_unfix_from_location"
+                android:src="?attr/icon_navigate"
+                app:backgroundTint="?attr/colorAccent"
+                app:tint="@color/realwhite" />
+        </androidx.coordinatorlayout.widget.CoordinatorLayout>
+    </RelativeLayout>
+</layout>

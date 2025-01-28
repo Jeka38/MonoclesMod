@@ -1,0 +1,8 @@
+* Vermeiden von Wiederholung in der Beschreibung zu Screenshots
+* dexOptionen wird nicht mehr in agp7 verwendet
+* stoppe agp7 Beschwerde über fehlende Proguard-Regeln
+* PIP-Aspektverhältnis soll mit Video-Aspektverhältnis übereinstimmen
+* Kehre "Always show Quote as last action" um
+* Verwende androidx ExifInterface zur Parse Rotation
+* standardmäßig "auto akzeptieren von Dateien" zu "Niemals" für Wi-Fi und mobile Datenverbindung
+

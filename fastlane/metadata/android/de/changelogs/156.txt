@@ -1,0 +1,16 @@
+* Aktualisierte Übersetzungen
+* Mehr Optionen für Lesemarker
+* Nur noch eine Sicherungsdatei für die Einstellungen erstellen 
+* Erlaubt die Auswahl von Text und das Zitieren der Auswahl (Doppeltippen)
+* Hinzufügen einer Kamerataste zum Eingabefeld
+* QR-Code-Scan auf Willkommensbildschirm für Einladungen hinzufügen 
+* Abhängigkeiten aktualisieren 
+* Standardmäßig wird ein Gif im Chat abgespielt 
+* Größerer Sendebutton-Bereich
+* Neuimplementierung der Emoji-Auswahl
+* Option für mehrere Konten entfernen, da sie immer aktiv ist
+* Option für einfache Nachrichtenreaktion hinzufügen
+* Verbessertes Löschen von Nachrichten mit Kompatibilität zu movim
+* Behebung der versteckten Textformatierungsfunktion 
+* Behebt zufällige Abstürze auf älteren Geräten
+* Internen Updater für App Stores entfernen

@@ -1,0 +1,31 @@
+apply plugin: 'java'
+
+group = 'fr.xgouchet'
+
+
+dependencies {
+    // TODO UNIT TESTS
+}
+
+// Additional tasks for jitpack.io
+
+// build a jar with source files
+task sourcesJar(type: Jar) {
+    from sourceSets.main.java.srcDirs
+    archiveClassifier.set("sources")
+}
+
+// build a jar with javadoc
+task javadocJar(type: Jar, dependsOn: javadoc) {
+    archiveClassifier.set("javadoc")
+    from javadoc.destinationDir
+}
+
+artifacts {
+    archives sourcesJar
+    archives javadocJar
+}
+java {
+    sourceCompatibility = JavaVersion.VERSION_1_8
+    targetCompatibility = JavaVersion.VERSION_1_8
+}

@@ -1,0 +1,14 @@
+* Verschlüsselte Backups erlauben (Daniel Gultsch)
+* aktualisierter Webrtc-Link
+* Fixing Trailing Zeichen behandelt als Teil von URI-Fehler, behandle Dollar Zeichen als URI Zeichen, Parse IPv6 URIs, (Millesimus)
+* zeige Avatare in Raumsuche (Christian Schneppe)
+* Fixing xmpp:uri Bug in Kanaldetails. (Millesimus)
+* >.< darf nicht als Zitat (Bugfix) angegeben werden. (Daniel Gultsch)
+* Dateibeobachter auf seinem eigenen Faden ausführen. fix. (Daniel Gultsch)
+* Zieldatei nach erfolgloser Bildkompression löschen (Daniel Gultsch)
+* Fix typo und Fehler in russischen Strings (Joie Whittington)
+* Umbenennung Profil nach Konten
+* zusätzliche Option für Importeinstellungen (Christian Schneppe)
+* Umbenennung Profil zu Konto
+* Umbenennung Channel zu Room
+* Externes App Update deaktiviert

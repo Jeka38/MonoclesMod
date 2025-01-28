@@ -1,0 +1,8 @@
+* Add a setting to remove file delete confirmation dialogs in chats 
+* Avatar Fix
+* Set blind trust before omemo verification to default
+* Revert "room" to "group" in roster
+* Fix crash because of images in some chat rooms
+* Fix send GPS location in omemo messages
+* Allow any characters in MUC nicknames
+* Only default to new thread when in MUC

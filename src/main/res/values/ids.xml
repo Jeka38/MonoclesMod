@@ -1,0 +1,12 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <item name="snackbar_location_message" type="id" />
+    <item name="message_image_view" type="id" />
+    <item name="message_video_view" type="id" />
+    <item name="message_gif_view" type="id" />
+    <item name="TAG_ACCOUNT" type="id" />
+    <item name="TAG_FINGERPRINT" type="id" />
+    <item name="TAG_FINGERPRINT_STATUS" type="id" />
+    <item name="TAG_AUDIO_PLAYER_VIEW_HOLDER" type="id" />
+    <item name="status" type="id" />
+</resources>

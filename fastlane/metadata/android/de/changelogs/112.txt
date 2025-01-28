@@ -1,0 +1,13 @@
+* Android 4 Unterstützung entfernt
+* WebRTC aktualisiert
+* zeige Raum Avatare und Anzahl der Benutzer für Raum Entdeckung
+* Möglichkeit der Ex-/Import-App-Einstellungen hinzugefügt
+* Implementierung des Nachrichtenrückzugs XEP-0424
+* Nachrichtenverlauf für korrigierte Nachrichten implementiert
+* Textformatierungstasten im Chat hinzugefügt
+* Textformatierung in Chats verstecken
+* Möglichkeit eigenen Avatar zu löschen
+* schwarze Balken anzeigen, wenn Remote-Video nicht mit einem Seitenverhältnis des Bildschirms übereinstimmt
+* Verbesserung der Suchleistung
+* Fehlerbehebungen
+* OTR wieder entfernt

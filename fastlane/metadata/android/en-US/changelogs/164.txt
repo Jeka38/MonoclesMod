@@ -1,0 +1,13 @@
+* Fix Restore Backup -> Crash Problem
+* Disable modifiable mappreview url
+* No swiping anymore for commands and webxdc viewpager fixes several webxdc problems
+* Added Oukitel WP12 Pro and Volla Phone X to the list of AAC sensitive devices
+* Initial stickers picker 
+* Bigger stickers
+* Fix flashing emoji picker
+* Show hint when not able to open WebXDC
+* Fix commands view
+* Hide recent threads when thread feature disabled
+* Allow copying own fingerprint with long click
+* Fix crash on some commands and webxdcs
+* Update strings

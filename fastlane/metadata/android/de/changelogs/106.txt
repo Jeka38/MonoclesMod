@@ -1,0 +1,8 @@
+* Material-Icons und modifizierung der Datumsblase
+* geänderte Datumsblase von italic zu fett
+* kleiner send_text Button
+* Code aufräumen und Kommentare hinzufügen
+* Farbe orange Datumsblase
+* transparentere Datumsblase
+* besserer Splash Screen
+* geändertes orange Thema für Empfangen Farbe

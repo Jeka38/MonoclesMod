@@ -1,0 +1,21 @@
+<?xml version="1.0" encoding="utf-8"?>
+<layout xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:app="http://schemas.android.com/apk/res-auto">
+
+    <RelativeLayout
+        android:layout_width="match_parent"
+        android:layout_height="@dimen/bottom_filters_height"
+        android:background="@color/black26"
+        android:paddingTop="@dimen/medium_margin">
+
+        <androidx.recyclerview.widget.RecyclerView
+            android:id="@+id/bottom_actions_filter_list"
+            android:layout_width="match_parent"
+            android:layout_height="@dimen/bottom_filters_height"
+            android:orientation="horizontal"
+            android:overScrollMode="never"
+            app:layoutManager="androidx.recyclerview.widget.LinearLayoutManager"/>
+
+    </RelativeLayout>
+
+</layout>

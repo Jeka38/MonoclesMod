@@ -1,0 +1,3 @@
+* Kompatibilität zu Android-Versionen unter 10 behoben
+* Unbenutzte Updates für Monocles Chat 2 entfernt
+* Teile APKs auf für die jeweiligen Plattformen

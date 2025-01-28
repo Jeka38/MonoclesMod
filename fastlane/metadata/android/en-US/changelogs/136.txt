@@ -1,0 +1,27 @@
+* Expendable text for long messages
+* Animated swipe to reply
+* Custom chat background
+* Added blue message checkmark icons in settings
+* Manage chat room permissions with dialog (Fixes user permissions bug)
+* Find chat room users by barejid when looking by realjid
+* Ask to moderate recent when banning if chat room supports it
+* Re-send presence to a chat room if sending custom emoji
+* Still follow thread of my own messages
+* Fix group chat shortcuts
+* Make sure the connection knows the final filename
+* Fix crash when receiving images from Cheogram
+* Added option in settings to import backup or settings file
+* Add action to create a backup from the manage accounts menu
+* Hide custom theme setting when not working
+* Updated strings
+* Fix show avatar big
+* Fix a bug/crash where the string resource of transcoding_video_x was not properly using with % signs
+* Keep the original filename while sending attachment as file
+* Update filename handling: received files will not get renamed at all, sent file names will only be renamed if not sent as original
+* Make confirm delete file optional
+* Show commands in chat rooms
+* Clean up providers list
+* Fix custom theme
+* Fix crash when interrupting file transfer
+* Menu item for message reaction
+* Bundle letsencrypt certificate

@@ -1,0 +1,2 @@
+* change color to theme of topbar
+* critical database bugfix for updateprocess

@@ -1,0 +1,6 @@
+* Separate vereinheitlichte Kontakte und Räume
+* Behebung eines seltenen Absturzes beim Wechsel in den Land-Modus
+* Leistungsverbesserungen
+* Ausblenden der Support-Snackbar, wenn bereits verwendet
+* Korrigiert die Farbe der Gesprächsübersicht, wenn nur ein Konto aktiv ist (behebt reines (AMOLED) schwarzes Thema)
+* Untere Navigation

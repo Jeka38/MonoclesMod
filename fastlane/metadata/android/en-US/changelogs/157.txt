@@ -1,0 +1,9 @@
+* Change sticker directory
+* Long press to save sticker of others
+* Save received/send image as sticker
+* Refresh UI when change show less/more avatars
+* Improve voice recorder
+* Directly send voice message instead of just attach
+* Append file type to stickers saved from inside chat 
+* Fix public chat room search method
+* Hide attach record voice and take picture when buttons already visible 

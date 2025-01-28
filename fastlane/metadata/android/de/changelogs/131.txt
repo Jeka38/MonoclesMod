@@ -1,0 +1,7 @@
+* Bessere Logik für die Ersetzung von Links
+* Unterstützung der XEP-0425 Nachrichtenmoderation
+* Import-Backup nicht mehr automatisch bei WelcomeActivity öffnen
+* Standardmäßig wird bei der Suche nach öffentlichen Räumen das Jabber-Netzwerk angezeigt
+* Hinzufügen der Funktion "Wischen zum Antworten"
+* Beliebige Farbe des Themas (Beta)
+* Fehlerbehebung verschwundene OMEMO Nachrichten

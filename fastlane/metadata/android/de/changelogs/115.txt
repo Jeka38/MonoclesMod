@@ -1,0 +1,4 @@
+* blaue Datums Blase
+* Verlauf von Nachrichtenänderungen anzeigen
+* Automatisches wieder senden von fehlgeschlagenen Nachrichten
+* Bugfixes

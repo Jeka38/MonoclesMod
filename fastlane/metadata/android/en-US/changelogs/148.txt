@@ -1,0 +1,12 @@
+* Fix crash when rotating view
+* Revert to stable emoji keyboard
+* Animations
+* Background center cropped
+* Fixing rare crash on layout change
+* Center cropped background image
+* Add xep-0440
+* Enable PEP native bookmarks
+* Remove stuck video compression notification
+* Updated strings
+* Fix geo location not shown on other clients
+* Fix showing wrong image in chat

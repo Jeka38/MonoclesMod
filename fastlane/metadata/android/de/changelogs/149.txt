@@ -1,0 +1,4 @@
+* Sticker-Feature und Suche mit ":"
+* Layout-Animationen
+* Emoji-Picker wieder integriert
+* Verschiedene Korrekturen

@@ -1,0 +1,143 @@
+* Ändern der Monocles-Support-Seite
+* Korrigiere Disable Swipes über WebXDC
+* Fix UI für reiche Antworten
+* Löschen von Aktionstasten
+* WebXDC ohne Status-Updates zulassen
+* Vorschaubild von webxdc
+* GridView-Link reparieren
+* Neues Subthread für webxdc einstellen
+* Repariere Absturz, wenn die Anhaftung mime null
+* Befehlsseite reparieren
+* Entferne String für unverschlüsselte WebXDC
+* Entferne zu viel Animation repariert leere Webxdc Ansicht
+* Update inputfield verbessern
+* WebxdcPage anpassen, wenn die Tastatur sichtbar ist
+* Verbessere WebxdcPage Tasten Farben + Strings
+* Verschlüsselungswarnung für WebXDC-Dateien direkt vor dem Senden anzeigen
+* Änderte Pipeline
+* Versuche nicht, einen Kontakt mit InvalidJid zu suchen
+* Namen von WebXDC als Datei "Name" erhalten
+* Erlaube, die https URLs direkt anzuhängen
+* WebXDC-Name anzeigen, wenn es vorhanden und kurz ist
+* Implement experimentelle WebXDC "realtime" API
+* Deaktiviere Swipes über WebXDC
+* Übersetzungen aktualisieren
+* Fix Überlappungsstatus Text, wenn quadratische Avatare aktiviert sind
+* Ignoriere MAM-Nachrichten von blockiert
+* Besserer Übergang
+* XEP-0490 Anzeige Zustand Implementierung
+* Übersetzungen aktualisieren
+* Mit WAL verbesserte Ladezeiten
+* Refactor Jingle File Transfer. WebRTCDatachannel Transport hinzufügen
+* Behebe Absturz bei der Verwendung von direkter Jingle-Init auf Offline-Kontakten
+* Nicht beenden Jingle ft Session zweimal (nach iq Timeout)
+* Abbrechen Socket Kandidatensuche, wenn Peer etwas mit höherer Priorität ausgewählt
+* Fix JET-Spezifikation
+* Lassen Sie zulassen_pm konfigurierbar
+* Erlaube, jede eigene Textnachricht zu bearbeiten
+* Reduziere LRU-Größe, um RAM-Druck zu helfen
+* Stopts Vermüllung der Reconnects während warten auf DB laden
+* Viel effizienteres Laden von Nachrichten
+* Bessere Unterstützung bei der Korrektur von Antworten/Reaktionen
+* Animierte Emoji sichtbar
+* Reiche Zitate
+* Schalten Sie Audio-Gerät beim Umschalten auf Video
+* Neue Sounds für Anrufe
+* Automatische Audiogeräteauswahl überspringen, wenn BT verfügbar ist
+* Fix storniert p2p ft angezeigt als solche
+* Ziehe Zitate aus der Vorschau
+* Ziehe alle Nutzlasten auch
+* Verwende korrekte id für Reaktionen
+* Antwort auf nicht heruntergeladenes Bild, haben wir möglicherweise keine cids
+* InReplyTo für Live-Nachrichten einstellen
+* @mods um einen Online Moderator zu erwähnen
+* In Antwort auf Indikator und springen auf
+* Absturz beheben, wenn Antwort auf GIF
+* Halte Threads, Emoji, senden, Mikrofon und Kamera-Symbole unten
+* Mögliche fixe Nachricht Rückzug urn / XEP-0424
+* Reparieren Sie den Racezustand, wenn Sie die Kameraberechtigung nach Anfrage auf Video wechseln
+* Wache gegen geschäftige Antworten ohne id
+* Auswählen von Grund bei der Moderation
+* Nicht synthetisiere Angebot für moderierte Nachricht
+* Korrektur stilisierte Antwort
+* Direkte Antwort festsetzen
+* Keine Reaktion auf eine Reaktion
+* Speichern Sie immer neue body+html von MUC
+* Fügen Sie mehr Dinge hinzu, die der MUC vor der Reflexion geändert haben könnte
+* Unify tone generator invocations
+* Fange seltene Fehler beim Drücken von Schalter zu Ohrhörer
+* Fange an, wenn der letzte Anruf abgeschaltet wird
+* Neue Option, MUC-Teilnehmer zum Chat einzuladen (Experimentell)
+* Nur aktualisiere die Befehle, wenn Update für diesen Kontakt war
+* Deaktiviere automatisch springen, um Befehle Tab und Hinzufügen Einstellung. Behebt leeren Chat-Bildschirm
+* Entfernen Sie ungenutzte Cache-Logik
+* Store oob fallbacks für gesendete Nachrichten
+* Beschränken Sie den Namen auf 3 Zeilen in der Anrufansicht
+* Ändern der gerohrten Instanz
+* Aus der Wache
+* Versuchen Sie nicht Aufkleber-Pack, wenn kein pack_id
+* Initial WebXDC "store"
+* Update Bouncycastle und Refraktär XmppDomainVerifier
+* Aktualisieren und integrieren von App-Verschluss
+* Entfernen Sie die hintere Taste für WebXDC Store
+* Seltener Absturz beim Empfang von Nachrichten von einem unbekannten Client
+* Thema folgen im WebXDC Store
+* Update Bouncycastle und Refraktär XmppDomainVerifier
+* Aktualisieren und integrieren von App-Verschluss
+* Entfernen Sie die hintere Taste für WebXDC Store
+* Seltener Absturz beim Empfang von Nachrichten von einem unbekannten Client
+* Entfernen Sie ungenutzte Cache-Logik
+* Store oob fallbacks für gesendete Nachrichten
+* Beschränken Sie den Namen auf 3 Zeilen in der Anrufansicht
+* Ändern der gerohrten Instanz
+* Aus der Wache
+* Versuchen Sie nicht Aufkleber-Pack, wenn kein pack_id
+* Initial WebXDC "store"
+* Unify tone generator invocations
+* Fang seltene Rassenbedingungen beim Drücken von Schalter zu Ohrhörer
+* Fang an, wenn der letzte Anruf abgeschaltet wird
+* Neue Option, MUC-Teilnehmer zum Chat einzuladen
+* Nur aktualisieren Sie die Befehle, wenn Update für diesen Kontakt war
+* Deaktivieren Sie automatisch springen, um Befehle Tab und Hinzufügen Einstellung. Behebt leeren Chat-Bildschirm
+* Halten Sie Faden, Emoji, senden, Mikrofon und Kamera-Symbole unten
+* Mögliche fixe Nachricht Rückzug urn / XEP-0424
+* Reparieren Sie den Racezustand, wenn Sie die Kameraberechtigung nach Anfrage auf Video wechseln
+* Wache gegen geschäftige Antworten ohne id
+* Auswählen von Grund bei der Moderation
+* Nicht synthetisieren Angebot für moderierte Nachricht
+* Korrektur stilisierte Antwort
+* Direkte Antwort festsetzen
+* Keine Reaktion auf eine Reaktion
+* Speichern Sie immer neue body+html von MUC
+* Fügen Sie mehr Dinge hinzu, die der MUC vor der Reflexion geändert haben könnte
+* Bessere Unterstützung bei der Korrektur von Antworten/Reaktionen
+* Animierte Emoji arbeiten jetzt
+* Reiche Zitate
+* Schalten Sie Audio-Gerät beim Umschalten auf Video
+* Neue Sounds für Anrufe
+* Automatische Audiogeräteauswahl überspringen, wenn BT verfügbar ist
+* Fix storniert p2p ft angezeigt als solche
+* Snip Zitate aus der Vorschau
+* Retract alle Nutzlasten auch
+* Verwenden Sie korrekte id für Reaktionen
+* Antwort auf nicht heruntergeladenes Bild, haben wir möglicherweise keine cids
+* InReplyTo für Live-Nachrichten einstellen
+* @mods um einen Online Moderator zu erwähnen
+* In Antwort auf Indikator und springen auf
+* Absturz beheben, wenn Antwort auf GIF
+* Fix JET-Spezifikation
+* Lassen Sie zulassen_pm konfigurierbar
+* Erlauben Sie, jede eigene Textnachricht zu bearbeiten
+* Reduzieren LRU-Größe, um RAM-Druck zu helfen
+* Stop thrashing reconnects während warten auf DB laden
+* Viel effizienteres Laden von Nachrichten
+* Fix Überlappungsstatus Text, wenn quadratische Avatare aktiviert sind
+* ignorieren MAM-Nachrichten von blockiert
+* Besserer Übergang
+* XEP-0490 Anzeige Zustand Implementierung
+* Übersetzungen aktualisieren
+* Mit WAL verbesserte Ladezeiten auf Kartoffel um 30er Jahre
+* Refactor Jingle File Transfer. WebRTCDatachannel Transport (Test) hinzufügen
+* Beheben Sie den Absturz bei der Verwendung von direkter Jingle-Init auf Offline-Kontakten
+* Nicht beenden Jingle ft Session zweimal (nach iq Timeout)
+* Abbrechen Socket Kandidatensuche, wenn Peer etwas mit höherer Priorität ausgewählt

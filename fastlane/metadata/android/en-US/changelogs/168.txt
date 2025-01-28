@@ -1,0 +1,19 @@
+* Activate animated avatars (GIFs up to 480px*480px and 100 KB) 
+* Show images from imagelinks in status in contact details
+* Clean up contact details
+* Fix random crashes
+* Bigger cancel and send buttons for voice recorder
+* Fix conversations fragment for tablet mode 
+* Play gifs inside chat also disables animated avatar and animated status images
+* Possible reduce battery consumption
+* Possible fix rare random crash
+* Clean up code (very little speed improvement)
+* Show images in reply field
+* Little performance improvement
+* Show images from quoted image links when image link preview activated
+* Fix avatar size in big avatar preview
+* Increase messages image size in messages a litte
+* Fix empty chat screen
+* Experimental setting to collapse messages longer than 7 lines
+* Initial GIFs picker 
+* Updated translations

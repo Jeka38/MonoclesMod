@@ -1,0 +1,16 @@
+* improving SASL Mechanism
+* allow long press to copy any link in a message
+* set autoresend default to 0
+* remove Material you and reset to round buttons
+* remove providers url
+* make username more bigger in groupchats
+* round avatars
+* database upgrade
+* webrtc improvements
+* scram improvements
+* bugfixes
+* improved russian string
+* prepare JingleRtpConnection for content-adds
+* add switch to video menu item to call
+* handle content-add jingle stanzas
+* trim xmpp address after user input 

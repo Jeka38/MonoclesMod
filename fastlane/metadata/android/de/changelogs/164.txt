@@ -1,0 +1,13 @@
+* Backup wiederherstellen -> Absturzproblem beheben
+* Modifizierbare Mappreview-Url abschalten
+* Kein Swipen mehr für Befehle und webxdc viewpager behebt mehrere webxdc Probleme
+* Oukitel WP12 Pro und Volla Phone X in die Liste der AAC-empfindlichen Geräte aufgenommen
+* Erste Sticker-Auswahl 
+* Größere Sticker
+* Behebt blinkende Emoji-Auswahl
+* Hinweis anzeigen, wenn WebXDC nicht geöffnet werden kann
+* Ansicht der Befehle korrigiert
+* Ausblenden der letzten Threads, wenn die Thread-Funktion deaktiviert ist
+* Erlaubt das Kopieren des eigenen Fingerabdrucks mit langem Klick
+* Behebt Absturz bei einigen Befehlen und WebXDCs
+* Zeichenketten aktualisieren

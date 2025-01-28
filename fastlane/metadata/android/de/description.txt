@@ -1,0 +1,29 @@
+﻿monocles chat ist ein moderner und sicherer chat client, welcher das XMPP Protokoll nutzt und viele Funktionen bietet. Basierend auf der Anwendung blabber .im und Conversations mit
+vielen Änderungen, insbesondere zur Verbesserung der Sicherheit, also auch der Benutzerfreundlichkeit,
+um den Umstieg von oftmals vorinstallierten Messengern zu erleichtern.
+
+Verbindungssicherheit und der Schutz persönlicher Daten ist uns sehr wichtig,
+deshalb erzwingen wir verschlüsselte Verbindungen zwischen Messenger und Server,
+was es nahezu unmöglich macht, deine Nachrichten durch Fremde abzufangen und zu
+lesen. Dazu verzichten wir im Vergleich zu ähnlichen xmpp Clienten auf ältere Verschlüsselungs Ketten. Diese sind optimal an den monocles Chat Server angepasst, aber auch mit anderen Chat Servern kompatibel, welche heutige Standards nutzen.
+
+Wem das nicht genug ist, kann auf die integrierte Nachrichtenverschlüsselung von
+Ende-zu-Ende, wie OMEMO oder OpenPGP, zurückgreifen.
+Damit lassen sich Nachrichten auf dem Sendegerät verschlüsseln und nur durch das
+für den Empfang bestimmte Empfangsgerät entschlüsseln.
+
+Features:
+* Ende-zu-Ende Verschlüsselung entweder mit <a href="https://de.wikipedia.org/wiki/Off-the-Record_Messaging">OTR</a>, <a href="http://conversations.im/omemo/">OMEMO</a> oder <a href="http://openpgp.org/about/">OpenPGP</a>
+* Austausch von Bildern sowie anderen Dateien
+* Standorte senden und empfangen
+* Sprachnachrichten senden und empfangen
+* Integration von Kontobildern (Avatare) deiner Kontakte
+* Synchronisiere Nachrichtenverlauf mit anderen Clients
+* Konferenzen bzw. Gruppenchats
+* Adressbuchintegration (ein Austausch deines Adressbuches mit dem Server findet nicht statt)
+* Audio/Video Telefonie
+* sehr geringe Akku-Belastung
+* Status Nachrichten
+* tägliches Backup der Datenbank auf den lokalen Speicher
+
+Benötigst du Hilfe? Bitte tritt doch einfach dem Support Gruppenchat <a href="xmpp:support@conference.monocles.eu">support@conference.monocles.eu</a> bei.

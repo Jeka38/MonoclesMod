@@ -1,0 +1,72 @@
+{
+  "version": 3,
+  "artifactType": {
+    "type": "APK",
+    "kind": "Directory"
+  },
+  "applicationId": "de.monocles.chat",
+  "variantName": "playstoreRelease",
+  "elements": [
+    {
+      "type": "UNIVERSAL",
+      "filters": [],
+      "attributes": [],
+      "versionCode": 138,
+      "versionName": "4135a60-playstore",
+      "outputFile": "monocles chat-1.7.6-playstore-universal-release.apk"
+    },
+    {
+      "type": "ONE_OF_MANY",
+      "filters": [
+        {
+          "filterType": "ABI",
+          "value": "arm64-v8a"
+        }
+      ],
+      "attributes": [],
+      "versionCode": 13804,
+      "versionName": "4135a60-playstore",
+      "outputFile": "monocles chat-1.7.6-playstore-arm64-v8a-release.apk"
+    },
+    {
+      "type": "ONE_OF_MANY",
+      "filters": [
+        {
+          "filterType": "ABI",
+          "value": "armeabi-v7a"
+        }
+      ],
+      "attributes": [],
+      "versionCode": 13801,
+      "versionName": "4135a60-playstore",
+      "outputFile": "monocles chat-1.7.6-playstore-armeabi-v7a-release.apk"
+    },
+    {
+      "type": "ONE_OF_MANY",
+      "filters": [
+        {
+          "filterType": "ABI",
+          "value": "x86_64"
+        }
+      ],
+      "attributes": [],
+      "versionCode": 13803,
+      "versionName": "4135a60-playstore",
+      "outputFile": "monocles chat-1.7.6-playstore-x86_64-release.apk"
+    },
+    {
+      "type": "ONE_OF_MANY",
+      "filters": [
+        {
+          "filterType": "ABI",
+          "value": "x86"
+        }
+      ],
+      "attributes": [],
+      "versionCode": 13802,
+      "versionName": "4135a60-playstore",
+      "outputFile": "monocles chat-1.7.6-playstore-x86-release.apk"
+    }
+  ],
+  "elementType": "File"
+}

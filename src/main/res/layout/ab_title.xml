@@ -1,0 +1,52 @@
+<?xml version="1.0" encoding="utf-8"?>
+<RelativeLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    android:layout_width="match_parent"
+    android:layout_height="match_parent"
+    android:gravity="start|center_vertical"
+    android:orientation="vertical">
+
+    <eu.siacs.conversations.ui.widget.AvatarView
+        android:id="@+id/toolbar_avatar"
+        android:layout_width="38dp"
+        android:layout_height="38dp"
+        android:clickable="true"
+        android:onClick="onClick"
+        android:layout_marginEnd="8dp"
+        android:layout_marginRight="8dp"
+        android:layout_margin="2dp"
+        android:scaleType="centerCrop"
+        android:layout_centerVertical="true"
+        android:visibility="gone"/>
+
+    <TextView
+        android:id="@android:id/text1"
+        style="@style/TextAppearance.Material3.ActionBar.Title"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:clickable="true"
+        android:layout_toRightOf="@+id/toolbar_avatar"
+        android:layout_toEndOf="@+id/toolbar_avatar"
+        android:ellipsize="end"
+        android:gravity="start|center_vertical"
+        android:onClick="onClick"
+        android:paddingTop="1dp"
+        android:scrollHorizontally="true"
+        android:singleLine="true" />
+
+    <TextView
+        android:id="@android:id/text2"
+        style="@style/TextAppearance.Material3.ActionBar.Subtitle"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:layout_below="@android:id/text1"
+        android:layout_toRightOf="@+id/toolbar_avatar"
+        android:layout_toEndOf="@+id/toolbar_avatar"
+        android:clickable="true"
+        android:ellipsize="end"
+        android:gravity="start|center_vertical"
+        android:onClick="onClick"
+        android:paddingBottom="1dp"
+        android:scrollHorizontally="true"
+        android:singleLine="true"
+        android:textSize="12sp" />
+</RelativeLayout>

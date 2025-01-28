@@ -1,0 +1,282 @@
+<resources xmlns:android="http://schemas.android.com/apk/res/android" xmlns:tools="http://schemas.android.com/tools">
+
+    <style name="TextAppearance.Conversations.Display2.Monospace" parent="TextAppearance.Conversations.Display2">
+        <item name="fontFamily">@font/notosansregular</item>
+    </style>
+
+    <style name="TextAppearance.Conversations.Title.Monospace" parent="TextAppearance.Conversations.Title">
+        <item name="fontFamily">@font/notosansregular</item>
+    </style>
+
+    <style name="TextAppearance.Conversations.Display2" parent="TextAppearance.Material3.DisplayMedium">
+        <item name="android:textSize">?TextSizeDisplay2</item>
+        <item name="fontFamily">@font/notosansmedium</item>
+    </style>
+
+    <style name="TextAppearance.Conversations.Title" parent="TextAppearance.Material3.TitleMedium">
+        <item name="android:textSize">?TextSizeTitle</item>
+        <item name="fontFamily">@font/notosansmedium</item>
+
+    </style>
+
+    <style name="TextAppearance.Conversations.Subhead" parent="TextAppearance.Material3.TitleSmall">
+        <item name="android:textSize">?TextSizeSubhead</item>
+        <item name="fontFamily">@font/notosansregular</item>
+
+    </style>
+
+    <style name="TextAppearance.Conversations.Body2" parent="TextAppearance.Material3.BodyMedium">
+        <item name="android:textSize">?TextSizeBody2</item>
+        <item name="fontFamily">@font/notosansregular</item>
+
+    </style>
+
+    <style name="TextAppearance.Conversations.Body1" parent="TextAppearance.Material3.BodyMedium">
+        <item name="android:textSize">?TextSizeBody1</item>
+        <item name="android:textColorLink">?text_Color_Main</item>
+        <item name="fontFamily">@font/notosansregular</item>
+
+    </style>
+
+    <style name="TextAppearance.Conversations.Body1.Warning" parent="TextAppearance.Material3.BodyLarge">
+        <item name="android:textColor">?color_warning</item>
+        <item name="fontFamily">@font/notosansbold</item>
+
+    </style>
+
+    <style name="TextAppearance.Conversations.Body1.Linkified" parent="TextAppearance.Material3.BodyLarge">
+        <item name="android:textSize">?TextSizeBody1</item>
+        <item name="android:textColorLink">?android:colorAccent</item>
+        <item name="fontFamily">@font/notosansbold</item>
+
+    </style>
+
+    <style name="TextAppearance.Conversations.Caption" parent="TextAppearance.Material3.BodySmall">
+        <item name="android:textSize">11sp</item>
+        <item name="fontFamily">@font/notosansregular</item>
+    </style>
+
+    <style name="Widget.Conversations.EditText" parent="Widget.Material3.TextInputEditText.FilledBox">
+        <item name="android:textSize">?TextSizeInput</item>
+        <item name="android:textCursorDrawable">@drawable/dark_cursor</item>
+        <item name="colorControlActivated">?attr/colorAccent</item>
+        <item name="colorControlNormal">?attr/colorAccent</item>
+        <item name="fontFamily">@font/notosansregular</item>
+    </style>
+
+    <style name="Widget.Conversations.TextInputLayout.OutlinedBox" parent="Widget.Material3.TextInputLayout.OutlinedBox">
+        <item name="boxStrokeColor">@color/text_input_stroke_color</item>
+        <item name="android:textColorHint">@color/text_input_stroke_color</item>
+        <item name="hintTextColor">@color/text_input_stroke_color</item>
+        <item name="fontFamily">@font/notosansregular</item>
+    </style>
+
+    <style name="Widget.Conversations.SearchView" parent="Widget.Conversations.EditText">
+        <item name="android:background">@android:color/transparent</item>
+        <item name="android:textSize">18sp</item>
+        <item name="android:textCursorDrawable">@drawable/black_cursor</item>
+        <item name="fontFamily">@font/notosansregular</item>
+    </style>
+
+    <style name="Widget.monocles.Switch" parent="Widget.Material3.CompoundButton.MaterialSwitch">
+        <item name="android:switchTextAppearance">?TextSizeBody</item>
+        <item name="fontFamily">@font/notosansregular</item>
+    </style>
+
+    <style name="Widget.monocles.SwitchPreference" parent="Widget.Material3.CompoundButton.MaterialSwitch">
+        <item name="android:textSize">?TextSizeBody</item>
+        <item name="fontFamily">@font/notosansregular</item>
+    </style>
+
+    <style name="Widget.Conversations.RadioButton" parent="Widget.Material3.CompoundButton.RadioButton">
+        <item name="android:textSize">?TextSizeBody1</item>
+        <item name="fontFamily">@font/notosansregular</item>
+    </style>
+
+    <style name="Widget.Conversations.Button.Borderless" parent="@style/Widget.Material3.Button.TextButton">
+        <item name="android:textSize">?TextSizeBody2</item>
+        <item name="android:textColor">@color/button_state_color</item>
+        <item name="fontFamily">@font/notosanssemibold</item>
+    </style>
+
+    <style name="Widget.Conversations.Button.Outline" parent="@style/Widget.Material3.Button.OutlinedButton">
+        <item name="android:textSize">?TextSizeBody2</item>
+        <item name="strokeColor">?attr/colorAccent</item>
+        <item name="cornerRadius">20dp</item>
+        <item name="android:textColor">@color/button_state_color</item>
+        <item name="fontFamily">@font/notosanssemibold</item>
+    </style>
+
+    <style name="Widget.Conversations.Button" parent="@style/Widget.Material3.Button">
+        <item name="android:textSize">?TextSizeBody2</item>
+        <item name="cornerRadius">20dp</item>
+        <item name="android:textColor">@color/button_state_color</item>
+        <item name="fontFamily">@font/notosanssemibold</item>
+    </style>
+
+    <style name="Widget.Conversations.Button.Dialog" parent="@style/Widget.Material3.Button.TextButton">
+        <item name="android:textSize">?TextSizeBody2</item>
+        <item name="android:textColor">@color/button_state_color</item>
+        <item name="fontFamily">@font/notosanssemibold</item>
+    </style>
+
+    <style name="TextAppearance.Conversations.Design.Hint" parent="TextAppearance.Design.Hint">
+        <item name="strokeColor">?colorSecondary</item>
+        <item name="android:textSize">?TextSizeCaption</item>
+        <item name="fontFamily">@font/notosansregular</item>
+    </style>
+
+    <style name="TextAppearance.Conversations.Design.Error" parent="TextAppearance.Design.Error">
+        <item name="android:textSize">?TextSizeCaption</item>
+        <item name="fontFamily">@font/notosansregular</item>
+    </style>
+
+    <style name="TextAppearance.Conversations.Body1.Secondary" parent="TextAppearance.Conversations.Body1">
+        <item name="android:textColor">?android:textColorSecondary</item>
+        <item name="fontFamily">@font/notosansregular</item>
+    </style>
+
+    <style name="TextAppearance.Conversations.Body1.Tertiary" parent="TextAppearance.Conversations.Body1">
+        <item name="android:textColor">?android:textColorTertiary</item>
+        <item name="fontFamily">@font/notosansregular</item>
+    </style>
+
+    <style name="TextAppearance.Conversations.Fingerprint" parent="TextAppearance.Conversations.Body1">
+        <item name="fontFamily">@font/notosansregular</item>
+    </style>
+
+    <style name="InputLabel" parent="TextAppearance.Conversations.Caption">
+        <item name="android:paddingBottom">@dimen/input_label_vertical_spacing</item>
+        <item name="android:paddingLeft">@dimen/input_label_horizontal_spacing</item>
+        <item name="android:paddingRight">@dimen/input_label_horizontal_spacing</item>
+        <item name="fontFamily">@font/notosansregular</item>
+    </style>
+
+    <style name="TextAppearance.Conversations.Status" parent="TextAppearance.Conversations.Caption">
+        <item name="android:textStyle">italic</item>
+        <item name="fontFamily">@font/notosansregular</item>
+    </style>
+
+    <style name="TextAppearance.Conversations.Tag" parent="TextAppearance.Conversations.Caption">
+        <item name="android:textColor">@color/white</item>
+        <item name="fontFamily">@font/notosansregular</item>
+    </style>
+
+    <style name="TextAppearance.Conversations.Subject" parent="TextAppearance.Conversations.Caption">
+        <item name="android:textStyle">bold</item>
+        <item name="fontFamily">@font/notosansregular</item>
+    </style>
+
+    <style name="TextAppearance.Conversations.Caption.OnDark" parent="TextAppearance.Conversations.Caption">
+        <item name="android:textColor">@color/white70</item>
+        <item name="fontFamily">@font/notosansregular</item>
+    </style>
+
+    <style name="TextAppearance.Conversations.Caption.OnDark.Bold" parent="TextAppearance.Conversations.Caption.OnDark">
+        <item name="android:textStyle">bold</item>
+        <item name="fontFamily">@font/notosansbold</item>
+    </style>
+
+    <style name="TextAppearance.Conversations.Caption.Warning" parent="TextAppearance.Conversations.Caption">
+        <item name="android:textColor">@color/red700</item>
+        <item name="fontFamily">@font/notosansregular</item>
+    </style>
+
+    <style name="TextAppearance.Conversations.Caption.Warning.OnDark" parent="TextAppearance.Conversations.Caption">
+        <item name="android:textColor">@color/red500</item>
+        <item name="fontFamily">@font/notosansregular</item>
+    </style>
+
+    <style name="TextAppearance.Conversations.Caption.Highlight" parent="TextAppearance.Conversations.Caption">
+        <item name="android:textColor">?attr/colorAccent</item>
+        <item name="fontFamily">@font/notosansregular</item>
+    </style>
+
+    <style name="TextAppearance.Conversations.Caption.Disabled" parent="TextAppearance.Conversations.Caption">
+        <item name="android:textColor">?android:textColorTertiary</item>
+        <item name="fontFamily">@font/notosansregular</item>
+    </style>
+
+    <style name="TextAppearance.Conversations.Fingerprint.Disabled" parent="TextAppearance.Conversations.Fingerprint">
+        <item name="android:textColor">?android:textColorTertiary</item>
+        <item name="fontFamily">@font/notosansregular</item>
+    </style>
+
+    <style name="TextAppearance.Conversations.Body1.OnDark" parent="TextAppearance.Conversations.Body1">
+        <item name="android:textColor">@color/white</item>
+        <item name="android:textColorLink">@color/white</item>
+        <item name="fontFamily">@font/notosansregular</item>
+    </style>
+
+    <style name="TextAppearance.Conversations.Body1.Emoji.OnDark" parent="TextAppearance.Conversations.Body1">
+        <item name="android:textColor">?EmojiColor</item>
+        <item name="fontFamily">@font/notosansregular</item>
+    </style>
+
+    <style name="TextAppearance.Conversations.Body1.Emoji" parent="TextAppearance.Conversations.Body1">
+        <item name="android:textColor">?EmojiColor</item>
+        <item name="fontFamily">@font/notosansregular</item>
+    </style>
+
+    <style name="TextAppearance.Conversations.Body1.Secondary.OnDark" parent="TextAppearance.Conversations.Body1">
+        <item name="android:textColor">@color/white70</item>
+        <item name="fontFamily">@font/notosansregular</item>
+    </style>
+
+    <style name="Conversations.Dialog" parent="ThemeOverlay.Material3.Dialog.Alert">
+        <item name="android:buttonStyle">@style/Widget.Conversations.Button.Borderless</item>
+        <item name="fontFamily">@font/notosansregular</item>
+    </style>
+
+    <style name="Conversations.Dialog.Alert.Buttons" parent="Widget.Material3.Button">
+        <item name="android:textColor">?attr/colorAccent</item>
+        <item name="fontFamily">@font/notosansregular</item>
+    </style>
+
+    <style name="ExoMediaButton.Previous" tools:ignore="PrivateResource">
+        <item name="android:visibility">gone</item>
+        <item name="fontFamily">@font/notosansregular</item>
+    </style>
+
+    <style name="ExoMediaButton.Next" tools:ignore="PrivateResource">
+        <item name="android:visibility">gone</item>
+        <item name="fontFamily">@font/notosansregular</item>
+    </style>
+
+    <style name="DialpadNumberStyle">
+        <item name="android:includeFontPadding">false</item>
+        <item name="android:textSize">@dimen/dialpad_text_size</item>
+        <item name="fontFamily">@font/notosansregular</item>
+    </style>
+
+    <style name="DialpadLetterStyle">
+        <item name="android:textSize">@dimen/smaller_text_size</item>
+        <item name="android:alpha">0.8</item>
+        <item name="fontFamily">@font/notosansregular</item>
+    </style>
+
+    <style name="ShapeAppearanceOverlay.PhotoSquare" parent="ShapeAppearance.Material3.SmallComponent">
+        <item name="cornerFamily">rounded</item>
+        <item name="cornerSize">5dp</item>
+    </style>
+
+    <style name="ShapeAppearanceOverlay.PhotoRound" parent="ShapeAppearance.Material3.SmallComponent">
+        <item name="cornerFamily">rounded</item>
+        <item name="cornerSize">50%</item>
+    </style>
+
+    <style name="ShapeAppearanceOverlay.IncomingCall" parent="ShapeAppearance.Material3.SmallComponent">
+        <item name="cornerFamily">rounded</item>
+        <item name="cornerSize">@dimen/incoming_call_radius</item>
+    </style>
+
+    <style name="ShapeAppearanceOverlay.PhotoRoundBig" parent="ShapeAppearance.Material3.SmallComponent">
+        <item name="cornerFamily">rounded</item>
+        <item name="cornerSize">50%</item>
+    </style>
+    <style name="monocles.Active.Indicator" parent="Widget.Material3.BottomNavigationView.ActiveIndicator">
+        <item name="android:color">?attr/colorAccentLight</item>
+        <item name="android:height">24dp</item>
+        <item name="android:width">62dp</item>
+    </style>
+</resources>

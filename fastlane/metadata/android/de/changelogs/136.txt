@@ -1,0 +1,27 @@
+* Ausgeblendeter Text für lange Nachrichten
+* Animiertes Wischen zum Antworten
+* Benutzerdefinierter Chat-Hintergrund
+* Blaue Häkchensymbole für Nachrichten in den Einstellungen hinzugefügt
+* Verwalten von Chat-Raum-Berechtigungen mit Dialog (Behebt Fehler bei Benutzerberechtigungen)
+* Finde Chatraum-Benutzer nach barejid, wenn nach realjid gesucht wird
+* Frage nach Moderation beim Bannen, wenn der Chatraum dies unterstützt
+* Sende noch einmal Präsenz zu einen Chat Raum wenn eigener Emoji gesendet wird
+* Verfolge immer noch den Thread meiner eigenen Nachrichten
+* Gruppenchat-Verknüpfungen reparieren
+* Sicherstellen, dass die Verbindung den endgültigen Dateinamen kennt
+* Behebt Absturz beim Empfang von Bildern von Cheogram
+* Option in den Einstellungen hinzugefügt, um Backup oder Einstellungsdatei zu importieren
+* Hinzufügen einer Aktion zum Erstellen eines Backups im Menü "Konten verwalten"
+* Benutzerdefinierte Themeneinstellungen ausblenden, wenn sie nicht funktionieren
+* Aktualisierte Strings
+* Avatar groß anzeigen behoben
+* Behebt einen Fehler/Absturz, bei dem die String-Ressource von transcoding_video_x nicht korrekt mit %-Zeichen verwendet wurde
+* Beibehaltung des ursprünglichen Dateinamens beim Senden von Anhängen als Datei
+* Aktualisierung der Behandlung von Dateinamen: empfangene Dateien werden nicht umbenannt, gesendete Dateinamen werden nur umbenannt, wenn sie nicht als Original gesendet werden
+* Bestätigen des Löschens von Dateien optional machen
+* Befehle in Chaträumen anzeigen
+* Liste der Anbieter aufgeräumt
+* Benutzerdefiniertes Thema korrigiert
+* Absturz bei Unterbrechung des Dateitransfers behoben
+* Menupunkt für Nachrichtenreaktionen hinzugefügt
+* Integriere letsencrypt Zertifikat

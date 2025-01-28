@@ -1,0 +1,29 @@
+* Überarbeitung der Sprachaufzeichnung
+* Nur diesen Thread anzeigen, wenn die Thread-Funktion aktiviert ist
+* Standardhöhe der Emojipickerview anpassen
+* Moderationen nicht mehr als neue Nachrichten hinzufügen
+* Thread + Omemo zulassen
+* Sliderfeld
+* Anfängliche Überarbeitung der Aufkleber-Auswahl
+* Mögliche Behebung eines Absturzes bei leerem Array
+* Überprüfen der Speicherberechtigungen vor dem Laden von GIFs behebt Absturz in einigen Fällen
+* Erlaubt das Speichern von GIFs aus einer Chat-Nachricht
+* Erlaubt die Einstellung des Dateinamens vor dem Speichern als Sticker oder GIF
+* Blockieren der Sprachaufnahmetaste während der Aufnahme
+* Sprachnachricht nur einmal senden
+* Regelmäßiges Senden von Aufklebern als Bilder
+* Mögliche Behebung eines Absturzes bei der Aktualisierung von WebXDC
+* Mögliche Behebung des Absturzes bei der Bildvorschau von Bildlinks
+* Dateisymbol anzeigen, wenn kein Bild oder Video in Anführungszeichen
+* Behebung der Einstellung "Benutzerdefiniertes Thema ausblenden" für inkompatible Android OS
+* Mögliche Behebung eines seltenen Absturzes bei der Anzeige der Schaltfläche zur Sprachaufzeichnung
+* Mögliche Behebung eines seltenen Absturzes beim Wischen zum Antworten
+* Dateisymbol für Dateien in Antwortvorschau anzeigen
+* Noch kein Onboarding erforderlich
+* Importieren von Stickern und GIFs über die Einstellungen der App
+* Sticker oder GIF mit langem Druck löschen
+* Privatsphäre-Option und Mikrofonrichtung einstellen, wenn möglich 
+* Kleine Leistungsverbesserung beim Laden von Stickern und Gifs 
+* Behebt Absturz bei viewtype = -1 
+* Überprüfung bekannter SRVs sowie DNSSEC 
+* NPE beheben

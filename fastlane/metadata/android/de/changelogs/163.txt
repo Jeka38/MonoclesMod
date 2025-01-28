@@ -1,0 +1,3 @@
+* Standard-Hintergrund aktualisieren
+* WebXDC kann Verschlüsselung nur verwenden, wenn kein Status-Update stattfindet
+* Behebt Absturz, wenn Tastatur in Webxdc-Seite benötigt wird

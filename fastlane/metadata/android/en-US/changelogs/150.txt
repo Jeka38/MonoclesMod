@@ -1,0 +1,12 @@
+* Fix crash when update stickers after background changed
+* Fix missing stickers
+* Allow change stickers directory
+* Removed emoji picker and default to keyboard emoji button
+* Implement see-other-host stream error
+* Use aggressive reconnects for see-other-host
+* Upgrade minidns
+* verify DNSSEC when possible, show in UI
+* Verify DANE and display when verified
+* Support SVG in avatar
+* Support animated avatars
+* Change stickers dir and don't show stickers in android gallery 

@@ -1,0 +1,4 @@
+* blue date bubble
+* show history of edited messages
+* auto resend failed messages
+* Bugfixes

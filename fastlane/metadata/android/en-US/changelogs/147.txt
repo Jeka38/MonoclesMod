@@ -1,0 +1,17 @@
+* Improved emoji picker handling
+* Improved input field and comment bubble
+* Material 3
+* Many Design improvements
+* Better show for verified keys per QR-Code
+* Changed font and styling
+* Optionally textformatting tools
+* Several fixes
+* Private DNS (DoT)
+* Setting to enable square avatars
+* Setting to enable thread feature
+* Moved to SDK 34
+* Improved translations
+* Updated to webrtc m119
+* Removed Stickers for now until better implementation
+* Fixed voice recorder
+* Little performance improvement

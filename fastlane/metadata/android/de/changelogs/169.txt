@@ -1,0 +1,2 @@
+* PDF-Vorschau reparieren + Video-Vorschau-Overlay reparieren
+* Zurück zu besserer Leistung

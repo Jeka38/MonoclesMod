@@ -1,0 +1,30 @@
+<?xml version="1.0" encoding="utf-8"?>
+<paths>
+    <root-path
+        name="root"
+        path="." />
+    <external-path
+        name="external"
+        path="/" />
+    <root-path
+        name="storage"
+        path="/storage/" />
+    <files-path
+        name="pictures"
+        path="Images/" />
+    <files-path
+        name="videos"
+        path="Videos/" />
+    <files-path
+        name="files"
+        path="Files/" />
+    <files-path
+        name="audios"
+        path="Audios/" />
+    <files-path
+        name="update"
+        path="Update/" />
+    <files-path
+        name="files"
+        path="." />
+</paths>

@@ -1,0 +1,1 @@
+ist ein sicherer XMPP-Chat-Client für Android

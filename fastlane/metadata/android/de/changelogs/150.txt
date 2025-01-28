@@ -1,0 +1,11 @@
+* Behebt Absturz beim Aktualisieren von Stickern, nachdem der Hintergrund geändert wurde
+* Behebt fehlende Sticker
+* Erlaubt den Wechsel des Stickerverzeichnisses
+* Implementierung von see-other-host stream error
+* Aggressive Reconnects für see-other-host verwenden
+* Minidns aktualisieren
+* DNSSEC verifizieren, wenn möglich, in UI anzeigen
+* DANE verifizieren und anzeigen, wenn verifiziert
+* Unterstützung von SVG in Avataren
+* Unterstützt animierte Avatare
+* Ändere Sticker-Verzeichnis und zeige keine Sticker in der Android-Galerie 

@@ -1,0 +1,31 @@
+<?xml version="1.0" encoding="utf-8"?>
+<layout xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:app="http://schemas.android.com/apk/res-auto">
+
+    <com.google.android.material.textfield.TextInputLayout
+        android:id="@+id/textinput_layout"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:paddingLeft="8dp"
+        android:paddingRight="8dp"
+        android:paddingBottom="16dp"
+        app:suffixTextAppearance="@style/Widget.Material3.TextInputEditText.FilledBox"
+        app:errorTextAppearance="@style/TextAppearance.Conversations.Design.Error"
+        app:hintTextAppearance="@style/TextAppearance.Conversations.Design.Hint"
+        app:helperTextTextAppearance="@style/TextAppearance.Conversations.Status"
+        app:helperTextTextColor="?android:textColorSecondary">
+
+        <com.google.android.material.textfield.TextInputEditText
+            android:id="@+id/textinput"
+            style="@style/Widget.Material3.TextInputEditText.FilledBox"
+android:fontFamily="notosansregular"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:ems="10"
+            android:imeOptions="actionNext"
+            android:inputType="textWebEditText"
+            android:minLines="1" />
+
+    </com.google.android.material.textfield.TextInputLayout>
+
+</layout>

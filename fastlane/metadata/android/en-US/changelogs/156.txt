@@ -1,0 +1,16 @@
+* Updated translations
+* More options for read markers
+* Create only one settings backup file 
+* Allow selecting text and quoting the selection (double tap)
+* Add camera button to input field
+* Add QR code scan on welcome screen for invitations 
+* Update dependencies 
+* Default to play gif inside chat 
+* Bigger send button area
+* Re-implement emoji picker
+* Remove multi account option since it's always active
+* Add simple message reaction option
+* Improve message deletion with compatibility to movim
+* Fix hidden textformatting feature 
+* Fix random crash on older devices
+* Remove internal updater for app stores

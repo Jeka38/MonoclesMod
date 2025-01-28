@@ -1,0 +1,7 @@
+* Abhängigkeiten aktualisieren
+* Sticker für die Galerie sichtbar machen, damit sie mit anderen Anwendungen verwendet werden können
+* Alternativer Sprachcodec ändern und versuchen, abgeschnittene Sprachnachrichten zu reparieren
+* Outlined Icons auf dem Eingabefeld
+* Behebt das Verlassen der App, anstatt zur vorherigen Ansicht von Chats zurückzukehren
+* Verhindere Drehung des Bildschirms bei der Aufnahme von Sprachnachrichten
+* Untere Navigationssymbole werden gefüllt, wenn sie ausgewählt werden

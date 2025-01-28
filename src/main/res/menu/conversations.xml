@@ -1,0 +1,54 @@
+<?xml version="1.0" encoding="utf-8"?>
+<menu xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:app="http://schemas.android.com/apk/res-auto">
+    <item
+        android:id="@+id/title"
+        android:checkable="false"
+        android:enabled="false"
+        android:orderInCategory="1"
+        android:visible="false" />
+    <item
+        android:id="@+id/action_contact_details"
+        android:orderInCategory="10"
+        android:title="@string/action_contact_details"
+        app:showAsAction="never" />
+    <item
+        android:id="@+id/action_group_details"
+        android:icon="?attr/icon_group_unselected"
+        android:orderInCategory="10"
+        android:title="@string/conference_details"
+        app:showAsAction="never" />
+    <item
+        android:id="@+id/action_ongoing_call"
+        android:icon="?attr/icon_ongoing_call"
+        android:orderInCategory="20"
+        android:title="@string/return_to_ongoing_call"
+        app:showAsAction="always" />
+    <item
+        android:id="@+id/action_toggle_pinned"
+        android:orderInCategory="30"
+        android:title="@string/add_to_favorites"
+        app:showAsAction="never" />
+    <item
+        android:id="@+id/action_mute"
+        android:orderInCategory="40"
+        android:title="@string/disable_notifications"
+        app:showAsAction="never" />
+    <item
+        android:id="@+id/action_unmute"
+        android:orderInCategory="40"
+        android:title="@string/enable_notifications"
+        app:showAsAction="never" />
+    <item
+        android:id="@+id/action_archive_chat"
+        android:orderInCategory="50"
+        android:title="@string/action_end_conversation"
+        app:showAsAction="never" />
+
+    <item
+        android:id="@+id/action_leave_group"
+        android:orderInCategory="50"
+        android:title="@string/action_end_conversation_muc"
+        app:showAsAction="never"
+        android:visible="false" />
+</menu>

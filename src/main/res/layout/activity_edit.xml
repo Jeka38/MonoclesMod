@@ -1,0 +1,89 @@
+<?xml version="1.0" encoding="utf-8"?>
+<layout xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:app="http://schemas.android.com/apk/res-auto">
+
+    <androidx.coordinatorlayout.widget.CoordinatorLayout
+        android:layout_width="match_parent"
+        android:layout_height="match_parent">
+
+        <RelativeLayout
+            android:layout_width="match_parent"
+            android:layout_height="match_parent">
+
+            <com.github.chrisbanes.photoview.PhotoView
+                android:id="@+id/default_image_view"
+                android:layout_width="match_parent"
+                android:layout_height="match_parent"
+                android:paddingTop="?attr/actionBarSize"
+                android:paddingBottom="@dimen/bottom_actions_height_bigger" />
+
+            <com.canhub.cropper.CropImageView
+                android:id="@+id/crop_image_view"
+                android:layout_width="match_parent"
+                android:layout_height="match_parent"
+                android:layout_marginTop="?attr/actionBarSize"
+                android:layout_marginBottom="@dimen/bottom_actions_height_bigger"
+                android:visibility="gone"
+                app:cropBackgroundColor="@color/crop_image_view_background"
+                app:cropInitialCropWindowPaddingRatio="0" />
+
+            <eu.siacs.conversations.medialib.views.EditorDrawCanvas
+                android:id="@+id/editor_draw_canvas"
+                android:layout_width="match_parent"
+                android:layout_height="match_parent"
+                android:layout_centerHorizontal="true"
+                android:layout_marginTop="?attr/actionBarSize"
+                android:layout_marginBottom="@dimen/bottom_actions_height_double"
+                android:background="@android:color/transparent"
+                android:visibility="gone" />
+
+            <include
+                android:id="@+id/bottom_editor_primary_actions"
+                layout="@layout/bottom_editor_primary_actions" />
+
+            <include
+                android:id="@+id/bottom_aspect_ratios"
+                layout="@layout/bottom_actions_aspect_ratio"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:layout_above="@+id/bottom_editor_crop_rotate_actions"
+                android:visibility="gone" />
+
+            <include
+                android:id="@+id/bottom_editor_filter_actions"
+                layout="@layout/bottom_editor_actions_filter"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:layout_above="@+id/bottom_editor_primary_actions"
+                android:visibility="gone" />
+
+            <include
+                android:id="@+id/bottom_editor_crop_rotate_actions"
+                layout="@layout/bottom_editor_crop_rotate_actions"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:layout_above="@+id/bottom_editor_primary_actions"
+                android:visibility="gone" />
+
+            <include
+                android:id="@+id/bottom_editor_draw_actions"
+                layout="@layout/bottom_editor_draw_actions"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:layout_above="@+id/bottom_editor_primary_actions"
+                android:visibility="gone" />
+
+        </RelativeLayout>
+
+        <com.google.android.material.appbar.MaterialToolbar
+            android:id="@+id/editor_toolbar"
+            android:layout_width="match_parent"
+            android:layout_height="?attr/actionBarSize"
+            android:background="@color/black26"
+            android:elevation="0dp"
+            app:title="@string/editor"
+            app:navigationIcon="?attr/homeAsUpIndicator" />
+
+    </androidx.coordinatorlayout.widget.CoordinatorLayout>
+
+</layout>

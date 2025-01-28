@@ -1,0 +1,14 @@
+* allow encrypted backups (Daniel Gultsch)
+* updated webrtc link 
+* Fixing trailing characters treated as part of URI error, Treat dollar signs as URI chars, Parse IPv6 URIs, (Millesimus)
+* show avatars in channel discovery (Christian Schneppe)
+* Fixing xmpp:uri bug in channel details. (Millesimus) 
+* >.< should not be rendered as quote (bugfix). (Daniel Gultsch)
+* run file observer on its own thread. fix. (Daniel Gultsch) 
+* delete target file after unsuccessful image compression (Daniel Gultsch)
+* Fix typo and incorrect in Russian strings (Joie Whittington)
+* renamed "Profile" to "Konten" 
+* added option for import settings (Christian Schneppe)
+* renamed "profile" to "account" 
+* renamed "channel" to "room"
+* deactivated app update from server

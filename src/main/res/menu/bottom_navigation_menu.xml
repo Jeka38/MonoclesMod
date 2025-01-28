@@ -1,0 +1,22 @@
+<?xml version="1.0" encoding="utf-8"?>
+<menu xmlns:android="http://schemas.android.com/apk/res/android">
+    <item
+        android:id="@+id/chats"
+        android:icon="?attr/icon_chat"
+        android:title="@string/chats"/>
+    <item
+        android:id="@+id/contactslist"
+        android:icon="?attr/icon_group_unselected"
+        android:title="@string/contacts"/>
+    <item
+        android:id="@+id/manageaccounts"
+        android:icon="?attr/icon_account"
+        android:title="@string/accounts"/>
+
+    <!-- TODO: Later -->
+    <item
+        android:id="@+id/stories"
+        android:icon="@drawable/ic_stories_black_24dp"
+        android:title="@string/stories"
+        android:visible="false" />
+</menu>

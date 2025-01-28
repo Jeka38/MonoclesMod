@@ -1,0 +1,54 @@
+<?xml version="1.0" encoding="utf-8"?>
+<layout xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:app="http://schemas.android.com/apk/res-auto">
+    <LinearLayout
+        android:layout_width="fill_parent"
+        android:layout_height="wrap_content"
+        android:paddingBottom="16dp"
+        android:orientation="vertical">
+
+        <TextView
+            android:id="@+id/label"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:paddingLeft="13dp"
+            android:paddingRight="8dp"
+            android:paddingBottom="8dp"
+            android:textAppearance="@style/TextAppearance.Conversations.Subhead"
+            android:textColor="?attr/edit_text_color" />
+
+        <de.monocles.chat.GridView
+            android:id="@+id/radios"
+            android:layout_width="fill_parent"
+            android:layout_height="wrap_content"
+            android:layout_marginRight="8dp"
+            android:paddingLeft="8dp"
+            android:horizontalSpacing="0dp"
+            android:verticalSpacing="0dp"
+            android:numColumns="auto_fit" />
+
+        <eu.siacs.conversations.ui.widget.TextInputEditText
+            android:id="@+id/open"
+            android:visibility="gone"
+            style="@style/Widget.Material3.TextInputEditText.FilledBox"
+android:fontFamily="notosansregular"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:layout_marginLeft="8dp"
+            android:layout_marginRight="8dp"
+            android:ems="10"
+            android:imeOptions="actionNext"
+            android:inputType="textWebEditText"
+            android:minLines="1" />
+
+        <TextView
+            android:id="@+id/desc"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:paddingLeft="16dp"
+            android:paddingRight="8dp"
+            android:textAppearance="@style/TextAppearance.Conversations.Status"
+            android:textColor="?android:textColorSecondary" />
+
+    </LinearLayout>
+</layout>

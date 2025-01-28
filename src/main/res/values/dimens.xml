@@ -1,0 +1,96 @@
+<resources>
+    <!-- Default screen margins, per the Android Design guidelines. -->
+    <dimen name="in_call_fab_margin">8dp</dimen>
+    <dimen name="in_call_fab_margin_center">12dp</dimen>
+    <dimen name="activity_horizontal_margin">8dp</dimen>
+    <dimen name="activity_vertical_margin">8dp</dimen>
+    <dimen name="card_padding_regular">16dp</dimen>
+    <dimen name="card_padding_list">8dp</dimen> <!-- card_padding_regular minus list_padding -->
+    <dimen name="list_padding">8dp</dimen>
+    <dimen name="image_button_padding">12dp</dimen>
+    <dimen name="key_action_width">56dp
+    </dimen>  <!-- icon width (24dp) + 2 * image button padding -->
+    <dimen name="fineprint_size">11sp</dimen>
+    <dimen name="audio_player_width">224dp</dimen>
+    <dimen name="image_preview_width">260dp</dimen>
+    <dimen name="avatar_item_distance">16dp</dimen>
+    <dimen name="swipe_escape_velocity">1200dp</dimen> <!-- android default is 120dp -->
+    <dimen name="media_preview_size">80dp</dimen>
+    <dimen name="media_size">56dp</dimen> <!-- ideally not larger than avatar_on_details_screen -->
+    <dimen name="browser_media_size">96dp</dimen>
+    <dimen name="toolbar_elevation">4dp</dimen>
+    <dimen name="search_view_tags_space">8dp</dimen>
+    <dimen name="publish_avatar_top_margin">8dp</dimen>
+    <dimen name="publish_avatar_size">96dp</dimen>
+    <dimen name="incoming_call_radius">48dp</dimen>
+    <dimen name="avatar_on_details_screen_size">56dp</dimen>
+
+    <dimen name="input_label_vertical_spacing">4dp</dimen>
+    <dimen name="input_label_horizontal_spacing">4dp</dimen>
+
+    <!-- scanner -->
+    <dimen name="scan_laser_width">4dp</dimen>
+    <dimen name="scan_dot_size">8dp</dimen>
+
+    <dimen name="background_image_opacity">0.12</dimen>
+    <dimen name="rounded_image_border">5dp</dimen>
+    <dimen name="rounded_avatar_border">30dp</dimen>
+    <dimen name="avatar">48dp</dimen>
+    <dimen name="avatar_on_conversation_overview">56dp</dimen>
+    <dimen name="avatar_on_status_message">32dp</dimen>
+    <dimen name="avatar_big">480dp</dimen>
+    <dimen name="sd_label_max_width">256dp</dimen>
+
+    <dimen name="local_video_preview_height">128dp</dimen>
+    <dimen name="local_video_preview_width">96dp</dimen>
+    <dimen name="rtp_session_duration_top_margin">24dp</dimen>
+
+    <dimen name="dialpad_text_size">30sp</dimen>
+    <dimen name="smaller_text_size">12sp</dimen>
+    <dimen name="medium_margin">8dp</dimen>
+    <dimen name="activity_margin">16dp</dimen>
+    <dimen name="small_margin">4dp</dimen>
+    <dimen name="actionbar_text_size">20sp</dimen>
+    <dimen name="material_input_text_to_prefix_suffix_padding">0dp</dimen>
+    <dimen name="avatar_actionbar">38dp</dimen>
+
+    <!--Lockscreen-->
+
+    <dimen name="forgot_password_margin_bottom">13.6dp</dimen>
+    <dimen name="number_pad_margin_top">7.3dp</dimen>
+    <dimen name="number_pad_parent_margin">14.5dp</dimen>
+
+    <!-- avatar corner radius -->
+    <dimen name="avatar_corners_radius">8dp</dimen>
+
+    <!-- bottom navigation height -->
+    <dimen name="nav_bar_height">70dp</dimen>
+
+    <!-- photo editor -->
+    <dimen name="selection_check_size">26dp</dimen>
+    <dimen name="bottom_actions_height">64dp</dimen>
+    <dimen name="bottom_actions_small_height">48dp</dimen>
+    <dimen name="bottom_actions_height_double">120dp</dimen>
+    <dimen name="bottom_actions_height_bigger">172dp</dimen>
+    <dimen name="bottom_editor_color_picker_size">48dp</dimen>
+    <dimen name="bottom_filters_thumbnail_size">76dp</dimen>
+    <dimen name="bottom_filters_height">90dp</dimen>
+    <dimen name="bottom_filters_height_with_margin">98dp</dimen>
+    <dimen name="bottom_editor_actions_shadow_height">180dp</dimen>
+    <dimen name="full_brush_size">40dp</dimen>
+
+    <dimen name="one_dp">1dp</dimen>
+    <dimen name="tiny_margin">2dp</dimen>
+    <dimen name="smaller_margin">6dp</dimen>
+    <dimen name="normal_margin">12dp</dimen>
+    <dimen name="large_margin">16dp</dimen>
+
+    <dimen name="tiny_text_size">8sp</dimen>
+    <dimen name="small_text_size">10sp</dimen>
+    <dimen name="normal_text_size">14sp</dimen>
+    <dimen name="medium_text_size">15sp</dimen>
+    <dimen name="bigger_text_size">16sp</dimen>
+    <dimen name="big_text_size">18sp</dimen>
+
+    <dimen name="colorpicker_hue_width">30dp</dimen>
+</resources>

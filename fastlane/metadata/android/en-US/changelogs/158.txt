@@ -1,0 +1,8 @@
+* Update dependencies
+* Make stickers visible for gallery to be used with other apps
+* Change alternative voice codec and try fixing cut voice messages
+* Outlined icons on input field
+* Fixes disappearing input field on Android < 11
+* Fix leaving app instead of going back to previous view from chats
+* Lock screen rotation when record voice message
+* Make bottom navigation icons filled when selected

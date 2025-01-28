@@ -1,0 +1,6 @@
+* I2P Unterstützung
+* SASL 2 Verbesserungen
+* Aktualisierung des WebRTC
+* Externer Speicher wieder nutzbar
+* Problemlösung beim Senden/Empfangen von Dateien bei Nutzung des externen Speichers
+* Weitere Problemlösungen

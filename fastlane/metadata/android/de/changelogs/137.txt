@@ -1,0 +1,8 @@
+* Aktualisierung von webrtc auf m117
+* Unterstützt klingelnde Jingle-Nachrichten
+* Großes Redesign des Eingabefeldes und der Vorschau der Angebotsnachricht
+* Überarbeitung des benutzerdefinierten Hintergrunds, um Bilder mit Alphakanal zu ermöglichen
+* Behebung eines Absturzes bei der Einstellung des benutzerdefinierten Hintergrunds
+* Hinzufügen eines systemunabhängigen Emoji-Pickers zum Eingabefeld
+* Öffnen des Emoji-Pickers für Nachrichtenreaktionen
+* Behebung des Echos bei Anrufen mit Fairphone 4

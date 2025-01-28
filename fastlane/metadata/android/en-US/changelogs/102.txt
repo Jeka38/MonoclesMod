@@ -1,0 +1,41 @@
+### Changelog
+
+##Version 1.2
+* Changed missed call, notification and connection icons
+* upgrade to libwebrtc m86
+* enable extmap-allow-mixed 
+* changed version tag
+* added old icons
+* improved german translation changes (Thanks IM)
+* use onAddTrack instead of deprecated onAddStream 
+* pulled translations from transifex / Conversations
+* removed old TLS chipers
+* changed TLS Chipers to monocles standards
+* use internal storage instead of sdcard to save attachments for security reasons
+* Always verify hostname/domain "There might be corner cases where it is required to use self signed certificates. However there should be no corner cases where it is required to use a wrong domain name. This commit swaps out the
+MemorizingHostnameVerifier that let users accept wrong domains with the
+standard XmppDomainVerifier." (Daniel Gultsch)
+* Add User-Agent to all HTTP calls 
+* trigger registration dialog on roster;ibr=y only if no accounts are configured
+* show domains in manual cert accept dialog 
+many translations
+* a/v calls: seperate out SECURITY error from APP_FAILURE "until now problems with verifying the call (omemo or DTLS missing) would
+just be another app failure. This commit displays verifications problems as
+their own thing." Daniel Gultsch
+* encrypt to inactive and untrusted devices in jingle "encrypting to untrusted devices means no degradition of security
+compared to not encrypting at all. Trust status display (shield) is made
+independently at a later stage." (Daniel Gultsch)
+* remove gps maps preview link for privacy reasons
+* changed presettings to little more privacy
+* bump jxmpp-jid version 
+* fixup: update some libraries 
+* call SVGs 'vector graphic' instead of 'image' 
+* bump gradle plugin version 
+* FileParams indicate unavailable file size as null "since 0 is a valid file size we should use null to indicate absence" (Daniel Gultsch)
+* execute status code check on HEAD 
+* Transferables interface needs to differentiate between 0 and null file size
+* add description for text/plain 
+* log exception when file is not a ceb
+* ring during device discovery 
+* make search case-insensitive not only for ASCII 
+

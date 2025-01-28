@@ -1,0 +1,7 @@
+* Better link replacement logic
+* Support XEP-0425 message moderation
+* don't automatically open import backup on WelcomeActivity
+* Default to show Jabber network when search public rooms
+* Add swipe to reply feature
+* Any color Theme (Beta)
+* Bugfix disapearing omemo messages

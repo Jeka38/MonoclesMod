@@ -1,0 +1,4 @@
+* Herunterziehen um Kontakte zu aktualisieren
+* Swipe Funktionen für chats
+* Unterstützung von sasl 2.0
+* Bugfixes

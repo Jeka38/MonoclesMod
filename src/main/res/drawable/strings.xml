@@ -1,0 +1,46 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="app_name">Simple Gallery</string>
+    <string name="app_launcher_name">Gallery</string>
+
+    <string name="ok">OK</string>
+    <string name="cancel">Cancel</string>
+    <string name="custom">Custom</string>
+
+    <string name="resize_and_save">Resize selection and save</string>
+    <string name="width">Width</string>
+    <string name="height">Height</string>
+    <string name="keep_aspect_ratio">Keep aspect ratio</string>
+    <string name="invalid_values">Please enter a valid resolution</string>
+
+    <string name="editor">Editor</string>
+    <string name="basic_editor">Basic Editor</string>
+    <string name="rotate">Rotate</string>
+    <string name="invalid_image_path">Invalid image path</string>
+    <string name="image_editing_failed">Image editing failed</string>
+    <string name="unknown_file_location">Unknown file location</string>
+    <string name="transform">Transform</string>
+    <string name="crop">Crop</string>
+    <string name="draw">Draw</string>
+    <string name="flip_horizontally">Flip horizontally</string>
+    <string name="flip_vertically">Flip vertically</string>
+    <string name="free_aspect_ratio">Free</string>
+    <string name="other_aspect_ratio">Other</string>
+
+    <string name="thumbnails">Thumbnails</string>
+    <string name="saving">saving</string>
+    <string name="out_of_memory_error">out_of_memory_error</string>
+    <string name="none">none</string>
+    <string name="file_saved">file_saved</string>
+    <string name="error">error</string>
+    <string name="simple_commons">simple_commons</string>
+    <string name="value_copied_to_clipboard_show">value_copied_to_clipboard_show</string>
+    <string name="default_color">default_color</string>
+    <string name="unknown_error_occurred">unknown_error_occurred</string>
+    <string name="undo">undo</string>
+    <string name="change_color">change_color</string>
+    <string name="resize">resize</string>
+    <string name="filter">filter</string>
+    <string name="could_not_create_file">could_not_create_file</string>
+
+</resources>

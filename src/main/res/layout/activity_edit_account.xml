@@ -1,0 +1,1127 @@
+<?xml version="1.0" encoding="utf-8"?>
+<layout xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:app="http://schemas.android.com/apk/res-auto"
+    xmlns:card_view="http://schemas.android.com/apk/res-auto"
+    xmlns:tools="http://schemas.android.com/tools">
+
+    <RelativeLayout
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:background="?attr/color_background_tertiary">
+
+        <include
+            android:id="@+id/toolbar"
+            layout="@layout/toolbar" />
+
+        <ScrollView
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:layout_above="@+id/button_bar"
+            android:layout_below="@id/toolbar">
+
+            <LinearLayout
+                android:id="@+id/account_main_layout"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:orientation="vertical">
+
+                <androidx.cardview.widget.CardView
+                    android:id="@+id/editor"
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:layout_marginStart="@dimen/activity_horizontal_margin"
+                    android:layout_marginLeft="@dimen/activity_horizontal_margin"
+                    android:layout_marginTop="@dimen/activity_vertical_margin"
+                    android:layout_marginEnd="@dimen/activity_horizontal_margin"
+                    android:layout_marginRight="@dimen/activity_horizontal_margin"
+                    android:layout_marginBottom="@dimen/activity_vertical_margin"
+                    android:orientation="vertical"
+                    android:padding="@dimen/card_padding_regular"
+                    card_view:cardBackgroundColor="?attr/color_background_secondary">
+
+                    <RelativeLayout
+                        android:layout_width="match_parent"
+                        android:layout_height="wrap_content"
+                        android:padding="@dimen/card_padding_regular">
+
+
+                        <LinearLayout
+                            android:id="@+id/jid_password_box"
+                            android:layout_width="match_parent"
+                            android:layout_height="wrap_content"
+                            android:layout_below="@+id/status_avatar_box"
+                            android:orientation="vertical">
+
+                            <LinearLayout
+                                android:id="@+id/name_port"
+                                android:layout_width="match_parent"
+                                android:layout_height="wrap_content"
+                                android:layout_marginTop="8dp"
+                                android:orientation="horizontal"
+                                android:weightSum="1">
+
+                                <LinearLayout
+                                    android:layout_width="0dp"
+                                    android:layout_height="match_parent"
+                                    android:layout_weight="0.7"
+                                    android:orientation="vertical">
+
+                                    <com.google.android.material.textfield.TextInputLayout
+                                        android:id="@+id/hostname_layout"
+                                        style="@style/Widget.Conversations.TextInputLayout.OutlinedBox"
+                                        android:layout_width="match_parent"
+                                        android:layout_height="wrap_content"
+                                        android:hint="@string/account_settings_hostname"
+                                        app:errorTextAppearance="@style/TextAppearance.Conversations.Design.Error"
+                                        app:hintTextAppearance="@style/TextAppearance.Conversations.Design.Hint">
+
+                                        <eu.siacs.conversations.ui.widget.TextInputEditText
+                                            android:id="@+id/hostname"
+                                            style="@style/Widget.Material3.TextInputEditText.FilledBox"
+                                            android:fontFamily="notosansregular"
+                                            android:layout_width="match_parent"
+                                            android:layout_height="wrap_content"
+                                            android:inputType="textWebEmailAddress" />
+                                    </com.google.android.material.textfield.TextInputLayout>
+                                </LinearLayout>
+
+                                <LinearLayout
+                                    android:layout_width="0dp"
+                                    android:layout_height="match_parent"
+                                    android:layout_weight="0.3"
+                                    android:orientation="vertical">
+
+                                    <com.google.android.material.textfield.TextInputLayout
+                                        android:id="@+id/port_layout"
+                                        style="@style/Widget.Conversations.TextInputLayout.OutlinedBox"
+                                        android:layout_width="match_parent"
+                                        android:layout_height="match_parent"
+                                        android:hint="@string/account_settings_port"
+                                        app:errorTextAppearance="@style/TextAppearance.Conversations.Design.Error"
+                                        app:hintTextAppearance="@style/TextAppearance.Conversations.Design.Hint">
+
+                                        <eu.siacs.conversations.ui.widget.TextInputEditText
+                                            android:id="@+id/port"
+                                            style="@style/Widget.Material3.TextInputEditText.FilledBox"
+android:fontFamily="notosansregular"
+                                            android:layout_width="match_parent"
+                                            android:layout_height="match_parent"
+                                            android:inputType="number"
+                                            android:maxLength="5" />
+                                    </com.google.android.material.textfield.TextInputLayout>
+                                </LinearLayout>
+                            </LinearLayout>
+
+                            <com.google.android.material.textfield.TextInputLayout
+                                android:id="@+id/account_jid_layout"
+                                style="@style/Widget.Conversations.TextInputLayout.OutlinedBox"
+                                android:layout_width="match_parent"
+                                android:layout_height="wrap_content"
+                                android:hint="@string/account_settings_jabber_id"
+                                app:errorTextAppearance="@style/TextAppearance.Conversations.Design.Error"
+                                app:hintTextAppearance="@style/TextAppearance.Conversations.Design.Hint">
+
+                                <AutoCompleteTextView
+                                    android:id="@+id/account_jid"
+                                    style="@style/Widget.Material3.TextInputEditText.FilledBox"
+android:fontFamily="notosansregular"
+                                    android:layout_width="match_parent"
+                                    android:layout_height="wrap_content"
+                                    android:imeOptions="actionNext"
+                                    android:inputType="textEmailAddress"
+                                    android:padding="16dp"
+                                    android:textColor="?attr/edit_text_color" />
+                            </com.google.android.material.textfield.TextInputLayout>
+
+                            <com.google.android.material.textfield.TextInputLayout
+                                android:id="@+id/account_password_layout"
+                                style="@style/Widget.Conversations.TextInputLayout.OutlinedBox"
+                                android:layout_width="match_parent"
+                                android:layout_height="wrap_content"
+                                app:errorTextAppearance="@style/TextAppearance.Conversations.Design.Error"
+                                app:hintTextAppearance="@style/TextAppearance.Conversations.Design.Hint"
+                                app:passwordToggleDrawable="@drawable/visibility_toggle_drawable"
+                                app:passwordToggleEnabled="true"
+                                app:passwordToggleTint="?android:textColorSecondary">
+
+                                <eu.siacs.conversations.ui.widget.TextInputEditText
+                                    android:id="@+id/account_password"
+                                    style="@style/Widget.Material3.TextInputEditText.FilledBox"
+                                    android:fontFamily="notosansregular"
+                                    android:layout_width="match_parent"
+                                    android:layout_height="wrap_content"
+                                    android:hint="@string/password"
+                                    android:inputType="textPassword"
+                                    android:textColor="?attr/edit_text_color" />
+                            </com.google.android.material.textfield.TextInputLayout>
+
+
+                            <RelativeLayout
+                                android:id="@+id/verification_box"
+                                android:layout_width="wrap_content"
+                                android:layout_height="match_parent"
+                                android:layout_alignParentBottom="true"
+                                android:layout_marginTop="12dp">
+
+                                <LinearLayout
+                                    android:layout_width="wrap_content"
+                                    android:layout_height="wrap_content"
+                                    android:layout_alignParentLeft="true"
+                                    android:layout_centerVertical="true"
+                                    android:layout_toLeftOf="@+id/verification_indicator"
+                                    android:orientation="vertical">
+
+                                    <TextView
+                                        android:id="@+id/verification_message"
+                                        android:layout_width="wrap_content"
+                                        android:layout_height="wrap_content"
+                                        android:text="@string/not_dnssec_verified"
+                                        android:textAppearance="@style/TextAppearance.Conversations.Body1.Tertiary" />
+                                </LinearLayout>
+
+                                <ImageView
+                                    android:id="@+id/verification_indicator"
+                                    android:layout_width="wrap_content"
+                                    android:layout_height="wrap_content"
+                                    android:layout_alignParentRight="true"
+                                    android:layout_centerVertical="true"
+                                    android:alpha="?attr/icon_alpha"
+                                    android:background="?attr/selectableItemBackgroundBorderless"
+                                    android:padding="@dimen/image_button_padding"
+                                    android:src="@drawable/shield_question"
+                                    android:visibility="visible" />
+                            </RelativeLayout>
+
+                            <RelativeLayout
+                                android:id="@+id/account_color_box"
+                                android:layout_width="wrap_content"
+                                android:layout_height="match_parent"
+                                android:layout_marginTop="12dp">
+
+                                <LinearLayout
+                                    android:layout_width="wrap_content"
+                                    android:layout_height="wrap_content"
+                                    android:layout_alignParentLeft="true"
+                                    android:layout_centerVertical="true"
+                                    android:layout_toLeftOf="@+id/account_color_thumbnail"
+                                    android:orientation="vertical">
+
+                                    <TextView
+                                        android:layout_width="wrap_content"
+                                        android:layout_height="wrap_content"
+                                        android:text="@string/account_color"
+                                        android:textAppearance="@style/TextAppearance.Conversations.Body1"/>
+                                    
+                                    <TextView
+                                        android:layout_width="wrap_content"
+                                        android:layout_height="wrap_content"
+                                        android:text="@string/account_color_summary"
+                                        android:textAppearance="@style/TextAppearance.Conversations.Caption"/>
+                                </LinearLayout>
+
+                                <FrameLayout
+                                    android:id="@+id/account_color_thumbnail"
+                                    android:layout_width="48dp"
+                                    android:layout_height="48dp"
+                                    android:background="@drawable/thumbnail_border"
+                                    android:layout_alignParentRight="true"
+                                    android:layout_centerVertical="true">
+
+                                    <View
+                                        android:layout_margin="1dp"
+                                        android:id="@+id/colorPreview"
+                                        android:layout_width="fill_parent"
+                                        android:layout_height="fill_parent" />
+
+                                </FrameLayout>
+                            </RelativeLayout>
+                            <RelativeLayout
+                                android:id="@+id/quiet_hours_box"
+                                android:layout_width="wrap_content"
+                                android:layout_height="match_parent"
+                                android:layout_marginTop="12dp">
+
+                                <LinearLayout
+                                    android:layout_width="wrap_content"
+                                    android:layout_height="wrap_content"
+                                    android:layout_alignParentLeft="true"
+                                    android:layout_centerVertical="true"
+                                    android:layout_toLeftOf="@+id/action_edit_quiet_hours"
+                                    android:orientation="vertical">
+
+                                    <TextView
+                                        android:layout_width="wrap_content"
+                                        android:layout_height="wrap_content"
+                                        android:text="@string/title_pref_quiet_hours"
+                                        android:textAppearance="@style/TextAppearance.Conversations.Body1"/>
+
+                                    <TextView
+                                        android:layout_width="wrap_content"
+                                        android:layout_height="wrap_content"
+                                        android:text="@string/pref_quiet_hours_summary"
+                                        android:textAppearance="@style/TextAppearance.Conversations.Caption"/>
+                                </LinearLayout>
+
+                                <ImageView
+                                    android:id="@+id/action_edit_quiet_hours"
+                                    android:layout_width="wrap_content"
+                                    android:layout_height="wrap_content"
+                                    android:layout_alignParentRight="true"
+                                    android:layout_centerVertical="true"
+                                    android:alpha="?attr/icon_alpha"
+                                    android:background="?attr/selectableItemBackgroundBorderless"
+                                    android:padding="@dimen/image_button_padding"
+                                    android:src="?attr/icon_edit_body"
+                                    android:visibility="visible"/>
+                            </RelativeLayout>
+
+                        </LinearLayout>
+
+                        <LinearLayout
+                            android:layout_width="match_parent"
+                            android:layout_height="wrap_content"
+                            android:layout_below="@id/jid_password_box"
+                            android:orientation="vertical">
+
+                            <Button
+                                android:id="@+id/show_privacy_policy"
+                                android:layout_width="match_parent"
+                                android:layout_height="wrap_content"
+                                android:layout_gravity="center_horizontal"
+                                android:layout_marginTop="4dp"
+                                android:layout_marginBottom="4dp"
+                                android:backgroundTint="?attr/colorAccent"
+                                android:text="@string/show_privacy"
+                                android:visibility="gone" />
+
+                            <Button
+                                android:id="@+id/show_terms_of_use"
+                                android:layout_width="match_parent"
+                                android:layout_height="wrap_content"
+                                android:layout_gravity="center_horizontal"
+                                android:layout_marginTop="4dp"
+                                android:layout_marginBottom="4dp"
+                                android:backgroundTint="?attr/colorAccent"
+                                android:text="@string/show_termsofuse"
+                                android:visibility="gone" />
+                        </LinearLayout>
+
+                        <RelativeLayout
+                            android:id="@+id/your_name_box"
+                            android:layout_width="wrap_content"
+                            android:layout_height="wrap_content"
+                            android:layout_marginStart="6dp"
+                            android:layout_marginLeft="6dp"
+                            android:visibility="gone">
+
+                            <ImageButton
+                                android:id="@+id/action_edit_your_name"
+                                android:layout_width="wrap_content"
+                                android:layout_height="wrap_content"
+                                android:layout_alignParentEnd="true"
+                                android:layout_alignParentRight="true"
+                                android:layout_centerVertical="true"
+                                android:alpha="?attr/icon_alpha"
+                                android:background="?attr/selectableItemBackgroundBorderless"
+                                android:padding="@dimen/image_button_padding"
+                                android:src="?attr/icon_edit_body"
+                                android:visibility="visible" />
+
+                            <LinearLayout
+                                android:layout_width="wrap_content"
+                                android:layout_height="wrap_content"
+                                android:layout_alignParentStart="true"
+                                android:layout_alignParentLeft="true"
+                                android:layout_centerVertical="true"
+                                android:layout_toStartOf="@+id/action_edit_your_name"
+                                android:layout_toLeftOf="@+id/action_edit_your_name"
+                                android:orientation="vertical">
+
+                                <TextView
+                                    android:id="@+id/your_name_desc"
+                                    android:layout_width="wrap_content"
+                                    android:layout_height="wrap_content"
+                                    android:text="@string/your_name"
+                                    android:textAppearance="@style/TextAppearance.Conversations.Caption" />
+
+                                <TextView
+                                    android:id="@+id/your_name"
+                                    android:layout_width="wrap_content"
+                                    android:layout_height="wrap_content"
+                                    android:text="@string/no_name_set_instructions"
+                                    android:textAppearance="@style/TextAppearance.Conversations.Body1.Tertiary" />
+                            </LinearLayout>
+                        </RelativeLayout>
+
+                        <RelativeLayout
+                            android:id="@+id/status_avatar_box"
+                            android:layout_width="match_parent"
+                            android:layout_height="wrap_content"
+                            android:layout_below="@+id/your_name_box"
+                            android:layout_marginBottom="@dimen/activity_vertical_margin"
+                            android:orientation="horizontal">
+
+                            <RelativeLayout
+                                android:layout_width="wrap_content"
+                                android:layout_height="wrap_content"
+                                android:layout_toEndOf="@+id/avater"
+                                android:layout_toRightOf="@+id/avater"
+                                android:orientation="vertical">
+
+                                <RelativeLayout
+                                    android:id="@+id/your_status_box"
+                                    android:layout_width="wrap_content"
+                                    android:layout_height="wrap_content"
+                                    android:visibility="gone">
+
+                                    <ImageButton
+                                        android:id="@+id/action_edit_your_status"
+                                        android:layout_width="wrap_content"
+                                        android:layout_height="wrap_content"
+                                        android:layout_alignParentEnd="true"
+                                        android:layout_alignParentRight="true"
+                                        android:layout_centerVertical="true"
+                                        android:alpha="?attr/icon_alpha"
+                                        android:background="?attr/selectableItemBackgroundBorderless"
+                                        android:padding="@dimen/image_button_padding"
+                                        android:src="?attr/icon_edit_body"
+                                        android:visibility="visible" />
+
+                                    <LinearLayout
+                                        android:layout_width="wrap_content"
+                                        android:layout_height="wrap_content"
+                                        android:layout_alignParentStart="true"
+                                        android:layout_alignParentLeft="true"
+                                        android:layout_centerVertical="true"
+                                        android:layout_toStartOf="@+id/action_edit_your_status"
+                                        android:layout_toLeftOf="@+id/action_edit_your_status"
+                                        android:orientation="vertical">
+
+                                        <TextView
+                                            android:id="@+id/your_status_desc"
+                                            android:layout_width="wrap_content"
+                                            android:layout_height="wrap_content"
+                                            android:text="@string/your_status"
+                                            android:textAppearance="@style/TextAppearance.Conversations.Caption" />
+
+                                        <TextView
+                                            android:id="@+id/your_status"
+                                            android:layout_width="wrap_content"
+                                            android:layout_height="wrap_content"
+                                            android:text=""
+                                            android:textAppearance="@style/TextAppearance.Conversations.Body1.Tertiary" />
+                                    </LinearLayout>
+                                </RelativeLayout>
+                            </RelativeLayout>
+
+                            <eu.siacs.conversations.ui.widget.AvatarView
+                                android:id="@+id/avater"
+                                android:layout_width="@dimen/avatar_on_details_screen_size"
+                                android:layout_height="@dimen/avatar_on_details_screen_size"
+                                android:layout_alignParentStart="true"
+                                android:layout_alignParentLeft="true"
+                                android:layout_centerHorizontal="false"
+                                android:layout_margin="6dp"
+                                android:layout_marginBottom="@dimen/avatar_item_distance"
+                                android:adjustViewBounds="true"
+                                android:contentDescription="@string/account_image_description"
+                                android:maxWidth="@dimen/avatar_on_details_screen_size"
+                                android:maxHeight="@dimen/avatar_on_details_screen_size"
+                                app:strokeColor="@color/custom_theme_accent" />
+
+                        </RelativeLayout>
+
+                        <com.google.android.material.materialswitch.MaterialSwitch
+                            android:id="@+id/account_register_new"
+                            style="@style/Widget.monocles.Switch"
+                            android:layout_width="wrap_content"
+                            android:layout_height="wrap_content"
+                            android:layout_below="@id/jid_password_box"
+                            android:layout_marginTop="8dp"
+                            android:text="@string/register_account" />
+                    </RelativeLayout>
+                </androidx.cardview.widget.CardView>
+
+                <androidx.cardview.widget.CardView
+                    android:id="@+id/os_optimization"
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:layout_marginStart="@dimen/activity_horizontal_margin"
+                    android:layout_marginLeft="@dimen/activity_horizontal_margin"
+                    android:layout_marginTop="@dimen/activity_vertical_margin"
+                    android:layout_marginEnd="@dimen/activity_horizontal_margin"
+                    android:layout_marginRight="@dimen/activity_horizontal_margin"
+                    android:layout_marginBottom="@dimen/activity_vertical_margin"
+                    android:visibility="gone"
+                    card_view:cardBackgroundColor="?attr/color_background_secondary">
+
+                    <LinearLayout
+                        android:layout_width="match_parent"
+                        android:layout_height="wrap_content"
+                        android:orientation="vertical">
+
+                        <LinearLayout
+                            android:layout_width="match_parent"
+                            android:layout_height="wrap_content"
+                            android:orientation="vertical"
+                            android:padding="@dimen/card_padding_regular">
+
+                            <TextView
+                                android:id="@+id/os_optimization_headline"
+                                android:layout_width="wrap_content"
+                                android:layout_height="wrap_content"
+                                android:text="@string/battery_optimizations_enabled"
+                                android:textAppearance="@style/TextAppearance.Conversations.Title" />
+
+                            <TextView
+                                android:id="@+id/os_optimization_body"
+                                android:layout_width="wrap_content"
+                                android:layout_height="wrap_content"
+                                android:layout_marginTop="8dp"
+                                android:text="@string/battery_optimizations_enabled_explained"
+                                android:textAppearance="@style/TextAppearance.Conversations.Body1" />
+                        </LinearLayout>
+
+                        <LinearLayout
+                            android:layout_width="match_parent"
+                            android:layout_height="wrap_content"
+                            android:layout_gravity="end"
+                            android:gravity="end">
+
+                            <Button
+                                android:id="@+id/os_optimization_disable"
+                                style="@style/Widget.Conversations.Button.Borderless"
+                                android:layout_width="wrap_content"
+                                android:layout_height="wrap_content"
+                                android:minWidth="0dp"
+                                android:paddingStart="16dp"
+                                android:paddingLeft="16dp"
+                                android:paddingEnd="16dp"
+                                android:paddingRight="16dp"
+                                android:text="@string/disable"
+                                android:textColor="?attr/colorAccent" />
+                        </LinearLayout>
+                    </LinearLayout>
+                </androidx.cardview.widget.CardView>
+
+                <androidx.cardview.widget.CardView
+                    android:id="@+id/stats"
+                    android:layout_width="match_parent"
+                    android:layout_height="match_parent"
+                    android:layout_marginLeft="@dimen/activity_horizontal_margin"
+                    android:layout_marginTop="@dimen/activity_vertical_margin"
+                    android:layout_marginRight="@dimen/activity_horizontal_margin"
+                    android:layout_marginBottom="@dimen/activity_vertical_margin"
+                    android:visibility="gone"
+                    card_view:cardBackgroundColor="?attr/color_background_secondary">
+
+                    <LinearLayout
+                        android:layout_width="match_parent"
+                        android:layout_height="wrap_content"
+                        android:orientation="vertical"
+                        android:padding="@dimen/card_padding_regular">
+
+                        <TextView
+                            android:id="@+id/this_device_keys_title"
+                            android:layout_width="wrap_content"
+                            android:layout_height="wrap_content"
+                            android:layout_marginTop="@dimen/list_padding"
+                            android:layout_marginBottom="@dimen/list_padding"
+                            android:text="@string/this_device"
+                            android:textAppearance="@style/TextAppearance.Conversations.Title" />
+
+                        <TableLayout
+                            android:layout_width="match_parent"
+                            android:layout_height="wrap_content"
+                            android:shrinkColumns="0"
+                            android:stretchColumns="1">
+
+                            <TableRow
+                                android:layout_width="match_parent"
+                                android:layout_height="wrap_content"
+                                tools:ignore="UselessParent">
+
+                                <TextView
+                                    android:layout_width="wrap_content"
+                                    android:layout_height="wrap_content"
+                                    android:ellipsize="end"
+                                    android:singleLine="true"
+                                    android:text="@string/server_info_session_established"
+                                    android:textAppearance="@style/TextAppearance.Conversations.Body1" />
+
+                                <TextView
+                                    android:id="@+id/session_est"
+                                    android:layout_width="wrap_content"
+                                    android:layout_height="wrap_content"
+                                    android:layout_gravity="end"
+                                    android:paddingStart="4dp"
+                                    android:paddingLeft="4dp"
+                                    android:textAppearance="@style/TextAppearance.Conversations.Body1" />
+                            </TableRow>
+
+                        </TableLayout>
+
+                        <TableLayout
+                            android:id="@+id/server_info_login_mechanism"
+                            android:layout_width="match_parent"
+                            android:layout_height="wrap_content"
+                            android:shrinkColumns="0"
+                            android:stretchColumns="1"
+                            android:visibility="gone">
+
+                            <TableRow
+                                android:layout_width="fill_parent"
+                                android:layout_height="wrap_content">
+
+                                <TextView
+                                    android:layout_width="wrap_content"
+                                    android:layout_height="wrap_content"
+                                    android:ellipsize="end"
+                                    android:singleLine="true"
+                                    android:text="@string/server_info_login_mechanism"
+                                    android:textAppearance="@style/TextAppearance.Conversations.Body1" />
+
+                                <TextView
+                                    android:id="@+id/login_mechanism"
+                                    android:layout_width="wrap_content"
+                                    android:layout_height="wrap_content"
+                                    android:layout_gravity="end"
+                                    android:paddingStart="4dp"
+                                    android:paddingLeft="4dp"
+                                    android:textAppearance="@style/TextAppearance.Conversations.Body1" />
+                            </TableRow>
+
+                        </TableLayout>
+
+                        <TableLayout
+                            android:id="@+id/server_info_more"
+                            android:layout_width="match_parent"
+                            android:layout_height="wrap_content"
+                            android:shrinkColumns="0"
+                            android:stretchColumns="1"
+                            android:visibility="gone">
+
+                            <TableRow
+                                android:layout_width="match_parent"
+                                android:layout_height="wrap_content">
+
+                                <TextView
+                                    android:layout_width="wrap_content"
+                                    android:layout_height="wrap_content"
+                                    android:ellipsize="end"
+                                    android:singleLine="true"
+                                    android:text="@string/server_info_pep"
+                                    android:textAppearance="@style/TextAppearance.Conversations.Body1" />
+
+                                <TextView
+                                    android:id="@+id/server_info_pep"
+                                    android:layout_width="wrap_content"
+                                    android:layout_height="wrap_content"
+                                    android:layout_gravity="end"
+                                    android:paddingStart="4dp"
+                                    android:paddingLeft="4dp"
+                                    android:textAppearance="@style/TextAppearance.Conversations.Body1" />
+                            </TableRow>
+
+                            <TableRow
+                                android:layout_width="match_parent"
+                                android:layout_height="wrap_content">
+
+                                <TextView
+                                    android:layout_width="wrap_content"
+                                    android:layout_height="wrap_content"
+                                    android:ellipsize="end"
+                                    android:singleLine="true"
+                                    android:text="@string/server_info_blocking"
+                                    android:textAppearance="@style/TextAppearance.Conversations.Body1" />
+
+                                <TextView
+                                    android:id="@+id/server_info_blocking"
+                                    android:layout_width="wrap_content"
+                                    android:layout_height="wrap_content"
+                                    android:layout_gravity="end"
+                                    android:paddingStart="4dp"
+                                    android:paddingLeft="4dp"
+                                    android:textAppearance="@style/TextAppearance.Conversations.Body1" />
+                            </TableRow>
+
+                            <TableRow
+                                android:layout_width="match_parent"
+                                android:layout_height="wrap_content">
+
+                                <TextView
+                                    android:layout_width="wrap_content"
+                                    android:layout_height="wrap_content"
+                                    android:ellipsize="end"
+                                    android:singleLine="true"
+                                    android:text="@string/server_info_stream_management"
+                                    android:textAppearance="@style/TextAppearance.Conversations.Body1" />
+
+                                <TextView
+                                    android:id="@+id/server_info_sm"
+                                    android:layout_width="wrap_content"
+                                    android:layout_height="wrap_content"
+                                    android:layout_gravity="end"
+                                    android:paddingStart="4dp"
+                                    android:paddingLeft="4dp"
+                                    android:textAppearance="@style/TextAppearance.Conversations.Body1" />
+                            </TableRow>
+
+                            <TableRow
+                                android:layout_width="match_parent"
+                                android:layout_height="wrap_content">
+
+                                <TextView
+                                    android:layout_width="wrap_content"
+                                    android:layout_height="wrap_content"
+                                    android:ellipsize="end"
+                                    android:singleLine="true"
+                                    android:text="@string/server_info_external_service_discovery"
+                                    android:textAppearance="@style/TextAppearance.Conversations.Body1" />
+
+                                <TextView
+                                    android:id="@+id/server_info_external_service"
+                                    android:layout_width="wrap_content"
+                                    android:layout_height="wrap_content"
+                                    android:layout_gravity="right"
+                                    android:paddingLeft="4dp"
+                                    android:textAppearance="@style/TextAppearance.Conversations.Body1"
+                                    tools:ignore="RtlHardcoded" />
+                            </TableRow>
+
+                            <TableRow
+                                android:layout_width="match_parent"
+                                android:layout_height="wrap_content">
+
+                                <TextView
+                                    android:layout_width="wrap_content"
+                                    android:layout_height="wrap_content"
+                                    android:ellipsize="end"
+                                    android:singleLine="true"
+                                    android:text="@string/server_info_roster_version"
+                                    android:textAppearance="@style/TextAppearance.Conversations.Body1" />
+
+                                <TextView
+                                    android:id="@+id/server_info_roster_version"
+                                    android:layout_width="wrap_content"
+                                    android:layout_height="wrap_content"
+                                    android:layout_gravity="end"
+                                    android:paddingStart="4dp"
+                                    android:paddingLeft="4dp"
+                                    android:textAppearance="@style/TextAppearance.Conversations.Body1" />
+                            </TableRow>
+
+                            <TableRow
+                                android:layout_width="match_parent"
+                                android:layout_height="wrap_content">
+
+                                <TextView
+                                    android:layout_width="wrap_content"
+                                    android:layout_height="wrap_content"
+                                    android:ellipsize="end"
+                                    android:singleLine="true"
+                                    android:text="@string/server_info_carbon_messages"
+                                    android:textAppearance="@style/TextAppearance.Conversations.Body1" />
+
+                                <TextView
+                                    android:id="@+id/server_info_carbons"
+                                    android:layout_width="wrap_content"
+                                    android:layout_height="wrap_content"
+                                    android:layout_gravity="end"
+                                    android:paddingStart="4dp"
+                                    android:paddingLeft="4dp"
+                                    android:textAppearance="@style/TextAppearance.Conversations.Body1" />
+                            </TableRow>
+
+                            <TableRow
+                                android:layout_width="match_parent"
+                                android:layout_height="wrap_content">
+
+                                <TextView
+                                    android:layout_width="wrap_content"
+                                    android:layout_height="wrap_content"
+                                    android:ellipsize="end"
+                                    android:singleLine="true"
+                                    android:text="@string/server_info_mam"
+                                    android:textAppearance="@style/TextAppearance.Conversations.Body1" />
+
+                                <TextView
+                                    android:id="@+id/server_info_mam"
+                                    android:layout_width="wrap_content"
+                                    android:layout_height="wrap_content"
+                                    android:layout_gravity="end"
+                                    android:paddingStart="4dp"
+                                    android:paddingLeft="4dp"
+                                    android:textAppearance="@style/TextAppearance.Conversations.Body1" />
+                            </TableRow>
+
+                            <TableRow
+                                android:layout_width="match_parent"
+                                android:layout_height="wrap_content">
+
+                                <TextView
+                                    android:layout_width="wrap_content"
+                                    android:layout_height="wrap_content"
+                                    android:ellipsize="end"
+                                    android:singleLine="true"
+                                    android:text="@string/server_info_csi"
+                                    android:textAppearance="@style/TextAppearance.Conversations.Body1" />
+
+                                <TextView
+                                    android:id="@+id/server_info_csi"
+                                    android:layout_width="wrap_content"
+                                    android:layout_height="wrap_content"
+                                    android:layout_gravity="end"
+                                    android:paddingStart="4dp"
+                                    android:paddingLeft="4dp"
+                                    android:textAppearance="@style/TextAppearance.Conversations.Body1" />
+                            </TableRow>
+
+                            <TableRow
+                                android:layout_width="match_parent"
+                                android:layout_height="wrap_content">
+
+                                <TextView
+                                    android:layout_width="wrap_content"
+                                    android:layout_height="wrap_content"
+                                    android:ellipsize="end"
+                                    android:singleLine="true"
+                                    android:text="@string/server_info_easy_invite"
+                                    android:textAppearance="@style/TextAppearance.Conversations.Body1" />
+
+                                <TextView
+                                    android:id="@+id/server_info_easy_invite"
+                                    android:layout_width="wrap_content"
+                                    android:layout_height="wrap_content"
+                                    android:layout_gravity="end"
+                                    android:paddingStart="4dp"
+                                    android:paddingLeft="4dp"
+                                    android:textAppearance="@style/TextAppearance.Conversations.Body1" />
+                            </TableRow>
+
+                            <TableRow
+                                android:id="@+id/push_row"
+                                android:layout_width="match_parent"
+                                android:layout_height="wrap_content">
+
+                                <TextView
+                                    android:layout_width="wrap_content"
+                                    android:layout_height="wrap_content"
+                                    android:ellipsize="end"
+                                    android:singleLine="true"
+                                    android:text="@string/server_info_push"
+                                    android:textAppearance="@style/TextAppearance.Conversations.Body1" />
+
+                                <TextView
+                                    android:id="@+id/server_info_push"
+                                    android:layout_width="wrap_content"
+                                    android:layout_height="wrap_content"
+                                    android:layout_gravity="end"
+                                    android:paddingStart="4dp"
+                                    android:paddingLeft="4dp"
+                                    android:textAppearance="@style/TextAppearance.Conversations.Body1" />
+                            </TableRow>
+
+                            <TableRow
+                                android:layout_width="match_parent"
+                                android:layout_height="wrap_content">
+
+                                <TextView
+                                    android:id="@+id/server_info_http_upload_description"
+                                    android:layout_width="wrap_content"
+                                    android:layout_height="wrap_content"
+                                    android:ellipsize="end"
+                                    android:singleLine="true"
+                                    android:text="@string/server_info_http_upload"
+                                    android:textAppearance="@style/TextAppearance.Conversations.Body1" />
+
+                                <TextView
+                                    android:id="@+id/server_info_http_upload"
+                                    android:layout_width="wrap_content"
+                                    android:layout_height="wrap_content"
+                                    android:layout_gravity="end"
+                                    android:paddingStart="4dp"
+                                    android:paddingLeft="4dp"
+                                    android:textAppearance="@style/TextAppearance.Conversations.Body1" />
+
+                            </TableRow>
+
+                            <TableRow
+                                android:layout_width="fill_parent"
+                                android:layout_height="wrap_content">
+
+                                <TextView
+                                    android:layout_width="wrap_content"
+                                    android:layout_height="wrap_content"
+                                    android:ellipsize="end"
+                                    android:singleLine="true"
+                                    android:text="@string/server_info_bind2"
+                                    android:textAppearance="@style/TextAppearance.Conversations.Body1" />
+
+                                <TextView
+                                    android:id="@+id/server_info_bind2"
+                                    android:layout_width="wrap_content"
+                                    android:layout_height="wrap_content"
+                                    android:layout_gravity="end"
+                                    android:paddingStart="4dp"
+                                    android:paddingLeft="4dp"
+                                    android:textAppearance="@style/TextAppearance.Conversations.Body1" />
+
+                            </TableRow>
+
+                            <TableRow
+                                android:layout_width="fill_parent"
+                                android:layout_height="wrap_content">
+
+                                <TextView
+                                    android:layout_width="wrap_content"
+                                    android:layout_height="wrap_content"
+                                    android:ellipsize="end"
+                                    android:singleLine="true"
+                                    android:text="@string/server_info_sasl2"
+                                    android:textAppearance="@style/TextAppearance.Conversations.Body1" />
+
+                                <TextView
+                                    android:id="@+id/server_info_sasl2"
+                                    android:layout_width="wrap_content"
+                                    android:layout_height="wrap_content"
+                                    android:layout_gravity="end"
+                                    android:paddingStart="4dp"
+                                    android:paddingLeft="4dp"
+                                    android:textAppearance="@style/TextAppearance.Conversations.Body1" />
+                            </TableRow>
+
+                        </TableLayout>
+
+                        <View
+                            android:layout_width="match_parent"
+                            android:layout_height="8dp" />
+
+                        <RelativeLayout
+                            android:id="@+id/pgp_fingerprint_box"
+                            android:layout_width="wrap_content"
+                            android:layout_height="match_parent"
+                            android:layout_marginTop="32dp">
+
+                            <ImageButton
+                                android:id="@+id/action_delete_pgp"
+                                android:layout_width="wrap_content"
+                                android:layout_height="wrap_content"
+                                android:layout_alignParentEnd="true"
+                                android:layout_alignParentRight="true"
+                                android:layout_centerVertical="true"
+                                android:alpha="1.0"
+                                android:background="?attr/selectableItemBackgroundBorderless"
+                                android:padding="@dimen/image_button_padding"
+                                android:src="?attr/icon_remove"
+                                android:visibility="visible" />
+
+                            <LinearLayout
+                                android:layout_width="wrap_content"
+                                android:layout_height="wrap_content"
+                                android:layout_alignParentStart="true"
+                                android:layout_alignParentLeft="true"
+                                android:layout_centerVertical="true"
+                                android:layout_toStartOf="@+id/action_delete_pgp"
+                                android:layout_toLeftOf="@+id/action_delete_pgp"
+                                android:orientation="vertical">
+
+                                <TextView
+                                    android:id="@+id/pgp_fingerprint"
+                                    android:layout_width="wrap_content"
+                                    android:layout_height="wrap_content"
+                                    android:textAppearance="@style/TextAppearance.Conversations.Fingerprint" />
+
+                                <TextView
+                                    android:id="@+id/pgp_fingerprint_desc"
+                                    android:layout_width="wrap_content"
+                                    android:layout_height="wrap_content"
+                                    android:text="@string/openpgp_key_id"
+                                    android:textAppearance="@style/TextAppearance.Conversations.Caption" />
+                            </LinearLayout>
+                        </RelativeLayout>
+
+                        <RelativeLayout
+                            android:id="@+id/axolotl_fingerprint_box"
+                            android:layout_width="wrap_content"
+                            android:layout_height="match_parent"
+                            android:layout_marginTop="24dp">
+
+                            <LinearLayout
+                                android:layout_width="wrap_content"
+                                android:layout_height="wrap_content"
+                                android:layout_alignParentStart="true"
+                                android:layout_alignParentLeft="true"
+                                android:layout_centerVertical="true"
+                                android:layout_toStartOf="@+id/axolotl_actions"
+                                android:layout_toLeftOf="@+id/axolotl_actions"
+                                android:orientation="vertical">
+
+                                <TextView
+                                    android:id="@+id/axolotl_fingerprint"
+                                    android:layout_width="wrap_content"
+                                    android:layout_height="wrap_content"
+                                    android:textAppearance="@style/TextAppearance.Conversations.Fingerprint" />
+
+                                <TextView
+                                    android:id="@+id/own_fingerprint_desc"
+                                    android:layout_width="wrap_content"
+                                    android:layout_height="wrap_content"
+                                    android:textAppearance="@style/TextAppearance.Conversations.Caption" />
+                            </LinearLayout>
+
+                            <LinearLayout
+                                android:id="@+id/axolotl_actions"
+                                android:layout_width="wrap_content"
+                                android:layout_height="wrap_content"
+                                android:layout_alignParentEnd="true"
+                                android:layout_alignParentRight="true"
+                                android:layout_centerVertical="true"
+                                android:orientation="horizontal">
+
+                                <ImageButton
+                                    android:id="@+id/show_qr_code_button"
+                                    android:layout_width="wrap_content"
+                                    android:layout_height="wrap_content"
+                                    android:background="?attr/selectableItemBackgroundBorderless"
+                                    android:contentDescription="@string/copy_omemo_clipboard_description"
+                                    android:padding="@dimen/image_button_padding"
+                                    android:src="?attr/icon_qr_code"
+                                    android:visibility="visible" />
+
+                                <ImageButton
+                                    android:id="@+id/action_regenerate_omemo_key"
+                                    android:layout_width="wrap_content"
+                                    android:layout_height="wrap_content"
+                                    android:background="?attr/selectableItemBackgroundBorderless"
+                                    android:contentDescription="@string/regenerate_omemo_key"
+                                    android:padding="@dimen/image_button_padding"
+                                    android:src="?attr/icon_refresh"
+                                    android:visibility="gone" />
+                            </LinearLayout>
+                        </RelativeLayout>
+                    </LinearLayout>
+                </androidx.cardview.widget.CardView>
+
+                <androidx.cardview.widget.CardView
+                    android:id="@+id/other_device_keys_card"
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:layout_marginStart="@dimen/activity_horizontal_margin"
+                    android:layout_marginLeft="@dimen/activity_horizontal_margin"
+                    android:layout_marginTop="@dimen/activity_vertical_margin"
+                    android:layout_marginEnd="@dimen/activity_horizontal_margin"
+                    android:layout_marginRight="@dimen/activity_horizontal_margin"
+                    android:layout_marginBottom="@dimen/activity_vertical_margin"
+                    android:visibility="gone"
+                    card_view:cardBackgroundColor="?attr/color_background_secondary">
+
+                    <LinearLayout
+                        android:layout_width="match_parent"
+                        android:layout_height="wrap_content"
+                        android:orientation="vertical">
+
+                        <LinearLayout
+                            android:layout_width="match_parent"
+                            android:layout_height="wrap_content"
+                            android:orientation="vertical"
+                            android:padding="@dimen/card_padding_list">
+
+                            <TextView
+                                android:id="@+id/other_device_keys_title"
+                                android:layout_width="wrap_content"
+                                android:layout_height="wrap_content"
+                                android:layout_margin="@dimen/list_padding"
+                                android:text="@string/other_devices"
+                                android:textAppearance="@style/TextAppearance.Conversations.Title" />
+
+                            <LinearLayout
+                                android:id="@+id/other_device_keys"
+                                android:layout_width="fill_parent"
+                                android:layout_height="wrap_content"
+                                android:orientation="vertical" />
+                        </LinearLayout>
+
+                        <LinearLayout
+                            android:id="@+id/unverified_warning"
+                            android:layout_width="match_parent"
+                            android:layout_height="wrap_content"
+                            android:paddingHorizontal="@dimen/card_padding_list">
+
+                            <TextView
+                                android:layout_width="wrap_content"
+                                android:layout_height="wrap_content"
+                                android:layout_marginHorizontal="@dimen/list_padding"
+                                android:text="@string/unverified_devices"
+                                android:textAppearance="@style/TextAppearance.Conversations.Body1.Secondary" />
+                        </LinearLayout>
+
+                        <LinearLayout
+                            android:layout_width="wrap_content"
+                            android:layout_height="match_parent"
+                            android:layout_marginTop="8dp"
+                            android:orientation="horizontal">
+
+
+                            <Button
+                                android:id="@+id/scan_button"
+                                style="@style/Widget.Conversations.Button.Borderless"
+                                android:layout_width="wrap_content"
+                                android:layout_height="wrap_content"
+                                android:minWidth="0dp"
+                                android:paddingLeft="16dp"
+                                android:paddingRight="16dp"
+                                android:text="@string/scan_qr_code"
+                                android:textColor="?attr/colorAccent" />
+
+                            <Button
+                                android:id="@+id/clear_devices"
+                                style="@style/Widget.Conversations.Button.Borderless"
+                                android:layout_width="wrap_content"
+                                android:layout_height="wrap_content"
+                                android:minWidth="0dp"
+                                android:paddingLeft="16dp"
+                                android:paddingRight="16dp"
+                                android:text="@string/clear_other_devices"
+                                android:textColor="?attr/colorAccent" />
+                        </LinearLayout>
+                    </LinearLayout>
+                </androidx.cardview.widget.CardView>
+            </LinearLayout>
+        </ScrollView>
+
+        <LinearLayout
+            android:id="@+id/button_bar"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:layout_alignParentStart="true"
+            android:layout_alignParentLeft="true"
+            android:layout_alignParentEnd="true"
+            android:layout_alignParentRight="true"
+            android:layout_alignParentBottom="true">
+
+            <Button
+                android:id="@+id/cancel_button"
+                style="@style/Widget.Conversations.Button.Borderless"
+                android:layout_width="0dp"
+                android:layout_height="wrap_content"
+                android:layout_weight="1"
+                android:text="@string/cancel" />
+
+            <View
+                android:layout_width="1dp"
+                android:layout_height="match_parent"
+                android:layout_marginTop="7dp"
+                android:layout_marginBottom="7dp" />
+
+            <Button
+                android:id="@+id/save_button"
+                style="@style/Widget.Conversations.Button.Borderless"
+                android:layout_width="0dp"
+                android:layout_height="wrap_content"
+                android:layout_weight="1"
+                android:enabled="false"
+                android:text="@string/save" />
+        </LinearLayout>
+    </RelativeLayout>
+</layout>

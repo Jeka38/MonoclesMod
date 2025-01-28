@@ -1,0 +1,9 @@
+* Sticker-Verzeichnis wechseln
+* Langes Drücken, um Sticker von anderen zu speichern
+* Empfangene/gesendete Bilder als Sticker speichern
+* UI aktualisieren, wenn weniger/mehr Avatare angezeigt werden
+* Verbesserter Sprachrekorder
+* Sprachnachricht direkt senden statt nur anhängen
+* Dateityp an Sticker anhängen, die im Chat gespeichert wurden 
+* Suchmethode für öffentliche Chaträume korrigiert
+* Anhängen der Sprach- und Bildaufnahme ausblenden, wenn die Tasten bereits sichtbar sind

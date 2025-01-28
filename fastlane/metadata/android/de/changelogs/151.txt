@@ -1,0 +1,24 @@
+* Einstellung hinzufügen, um DANE zu erzwingen
+* Versteckten Speicher für Sticker verwenden
+* Fix Raum Schreibzugriffsdialog
+* Fix Hintergrundbild einstellen nach Neuinstallation der App
+* Besseres Speichern des Hintergrundbildes und Option zum Löschen
+* Benutzerdefinierten Hintergrund auch auf älteren Geräten zulassen
+* WebXDC kann nun auch ohne Thread-Set geöffnet werden und Absturz behoben
+* Übersetzungen aktualisieren
+* Ünterstützungs-Snackbar hinzufügen
+* Bessere Sortierung der UI-Einstellungen
+* Unterstützung von SVG als Avatar
+* Animierte Avatare vorbereiten
+* Setzen auf Tastatur-interne Emoji-Auswahl behebt die Handhabung von Eingabefeldern
+* Behebt zufälligen Absturz bei Layoutwechsel
+* Abfrage der Mikrofonerlaubnis beim Auslösen eines Videoanrufs
+* Überarbeitung und Verbesserung der Registrierung und magischen Registrierung
+* RTP überarbeitet
+* Neu sortierte Menüs für Anmeldung, Konto erstellen und Konto verwalten
+* Problembericht in die Einstellungen verschieben und E-Mail öffnen, wenn gedrückt 
+* Ändern des Endtons bei Anrufen
+* Behebung des Absturzes bei der Standortanzeige
+* Öffnen Sie eine beliebige Navigationsanwendung, um zum gemeinsamen Standort zu navigieren.
+* Importieren von Stickern erlauben, auffindbar über den Dateinamen in der Stickersuche
+* Größe einzelner Emoji und Stickernachrichten erhöhen 

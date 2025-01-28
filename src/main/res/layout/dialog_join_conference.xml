@@ -1,0 +1,60 @@
+<?xml version="1.0" encoding="utf-8"?>
+<layout xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:app="http://schemas.android.com/apk/res-auto">
+
+    <LinearLayout
+        android:layout_width="match_parent"
+        android:layout_height="match_parent"
+        android:orientation="vertical"
+        android:paddingStart="24dp"
+        android:paddingLeft="24dp"
+        android:paddingTop="16dp"
+        android:paddingEnd="24dp"
+        android:paddingRight="24dp"
+        android:paddingBottom="8dp">
+
+        <TextView
+            android:id="@+id/your_account"
+            style="@style/InputLabel"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:text="@string/your_account"
+            android:visibility="gone" />
+
+        <Spinner
+            android:id="@+id/account"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:visibility="gone" />
+
+        <com.google.android.material.textfield.TextInputLayout
+            android:id="@+id/account_jid_layout"
+            style="@style/Widget.Conversations.TextInputLayout.OutlinedBox"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:hint="@string/xmpp_address"
+            app:errorTextAppearance="@style/TextAppearance.Conversations.Design.Error"
+            app:hintTextAppearance="@style/TextAppearance.Conversations.Design.Hint">
+
+            <AutoCompleteTextView
+                android:id="@+id/jid"
+                style="@style/Widget.Material3.TextInputEditText.FilledBox"
+android:fontFamily="notosansregular"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:imeOptions="actionDone|flagNoExtractUi"
+                android:inputType="textEmailAddress"
+                android:padding="16dp" />
+        </com.google.android.material.textfield.TextInputLayout>
+
+        <com.google.android.material.materialswitch.MaterialSwitch
+            android:id="@+id/bookmark"
+            style="@style/Widget.monocles.Switch"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:layout_marginTop="8dp"
+            android:checked="true"
+            android:text="@string/save_as_bookmark" />
+
+    </LinearLayout>
+</layout>

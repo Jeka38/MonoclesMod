@@ -1,0 +1,8 @@
+* Absturz beim Senden/Empfangen von PDF-Dateien behoben
+* Doppelte App-Einladung entfernt
+* Option "Stille Stunden" beim Erstellen eines neuen Kontos entfernen
+* Avatar-Handling behoben
+* Behebung des Absturzes beim Senden eines Ortes
+* Stille Stunden pro Konto
+* Vollständige Liste der Gateway-Typen abrufen
+* SMS und Tel-URI in der App öffnen, wenn es einen entsprechenden Gateway gibt

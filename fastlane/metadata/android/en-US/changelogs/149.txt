@@ -1,0 +1,4 @@
+* Integrate sticker feature and search with ":"
+* Layout animations
+* Reintegrate emoji picker
+* Several fixes

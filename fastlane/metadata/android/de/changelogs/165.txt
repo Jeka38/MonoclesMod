@@ -1,0 +1,8 @@
+* Behebung des ImportBackup-Problems bei Android 11+
+* Einstellung für Bildlink-Vorschau ermöglichen
+* Behebt den zufälligen Absturz bei aktiver Thread-Funktion
+* Behebt das Layout der Kontenverwaltung bei aktiven Telefonkonten 
+* Internen Updater deaktivieren
+* Behebt das Problem mit dem Memory Leak, wenn man in das Fragment klickt und wieder zur Aktivität zurückkehrt
+* tlistener entfernen, wenn nicht benötigt 
+* Erstellen von Anrufprotokolldateien abschalten

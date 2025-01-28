@@ -1,0 +1,43 @@
+<?xml version="1.0" encoding="utf-8"?>
+<layout xmlns:android="http://schemas.android.com/apk/res/android"
+	xmlns:app="http://schemas.android.com/apk/res-auto">
+
+	<LinearLayout
+		android:layout_width="wrap_content"
+		android:layout_height="wrap_content"
+		android:orientation="horizontal"
+		android:paddingTop="2dp"
+		android:paddingBottom="2dp"
+		android:paddingLeft="2dp"
+		android:paddingRight="2dp"
+		android:background="@drawable/list_choice">
+
+		<TextView
+			android:id="@+id/nonunicode"
+			android:layout_width="wrap_content"
+			android:layout_height="wrap_content"
+			android:gravity="center_vertical|center_horizontal"
+			android:textSize="36sp"
+			app:emojiCompatEnabled="false"
+			android:visibility="gone" />
+
+		<TextView
+			android:id="@+id/unicode"
+			android:layout_width="wrap_content"
+			android:layout_height="wrap_content"
+			android:textSize="36sp"
+			android:gravity="center_vertical|center_horizontal"
+			android:textAppearance="?textAppearanceBodyMedium" />
+
+		<TextView
+			android:id="@+id/shortcode"
+			android:layout_width="wrap_content"
+			android:layout_height="wrap_content"
+			android:gravity="center_vertical|center_horizontal"
+			android:paddingLeft="8dp"
+			android:visibility="gone"
+			android:textAppearance="?textAppearanceBodyMedium" />
+
+	</LinearLayout>
+
+</layout>

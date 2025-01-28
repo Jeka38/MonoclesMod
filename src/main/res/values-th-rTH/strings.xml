@@ -1,0 +1,16 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="action_settings">การตั้งค่า</string>
+    <string name="action_add">บทสนทนาใหม่</string>
+    <string name="action_accounts">จัดการบัญชี</string>
+    <string name="action_end_conversation">สิ้นสุดบทสนทนา</string>
+    <string name="action_contact_details">ข้อมูลการติดต่อ</string>
+    <string name="action_secure">ความปลอดภัยในการสนทนา</string>
+    <string name="action_add_new_account">เพิ่มบัญชีใหม่</string>
+    <string name="action_add_phone_book">เพิ่มไปยังสมุดผู้ติดต่อ</string>
+    <string name="action_delete_contact">ลบออกจากบัญชีรายชื่อ</string>
+    <string name="action_block_contact">บล็อกผู้ติดต่อ</string>
+    <string name="action_unblock_contact">ปลดล็อคผู้ติดต่อ</string>
+    <string name="action_block_domain">ปิดกั้นโดเมน</string>
+    <string name="action_unblock_domain">ยกเลิกการปิดกั้นโดเมน</string>
+</resources>

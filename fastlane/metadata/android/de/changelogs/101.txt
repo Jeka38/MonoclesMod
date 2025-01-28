@@ -1,0 +1,8 @@
+### Changelog
+
+##Version 1.1
+* Voreinstellungen geändert, um Verbindungsprobleme zu vermeiden
+* einige Textkorrekturen
+* optionalen monocles Registrierungslink hinzugefügt
+* geändertes Appicon
+

@@ -1,0 +1,19 @@
+* Aktivieren Sie animierte Avatare (GIFs bis zu 480px*480px und 100 KB) 
+* Bilder von Imagelinks im Status in den Kontaktdetails anzeigen
+* Kontaktdetails aufräumen
+* Behebt zufällige Abstürze
+* Größere Abbrechen- und Senden-Buttons für den Sprachrekorder
+* Behebung des Gesprächsfragments für den Tablet-Modus 
+* Gifs im Chat abspielen deaktiviert auch animierte Avatare und animierte Statusbilder
+* Mögliche Reduzierung des Batterieverbrauchs
+* Mögliche Behebung eines seltenen zufälligen Absturzes
+* Code aufräumen (sehr geringe Geschwindigkeitsverbesserung)
+* Bilder im Antwortfeld anzeigen
+* Geringe Leistungsverbesserung
+* Bilder aus zitierten Bild-Links anzeigen, wenn Bild-Link-Vorschau aktiviert
+* Avatar-Größe in der großen Avatar-Vorschau korrigieren
+* Bildgröße der Nachrichten in Nachrichten ein wenig erhöhen
+* Leeren Chat-Bildschirm beheben
+* Experimentelle Einstellung, um Nachrichten, die länger als 7 Zeilen sind, zusammen zu klappen
+* Initiale GIFs-Auswahl 
+* Aktualisierte Übersetzungen

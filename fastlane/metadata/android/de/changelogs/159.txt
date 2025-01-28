@@ -1,0 +1,14 @@
+* Icons statt Text für den Sprachrekorder verwenden
+* Fix: Das erste Lesezeichen kann im alten PEP nicht gespeichert werden
+* Zeitüberschreitung bei ICE-Sammeln hinzufügen
+* Weichere XEP0392-Farben aus dem c3-Zweig
+* Kann nicht prüfen, ob authentische Daten auf nxdomain etc.
+* Sprachaufzeichnung beim Verlassen des Chats stoppen
+* Behebt Absturz, wenn der Bildschirm während der Sprachaufzeichnung gedreht wurde und die Taste "Zurück" gedrückt wurde
+* Update der Anruf-UI nach Beendigung der RTP-Verbindung
+* Übersetzungen aktualisieren
+* Bildschirm während der Aufnahme aktiv halten
+* Präsenzname immer anzeigen, wenn bekannt
+* Zeigt nicht immer nur jid als Gesprächsname bei Fremden an
+* Wenn es keine Anwesenheit gibt, können wir keine Prüfung durchführen.
+* Verbesserte Anrufprotokollierungs- und Datumssprechblasen + korrekte Zeichenfolgen für verpasste Anrufe 

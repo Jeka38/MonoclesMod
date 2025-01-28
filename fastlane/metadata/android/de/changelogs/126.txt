@@ -1,0 +1,2 @@
+* Ändere Farbe der Topbar zu Themefarbe
+* Kritische Datenbank Fehler repariert für den Updateprozess

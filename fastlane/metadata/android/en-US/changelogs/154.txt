@@ -1,0 +1,6 @@
+* Long press on inline stickers to import it
+* Security: Introduce backup file format v2
+* Update translations
+* Remove redundant message deletion menu 
+* Fix import monocles chat backups
+* Fix crash when a user has SVG Avatar

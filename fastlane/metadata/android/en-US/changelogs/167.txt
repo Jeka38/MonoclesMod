@@ -1,0 +1,16 @@
+* Fix the ImportBackup at Android 11+ problem. 
+* Activate setting for link preview per image 
+* Fix random crash when thread feature active
+* Improve thread feature string 
+* Fix manage accounts layout when phone accounts active
+* Fix up internal updater
+* Fix the memory leak when click into Fragment and return back to activity problem
+* Remove tlistener when no need
+* Disable create call log files
+* Integrate providers list for alternative account creation
+* Activate animated avatars (GIFs/WEBPs up to 480px*480px and 100 KB) 
+* Show images from imagelinks in status in contact details
+* Clean up contact details
+* Fix random crashes
+* Bigger cancel and send buttons for voice recorder
+* Option play gifs inside chat enables animated avatars and status images

@@ -1,0 +1,29 @@
+* Refactor voice recording
+* Show show only this thread when thread feature activated
+* Adjust default emojipickerview height
+* Don't ever add moderations as new messages
+* Allow thread+omemo
+* Slider field
+* Initial stickers picker rework
+* Possible fix crash on empty array
+* Check storage permissions before loading GIFs fixes crash in some cases
+* Allow saving GIF from a chat message
+* Allow setting filename before save as sticker or GIF
+* Block voice recording button while recording
+* Send voice message only once
+* Send stickers regular as images
+* Possible fix crash on WebXDC refresh
+* Possible fix crash on image preview from image link
+* Show file icon when no image or video in quotes
+* Fix hide custom theme setting for incompatible Android OS
+* Possible fix rare crash for show record voice button
+* Possible fix rare crash when swipe to reply
+* Show file icon for files in reply preview
+* No onboarding needed yet
+* Import stickers and GIFs through the app settings
+* Delete sticker or GIF with long press
+* Set Privacy option and microphone direction, if possible 
+* Little performance improvement for loading stickers and gifs 
+* Fix crash when viewtype = -1 
+* Check well known SRVs as well as DNSSEC 
+* Fix NPE 

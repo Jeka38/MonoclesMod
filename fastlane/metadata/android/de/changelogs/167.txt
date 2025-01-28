@@ -1,0 +1,16 @@
+* Behebung des ImportBackup-Problems bei Android 11+. 
+* Einstellung für Linkvorschau pro Bild aktivieren 
+* Behebt zufälligen Absturz bei aktivem Thread-Feature
+* String der Thread-Funktion verbessern 
+* Layout der Kontenverwaltung bei aktiven Telefonkonten korrigiert
+* Behebt den internen Updater
+* Behebt das Speicherleck, wenn man in das Fragment klickt und wieder zur Aktivität zurückkehrt
+* tlistener entfernen, wenn nicht benötigt
+* Deaktivieren der Erstellung von Anrufprotokolldateien
+* Anbieterliste für alternative Kontoerstellung einbinden
+* Animierte Avatare aktivieren (GIFs/WEBPs bis zu 480px*480px und 100 KB) 
+* Bilder von Imagelinks im Status in den Kontaktdetails anzeigen
+* Kontaktdetails aufräumen
+* Behebt zufällige Abstürze
+* Größere Abbrechen- und Senden-Buttons für den Sprachrekorder
+* Option GIFs im Chat abspielen aktiviert animierte Avatare und Statusbilder

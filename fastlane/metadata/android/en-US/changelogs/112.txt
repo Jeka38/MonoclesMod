@@ -1,0 +1,13 @@
+* remove Android 4 support
+* update WebRTC
+* show channel avatars and number of users for channel discovery
+* add ability to ex-/import app settings
+* implementation of message retraction XEP-0424
+* implement message history for corrected messages
+* add text formatting buttons in chat
+* hide text formatting in chats
+* add ability to delete own avatar
+* show black bars when remote video does not match aspect ratio of screen
+* improve search performance
+* bug fixes
+* removed OTR again

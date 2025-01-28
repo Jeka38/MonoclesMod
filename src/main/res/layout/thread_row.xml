@@ -1,0 +1,33 @@
+<?xml version="1.0" encoding="utf-8"?>
+<layout xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:app="http://schemas.android.com/apk/res-auto">
+
+    <LinearLayout
+        android:layout_width="match_parent"
+        android:layout_height="match_parent"
+        android:minHeight="?android:attr/listPreferredItemHeightSmall"
+        android:paddingLeft="@dimen/avatar_item_distance"
+        android:paddingRight="@dimen/avatar_item_distance"
+        android:background="@drawable/list_choice"
+        android:orientation="horizontal">
+
+        <com.lelloman.identicon.view.GithubIdenticonView
+            android:id="@+id/thread_identicon"
+            android:layout_width="17dp"
+            android:layout_height="17dp"
+            android:layout_gravity="center_vertical"
+            android:layout_marginRight="10dp" />
+
+        <TextView
+            android:id="@+id/thread_subject"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:gravity="center_vertical"
+            android:maxLines="1"
+            android:minHeight="?android:attr/listPreferredItemHeightSmall"
+            android:textAppearance="@style/TextAppearance.Conversations.Body1"
+            android:textColor="?attr/edit_text_color" />
+
+    </LinearLayout>
+
+</layout>

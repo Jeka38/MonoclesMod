@@ -1,0 +1,8 @@
+* material icons and modified date_bubble
+* changed date bubble from italic to bold
+* smaller send_text
+* clean up code, and add comments
+* color orange, date bubble mute
+* muter date_bubble
+* better splash screen bachground
+* changed orange theme recieved color

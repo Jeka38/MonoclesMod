@@ -1,0 +1,24 @@
+* Add setting to enforce DANE
+* Use hidden Storage for stickers
+* Fix room write access dialog
+* Fix set background image after app reinstall
+* Better background image saving and option to delete
+* Allow custom background on older devices too
+* Make WebXDC openable without thread set and fix crash
+* Update translations
+* Add support snackbar
+* Better sorted UI settings
+* Support SVG as avatar
+* Prepare animated avatars
+* Set to keyboard internal emoji picker fixes input field handling
+* Fix random crash when layout changed
+* Request microphone permission when trigger video call
+* Rework and improved magic create and registration
+* Rework RTP
+* Re-sort login, create account and manage account menus
+* Move report issue to settings and open email when pressed 
+* Change end call tone
+* Fix crash on view location
+* Open any navigation app to navigate to shared location
+* Allow import stickers, findable by filename in sticker search
+* Increase size of single emoji and sticker message 

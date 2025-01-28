@@ -1,0 +1,3 @@
+* update default background
+* WebXDC can only use encryption if there is no state update
+* Fix crash when keyboard needed in Webxdc page

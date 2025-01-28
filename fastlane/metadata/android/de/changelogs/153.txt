@@ -1,0 +1,5 @@
+* Aktualisierte Übersetzungen
+* Abgeschnittene Sprachnachricht korrigiert
+* Automatische Wiedergabe von Videodateien
+* Universal-Backup in die Einstellungen verschieben
+* Weitere Korrekturen

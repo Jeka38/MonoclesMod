@@ -1,0 +1,4 @@
+* pull down to refresh for contacts
+* swipe features to chats
+* support sasl 2.0
+* bugfixes

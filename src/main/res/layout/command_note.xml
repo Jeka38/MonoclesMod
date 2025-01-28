@@ -1,0 +1,31 @@
+<?xml version="1.0" encoding="utf-8"?>
+<layout xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:app="http://schemas.android.com/apk/res-auto">
+    <LinearLayout
+        android:layout_width="fill_parent"
+        android:layout_height="wrap_content"
+        android:paddingBottom="16dp"
+        android:orientation="vertical">
+
+        <ImageView
+            android:visibility="gone"
+            android:id="@+id/error_icon"
+            android:layout_width="match_parent"
+            android:layout_height="50dp"
+            android:layout_centerHorizontal="true"
+            android:scaleType="fitCenter"
+            android:src="@drawable/ic_send_cancel_dnd" />
+
+        <TextView
+            android:id="@+id/message"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:gravity="center"
+            android:minHeight="?android:attr/listPreferredItemHeightSmall"
+            android:paddingLeft="8dp"
+            android:paddingRight="8dp"
+            android:textAppearance="@style/TextAppearance.Conversations.Body1"
+            android:textColor="?attr/edit_text_color" />
+
+    </LinearLayout>
+</layout>

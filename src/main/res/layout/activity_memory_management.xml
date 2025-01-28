@@ -1,0 +1,255 @@
+<LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:card_view="http://schemas.android.com/apk/res-auto"
+    xmlns:tools="http://schemas.android.com/tools"
+    android:layout_width="match_parent"
+    android:layout_height="match_parent"
+    android:background="?attr/color_background_tertiary"
+    android:orientation="vertical"
+    tools:context="eu.siacs.conversations.ui.MemoryManagementPref">
+
+    <include layout="@layout/toolbar" />
+
+    <ScrollView
+        android:layout_width="match_parent"
+        android:layout_height="match_parent">
+
+        <RelativeLayout
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:orientation="vertical">
+
+            <androidx.cardview.widget.CardView
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:layout_marginStart="@dimen/activity_horizontal_margin"
+                android:layout_marginLeft="@dimen/activity_horizontal_margin"
+                android:layout_marginTop="@dimen/activity_vertical_margin"
+                android:layout_marginEnd="@dimen/activity_horizontal_margin"
+                android:layout_marginRight="@dimen/activity_horizontal_margin"
+                android:layout_marginBottom="@dimen/activity_vertical_margin"
+                android:orientation="vertical"
+                android:padding="@dimen/card_padding_regular"
+                card_view:cardBackgroundColor="?attr/color_background_secondary">
+
+                <LinearLayout
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:orientation="vertical"
+                    android:padding="@dimen/card_padding_regular">
+
+                    <TextView
+                        android:id="@+id/memory_management_title"
+                        android:layout_width="wrap_content"
+                        android:layout_height="wrap_content"
+                        android:layout_marginTop="@dimen/list_padding"
+                        android:layout_marginBottom="@dimen/list_padding"
+                        android:text="@string/title_memory_management"
+                        android:textAppearance="@style/TextAppearance.Conversations.Title" />
+
+                    <TableLayout
+                        android:id="@+id/memory_usages"
+                        android:layout_width="match_parent"
+                        android:layout_height="wrap_content"
+                        android:shrinkColumns="0"
+                        android:stretchColumns="1">
+
+                        <TableRow
+                            android:layout_width="match_parent"
+                            android:layout_height="match_parent">
+
+                            <TextView
+                                android:layout_width="wrap_content"
+                                android:layout_height="wrap_content"
+                                android:layout_gravity="center_vertical"
+                                android:ellipsize="end"
+                                android:singleLine="true"
+                                android:text="@string/disk_storage"
+                                android:textAppearance="@style/TextAppearance.Conversations.Body1" />
+
+                            <TextView
+                                android:id="@+id/disk_storage"
+                                android:layout_width="wrap_content"
+                                android:layout_height="wrap_content"
+                                android:layout_gravity="center_vertical|end"
+                                android:paddingStart="4dp"
+                                android:paddingLeft="4dp"
+                                android:textAppearance="@style/TextAppearance.Conversations.Body1" />
+                        </TableRow>
+
+                        <View
+                            android:layout_width="1dp"
+                            android:layout_height="match_parent"
+                            android:layout_marginTop="7dp"
+                            android:layout_marginBottom="7dp"
+                            android:background="?attr/divider" />
+
+                        <TableRow
+                            android:layout_width="match_parent"
+                            android:layout_height="match_parent">
+
+                            <TextView
+                                android:layout_width="wrap_content"
+                                android:layout_height="wrap_content"
+                                android:layout_gravity="center_vertical"
+                                android:ellipsize="end"
+                                android:singleLine="true"
+                                android:text="@string/media_usage"
+                                android:textAppearance="@style/TextAppearance.Conversations.Body1" />
+
+                            <TextView
+                                android:id="@+id/media_usage"
+                                android:layout_width="wrap_content"
+                                android:layout_height="wrap_content"
+                                android:layout_gravity="center_vertical|end"
+                                android:paddingStart="4dp"
+                                android:paddingLeft="4dp"
+                                android:textAppearance="@style/TextAppearance.Conversations.Body1" />
+
+                            <ImageButton
+                                android:id="@+id/action_delete_media"
+                                android:layout_width="wrap_content"
+                                android:layout_height="wrap_content"
+                                android:layout_gravity="end"
+                                android:alpha="?attr/icon_alpha"
+                                android:background="?attr/selectableItemBackgroundBorderless"
+                                android:padding="@dimen/image_button_padding"
+                                android:src="?attr/icon_delete" />
+                        </TableRow>
+
+                        <TableRow
+                            android:layout_width="match_parent"
+                            android:layout_height="match_parent">
+
+                            <TextView
+                                android:layout_width="wrap_content"
+                                android:layout_height="wrap_content"
+                                android:layout_gravity="center_vertical"
+                                android:ellipsize="end"
+                                android:singleLine="true"
+                                android:text="@string/pictures_usage"
+                                android:textAppearance="@style/TextAppearance.Conversations.Body1" />
+
+                            <TextView
+                                android:id="@+id/pictures_usage"
+                                android:layout_width="wrap_content"
+                                android:layout_height="wrap_content"
+                                android:layout_gravity="center_vertical|end"
+                                android:paddingStart="4dp"
+                                android:paddingLeft="4dp"
+                                android:textAppearance="@style/TextAppearance.Conversations.Body1" />
+
+                            <ImageButton
+                                android:id="@+id/action_delete_pictures"
+                                android:layout_width="wrap_content"
+                                android:layout_height="wrap_content"
+                                android:layout_gravity="end"
+                                android:alpha="?attr/icon_alpha"
+                                android:background="?attr/selectableItemBackgroundBorderless"
+                                android:padding="@dimen/image_button_padding"
+                                android:src="?attr/icon_delete" />
+                        </TableRow>
+
+                        <TableRow
+                            android:layout_width="match_parent"
+                            android:layout_height="match_parent">
+
+                            <TextView
+                                android:layout_width="wrap_content"
+                                android:layout_height="wrap_content"
+                                android:layout_gravity="center_vertical"
+                                android:ellipsize="end"
+                                android:singleLine="true"
+                                android:text="@string/videos_usage"
+                                android:textAppearance="@style/TextAppearance.Conversations.Body1" />
+
+                            <TextView
+                                android:id="@+id/videos_usage"
+                                android:layout_width="wrap_content"
+                                android:layout_height="wrap_content"
+                                android:layout_gravity="center_vertical|end"
+                                android:paddingStart="4dp"
+                                android:paddingLeft="4dp"
+                                android:textAppearance="@style/TextAppearance.Conversations.Body1" />
+
+                            <ImageButton
+                                android:id="@+id/action_delete_videos"
+                                android:layout_width="wrap_content"
+                                android:layout_height="wrap_content"
+                                android:layout_gravity="end"
+                                android:alpha="?attr/icon_alpha"
+                                android:background="?attr/selectableItemBackgroundBorderless"
+                                android:padding="@dimen/image_button_padding"
+                                android:src="?attr/icon_delete" />
+                        </TableRow>
+
+                        <TableRow
+                            android:layout_width="match_parent"
+                            android:layout_height="match_parent">
+
+                            <TextView
+                                android:layout_width="wrap_content"
+                                android:layout_height="wrap_content"
+                                android:layout_gravity="center_vertical"
+                                android:ellipsize="end"
+                                android:singleLine="true"
+                                android:text="@string/files_usage"
+                                android:textAppearance="@style/TextAppearance.Conversations.Body1" />
+
+                            <TextView
+                                android:id="@+id/files_usage"
+                                android:layout_width="wrap_content"
+                                android:layout_height="wrap_content"
+                                android:layout_gravity="center_vertical|end"
+                                android:paddingStart="4dp"
+                                android:paddingLeft="4dp"
+                                android:textAppearance="@style/TextAppearance.Conversations.Body1" />
+
+                            <ImageButton
+                                android:id="@+id/action_delete_files"
+                                android:layout_width="wrap_content"
+                                android:layout_height="wrap_content"
+                                android:layout_gravity="end"
+                                android:alpha="?attr/icon_alpha"
+                                android:background="?attr/selectableItemBackgroundBorderless"
+                                android:padding="@dimen/image_button_padding"
+                                android:src="?attr/icon_delete" />
+                        </TableRow>
+
+                        <TableRow
+                            android:layout_width="match_parent"
+                            android:layout_height="match_parent">
+
+                            <TextView
+                                android:layout_width="wrap_content"
+                                android:layout_height="wrap_content"
+                                android:layout_gravity="center_vertical"
+                                android:ellipsize="end"
+                                android:singleLine="true"
+                                android:text="@string/audios_usage"
+                                android:textAppearance="@style/TextAppearance.Conversations.Body1" />
+
+                            <TextView
+                                android:id="@+id/audios_usage"
+                                android:layout_width="wrap_content"
+                                android:layout_height="wrap_content"
+                                android:layout_gravity="center_vertical|end"
+                                android:paddingStart="4dp"
+                                android:paddingLeft="4dp"
+                                android:textAppearance="@style/TextAppearance.Conversations.Body1" />
+
+                            <ImageButton
+                                android:id="@+id/action_delete_audios"
+                                android:layout_width="wrap_content"
+                                android:layout_height="wrap_content"
+                                android:layout_gravity="end"
+                                android:alpha="?attr/icon_alpha"
+                                android:background="?attr/selectableItemBackgroundBorderless"
+                                android:padding="@dimen/image_button_padding"
+                                android:src="?attr/icon_delete" />
+                        </TableRow>
+                    </TableLayout>
+                </LinearLayout>
+            </androidx.cardview.widget.CardView>
+        </RelativeLayout>
+    </ScrollView>
+</LinearLayout>

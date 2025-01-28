@@ -1,0 +1,112 @@
+<?xml version="1.0" encoding="utf-8"?>
+<layout xmlns:android="http://schemas.android.com/apk/res/android">
+
+    <RelativeLayout
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:layout_alignParentStart="true"
+        android:layout_alignParentLeft="true"
+        android:padding="@dimen/list_padding">
+
+        <LinearLayout
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:layout_alignParentStart="true"
+            android:layout_alignParentLeft="true"
+            android:layout_centerVertical="true"
+            android:layout_toStartOf="@+id/action_container"
+            android:layout_toLeftOf="@+id/action_container"
+            android:orientation="vertical">
+
+            <TextView
+                android:id="@+id/key"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:clickable="true"
+                android:longClickable="true"
+                android:textAppearance="@style/TextAppearance.Conversations.Fingerprint" />
+            <RelativeLayout
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content">
+
+                <TextView
+                    android:id="@+id/key_type"
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:layout_alignParentStart="true"
+                    android:layout_alignParentLeft="true"
+                    android:clickable="true"
+                    android:longClickable="true"
+                    android:textAppearance="@style/TextAppearance.Conversations.Caption" />
+
+                <TextView
+                    android:id="@+id/key_automatically_accepted"
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:layout_toRightOf="@+id/key_type"
+                    android:text="@string/key_automatically_accepted"
+                    android:textAppearance="@style/TextAppearance.Conversations.Caption"
+                    android:visibility="gone"/>
+
+                <TextView
+                    android:id="@+id/verified_fingerprint_text"
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:layout_toRightOf="@+id/key_type"
+                    android:text="@string/verified_with_qr_code"
+                    android:textColor="@color/green500"
+                    android:textAppearance="@style/TextAppearance.Conversations.Caption"
+                    android:visibility="gone"/>
+
+                <ImageView
+                    android:id="@+id/verified_fingerprint"
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:layout_marginLeft="2dp"
+                    android:layout_marginTop="2dp"
+                    android:layout_toRightOf="@+id/verified_fingerprint_text"
+                    android:src="@drawable/ic_verified_fingerprint_16dp"
+                    android:visibility="gone" />
+
+            </RelativeLayout>
+        </LinearLayout>
+
+        <LinearLayout
+            android:id="@+id/action_container"
+            android:layout_width="@dimen/key_action_width"
+            android:layout_height="56dp"
+            android:layout_alignParentEnd="true"
+            android:layout_alignParentRight="true"
+            android:layout_centerVertical="true"
+            android:gravity="center"
+            android:orientation="vertical">
+
+            <ImageButton
+                android:id="@+id/button_remove"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:alpha="?attr/icon_alpha"
+                android:background="?attr/selectableItemBackgroundBorderless"
+                android:padding="@dimen/image_button_padding"
+                android:src="?attr/icon_remove"
+                android:visibility="gone" />
+
+            <ImageButton
+                android:id="@+id/button_enable_device"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:alpha="?attr/icon_alpha"
+                android:background="?attr/selectableItemBackgroundBorderless"
+                android:padding="@dimen/image_button_padding"
+                android:src="?attr/icon_enable_undecided_device"
+                android:visibility="gone" />
+
+            <com.google.android.material.materialswitch.MaterialSwitch
+                android:id="@+id/tgl_trust"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:visibility="gone" />
+        </LinearLayout>
+
+    </RelativeLayout>
+</layout>

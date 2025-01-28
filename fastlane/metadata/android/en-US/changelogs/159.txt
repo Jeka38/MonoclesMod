@@ -1,0 +1,14 @@
+* Use icons instead of text for voice recorder
+* Fix can't save first bookmark on old PEP
+* Add timeout to ICE gathering
+* Softer XEP0392 colours from c3 branch
+* Can't check if authentic data on nxdomain etc
+* Stop voice recorder when leaving chat
+* Fix crash when back pressed after screen rotated while recording voice
+* Update call UI after RTP connection has ended
+* Update translations
+* Keep screen active while recording
+* Always show presence name if known
+* Don't just always show jid as conversation name with stranger
+* If there is no presence then we can't possibly do a check
+* Improved call log and date bubbles + correct missed call strings 

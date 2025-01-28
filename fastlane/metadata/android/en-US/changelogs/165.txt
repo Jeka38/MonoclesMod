@@ -1,0 +1,8 @@
+* Fix the ImportBackup at Android 11+ problem
+* Activate setting for image link preview
+* Fix random crash when thread feature active
+* Fix manage accounts layout when phone accounts active 
+* Disable internal updater
+* Fix the memory leak when click into Fragment and return back to activity problem
+* Remove tlistener when no need 
+* Disable create call log files

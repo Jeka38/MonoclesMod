@@ -1,0 +1,13 @@
+* Bessere Handhabung von Links
+* Verbesserte XEP-0425 Nachrichtenmoderation
+* Reaktionen (Nachrichtenantwort ist Reaktion)
+* Kompatibilität mit Stickern (movim/signal)
+* Verbesserte UI
+* Threads
+* Editierbare Farben pro Konto
+* Stille Stunden gelten für Anrufe
+* WebXDC-Implementierung
+* Verbesserte Kompatibilität für Bridges/Gateways
+* Befehlsansicht, wenn verfügbar
+* Bild-in-Bild Videowiedergabe
+* mehrere Behebungen

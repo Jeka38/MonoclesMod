@@ -1,0 +1,11 @@
+* long press send button to send /me
+* disable opening ceb files from file manager 
+* security warning for backup import
+* fix crash when aborted file download
+* fix send message to user from chat room users list
+* Add stickers to db when scanning
+* Fix reply to self
+* User account color on notifications
+* fix memory leak
+* use ":" to search and send emojis
+* add setting for auto-follow threads (disabled by default)

@@ -1,0 +1,16 @@
+* Verbesserung des SASL-Mechanismus
+* Langes Drücken zum Kopieren eines Links in einer Nachricht erlauben
+* Standardeinstellung für automatisches Wiederversenden auf 0 setzen
+* Material you entfernen und auf runde Buttons zurücksetzen
+* Provider-Url entfernen
+* Benutzernamen in Gruppenchats größer machen
+* Runde Avatare
+* Datenbank-Upgrade
+* Webrtc Verbesserungen
+* SCRAM Verbesserungen
+* Bugfixes
+* Verbesserte russische Zeichenkette
+* JingleRtpConnection für Content-Add vorbereiten
+* Schalter/Video-Menüpunkt zum Telefonieren hinzufügen
+* Handhabung von Jingle-Strophen für das Hinzufügen von Inhalten
+* XMPP-Adresse nach Benutzereingabe abschneiden 

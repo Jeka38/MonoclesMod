@@ -1,0 +1,3 @@
+* fixed compatibility to android versions below 10
+* removed unused updates for monocles chat 2
+* split apks for different platforms

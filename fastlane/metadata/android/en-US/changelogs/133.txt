@@ -1,0 +1,8 @@
+* Fixed crash when sending/receiving PDF
+* Remove duplicate app invitation
+* Remove quiet hours option when creating new account
+* Fix avatar handling
+* Fix crash when sending location
+* Per account quiet hours
+* Get full list of Gateway types
+* Open sms and tel URI in-app if there is a relevant gateway

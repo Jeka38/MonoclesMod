@@ -1,0 +1,12 @@
+* Behebt Absturz beim Drehen der Ansicht
+* Animationen
+* Hintergrund mittig beschnitten
+* Behebung eines seltenen Absturzes beim Layoutwechsel
+* Hintergrundbild zentriert abgeschnitten
+* Hinzufügen von xep-0440
+* Native PEP-Lesezeichen aktivieren
+* Benachrichtigung über hängengebliebene Videokompression entfernen
+* Aktualisierte Übersetzungen
+* Behebt, dass der Geostandort auf anderen Clients nicht angezeigt wird
+* Behebung der Anzeige eines falschen Bildes im Chat
+* Rückkehr zur stabilen Emoji-Tastatur

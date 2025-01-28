@@ -1,0 +1,143 @@
+* Change monocles support site
+* Correct disable swipes over WebXDC
+* Fix UI for rich replies
+* Fix disappearing action buttons
+* Allow WebXDC without status updates
+* Preview image of webxdc
+* Fix GridView linking
+* Set newsubthread for webxdc
+* Fix crash when attachment mime null
+* Fix up command page
+* Remove string for unencrypted WebXDC
+* Remove too much animation fixes empty webxdc view
+* Improve updateinputfield calling
+* Adjust WebxdcPage when keyboard visible
+* Improve WebxdcPage buttons colors + strings
+* Show encryption warning for WebXDC files directly before sending
+* Changed piped instance
+* Don't try to look up a contact using InvalidJid
+* Get name of WebXDC as the file "name"
+* Allow attaching https URLs directly 
+* Show WebXDC name if it's present and short
+* Implement experimental WebXDC "realtime" API
+* Disable swipes over WebXDC
+* Update translations
+* Fix overlapping status text if squared avatars are enabled 
+* Ignore MAM messages from blocked
+* Add better transition
+* XEP-0490 message display state implementation
+* Update translations 
+* Using WAL improved load times on potato by 30s 
+* Refactor Jingle File Transfer. add WebRTCDatachannel transport
+* Fix crash when using direct jingle init on offline contacts 
+* Do not terminate jingle ft session twice (after iq timeout)
+* Abort socks candidate search if peer selected something with higher priority
+* Fix JET spec compliance 
+* Make allow_pm configurable 
+* Allow editing every own text message 
+* Reduce LRU size to help RAM pressure
+* Stop thrashing reconnects while waiting for DB load
+* Much more efficient loading of messages
+* Better support for correcting replies/reactions 
+* Animated emoji working now
+* Rich quotes
+* Switch audio device when switching to video 
+* New sounds for Calls
+* Skip automatic audio device selection when BT is available
+* Fix cancelled p2p ft showing up as such
+* Snip quotes from preview 
+* Retract all payloads too
+* Use correct id for reactions
+* Reply to un-downloaded image, we may not have cids
+* Set the InReplyTo for live messages
+* @mods to mention an online moderator
+* In reply to indicator and jump to
+* Fix crash when reply to GIF
+* Keep thread, emoji, send, mic and camera icons at bottom
+* Possible fix message retraction urn / XEP-0424
+* Fix race condition when granting camera permission after request to switch to video
+* Guard against busted replies with no id
+* Select reason when moderating
+* Don't synthesize quote for moderated message
+* Fix correcting styled reply
+* Fix direct reply
+* No reacting to a reaction
+* Always store new body+html from MUC
+* Add more things that the MUC might have changed before reflection
+* Unify tone generator invocations 
+* Catch rare race conditions when pressing switch to earpiece
+* Catch establishing call when last call is shutting down
+* New option to invite MUC participant to chat (experimentall)
+* Only refresh commands if update was for this contact 
+* Disable automatically jump to commands tab and add setting. Fixes empty chat screen
+* Remove unused caching logic
+* Store oob fallbacks for sent messages
+* Limit name to 3 lines in call view
+* Change piped instance
+* Out of bounds guard
+* Don't try sticker pack if no pack_id
+* Initial WebXDC "store"
+* Update bouncycastle and refractor XmppDomainVerifier
+* Update and integrate app lock
+* Remove back button for WebXDC store
+* Fix rare crash when receiving messages from an unknown client
+* Follow theme in WebXDC store
+* Update bouncycastle and refractor XmppDomainVerifier
+* Update and integrate app lock
+* Remove back button for WebXDC store
+* Fix rare crash when receiving messages from an unknown client
+* Remove unused caching logic
+* Store oob fallbacks for sent messages
+* Limit name to 3 lines in call view
+* Change piped instance
+* Out of bounds guard
+* Don't try sticker pack if no pack_id
+* Initial WebXDC "store"
+* Unify tone generator invocations 
+* Catch rare race conditions when pressing switch to earpiece
+* Catch establishing call when last call is shutting down
+* New option to invite MUC participant to chat 
+* Only refresh commands if update was for this contact 
+* Disable automatically jump to commands tab and add setting. Fixes empty chat screen 
+* Keep thread, emoji, send, mic and camera icons at bottom
+* Possible fix message retraction urn / XEP-0424
+* Fix race condition when granting camera permission after request to switch to video
+* Guard against busted replies with no id
+* Select reason when moderating
+* Don't synthesize quote for moderated message
+* Fix correcting styled reply
+* Fix direct reply
+* No reacting to a reaction
+* Always store new body+html from MUC
+* Add more things that the MUC might have changed before reflection 
+* Better support for correcting replies/reactions 
+* Animated emoji working now
+* Rich quotes
+* Switch audio device when switching to video 
+* New sounds for Calls
+* Skip automatic audio device selection when BT is available
+* Fix cancelled p2p ft showing up as such
+* Snip quotes from preview 
+* Retract all payloads too
+* Use correct id for reactions
+* Reply to un-downloaded image, we may not have cids
+* Set the InReplyTo for live messages
+* @mods to mention an online moderator
+* In reply to indicator and jump to
+* Fix crash when reply to GIF
+* Fix JET spec compliance 
+* Make allow_pm configurable 
+* Allow editing every own text message 
+* Reduce LRU size to help RAM pressure
+* Stop thrashing reconnects while waiting for DB load
+* Much more efficient loading of messages
+* Fix overlapping status text if squared avatars are enabled 
+* Ignore MAM messages from blocked
+* Add better transition
+* XEP-0490 message display state implementation
+* Update translations 
+* Using WAL improved load times on potato by 30s 
+* Refactor Jingle File Transfer. add WebRTCDatachannel transport (Test)
+* Fix crash when using direct jingle init on offline contacts 
+* Do not terminate jingle ft session twice (after iq timeout)
+* Abort socks candidate search if peer selected something with higher priority

@@ -1,0 +1,27 @@
+* Rundere Nachrichtenblasen
+* Behebt das Löschen von Nachrichten
+* Updates von Upstream
+* Reaktivierung und Verbesserung der Kartenvorschau
+* Erlaubt das Hinzufügen eines Betreffs zu Nachrichten
+* Mögliche Behebung eines Absturzes auf älteren Geräten, wenn die Höhe der Tastatur verändert wird
+* Behebung von abgeschnittenen Sprachnachrichten auf einigen Geräten
+* Thematisierbares Startmenü-Symbol
+* Bump reporting xep und Hinzufügen der Möglichkeit, Nachrichten zu melden
+* Keine erweiterten Adressierungsfallbacks in Zitaten
+* Korrekte Escape URI
+* Telefon-Symbol anstelle von PSTN verwenden
+* OMEMO und Standortübermittlung korrigieren
+* Liste der letzten Themen im Raum und Kontaktdetails anzeigen
+* Verarbeitet Chatraum-Passwort aus XMPP URI 
+* Zeigt keine aesgcm-Urls für Leute an
+* Versuche nicht, dnssec auf TLDs ohne Unterstützung zu verwenden
+* Aktualisierte Übersetzungen
+* Unterstützt list-multi 
+* App-Sperre
+* Betreff-Funktion nur bei deaktivierter Verschlüsselung anzeigen
+* Mehr konturierte Icons
+* Sprachaufnahme pausieren, wenn auf Timer getippt wird
+* Standard-Chat-Hintergrund aktualisiert
+* Blaues Theme entfernt
+* Option zum Öffnen von Weblinks in einem externen Browser hinzugefügt
+* Weitere Korrekturen

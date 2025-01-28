@@ -1,0 +1,10 @@
+* started to integrate OTR encryption
+* updated webrtc
+* improved translations
+* option to use hidden storage for files
+* improvement of text correction and deletion
+* improvement of a/v calls and connection
+* new text formatting function
+* changed registration process
+* option to disable auto download group chat files
+* and many more..

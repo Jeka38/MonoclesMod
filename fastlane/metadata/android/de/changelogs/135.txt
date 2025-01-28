@@ -1,0 +1,11 @@
+* Langes Drücken der Senden-Taste zum Senden von /me
+* Öffnen von Ceb-Dateien im Dateimanager deaktivieren 
+* Sicherheitswarnung bei 
+* Absturz bei abgebrochenem Dateidownload behoben
+* Nachricht an Benutzer aus Chatraum-Benutzerliste senden behoben
+* Sticker beim Scannen der Datenbank hinzugefügt
+* Behebt Problem bei Nachricht an sich selbst
+* Farbe des Benutzerkontos bei Benachrichtigungen
+* Speicherleck behoben
+* ":" zum Suchen und Senden von Emojis verwenden
+* Einstellung für Auto-Follow-Threads hinzugefügt (standardmäßig deaktiviert)

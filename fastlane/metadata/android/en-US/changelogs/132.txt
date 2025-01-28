@@ -1,0 +1,13 @@
+* Better link handling
+* Improved XEP-0425 message moderation
+* Reactions (Message reply is reaction)
+* Compatibility with stickers (movim/signal)
+* Improved UI
+* Threads
+* Editable per account colors
+* Quiet hours applies to calls
+* WebXDC implementation
+* Improved compatibility for bridges/gateways
+* Command view when available
+* Picture-in-Picture Videoplay
+* Fixes
