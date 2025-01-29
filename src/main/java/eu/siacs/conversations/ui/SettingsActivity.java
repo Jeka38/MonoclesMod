@@ -864,23 +864,6 @@ public class SettingsActivity extends XmppActivity implements OnSharedPreference
             });
         }
 
-        final Preference createIssuePreference = mSettingsFragment.findPreference("create_issue");
-        if (createIssuePreference != null) {
-            createIssuePreference.setOnPreferenceClickListener(preference -> {
-                try {
-                    Intent intent = new Intent(Intent.ACTION_SENDTO);
-                    intent.setData(Uri.parse("mailto:")); // only email apps should handle this
-                    intent.putExtra(Intent.EXTRA_EMAIL, new String[] { "support@monocles.eu" });
-                    intent.putExtra(Intent.EXTRA_SUBJECT, "monocles chat - Issue report");
-                    intent.putExtra(Intent.EXTRA_TEXT, R.string.describe_issue);
-                    startActivity(Intent.createChooser(intent, ""));
-                } catch (android.content.ActivityNotFoundException ex) {
-                Toast.makeText(this, R.string.no_application_found, Toast.LENGTH_LONG).show();
-            }
-                return true;
-            });
-        }
-
         final Preference appLockPreference = mSettingsFragment.findPreference("app_lock_enabled");
         if (appLockPreference != null) {
             appLockPreference.setOnPreferenceChangeListener((preference, newValue) -> {

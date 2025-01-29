@@ -777,10 +777,6 @@
                 android:title="@string/pref_enable_persistent_rooms_title" />
         </PreferenceCategory>
     </PreferenceScreen>
-    <!-- Report issue -->
-    <Preference
-        android:key="create_issue"
-        android:title="@string/create_issue" />
     <!--About-->
     <eu.siacs.conversations.ui.AboutPreference
         android:summary="@string/pref_about_conversations_summary"

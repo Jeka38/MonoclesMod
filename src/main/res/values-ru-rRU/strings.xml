@@ -1541,12 +1541,12 @@
     <string name="pref_open_links_inapp">Открыть ссылки в приложении</string>
     <string name="new_notification">Новое уведомление</string>
     <string name="new_message">Новое сообщение</string>
-    <string name="emojis">Смайлы</string>
+    <string name="emojis">Эмодзи</string>
     <string name="stickers">Стикеры</string>
     <string name="webxdc_hint">Чтобы использовать WebXDC, отправьте его еще раз в не зашифрованном виде</string>
     <string name="open">Открыть</string>
     <string name="unencrypted">не зашифрованный</string>
-    <string name="gifs">Гифки</string>
+    <string name="gifs">GIF</string>
     <string name="copy_GIFs_to_GIFs_folder">Импортировать собственные GIF-файлы через настройки приложения</string>
     <string name="choose_sticker_name">Выберите имя стикера без окончания</string>
     <string name="save_as_gif">Сохранить как GIF</string>
