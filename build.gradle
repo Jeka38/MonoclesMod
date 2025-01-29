@@ -167,7 +167,7 @@ android {
         buildConfigField("String", "LOGTAG", '"monocles chat"')
         buildConfigField("String", "DOMAIN_LOCK", 'null')
         buildConfigField("String", "MAGIC_CREATE_DOMAIN", '"monocles.eu"')
-        buildConfigField("boolean", "SHOW_INTRO", 'true')
+        buildConfigField("boolean", "SHOW_INTRO", 'false')
         buildConfigField("String", "UPDATE_URL", '"https://monocles.eu/chat/update/"')
         resValue "string", "applicationId", applicationId
         resValue "string", "app_name", "monocles chat"
