@@ -226,10 +226,6 @@
             android:title="@string/collapse_message_signs_title"
             android:inputType="number" />
             -->
-        <Preference
-            android:key="show_intro"
-            android:summary="@string/pref_show_intro_summary"
-            android:title="@string/pref_show_intro" />
         </PreferenceCategory>
     </PreferenceScreen>
     <!--Notifications-->

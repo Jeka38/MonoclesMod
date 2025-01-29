@@ -902,16 +902,6 @@ public class SettingsActivity extends XmppActivity implements OnSharedPreference
             });
         }
 
-        final Preference showIntroAgainPreference = mSettingsFragment.findPreference("show_intro");
-        if (showIntroAgainPreference != null) {
-            showIntroAgainPreference.setSummary(getString(R.string.pref_show_intro_summary));
-            showIntroAgainPreference.setOnPreferenceClickListener(preference -> {
-                showIntroAgain();
-                return true;
-            });
-        }
-
-
         final Preference cameraChooserPreference = mSettingsFragment.findPreference(CAMERA_CHOICE);
         if (cameraChooserPreference != null) {
             cameraChooserPreference.setOnPreferenceClickListener(preference -> {
