@@ -1097,12 +1097,6 @@
     <string name="success_import_settings">Настройки успешно импортированы.</string>
     <string name="sure_delete_fingerprint">Вы уверены, что хотите удалить этот отпечаток\?</string>
     <string name="switch_to_conversation">Перейти к разговору</string>
-    <string name="sync_with_contacts">Синхронизировать контакты</string>
-    <string name="sync_with_contacts_long">monocles chat хочет сопоставить список XMPP с контактами, чтобы показывать их полные имена и аватары.
-\n
-\nmonocles chat только прочтет Ваши контакты и сопоставит их локально, не загружая на сервер.
-\n
-\nСейчас Вам будет предложено предоставить разрешение на доступ к Вашим контактам.</string>
     <string name="tap_share_button_send_invite">Нажмите кнопку \"Поделиться\", чтобы отправить контакту приглашение на %1$s.</string>
     <string name="this_account_is_disabled">Вы отключили данный аккаунт</string>
     <string name="this_account_is_logged_out">Вы вышли из этой учетной записи</string>

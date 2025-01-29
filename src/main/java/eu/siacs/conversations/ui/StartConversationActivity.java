@@ -462,10 +462,6 @@ public class StartConversationActivity extends XmppActivity implements XmppConne
         final int theme = findTheme();
         if (this.mTheme != theme) {
             recreate();
-        } else {
-            if (pendingViewIntent.peek() == null) {
-                askForContactsPermissions();
-            }
         }
         mConferenceAdapter.refreshSettings();
         mContactsAdapter.refreshSettings();
@@ -958,55 +954,6 @@ public class StartConversationActivity extends XmppActivity implements XmppConne
             }
         }
         super.onActivityResult(requestCode, requestCode, intent);
-    }
-
-    private void askForContactsPermissions() {
-        if (checkSelfPermission(Manifest.permission.READ_CONTACTS) != PackageManager.PERMISSION_GRANTED) {
-            if (mRequestedContactsPermission.compareAndSet(false, true)) {
-
-                if (QuickConversationsService.isQuicksy() || shouldShowRequestPermissionRationale(Manifest.permission.READ_CONTACTS)) {
-                    final AlertDialog.Builder builder = new AlertDialog.Builder(this);
-                    final AtomicBoolean requestPermission = new AtomicBoolean(false);
-                    builder.setTitle(R.string.sync_with_contacts);
-                    builder.setMessage(getString(R.string.sync_with_contacts_long));
-                    @StringRes int confirmButtonText;
-                    if (QuickConversationsService.isConversations()) {
-                        confirmButtonText = R.string.next;
-                    } else {
-                        confirmButtonText = R.string.confirm;
-                    }
-                    builder.setPositiveButton(confirmButtonText, (dialog, which) -> {
-                        if (requestPermission.compareAndSet(false, true)) {
-                            requestPermissions(new String[]{Manifest.permission.READ_CONTACTS}, REQUEST_SYNC_CONTACTS);
-                        }
-                    });
-                    builder.setOnDismissListener(dialog -> {
-                        if (QuickConversationsService.isConversations() && requestPermission.compareAndSet(false, true)) {
-                            requestPermissions(new String[]{Manifest.permission.READ_CONTACTS}, REQUEST_SYNC_CONTACTS);
-
-                        }
-                    });
-                    SharedPreferences pref = this.getSharedPreferences("PACKAGE.NAME", MODE_PRIVATE);
-                    Boolean firstTime = pref.getBoolean("firstTime", true);
-                    if (firstTime) {
-                    builder.setCancelable(QuickConversationsService.isQuicksy());
-                    final AlertDialog dialog = builder.create();
-                    dialog.setCanceledOnTouchOutside(QuickConversationsService.isQuicksy());
-                    dialog.setOnShowListener(dialogInterface -> {
-                        final TextView tv = dialog.findViewById(android.R.id.message);
-                        if (tv != null) {
-                            tv.setMovementMethod(LinkMovementMethod.getInstance());
-                        }
-                    });
-                    dialog.show();
-                        pref.edit().putBoolean("firstTime", false).apply();
-                    }
-                } else {
-                    requestPermissions(new String[]{Manifest.permission.READ_CONTACTS}, REQUEST_SYNC_CONTACTS);
-                }
-
-            }
-        }
     }
 
     @Override
