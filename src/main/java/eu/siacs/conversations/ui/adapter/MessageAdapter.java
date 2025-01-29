@@ -1438,7 +1438,6 @@ public class MessageAdapter extends ArrayAdapter<Message> {
                     viewHolder.transfer = view.findViewById(R.id.transfer);
                     viewHolder.progressBar = view.findViewById(R.id.progressBar);
                     viewHolder.cancel_transfer = view.findViewById(R.id.cancel_transfer);
-                    viewHolder.thread_identicon = view.findViewById(R.id.thread_identicon);
                     break;
                 case RECEIVED:
                     view = activity.getLayoutInflater().inflate(R.layout.message_received, parent, false);
@@ -1474,7 +1473,6 @@ public class MessageAdapter extends ArrayAdapter<Message> {
                     viewHolder.progressBar = view.findViewById(R.id.progressBar);
                     viewHolder.cancel_transfer = view.findViewById(R.id.cancel_transfer);
                     viewHolder.commands_list = view.findViewById(R.id.commands_list);
-                    viewHolder.thread_identicon = view.findViewById(R.id.thread_identicon);
                     break;
                 case STATUS:
                     view = activity.getLayoutInflater().inflate(R.layout.message_status, parent, false);
@@ -1495,19 +1493,6 @@ public class MessageAdapter extends ArrayAdapter<Message> {
 
         if (viewHolder.messageBody != null) {
             viewHolder.messageBody.setCustomSelectionActionModeCallback(new MessageTextActionModeCallback(this, viewHolder.messageBody));
-        }
-
-        if (viewHolder.thread_identicon != null) {
-            viewHolder.thread_identicon.setVisibility(GONE);
-            final Element thread = message.getThread();
-            if (thread != null) {
-                final String threadId = thread.getContent();
-                if (threadId != null) {
-                    viewHolder.thread_identicon.setVisibility(View.VISIBLE);
-                    viewHolder.thread_identicon.setColor(UIHelper.getColorForName(threadId));
-                    viewHolder.thread_identicon.setHash(UIHelper.identiconHash(threadId));
-                }
-            }
         }
 
         boolean darkBackground = activity.isDarkTheme();
@@ -2029,7 +2014,6 @@ public class MessageAdapter extends ArrayAdapter<Message> {
         protected TextView status_message;
         protected TextView encryption;
         protected ListView commands_list;
-        protected GithubIdenticonView thread_identicon;
         protected RelativeLayout transfer;
         protected ProgressBar progressBar;
         protected ImageButton cancel_transfer;

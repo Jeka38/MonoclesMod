@@ -3,7 +3,6 @@ package eu.siacs.conversations.ui;
 import static eu.siacs.conversations.entities.Bookmark.printableValue;
 import static eu.siacs.conversations.ui.util.IntroHelper.showIntro;
 import static eu.siacs.conversations.utils.StringUtils.changed;
-import eu.siacs.conversations.databinding.ThreadRowBinding;
 import de.monocles.chat.Util;
 import androidx.annotation.NonNull;
 import android.view.ViewGroup;
@@ -846,9 +845,6 @@ public class ConferenceDetailsActivity extends XmppActivity implements OnConvers
         if (recentThreads.isEmpty()) {
             this.binding.recentThreadsWrapper.setVisibility(View.GONE);
         } else {
-            final ThreadAdapter threads = new ThreadAdapter();
-            threads.addAll(recentThreads);
-            this.binding.recentThreads.setAdapter(threads);
 
             if (xmppConnectionService != null && xmppConnectionService.getBooleanPreference("show_thread_feature", R.bool.show_thread_feature)) {
                 this.binding.recentThreadsWrapper.setVisibility(View.VISIBLE);
@@ -944,23 +940,6 @@ public class ConferenceDetailsActivity extends XmppActivity implements OnConvers
             } else {
                 this.binding.editMucNameButton.setImageResource(getThemeResource(R.attr.icon_cancel, R.drawable.ic_cancel_black_24dp));
             }
-        }
-    }
-
-    class ThreadAdapter extends ArrayAdapter<Conversation.Thread> {
-        ThreadAdapter() { super(ConferenceDetailsActivity.this, 0); }
-
-        @Override
-        public View getView(int position, View view, @NonNull ViewGroup parent) {
-            final ThreadRowBinding binding = DataBindingUtil.inflate(LayoutInflater.from(parent.getContext()), R.layout.thread_row, parent, false);
-            final Conversation.Thread item = getItem(position);
-
-            binding.threadIdenticon.setColor(UIHelper.getColorForName(item.getThreadId()));
-            binding.threadIdenticon.setHash(UIHelper.identiconHash(item.getThreadId()));
-
-            binding.threadSubject.setText(item.getDisplay());
-
-            return binding.getRoot();
         }
     }
 }

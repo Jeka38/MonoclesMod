@@ -244,46 +244,11 @@
                             android:layout_height="wrap_content"
                             android:animateLayoutChanges="true" >
 
-                            <RelativeLayout
-                                android:id="@+id/thread_identicon_layout"
-                                android:layout_width="26dp"
-                                android:layout_height="26dp"
-                                android:layout_alignParentStart="true"
-                                android:layout_alignParentLeft="true"
-                                android:layout_alignBottom="@+id/textinput_layout_new"
-                                android:layout_marginEnd="4dp"
-                                android:layout_marginBottom="7dp"
-                                android:visibility="visible"
-                                android:background="@drawable/thread_hint">
-
-                                <com.lelloman.identicon.view.GithubIdenticonView
-                                    android:id="@+id/thread_identicon"
-                                    android:alpha="0"
-                                    android:layout_width="24dp"
-                                    android:layout_height="24dp"
-                                    android:layout_centerVertical="true"
-                                    android:contentDescription="@string/thread_marker" />
-                                <ImageView
-                                    android:id="@+id/thread_identicon_lock"
-                                    android:layout_width="14dp"
-                                    android:layout_height="14dp"
-                                    android:layout_alignTop="@+id/thread_identicon"
-                                    android:layout_alignBaseline="@+id/thread_identicon"
-                                    android:layout_toEndOf="@+id/thread_identicon"
-                                    android:layout_toRightOf="@+id/thread_identicon"
-                                    android:visibility="gone"
-                                    android:src="?attr/icon_small_lock"
-                                    android:background="?attr/selectableItemBackgroundBorderless"
-                                    android:contentDescription="@string/thread_locked" />
-                            </RelativeLayout>
-
                             <ImageButton
                                 android:id="@+id/keyboardButton"
                                 android:layout_width="40dp"
                                 android:layout_height="40dp"
                                 android:layout_marginEnd="4dp"
-                                android:layout_toEndOf="@+id/thread_identicon_layout"
-                                android:layout_toRightOf="@+id/thread_identicon_layout"
                                 android:layout_alignBottom="@+id/textinput_layout_new"
                                 android:background="?attr/selectableItemBackgroundBorderless"
                                 android:contentDescription="@string/show_keyboard"

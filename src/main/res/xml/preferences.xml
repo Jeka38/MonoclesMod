@@ -685,16 +685,6 @@
                 android:summary="@string/pref_show_dynamic_tags_summary"
                 android:title="@string/pref_show_dynamic_tags" />
             <SwitchPreference
-                android:defaultValue="@bool/show_thread_feature"
-                android:key="show_thread_feature"
-                android:summary="@string/pref_show_thread_feature_summary"
-                android:title="@string/pref_show_thread_feature" />
-            <SwitchPreference
-                android:defaultValue="@bool/follow_thread_in_channel"
-                android:key="follow_thread_in_channel"
-                android:summary="@string/pref_follow_thread_in_channel_summary"
-                android:title="@string/pref_follow_thread_in_channel" />
-            <SwitchPreference
                 android:defaultValue="@bool/jump_to_commands_tab"
                 android:key="jump_to_commands_tab"
                 android:summary="@string/pref_jump_to_commands_tab_summary"

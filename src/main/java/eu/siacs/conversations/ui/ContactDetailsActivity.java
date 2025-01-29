@@ -69,7 +69,6 @@ import eu.siacs.conversations.crypto.axolotl.FingerprintStatus;
 import eu.siacs.conversations.crypto.axolotl.XmppAxolotlSession;
 import eu.siacs.conversations.databinding.ActivityContactDetailsBinding;
 import eu.siacs.conversations.databinding.CommandRowBinding;
-import eu.siacs.conversations.databinding.ThreadRowBinding;
 import eu.siacs.conversations.entities.Account;
 import eu.siacs.conversations.entities.Bookmark;
 import eu.siacs.conversations.entities.Contact;
@@ -1004,9 +1003,7 @@ public class ContactDetailsActivity extends OmemoActivity implements OnAccountUp
         if (recentThreads.isEmpty()) {
             this.binding.recentThreadsWrapper.setVisibility(View.GONE);
         } else {
-            final ContactDetailsActivity.ThreadAdapter threads = new ContactDetailsActivity.ThreadAdapter();
-            threads.addAll(recentThreads);
-            this.binding.recentThreads.setAdapter(threads);
+
             if (xmppConnectionService != null && xmppConnectionService.getBooleanPreference("show_thread_feature", R.bool.show_thread_feature)) {
                 this.binding.recentThreadsWrapper.setVisibility(View.VISIBLE);
             } else {
@@ -1184,23 +1181,6 @@ public class ContactDetailsActivity extends OmemoActivity implements OnAccountUp
             if (uriS != null) return Uri.parse(uriS).normalizeScheme();
             if (item.getName().equals("email")) return Uri.parse("mailto:" + item.findChildContent("text", Namespace.VCARD4));
             return null;
-        }
-    }
-
-    class ThreadAdapter extends ArrayAdapter<Conversation.Thread> {
-        ThreadAdapter() { super(ContactDetailsActivity.this, 0); }
-
-        @Override
-        public View getView(int position, View view, @NonNull ViewGroup parent) {
-            final ThreadRowBinding binding = DataBindingUtil.inflate(LayoutInflater.from(parent.getContext()), R.layout.thread_row, parent, false);
-            final Conversation.Thread item = getItem(position);
-
-            binding.threadIdenticon.setColor(UIHelper.getColorForName(item.getThreadId()));
-            binding.threadIdenticon.setHash(UIHelper.identiconHash(item.getThreadId()));
-
-            binding.threadSubject.setText(item.getDisplay());
-
-            return binding.getRoot();
         }
     }
 
