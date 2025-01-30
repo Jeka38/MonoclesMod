@@ -64,7 +64,6 @@ import eu.siacs.conversations.entities.Account;
 import eu.siacs.conversations.entities.ListItem;
 import eu.siacs.conversations.entities.Roster;
 import eu.siacs.conversations.ui.SettingsActivity;
-import eu.siacs.conversations.ui.text.FixedURLSpan;
 import eu.siacs.conversations.utils.GeoHelper;
 import eu.siacs.conversations.utils.Patterns;
 import eu.siacs.conversations.utils.XmppUri;
@@ -394,7 +393,6 @@ public class MyLinkify {
         if (includeGeo) {
             Linkify.addLinks(body, GeoHelper.GEO_URI, "geo");
         }
-        FixedURLSpan.fix(body);
     }
 
     public static void addLinks(Editable body, Account account, Jid context) {

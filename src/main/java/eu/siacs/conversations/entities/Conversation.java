@@ -92,7 +92,6 @@ import eu.siacs.conversations.databinding.CommandSpinnerFieldBinding;
 import eu.siacs.conversations.databinding.CommandTextFieldBinding;
 import eu.siacs.conversations.databinding.CommandWebviewBinding;
 import eu.siacs.conversations.services.XmppConnectionService;
-import eu.siacs.conversations.ui.text.FixedURLSpan;
 import eu.siacs.conversations.ui.util.ShareUtil;
 import eu.siacs.conversations.utils.PhoneNumberUtilWrapper;
 import eu.siacs.conversations.databinding.CommandItemCardBinding;
@@ -2220,22 +2219,6 @@ public class Conversation extends AbstractEntity implements Blockable, Comparabl
                     binding.values.setAdapter(values);
                     Util.justifyListViewHeightBasedOnChildren(binding.values);
 
-                    if (field.getType().equals(Optional.of("jid-single")) || field.getType().equals(Optional.of("jid-multi"))) {
-                        binding.values.setOnItemClickListener((arg0, arg1, pos, id) -> {
-                            new FixedURLSpan("xmpp:" + Uri.encode(Jid.ofEscaped(values.getItem(pos).getValue()).toEscapedString(), "@/+"), account).onClick(binding.values);
-                        });
-                    } else if ("xs:anyURI".equals(datatype)) {
-                        binding.values.setOnItemClickListener((arg0, arg1, pos, id) -> {
-                            new FixedURLSpan(values.getItem(pos).getValue(), account).onClick(binding.values);
-                        });
-                    } else if ("html:tel".equals(datatype)) {
-                        binding.values.setOnItemClickListener((arg0, arg1, pos, id) -> {
-                            try {
-                                new FixedURLSpan("tel:" + PhoneNumberUtilWrapper.normalize(binding.getRoot().getContext(), values.getItem(pos).getValue()), account).onClick(binding.values);
-                            } catch (final IllegalArgumentException | NumberParseException | NullPointerException e) { }
-                        });
-                    }
-
                     binding.values.setOnItemLongClickListener((arg0, arg1, pos, id) -> {
                         if (ShareUtil.copyTextToClipboard(binding.getRoot().getContext(), values.getItem(pos).getValue(), R.string.message)) {
                             Toast.makeText(binding.getRoot().getContext(), R.string.message_copied_to_clipboard, Toast.LENGTH_SHORT).show();
@@ -2260,15 +2243,6 @@ public class Conversation extends AbstractEntity implements Blockable, Comparabl
                         String datatype = validate == null ? null : validate.getAttribute("datatype");
                         String value = formatValue(datatype, cell.el.findChildContent("value", "jabber:x:data"), true);
                         SpannableStringBuilder text = new SpannableStringBuilder(value == null ? "" : value);
-                        if (cell.reported.getType().equals(Optional.of("jid-single"))) {
-                            text.setSpan(new FixedURLSpan("xmpp:" + Jid.ofEscaped(text.toString()).toEscapedString(), account), 0, text.length(), Spanned.SPAN_EXCLUSIVE_EXCLUSIVE);
-                        } else if ("xs:anyURI".equals(datatype)) {
-                            text.setSpan(new FixedURLSpan(text.toString(), account), 0, text.length(), Spanned.SPAN_EXCLUSIVE_EXCLUSIVE);
-                        } else if ("html:tel".equals(datatype)) {
-                            try {
-                                text.setSpan(new FixedURLSpan("tel:" + PhoneNumberUtilWrapper.normalize(binding.getRoot().getContext(), text.toString()), account), 0, text.length(), Spanned.SPAN_EXCLUSIVE_EXCLUSIVE);
-                            } catch (final IllegalArgumentException | NumberParseException | NullPointerException e) { }
-                        }
 
                         binding.text.setTextAppearance(binding.getRoot().getContext(), com.google.android.material.R.style.TextAppearance_Material3_BodyMedium);
                         binding.text.setText(text);

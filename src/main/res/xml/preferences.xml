@@ -202,11 +202,6 @@
             android:summary="@string/pref_show_own_accounts_summary"
             android:title="@string/pref_show_own_accounts" />
         <SwitchPreference
-            android:defaultValue="@bool/open_links_inapp"
-            android:key="open_links_inapp"
-            android:summary="@string/pref_open_links_inapp_summary"
-            android:title="@string/pref_open_links_inapp" />
-        <SwitchPreference
             android:defaultValue="@bool/start_searching"
             android:key="start_searching"
             android:summary="@string/pref_start_search_summary"
