@@ -1,6 +1,6 @@
 package eu.siacs.conversations.ui.adapter;
 
-import static de.monocles.chat.Util.getReadmakerType;
+import static de.monocles.mod.Util.getReadmakerType;
 import static eu.siacs.conversations.ui.util.MyLinkify.replaceYoutube;
 
 import android.content.SharedPreferences;
@@ -25,7 +25,7 @@ import com.google.common.base.Strings;
 
 import java.util.List;
 
-import de.monocles.chat.Util;
+import de.monocles.mod.Util;
 import eu.siacs.conversations.R;
 import eu.siacs.conversations.databinding.ConversationListRowBinding;
 import eu.siacs.conversations.entities.Conversation;

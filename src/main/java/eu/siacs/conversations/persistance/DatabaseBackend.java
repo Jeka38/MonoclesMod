@@ -18,7 +18,7 @@ import com.google.common.base.Stopwatch;
 import com.google.common.collect.HashMultimap;
 import com.google.common.collect.Multimap;
 
-import de.monocles.chat.WebxdcUpdate;
+import de.monocles.mod.WebxdcUpdate;
 
 import org.json.JSONException;
 import org.json.JSONObject;

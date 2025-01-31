@@ -20,7 +20,6 @@ import android.telephony.PhoneNumberUtils;
 import android.text.Editable;
 import android.text.InputType;
 import android.text.SpannableStringBuilder;
-import android.text.Spanned;
 import android.widget.AbsListView;
 import android.text.StaticLayout;
 import android.text.TextPaint;
@@ -43,7 +42,7 @@ import android.widget.ArrayAdapter;
 import android.widget.CompoundButton;
 import android.widget.TextView;
 import android.widget.Toast;
-import androidx.core.content.ContextCompat;
+
 import androidx.core.util.Consumer;
 import androidx.databinding.DataBindingUtil;
 import androidx.databinding.ViewDataBinding;
@@ -64,11 +63,9 @@ import com.google.android.material.tabs.TabLayout;
 import com.google.android.material.textfield.TextInputLayout;
 import com.google.common.base.Optional;
 
-import de.monocles.chat.ConversationPage;
-import de.monocles.chat.Util;
-import de.monocles.chat.WebxdcPage;
-
-import io.michaelrocks.libphonenumber.android.NumberParseException;
+import de.monocles.mod.ConversationPage;
+import de.monocles.mod.Util;
+import de.monocles.mod.WebxdcPage;
 
 import java.time.ZoneId;
 import java.time.ZonedDateTime;
@@ -93,7 +90,6 @@ import eu.siacs.conversations.databinding.CommandTextFieldBinding;
 import eu.siacs.conversations.databinding.CommandWebviewBinding;
 import eu.siacs.conversations.services.XmppConnectionService;
 import eu.siacs.conversations.ui.util.ShareUtil;
-import eu.siacs.conversations.utils.PhoneNumberUtilWrapper;
 import eu.siacs.conversations.databinding.CommandItemCardBinding;
 
 import eu.siacs.conversations.xml.Element;

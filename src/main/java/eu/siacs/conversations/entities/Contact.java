@@ -744,8 +744,8 @@ public class Contact implements ListItem, Blockable {
 
     public PhoneAccountHandle phoneAccountHandle() {
         ComponentName componentName = new ComponentName(
-                "de.monocles.chat",
-                "de.monocles.chat.ConnectionService"
+                "de.monocles.mod",
+                "de.monocles.mod.ConnectionService"
         );
         return new PhoneAccountHandle(componentName, phoneAccountLabel());
     }

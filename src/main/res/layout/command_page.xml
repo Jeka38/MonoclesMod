@@ -15,7 +15,7 @@
             android:orientation="vertical"
             app:layoutManager="androidx.recyclerview.widget.GridLayoutManager" />
 
-        <de.monocles.chat.GridView
+        <de.monocles.mod.GridView
             android:id="@+id/actions"
             android:background="@color/primary_monocles"
             android:layout_width="match_parent"
@@ -43,7 +43,7 @@
                 android:layout_weight="1"
                 android:visibility="visible" />
 
-            <de.monocles.chat.GridView
+            <de.monocles.mod.GridView
                 android:id="@+id/stickers"
                 android:layout_width="match_parent"
                 android:layout_height="match_parent"

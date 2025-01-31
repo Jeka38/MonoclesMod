@@ -105,7 +105,7 @@
                             android:orientation="vertical"
                             android:visibility="gone">
 
-                            <de.monocles.chat.TagEditorView
+                            <de.monocles.mod.TagEditorView
                                 android:id="@+id/edit_tags"
                                 android:layout_width="match_parent"
                                 android:layout_height="wrap_content"

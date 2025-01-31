@@ -9,7 +9,7 @@ import android.util.Log;
 import android.util.Base64OutputStream;
 import eu.siacs.conversations.entities.Message;
 
-import de.monocles.chat.BobTransfer;
+import de.monocles.mod.BobTransfer;
 
 import com.google.common.io.ByteStreams;
 
@@ -48,7 +48,6 @@ import eu.siacs.conversations.xmpp.Jid;
 import eu.siacs.conversations.xmpp.forms.Data;
 import eu.siacs.conversations.xmpp.pep.Avatar;
 import eu.siacs.conversations.xmpp.stanzas.IqPacket;
-import eu.siacs.conversations.entities.Message;
 
 
 public class IqGenerator extends AbstractGenerator {

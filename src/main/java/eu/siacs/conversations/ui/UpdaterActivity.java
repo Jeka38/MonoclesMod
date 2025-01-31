@@ -139,7 +139,7 @@ public class UpdaterActivity extends XmppActivity {
                         //ask for permissions on devices >= SDK 23
                         if (isStoragePermissionGranted() && isNetworkAvailable(getApplicationContext())) {
                             //start downloading the file using the download manager
-                            if (store != null && store.equalsIgnoreCase(PlayStore) || BuildConfig.APPLICATION_ID.equals("de.monocles.chat")) {
+                            if (store != null && store.equalsIgnoreCase(PlayStore) || BuildConfig.APPLICATION_ID.equals("de.monocles.mod")) {
                                 ToastCompat.makeText(getApplicationContext(), getText(R.string.download_started), ToastCompat.LENGTH_LONG).show();
                                 downloadTask = new DownloadTask(UpdaterActivity.this);
                                 downloadTask.execute(appURI);

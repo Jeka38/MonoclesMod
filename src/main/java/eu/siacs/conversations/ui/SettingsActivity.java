@@ -33,7 +33,7 @@ import android.provider.OpenableColumns;
 import android.util.Log;
 import static eu.siacs.conversations.utils.CameraUtils.showCameraChooser;
 
-import de.monocles.chat.DownloadDefaultStickers;
+import de.monocles.mod.DownloadDefaultStickers;
 
 import androidx.annotation.NonNull;
 import androidx.appcompat.app.AlertDialog;

@@ -1,17 +1,15 @@
 package eu.siacs.conversations.ui;
 
-import static de.monocles.chat.ui.PermissionsActivity.permissions;
+import static de.monocles.mod.ui.PermissionsActivity.permissions;
 import static eu.siacs.conversations.Config.DISALLOW_REGISTRATION_IN_UI;
 import static eu.siacs.conversations.utils.PermissionUtils.allGranted;
 import static eu.siacs.conversations.utils.PermissionUtils.readGranted;
 
 import android.Manifest;
-import android.content.ActivityNotFoundException;
 import android.content.Intent;
 import android.content.pm.ActivityInfo;
 import android.net.Uri;
 import android.os.Bundle;
-import android.security.KeyChain;
 import android.security.KeyChainAliasCallback;
 import android.util.Log;
 import android.view.Menu;
@@ -28,7 +26,7 @@ import java.util.Arrays;
 import java.util.List;
 import java.util.HashSet;
 
-import de.monocles.chat.RegisterMonoclesActivity;
+import de.monocles.mod.RegisterMonoclesActivity;
 import eu.siacs.conversations.Config;
 import eu.siacs.conversations.R;
 import eu.siacs.conversations.databinding.WelcomeBinding;

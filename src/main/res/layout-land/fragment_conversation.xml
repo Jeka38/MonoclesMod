@@ -29,7 +29,7 @@
             app:tabSelectedTextColor="?attr/text_Color_Main"
             app:tabTextColor="?attr/button_text_color_disabled" />
 
-        <de.monocles.chat.WebviewAwareViewPager
+        <de.monocles.mod.WebviewAwareViewPager
             android:id="@+id/conversation_view_pager"
             android:layout_below="@id/tab_layout"
             android:layout_width="fill_parent"
@@ -186,7 +186,7 @@
                             app:shapeAppearance="@style/ShapeAppearanceOverlay.PhotoSquare"
                             android:visibility="gone" />
 
-                        <de.monocles.chat.ReadMoreTextView
+                        <de.monocles.mod.ReadMoreTextView
                             app:trimExpandedText="@string/show_less"
                             app:trimCollapsedText="@string/show_more"
                             app:trimMode="trimModeLength"
@@ -378,7 +378,7 @@
                                 android:layout_weight="1"
                                 android:visibility="visible" />
 
-                            <de.monocles.chat.GridView
+                            <de.monocles.mod.GridView
                                 android:id="@+id/stickersview"
                                 android:layout_width="match_parent"
                                 android:layout_height="match_parent"
@@ -393,7 +393,7 @@
                                 android:layout_weight="1"
                                 android:visibility="gone" />
 
-                            <de.monocles.chat.GridView
+                            <de.monocles.mod.GridView
                                 android:id="@+id/gifsview"
                                 android:layout_width="match_parent"
                                 android:layout_height="match_parent"
@@ -620,6 +620,6 @@
 
             </RelativeLayout>
 
-        </de.monocles.chat.WebviewAwareViewPager>
+        </de.monocles.mod.WebviewAwareViewPager>
     </RelativeLayout>
 </layout>

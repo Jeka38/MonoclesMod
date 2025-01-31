@@ -5,7 +5,6 @@ import android.app.Activity;
 import android.content.Intent;
 import android.content.pm.PackageManager;
 import android.net.Uri;
-import android.os.Build;
 import android.os.Bundle;
 import android.preference.PreferenceManager;
 import android.util.Log;
@@ -19,7 +18,7 @@ import androidx.databinding.DataBindingUtil;
 
 import com.google.common.base.Strings;
 
-import de.monocles.chat.DownloadDefaultStickers;
+import de.monocles.mod.DownloadDefaultStickers;
 
 import org.jetbrains.annotations.NotNull;
 
@@ -39,7 +38,6 @@ import eu.siacs.conversations.utils.ProvisioningUtils;
 import eu.siacs.conversations.utils.SignupUtils;
 import eu.siacs.conversations.utils.XmppUri;
 import eu.siacs.conversations.xmpp.Jid;
-import me.drakeet.support.toast.ToastCompat;
 import okhttp3.Call;
 import okhttp3.Callback;
 import okhttp3.HttpUrl;

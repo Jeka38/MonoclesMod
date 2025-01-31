@@ -40,7 +40,7 @@
             android:textAllCaps="false"
             android:minHeight="75dp" />
 
-        <de.monocles.chat.GridView
+        <de.monocles.mod.GridView
             android:id="@+id/buttons"
             android:layout_width="fill_parent"
             android:layout_height="wrap_content"

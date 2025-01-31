@@ -100,7 +100,7 @@ public class UpdateService extends AsyncTask<String, Object, UpdateService.Wrapp
                 String ownVersion = BuildConfig.VERSION_NAME;
                 String url = json.getString("appURI");
                 String filesize = json.getString("filesize");
-                if (BuildConfig.APPLICATION_ID.equals("de.monocles.chat")) {
+                if (BuildConfig.APPLICATION_ID.equals("de.monocles.mod")) {
                     url = json.getString("appURIPS");
                     filesize = json.getString("filesizePS");
                 }

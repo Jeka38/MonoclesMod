@@ -2,10 +2,9 @@ package eu.siacs.conversations.ui.adapter;
 
 import static android.view.View.GONE;
 import static android.view.ViewGroup.LayoutParams.WRAP_CONTENT;
-import static de.monocles.chat.Util.getReadmakerType;
+import static de.monocles.mod.Util.getReadmakerType;
 import static eu.siacs.conversations.entities.Message.DELETED_MESSAGE_BODY;
 import static eu.siacs.conversations.entities.Message.DELETED_MESSAGE_BODY_OLD;
-import static eu.siacs.conversations.entities.Message.ENCRYPTION_NONE;
 import static eu.siacs.conversations.persistance.FileBackend.formatTime;
 import static eu.siacs.conversations.persistance.FileBackend.safeLongToInt;
 import static eu.siacs.conversations.ui.SettingsActivity.PLAY_GIF_INSIDE;
@@ -16,10 +15,8 @@ import static eu.siacs.conversations.ui.util.MyLinkify.removeTrailingBracket;
 import static eu.siacs.conversations.ui.util.MyLinkify.replaceYoutube;
 
 import android.Manifest;
-import android.animation.ObjectAnimator;
 import android.annotation.SuppressLint;
 import android.app.Activity;
-import android.content.ActivityNotFoundException;
 import android.content.Intent;
 import android.content.SharedPreferences;
 import android.content.pm.PackageManager;
@@ -46,11 +43,9 @@ import android.util.Base64;
 import android.util.DisplayMetrics;
 import android.util.Log;
 import android.util.LruCache;
-import android.util.Patterns;
 import android.view.MotionEvent;
 import android.view.View;
 import android.view.ViewGroup;
-import android.view.ViewTreeObserver;
 import android.view.WindowManager;
 import android.widget.ArrayAdapter;
 import android.widget.Button;
@@ -62,7 +57,6 @@ import android.widget.ListView;
 import android.widget.ProgressBar;
 import android.widget.RelativeLayout;
 import android.widget.TextView;
-import android.widget.Toast;
 
 import androidx.core.app.ActivityCompat;
 import androidx.core.content.ContextCompat;
@@ -73,31 +67,25 @@ import androidx.core.graphics.drawable.DrawableCompat;
 import com.bumptech.glide.Glide;
 import com.daimajia.swipe.SwipeLayout;
 import com.google.common.base.Strings;
-import com.lelloman.identicon.view.GithubIdenticonView;
 
 import java.io.IOException;
 import java.io.UnsupportedEncodingException;
 import java.lang.ref.WeakReference;
 import java.net.URI;
 import java.net.URISyntaxException;
-import java.net.URL;
-import java.net.URLConnection;
 import java.security.NoSuchAlgorithmException;
-import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Locale;
 import java.util.Map;
-import java.util.UUID;
-import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
-import de.monocles.chat.BobTransfer;
-import de.monocles.chat.MessageTextActionModeCallback;
-import de.monocles.chat.Util;
-import de.monocles.chat.WebxdcPage;
-import de.monocles.chat.WebxdcUpdate;
+import de.monocles.mod.BobTransfer;
+import de.monocles.mod.MessageTextActionModeCallback;
+import de.monocles.mod.Util;
+import de.monocles.mod.WebxdcPage;
+import de.monocles.mod.WebxdcUpdate;
 import eu.siacs.conversations.Config;
 import eu.siacs.conversations.R;
 import eu.siacs.conversations.crypto.axolotl.FingerprintStatus;
@@ -120,7 +108,6 @@ import eu.siacs.conversations.ui.XmppActivity;
 import eu.siacs.conversations.ui.text.DividerSpan;
 import eu.siacs.conversations.ui.text.QuoteSpan;
 import eu.siacs.conversations.ui.util.AvatarWorkerTask;
-import eu.siacs.conversations.ui.util.CustomTab;
 import eu.siacs.conversations.ui.util.MyLinkify;
 import eu.siacs.conversations.ui.util.QuoteHelper;
 import eu.siacs.conversations.ui.util.ShareUtil;
@@ -817,7 +804,7 @@ public class MessageAdapter extends ArrayAdapter<Message> {
                 displayRichLinkMessage(viewHolder, message, darkBackground);
             }
             // Make custom emoji bigger too, to match emoji
-            for (final var span : body.getSpans(0, body.length(), de.monocles.chat.InlineImageSpan.class)) {
+            for (final var span : body.getSpans(0, body.length(), de.monocles.mod.InlineImageSpan.class)) {
                 body.setSpan(
                         new RelativeSizeSpan(2f),
                         body.getSpanStart(span),

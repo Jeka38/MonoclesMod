@@ -9,7 +9,7 @@ public class FirstStartManager {
     Context context;
     private SharedPreferences pref;
     private SharedPreferences.Editor editor;
-    private static final String PREF_NAME = "de.monocles.chat";
+    private static final String PREF_NAME = "de.monocles.mod";
     private static final String IS_FIRST_TIME_LAUNCH = "IsFirstTimeLaunch";
 
     public FirstStartManager(Context context) {

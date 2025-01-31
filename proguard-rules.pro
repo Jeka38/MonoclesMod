@@ -1,6 +1,6 @@
 -dontobfuscate
 
--keep class de.monocles.chat.**
+-keep class de.monocles.mod.**
 -keep class de.pixart.messenger.**
 -keep class eu.siacs.conversations.**
 

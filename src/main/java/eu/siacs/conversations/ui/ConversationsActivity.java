@@ -29,7 +29,7 @@
 
 package eu.siacs.conversations.ui;
 
-import static de.monocles.chat.ui.PermissionsActivity.permissions;
+import static de.monocles.mod.ui.PermissionsActivity.permissions;
 import static eu.siacs.conversations.ui.ConversationFragment.REQUEST_DECRYPT_PGP;
 import static eu.siacs.conversations.ui.SettingsActivity.HIDE_MEMORY_WARNING;
 import static eu.siacs.conversations.ui.SettingsActivity.MIN_ANDROID_SDK21_SHOWN;
@@ -71,7 +71,7 @@ import android.widget.Toast;
 import androidx.core.app.ActivityCompat;
 import androidx.core.content.ContextCompat;
 
-import de.monocles.chat.DownloadDefaultStickers;
+import de.monocles.mod.DownloadDefaultStickers;
 
 import net.java.otr4j.session.SessionStatus;
 import androidx.appcompat.widget.PopupMenu;

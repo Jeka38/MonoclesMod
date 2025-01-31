@@ -161,17 +161,17 @@ android {
 
         archivesBaseName += "-$versionName"
         // archivesBaseName += "$versionNameSuffix"  // activate for beta versions
-        applicationId "de.monocles.chat"
+        applicationId "de.monocles.mod"
         multiDexEnabled true
         //versionName grgit.describe(always: true)
-        buildConfigField("String", "LOGTAG", '"monocles chat"')
+        buildConfigField("String", "LOGTAG", '"monocles mod"')
         buildConfigField("String", "DOMAIN_LOCK", 'null')
         buildConfigField("String", "MAGIC_CREATE_DOMAIN", '"monocles.eu"')
         buildConfigField("boolean", "SHOW_INTRO", 'false')
         buildConfigField("String", "UPDATE_URL", '"https://monocles.eu/chat/update/"')
         resValue "string", "applicationId", applicationId
         resValue "string", "app_name", "monocles chat"
-        resValue "string", "short_app_name", "chat"
+        resValue "string", "short_app_name", "monocles mod"
     }
     splits {
         abi {
@@ -203,7 +203,7 @@ android {
         playstore {
             dimension "distribution"
             versionNameSuffix "-playstore"
-            applicationId "de.monocles.chat"
+            applicationId "de.monocles.mod"
             buildConfigField("boolean", "SHOW_MIGRATION_INFO", 'false')
             resValue "string", "applicationId", applicationId
         }

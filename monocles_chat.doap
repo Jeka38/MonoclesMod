@@ -14,7 +14,7 @@
     <description xml:lang="en">monocles chat is a modern and secure chat app using XMPP. Based on Conversations and Blabber.im but with many changes.</description>
 
     <homepage rdf:resource="https://monocles.eu/more/"/>
-    <download-page rdf:resource="https://f-droid.org/en/packages/de.monocles.chat/"/>
+    <download-page rdf:resource="https://f-droid.org/en/packages/de.monocles.mod/"/>
     <bug-database rdf:resource="https://codeberg.org/Arne/monocles_chat/issues"/>
     <!-- See https://github.com/ewilderj/doap/issues/53 -->
     <developer-forum rdf:resource="xmpp:development@conference.monocles.de?join"/>

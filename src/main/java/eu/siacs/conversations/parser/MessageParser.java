@@ -5,8 +5,8 @@ import android.util.Pair;
 import android.net.Uri;
 
 
-import de.monocles.chat.BobTransfer;
-import de.monocles.chat.WebxdcUpdate;
+import de.monocles.mod.BobTransfer;
+import de.monocles.mod.WebxdcUpdate;
 import java.io.File;
 
 import java.net.URISyntaxException;
@@ -27,7 +27,6 @@ import io.ipfs.cid.Cid;
 
 import android.os.Build;
 import android.text.Html;
-import android.widget.Toast;
 
 import net.java.otr4j.session.Session;
 import net.java.otr4j.session.SessionStatus;

@@ -52,7 +52,7 @@
                         android:text="@string/monocles_account_introduction"
                         android:textAppearance="@style/TextAppearance.Conversations.Subhead" />
 
-                    <de.monocles.chat.ReadMoreTextView
+                    <de.monocles.mod.ReadMoreTextView
                         android:id="@+id/instructions_monocles_account"
                         android:layout_width="match_parent"
                         android:layout_height="wrap_content"

@@ -28,13 +28,9 @@ import com.kedia.ogparser.OpenGraphParser;
 import com.kedia.ogparser.OpenGraphResult;
 import java.util.HashMap;
 
-import de.monocles.chat.EmojiSearch;
-import de.monocles.chat.GifsAdapter;
-import de.monocles.chat.StickerAdapter;
+import de.monocles.mod.EmojiSearch;
 import eu.siacs.conversations.ui.ConversationsActivity;
 import eu.siacs.conversations.persistance.UnifiedPushDatabase;
-import eu.siacs.conversations.ui.util.Attachment;
-import eu.siacs.conversations.utils.FileUtils;
 import eu.siacs.conversations.xmpp.OnGatewayResult;
 import eu.siacs.conversations.utils.Consumer;
 import java.net.URI;
@@ -80,17 +76,12 @@ import android.os.SystemClock;
 import android.os.Vibrator;
 import android.preference.PreferenceManager;
 import android.provider.ContactsContract;
-import android.provider.DocumentsContract;
 import android.security.KeyChain;
-import android.telephony.PhoneStateListener;
-import android.telephony.TelephonyManager;
 import android.text.TextUtils;
 import android.util.DisplayMetrics;
 import android.util.Log;
 import android.util.LruCache;
 import android.util.Pair;
-import android.view.View;
-import android.widget.AdapterView;
 
 import net.java.otr4j.OtrException;
 import net.java.otr4j.session.Session;
@@ -117,7 +108,7 @@ import com.google.common.collect.Multimap;
 
 import com.otaliastudios.transcoder.strategy.DefaultAudioStrategy;
 
-import de.monocles.chat.WebxdcUpdate;
+import de.monocles.mod.WebxdcUpdate;
 
 import org.conscrypt.Conscrypt;
 import org.openintents.openpgp.IOpenPgpService2;

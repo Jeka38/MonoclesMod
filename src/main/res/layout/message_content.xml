@@ -38,7 +38,7 @@
         android:textAppearance="@style/TextAppearance.Conversations.Body1"
         android:visibility="gone" />
 
-    <de.monocles.chat.ReadMoreTextView
+    <de.monocles.mod.ReadMoreTextView
         app:trimExpandedText="@string/show_less"
         app:trimCollapsedText="@string/show_more"
         app:trimMode="trimModeLength"

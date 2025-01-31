@@ -2,40 +2,33 @@ package eu.siacs.conversations.ui;
 
 import android.content.Intent;
 import android.content.pm.ActivityInfo;
-import android.net.Uri;
 import android.os.Bundle;
 import android.text.Editable;
 import android.text.TextWatcher;
-import android.text.method.LinkMovementMethod;
 import android.view.View;
 import android.widget.AdapterView;
 import android.widget.ArrayAdapter;
 import android.widget.Button;
 import android.widget.CompoundButton;
-import android.widget.ImageView;
-import android.widget.TextView;
 
 import androidx.appcompat.app.AlertDialog;
 import androidx.appcompat.widget.Toolbar;
 import androidx.databinding.DataBindingUtil;
 
 import java.security.SecureRandom;
-import java.util.Arrays;
 import java.util.Collections;
 import java.util.List;
 import java.util.concurrent.ExecutionException;
 
-import de.monocles.chat.SignUpPage;
-import de.monocles.chat.services.ProviderService;
+import de.monocles.mod.SignUpPage;
+import de.monocles.mod.services.ProviderService;
 import eu.siacs.conversations.Config;
 import eu.siacs.conversations.R;
 import eu.siacs.conversations.databinding.ActivityMagicCreateBinding;
 import eu.siacs.conversations.entities.Account;
-import eu.siacs.conversations.ui.util.CustomTab;
 import eu.siacs.conversations.utils.CryptoHelper;
 import eu.siacs.conversations.utils.InstallReferrerUtils;
 import eu.siacs.conversations.xmpp.Jid;
-import me.drakeet.support.toast.ToastCompat;
 
 public class MagicCreateActivity extends XmppActivity implements TextWatcher, AdapterView.OnItemSelectedListener, CompoundButton.OnCheckedChangeListener {
 
@@ -102,7 +95,7 @@ public class MagicCreateActivity extends XmppActivity implements TextWatcher, Ad
             e.printStackTrace();
         }
         // final List<String> domains = Arrays.asList(getResources().getStringArray(R.array.domains));
-        int defaultServer = adapter.getPosition(de.monocles.chat.Config.DOMAIN.getRandomServer());
+        int defaultServer = adapter.getPosition(de.monocles.mod.Config.DOMAIN.getRandomServer());
         if (registerFromUri && !useOwnProvider && (this.preAuth != null || domain != null)) {
             binding.server.setEnabled(false);
             binding.server.setVisibility(View.GONE);

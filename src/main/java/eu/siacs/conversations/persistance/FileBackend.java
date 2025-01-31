@@ -65,8 +65,8 @@ import com.wolt.blurhashkt.BlurHashDecoder;
 
 import org.tomlj.Toml;
 
-import de.monocles.chat.BobTransfer;
-import de.monocles.chat.ThumbHash;
+import de.monocles.mod.BobTransfer;
+import de.monocles.mod.ThumbHash;
 
 import java.io.ByteArrayInputStream;
 import java.io.ByteArrayOutputStream;
@@ -83,7 +83,6 @@ import java.lang.ref.WeakReference;
 import java.net.ServerSocket;
 import java.net.Socket;
 import java.nio.ByteBuffer;
-import java.net.URL;
 import java.nio.channels.FileChannel;
 import java.nio.charset.StandardCharsets;
 import java.security.DigestOutputStream;

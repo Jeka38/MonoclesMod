@@ -1,11 +1,10 @@
 package eu.siacs.conversations.ui;
 
-import static de.monocles.chat.ui.PermissionsActivity.permissions;
 import static eu.siacs.conversations.ui.SettingsActivity.USE_INTERNAL_UPDATER;
 
 import android.graphics.BitmapFactory;
 import android.graphics.drawable.AnimatedImageDrawable;
-import android.telephony.TelephonyManager;
+
 import eu.siacs.conversations.utils.Compatibility;
 import android.Manifest;
 import android.annotation.SuppressLint;
@@ -56,7 +55,6 @@ import android.view.Window;
 import android.widget.ImageView;
 import android.widget.Spinner;
 import android.widget.Toast;
-import eu.siacs.conversations.utils.Compatibility;
 
 import androidx.annotation.BoolRes;
 import androidx.annotation.IntegerRes;
@@ -64,7 +62,6 @@ import androidx.annotation.NonNull;
 import androidx.annotation.StringRes;
 import androidx.appcompat.app.AlertDialog;
 import androidx.appcompat.app.AppCompatDelegate;
-import androidx.core.app.ActivityCompat;
 import androidx.core.content.ContextCompat;
 import androidx.databinding.DataBindingUtil;
 
@@ -72,7 +69,6 @@ import com.bumptech.glide.Glide;
 import com.google.common.base.Strings;
 import com.google.common.collect.Collections2;
 
-import java.net.MalformedURLException;
 import java.net.URL;
 import java.util.HashMap;
 import java.io.File;
@@ -93,7 +89,6 @@ import eu.siacs.conversations.entities.Presences;
 import eu.siacs.conversations.services.AvatarService;
 import eu.siacs.conversations.services.BarcodeProvider;
 import eu.siacs.conversations.services.EmojiInitializationService;
-import eu.siacs.conversations.services.QuickConversationsService;
 import eu.siacs.conversations.services.UpdateService;
 import eu.siacs.conversations.services.XmppConnectionService;
 import eu.siacs.conversations.services.XmppConnectionService.XmppConnectionBinder;
@@ -115,19 +110,15 @@ import p32929.easypasscodelock.Utils.EasylockSP;
 import pl.droidsonroids.gif.GifDrawable;
 import android.util.Pair;
 import net.java.otr4j.session.SessionID;
-import eu.siacs.conversations.ui.util.SettingsUtils;
-import java.util.Collections;
-import java.util.Map;
-import java.util.concurrent.atomic.AtomicInteger;
+
 import android.webkit.ValueCallback;
-import eu.siacs.conversations.utils.CryptoHelper;
 
 import java.io.IOException;
 import java.lang.ref.WeakReference;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.concurrent.RejectedExecutionException;
-import eu.siacs.conversations.ui.SettingsActivity;
+
 import static eu.siacs.conversations.ui.SettingsActivity.ENABLE_OTR_ENCRYPTION;
 
 public abstract class XmppActivity extends ActionBarActivity {

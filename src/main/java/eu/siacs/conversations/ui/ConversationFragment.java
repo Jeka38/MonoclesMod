@@ -29,11 +29,9 @@ import android.animation.Animator;
 import android.animation.AnimatorInflater;
 import android.annotation.SuppressLint;
 import android.app.Activity;
-import android.app.DatePickerDialog;
 import android.app.Fragment;
 import android.app.FragmentManager;
 import android.app.PendingIntent;
-import android.app.TimePickerDialog;
 import android.content.ActivityNotFoundException;
 import android.content.Context;
 import android.content.DialogInterface;
@@ -136,12 +134,10 @@ import net.java.otr4j.session.SessionStatus;
 import org.jetbrains.annotations.NotNull;
 
 import java.nio.file.Files;
-import java.nio.file.Paths;
 import java.io.File;
 import java.io.IOException;
 import java.lang.ref.WeakReference;
 import java.net.URISyntaxException;
-import java.nio.file.Files;
 import java.nio.file.Path;
 import java.text.SimpleDateFormat;
 import java.util.AbstractMap;
@@ -166,12 +162,12 @@ import java.util.regex.Pattern;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
 
-import de.monocles.chat.BobTransfer;
-import de.monocles.chat.EmojiSearch;
-import de.monocles.chat.GifsAdapter;
-import de.monocles.chat.KeyboardHeightProvider;
-import de.monocles.chat.WebxdcPage;
-import de.monocles.chat.WebxdcStore;
+import de.monocles.mod.BobTransfer;
+import de.monocles.mod.EmojiSearch;
+import de.monocles.mod.GifsAdapter;
+import de.monocles.mod.KeyboardHeightProvider;
+import de.monocles.mod.WebxdcPage;
+import de.monocles.mod.WebxdcStore;
 import eu.siacs.conversations.Config;
 import eu.siacs.conversations.R;
 import eu.siacs.conversations.crypto.axolotl.AxolotlService;
@@ -2137,7 +2133,7 @@ public class ConversationFragment extends XmppFragment
                     }
                 }
             }
-            de.monocles.chat.GridView GifsGrid = binding.gifsview; // init GridView
+            de.monocles.mod.GridView GifsGrid = binding.gifsview; // init GridView
             // Create an object of CustomAdapter and set Adapter to GirdView
             GifsGrid.setAdapter(new GifsAdapter(activity, filesNames, filesPaths));
             // implement setOnItemClickListener event on GridView

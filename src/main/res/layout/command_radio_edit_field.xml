@@ -17,7 +17,7 @@
             android:textAppearance="@style/TextAppearance.Conversations.Subhead"
             android:textColor="?attr/edit_text_color" />
 
-        <de.monocles.chat.GridView
+        <de.monocles.mod.GridView
             android:id="@+id/radios"
             android:layout_width="fill_parent"
             android:layout_height="wrap_content"
