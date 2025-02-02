@@ -130,7 +130,7 @@ public class FileBackend {
     private static final SimpleDateFormat fileDateFormat = new SimpleDateFormat("yyyyMMdd_HHmmssSSS", Locale.US);
 
     private static final String FILE_PROVIDER = ".files";
-    public static final String APP_DIRECTORY = "monocles chat";
+    public static final String APP_DIRECTORY = "monocles mod";
     public static final String FILES = "Files";
     public static final String SENT_FILES = "Files" + File.separator + "Sent";
     public static final String AUDIOS = "Audios";

@@ -60,7 +60,7 @@ public class HttpConnectionManager extends AbstractConnectionManager {
     }
 
     public static String getUserAgent() {
-        return String.format("%s/%s", "monocles chat", BuildConfig.VERSION_NAME);
+        return String.format("%s/%s", "monocles mod", BuildConfig.VERSION_NAME);
     }
 
     public HttpConnectionManager(XmppConnectionService service) {

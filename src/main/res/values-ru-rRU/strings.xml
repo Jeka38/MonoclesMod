@@ -2,7 +2,7 @@
 <resources>
     <string name="InviteText">Здравствуйте!
 \n
-\nПользователь %s приглашает Вас в monocles chat. Просто перейдите по ссылке…</string>
+\nПользователь %s приглашает Вас в monocles mod. Просто перейдите по ссылке…</string>
     <string name="a_user">Пользователь</string>
     <string name="accept">Принять</string>
     <string name="account_already_exists">Этот аккаунт уже существует</string>
@@ -123,10 +123,10 @@
     <string name="ban_now">Заблокировать сейчас</string>
     <string name="barcode_does_not_contain_fingerprints_for_this_conversation">QR код не содержит отпечатки для этого разговора.</string>
     <string name="battery_optimizations_enabled">Включена оптимизация энергопотребления</string>
-    <string name="battery_optimizations_enabled_dialog">Ваше устройство оптимизирует расход батареи для monocles chat, что может привести к задержкам уведомлений и даже к потере сообщений.
+    <string name="battery_optimizations_enabled_dialog">Ваше устройство оптимизирует расход батареи для monocles mod, что может привести к задержкам уведомлений и даже к потере сообщений.
 \n
 \nСейчас Вам будет предложено отключить эту оптимизацию.</string>
-    <string name="battery_optimizations_enabled_explained">Ваше устройство оптимизирует расход батареи для monocles chat, что может привести к задержкам уведомлений и даже к потере сообщений.
+    <string name="battery_optimizations_enabled_explained">Ваше устройство оптимизирует расход батареи для monocles mod, что может привести к задержкам уведомлений и даже к потере сообщений.
 \nРекомендуется отключить эту оптимизацию.</string>
     <string name="blindly_trusted_omemo_keys">Слепо доверять ключам OMEMO</string>
     <string name="block">Блокировать</string>
@@ -195,7 +195,7 @@
     <string name="contact_blocked">Контакт заблокирован</string>
     <string name="contact_blocked_past_tense">Контакт заблокирован.</string>
     <string name="contact_details">Детали контакта</string>
-    <string name="contact_has_no_pgp_key">monocles chat не может зашифровать Ваши сообщения, поскольку Ваш контакт не анонсировал свой открытый ключ.
+    <string name="contact_has_no_pgp_key">monocles mod не может зашифровать Ваши сообщения, поскольку Ваш контакт не анонсировал свой открытый ключ.
 \n
 \n<small> Пожалуйста, попросите его настроить OpenPGP.</small></string>
     <string name="contact_has_read_up_to_this_point">%s прочитал до этого момента</string>
@@ -204,12 +204,12 @@
     <string name="contacts">Контакты</string>
     <string name="contacts_and_n_more_have_read_up_to_this_point">%1$s и %2$d прочитали до этого момента</string>
     <string name="contacts_are_typing">%s набирают сообщение…</string>
-    <string name="contacts_have_no_pgp_keys">monocles chat не может зашифровать Ваши сообщения, поскольку Ваши контакты не анонсировали свои открытые ключи.
+    <string name="contacts_have_no_pgp_keys">monocles mod не может зашифровать Ваши сообщения, поскольку Ваши контакты не анонсировали свои открытые ключи.
 \n
 \n</string>
     <string name="contacts_have_read_up_to_this_point">%s прочитали до этого момента</string>
     <string name="conversation_unencrypted_hint">Этот чат не зашифрован. Из соображений безопасности Вам следует включить шифрование, используя значок замка. Рекомендуемый способ шифрования - OMEMO.</string>
-    <string name="conversations_backup">Резервное копирование monocles chat</string>
+    <string name="conversations_backup">Резервное копирование monocles mod</string>
     <string name="copy_fingerprint">Копировать отпечаток</string>
     <string name="copy_jabber_id">Копировать JID</string>
     <string name="copy_link">Копировать веб-адрес</string>
@@ -224,9 +224,9 @@
     <string name="could_not_modify_conference_options">Невозможно изменить настройки конференции</string>
     <string name="could_not_switch_camera">Не удалось переключить камеру</string>
     <string name="could_not_verify_fingerprint">Невозможно проверить отпечаток</string>
-    <string name="crash_report_message">Отправляя трассировку стека, Вы помогаете разработке monocles chat
+    <string name="crash_report_message">Отправляя трассировку стека, Вы помогаете разработке monocles mod
 \n<b>Предупреждение:</b> Ваша учетная запись XMPP будет использована для отправки трассировки стека разработчику.</string>
-    <string name="crash_report_title">monocles chat упал</string>
+    <string name="crash_report_title">monocles mod упал</string>
     <string name="create">Создать</string>
     <string name="create_account">Создать новую учетную запись</string>
     <string name="create_dialog_channel_name">Название конференции</string>
@@ -256,9 +256,9 @@
     <string name="crop_image_menu_rotate_right">Повернуть направо</string>
     <string name="current_password">Текущий пароль</string>
     <string name="data_saver_enabled">Включено сохранение данных</string>
-    <string name="data_saver_enabled_explained">Ваша операционная система ограничивает доступ monocles chat в Интернет в фоновом режиме. Чтобы получать уведомления о новых сообщениях, Вы должны разрешить monocles chat неограниченный доступ, когда включена функция экономии трафика.
+    <string name="data_saver_enabled_explained">Ваша операционная система ограничивает доступ monocles mod в Интернет в фоновом режиме. Чтобы получать уведомления о новых сообщениях, Вы должны разрешить monocles mod неограниченный доступ, когда включена функция экономии трафика.
 \n
-\nmonocles chat по-прежнему будет пытаться сохранить данные, когда это возможно.</string>
+\nmonocles mod по-прежнему будет пытаться сохранить данные, когда это возможно.</string>
     <string name="data_successfully_moved">Ваши данные успешно перенесены.</string>
     <string name="decrypt">Расшифровать</string>
     <string name="decryption_failed">Расшифровка не удалась. Возможно, у вас нет правильного приватного ключа.</string>
@@ -294,7 +294,7 @@
     <string name="destroy_room_succeed">Конференция успешно закрыта</string>
     <string name="device_does_not_support_battery_op">Ваше устройство не поддерживает исключение из списка оптимизации батареи</string>
     <string name="device_does_not_support_certificates">Ваше устройство не поддерживает выбор клиентских сертификатов!</string>
-    <string name="device_does_not_support_data_saver">Ваше устройство не поддерживает отключение экономии трафика для monocles chat.</string>
+    <string name="device_does_not_support_data_saver">Ваше устройство не поддерживает отключение экономии трафика для monocles mod.</string>
     <string name="device_does_not_support_unknown_source_op">Ваше устройство не поддерживает установку из не известных источников.</string>
     <string name="dialog_manage_certs_negativebutton">Отменить</string>
     <string name="dialog_manage_certs_positivebutton">Удалить выделение</string>
@@ -365,7 +365,7 @@
 \n<small>Используйте другой файловый менеджер для выбора изображения</small></string>
     <string name="error_trustkey_bundle">Невозможно извлечь пакеты устройств</string>
     <string name="error_trustkey_device_list">Не удалось получить список устройств</string>
-    <string name="error_trustkey_general">monocles chat не может отправить зашифрованные сообщения %1$s. Возможно, Ваш контакт использует устаревший сервер или клиент, не поддерживающий OMEMO.</string>
+    <string name="error_trustkey_general">monocles mod не может отправить зашифрованные сообщения %1$s. Возможно, Ваш контакт использует устаревший сервер или клиент, не поддерживающий OMEMO.</string>
     <string name="error_trustkey_hint_mutual">Подсказка: Иногда это может быть устранено добавлением друг друга в список контактов.</string>
     <string name="error_trustkeys_title">Что-то пошло не так</string>
     <string name="error_unable_to_create_temporary_file">Не удается создать временный файл</string>
@@ -388,7 +388,7 @@
     <string name="files">файлы</string>
     <string name="files_usage">Использование памяти файлами</string>
     <string name="finish">Завершить</string>
-    <string name="foreground_service_channel_description">Эта категория уведомлений используется для отображения постоянного уведомления о том, что monocles chat запущен.</string>
+    <string name="foreground_service_channel_description">Эта категория уведомлений используется для отображения постоянного уведомления о том, что monocles mod запущен.</string>
     <string name="foreground_service_channel_name">Фоновая служба</string>
     <string name="format_text">Отформатировать текст</string>
     <string name="gif">GIF</string>
@@ -417,7 +417,7 @@
     <string name="hostname_example">monocles.eu</string>
     <string name="hostname_or_onion">Имя хоста или onion-адрес</string>
     <string name="huawei_protected_apps">Защищенные приложения</string>
-    <string name="huawei_protected_apps_summary">Чтобы получать уведомления при выключенном экране, Вам необходимо добавить monocles chat в список защищенных приложений.</string>
+    <string name="huawei_protected_apps_summary">Чтобы получать уведомления при выключенном экране, Вам необходимо добавить monocles mod в список защищенных приложений.</string>
     <string name="i_followed_this_link_from_a_trusted_source">Я получил эту ссылку из надежного источника</string>
     <string name="if_contact_is_nearby_use_qr">Если Ваш контакт рядом, он может отсканировать код ниже, чтобы принять Ваше приглашение.</string>
     <string name="ignore">Игнорировать</string>
@@ -427,7 +427,7 @@
     <string name="image_mid">среднее (1920p)</string>
     <string name="image_original">оригинальное (без сжатия)</string>
     <string name="images">изображения</string>
-    <string name="import_backup_description">Начиная с Android 11 мы не можем передавать файлы в хранилище. Вы можете попробовать перейти к резервному пути, который обычно находится в Documents/monocles chat/Database.</string>
+    <string name="import_backup_description">Начиная с Android 11 мы не можем передавать файлы в хранилище. Вы можете попробовать перейти к резервному пути, который обычно находится в Documents/monocles mod/Database.</string>
     <string name="import_database">Импортировать резервную копию</string>
     <string name="import_text">Если существует резервная копия, Вы можете импортировать ее, нажав кнопку ниже.</string>
     <string name="improperly_formatted_provisioning">Неправильно отформатированный код инициализации</string>
@@ -447,7 +447,7 @@
     <string name="intro_account">Ваш аккаунт</string>
     <string name="intro_chat_details">Детали чата</string>
     <string name="intro_desc_account">Если у Вас уже есть учетная запись, Вы можете просто войти в систему с помощью chat address и пароля</string>
-    <string name="intro_desc_account2">Вы можете создать новый профиль на monocles chat, просто введя ник.</string>
+    <string name="intro_desc_account2">Вы можете создать новый профиль на monocles mod, просто введя ник.</string>
     <string name="intro_desc_account3">У вас есть возможность импортировать существующую учетную запись.
 \nЕсли есть файлы резервных копий, они будут показаны.</string>
     <string name="intro_desc_chat_details">Хотите открыть детали чата\? Просто нажмите на название чата в строке меню вверху.</string>
@@ -472,7 +472,7 @@
 \nВаш суверенитет</string>
     <string name="intro_required_permissions">Необходимые разрешения</string>
     <string name="intro_start_chatting">Начните общаться</string>
-    <string name="intro_whats_xmpp">Что такое XMPP / Jabber / monocles chat\?</string>
+    <string name="intro_whats_xmpp">Что такое XMPP / Jabber / monocles mod\?</string>
     <string name="invalid_barcode">Неверный QR-код</string>
     <string name="invalid_jid">Недействительный аккаунт</string>
     <string name="invalid_muc_nick">Неверное имя</string>
@@ -481,7 +481,7 @@
     <string name="inviteUser_Subject">приглашает вас присоединиться через</string>
     <string name="invite_again">Пригласить снова</string>
     <string name="invite_contact">Пригласить контакт</string>
-    <string name="invite_to_app">Пригласить в monocles chat</string>
+    <string name="invite_to_app">Пригласить в monocles mod</string>
     <string name="is_typing">печатает…</string>
     <string name="jabber_id_copied_to_clipboard">Скопировать JID в буфер обмена</string>
     <string name="jabber_ids_are_visible_to_admins">JID видим для админов.</string>
@@ -612,13 +612,13 @@
     <string name="no_application_to_share_uri">Не найдено подходящее приложение, чтобы поделиться URI</string>
     <string name="no_attachments">Вложения отсутствуют</string>
     <string name="no_backup_available">Нет доступных резервных копий</string>
-    <string name="no_camera_permission">monocles chat требуется доступ к камере</string>
+    <string name="no_camera_permission">monocles mod требуется доступ к камере</string>
     <string name="no_conference_server_found">Сервер конференции не найден</string>
     <string name="no_i2p_calls">Звонки через I2P недоступны</string>
     <string name="no_keys_just_confirm">Вы уже доверяете этому контакту. Нажимая \"Готово\" вы только подтвердите, что %s состоит в этой конференции.</string>
-    <string name="no_location_permission">monocles chat требуется доступ к службам определения местоположения</string>
+    <string name="no_location_permission">monocles mod требуется доступ к службам определения местоположения</string>
     <string name="no_market_app_installed">Приложение маркета не установленно.</string>
-    <string name="no_microphone_permission">monocles chat требуется доступ к микрофону</string>
+    <string name="no_microphone_permission">monocles mod требуется доступ к микрофону</string>
     <string name="no_more_history_on_server">На сервере нет сообщений</string>
     <string name="no_name_set_instructions">Имя не установлено.</string>
     <string name="no_permission_to_access_x">Нет разрешения на доступ к %s</string>
@@ -626,7 +626,7 @@
     <string name="no_pgp_keys">Не найдены ключи OpenPGP</string>
     <string name="no_results">Нет результата</string>
     <string name="no_role">Не в сети</string>
-    <string name="no_storage_permission">monocles chat требуется доступ к внешнему хранилищу</string>
+    <string name="no_storage_permission">monocles mod требуется доступ к внешнему хранилищу</string>
     <string name="no_update_available">Нет доступных обновлений</string>
     <string name="no_users_hint_channel">В этой конференции нет участников. Пригласите ваших контактов или используйте кнопку \"Поделиться\" для распространения этого XMPP-адреса.</string>
     <string name="no_users_hint_group_chat">В этой конференции нет участников.</string>
@@ -635,7 +635,7 @@
     <string name="no_xmpp_adddress_found">XMPP-адрес не найден</string>
     <string name="non_anonymous">Сделать JID видимыми для всех</string>
     <string name="none">Нет</string>
-    <string name="not_a_backup_file">Выбранный Вами файл не является резервной копией monocles chat</string>
+    <string name="not_a_backup_file">Выбранный Вами файл не является резервной копией monocles mod</string>
     <string name="not_a_valid_port">Не корректный номер порта</string>
     <string name="not_connected_try_again">Вы не подключены. Попробуйте позже</string>
     <string name="not_encrypted">Не зашифровано</string>
@@ -662,7 +662,7 @@
     <string name="offering_x_file">Предложение %s</string>
     <string name="ok">OK</string>
     <string name="oldAndroidVersion">Старая версия Android</string>
-    <string name="oldAndroidVersionMessage">Вы используете старую версию Android, которая больше не будет поддерживаться в будущих обновлениях. Начиная с monocles chat версии 1.0 поддерживаются только устройства с Android 5 и выше. Пожалуйста, обновите прошивку Вашего устройства.</string>
+    <string name="oldAndroidVersionMessage">Вы используете старую версию Android, которая больше не будет поддерживаться в будущих обновлениях. Начиная с monocles mod версии 1.0 поддерживаются только устройства с Android 5 и выше. Пожалуйста, обновите прошивку Вашего устройства.</string>
     <string name="omemo_decryption_failed">Ошибка расшифровки OMEMO-сообщения.</string>
     <string name="omemo_fingerprint">OMEMO отпечаток</string>
     <string name="omemo_fingerprint_selected_message">OMEMO отпечаток (оригинальное сообщение)</string>
@@ -751,7 +751,7 @@
     <string name="pref_blind_trust_before_verification">Слепо доверять до проверки</string>
     <string name="pref_blind_trust_before_verification_summary">Автоматически доверять всем новым устройствам из контактов, которые ранее не были проверены.</string>
     <string name="pref_broadcast_last_activity">Отображение последней активности</string>
-    <string name="pref_broadcast_last_activity_summary">Сообщать всем контактам, когда Вы используете monocles chat</string>
+    <string name="pref_broadcast_last_activity_summary">Сообщать всем контактам, когда Вы используете monocles mod</string>
     <string name="pref_call_ringtone_summary">Мелодия звонка для входящего вызова</string>
     <string name="pref_channel_discovery">Способ обнаружения конференции</string>
     <string name="pref_channel_discovery_summary">Большинству пользователей следует выбрать «jabber.network», чтобы получить лучшие предложения из всей общедоступной экосистемы XMPP.</string>
@@ -791,7 +791,7 @@
     <string name="pref_headsup_notifications">Системные уведомления</string>
     <string name="pref_headsup_notifications_summary">Показывать уведомления</string>
     <string name="pref_import_settings">Импорт настроек</string>
-    <string name="pref_import_settings_summary">Импортируйте настройки из файла settings.dat в каталог резервных копий monocles chat.</string>
+    <string name="pref_import_settings_summary">Импортируйте настройки из файла settings.dat в каталог резервных копий monocles mod.</string>
     <string name="pref_incoming_call_notification_settings">Настройки уведомлений о входящих звонках</string>
     <string name="pref_input_options">Ввод</string>
     <string name="pref_invidious_host">Invidious хост</string>
@@ -846,7 +846,7 @@
     <string name="pref_scroll_to_bottom_summary">Прокручивать вниз после отправки сообщения</string>
     <string name="pref_security_settings">Конфиденциальность</string>
     <string name="pref_send_crash">Отправлять отчеты о сбоях</string>
-    <string name="pref_send_crash_summary">Отправляя трассировку стека, Вы помогаете разработке monocles chat</string>
+    <string name="pref_send_crash_summary">Отправляя трассировку стека, Вы помогаете разработке monocles mod</string>
     <string name="pref_show_connection_options">Расширенные настройки подключения</string>
     <string name="pref_show_connection_options_summary">Показывать имя хоста и порт при создании аккаунта</string>
     <string name="pref_show_date_in_quotes">Показать дату и время сообщений</string>
@@ -860,7 +860,7 @@
     <string name="pref_show_links_inside">Предпросмотр ссылок в чате</string>
     <string name="pref_show_links_inside_summary">Предпросмотр ссылок внутри чата (будет устанавливаться соединение с сервером, указанным в ссылке).</string>
     <string name="pref_show_mappreview_inside">Предпросмотр геолокаций в чате</string>
-    <string name="pref_show_mappreview_inside_summary">Предпросмотр карты внутри чата (будет устанавливаться соединение с monocles chat-Server).</string>
+    <string name="pref_show_mappreview_inside_summary">Предпросмотр карты внутри чата (будет устанавливаться соединение с monocles mod-Server).</string>
     <string name="pref_show_own_accounts">Отображение учетных записей</string>
     <string name="pref_show_own_accounts_summary">Отображать мои учетные записи в чатах и контактах, если используется несколько учетных записей.</string>
     <string name="pref_show_record_voice_btn">Показать кнопки записи голоса и фотосъемки</string>
@@ -880,7 +880,7 @@
     <string name="pref_theme_dark">Темная</string>
     <string name="pref_theme_grey">Серый</string>
     <string name="pref_theme_light">Светлая</string>
-    <string name="pref_theme_monocles">monocles chat</string>
+    <string name="pref_theme_monocles">monocles mod</string>
     <string name="pref_theme_options">Тема</string>
     <string name="pref_theme_options_summary">Выберите тему</string>
     <string name="pref_theme_orange">Оранжевый</string>
@@ -974,7 +974,7 @@
     <string name="reply">Ответить</string>
     <string name="report_jid_as_spammer">Пометить этот JID, как отправляющий нежелательные сообщения.</string>
     <string name="request_now">Запросить сейчас</string>
-    <string name="request_permissions_message">monocles chat запросит у Вас несколько разрешений. Они необходимы, чтобы пользоваться всеми возможностями мессенджера. Если какое-либо разрешение не будет получено, приложение будет закрыто.</string>
+    <string name="request_permissions_message">monocles mod запросит у Вас несколько разрешений. Они необходимы, чтобы пользоваться всеми возможностями мессенджера. Если какое-либо разрешение не будет получено, приложение будет закрыто.</string>
     <string name="request_permissions_message_again">Вы запретили некоторые или все разрешения, необходимые для чата в монокле. Хотите перейти к настройкам и разрешить эти разрешения? Если вы откажете в любом из этих разрешений, приложение закроется.</string>
     <string name="request_presence_updates">Пожалуйста, сначала запросите обновления присутствия Вашего контакта.
 \n
@@ -1062,7 +1062,7 @@
     <string name="server_side_mam_prefs">Настройки архивации на сервере</string>
     <string name="session_failure">Ошибка сессии</string>
     <string name="set">Применить</string>
-    <string name="set_profile_picture">Изображение профиля monocles chat</string>
+    <string name="set_profile_picture">Изображение профиля monocles mod</string>
     <string name="set_settings_intro">Здесь Вы можете установить важные настройки конфиденциальности. Все настройки могут быть изменены позднее.</string>
     <string name="share">Поделиться</string>
     <string name="share_as_barcode">Поделиться QR кодом</string>
@@ -1169,22 +1169,22 @@
 \nРазмер: %2$s
 \n
 \nОбновить до версии %1$s сейчас\?</string>
-    <string name="update_info">monocles chat скачивает и устанавливает новую версию автоматически.
+    <string name="update_info">monocles mod скачивает и устанавливает новую версию автоматически.
 \n
 \nПожалуйста, подождите…</string>
-    <string name="update_service">Служба обновлений monocles chat</string>
-    <string name="updated_to_monocles">Мы успешно обновили Monocles Messenger до monocles chat
+    <string name="update_service">Служба обновлений monocles mod</string>
+    <string name="updated_to_monocles">Мы успешно обновили Monocles Messenger до monocles mod
 \n
-\nСотрудничество проектов monocles chat и Monocles Messenger было расширено в ноябре 2020 года. В будущем приложение Monocles Messenger будет развиваться как monocles chat.
+\nСотрудничество проектов monocles mod и Monocles Messenger было расширено в ноябре 2020 года. В будущем приложение Monocles Messenger будет развиваться как monocles mod.
 \n
 \nЧто вы можете ожидать:
 \n- Набор функций остается прежним
 \n- Чаты поддержки объединены
-\n- Цвета и логотипы адаптированы под monocles chat
+\n- Цвета и логотипы адаптированы под monocles mod
 \n- Приложение все еще доступно бесплатно в Google Play и F-Droid
 \n
 \nВаша команда monocles</string>
-    <string name="updated_to_monocles_google">Приносим извинения за то, что не смогли выполнить обновление до monocles chat. По ссылке Вы получите инструкции о том, как перенести все свои профили из Monocles Messenger в monocles chat. Нажимая на кнопку «Переместить данные», мы пытаемся переместить все отправленные и полученные файлы из Monocles Messenger в monocles chat. После успешной миграции не забудьте удалить Monocles Messenger со своего устройства.</string>
+    <string name="updated_to_monocles_google">Приносим извинения за то, что не смогли выполнить обновление до monocles mod. По ссылке Вы получите инструкции о том, как перенести все свои профили из Monocles Messenger в monocles mod. Нажимая на кнопку «Переместить данные», мы пытаемся переместить все отправленные и полученные файлы из Monocles Messenger в monocles mod. После успешной миграции не забудьте удалить Monocles Messenger со своего устройства.</string>
     <string name="updating">Обновление…</string>
     <string name="url_copied_to_clipboard">URL скопирован в буфер обмена</string>
     <string name="use_camera_icon_to_scan_barcode">Используйте камеру для сканирования QR кода контактов</string>
@@ -1224,8 +1224,8 @@
     <string name="webview_not_available">Webview недоступен на вашем устройстве.</string>
     <string name="welcome_existing_account">У меня есть аккаунт</string>
     <string name="welcome_header">Добро пожаловать в
-\nmonocles chat</string>
-    <string name="welcome_server_info">Мы рекомендуем использовать сервер monocles chat.</string>
+\nmonocles mod</string>
+    <string name="welcome_server_info">Мы рекомендуем использовать сервер monocles mod.</string>
     <string name="welcome_text">…это свободный и безопасный XMPP/Jabber клиент.</string>
     <string name="without_mutual_presence_updates"><b>Предупреждение:</b> отправка без взаимного обновления присутствия может вызвать непредвиденные проблемы.
 \n
@@ -1451,7 +1451,7 @@
     <string name="show_keyboard">Показать клавиатуру</string>
     <string name="pref_show_thread_feature_summary">Активируйте значок темы в поле ввода и разрешите создавать и отслеживать темы</string>
     <string name="pref_show_thread_feature">Активировать функцию темы</string>
-    <string name="app_title" formatted="true">monocles chat</string>
+    <string name="app_title" formatted="true">monocles mod</string>
     <string name="edit_sytemaccount_or_xmppaccount">Изменить контакт в приложении или телефонный контакт?</string>
     <string name="edit_sytemaccount">Контакт в телефоне</string>
     <string name="edit_chat_contact">Контакт в приложении</string>
@@ -1538,8 +1538,8 @@
     <string name="recent_threads">Последние темы</string>
     <string name="settings_lock">Блокировка приложения (бета-версия)</string>
     <string name="settings_lock_summary">Заблокируйте приложение паролем вашего устройства или отпечатком пальца</string>
-    <string name="unlock_app">Разблокировать monocles chat</string>
-    <string name="pref_app_lock_summary">Заблокируйте приложение с помощью PIN-кода или отпечатка пальца. Monocles chat будет заблокирован после закрытия и его можно будет снова открыть только с помощью правильного PIN-кода или отпечатка пальца</string>
+    <string name="unlock_app">Разблокировать monocles mod</string>
+    <string name="pref_app_lock_summary">Заблокируйте приложение с помощью PIN-кода или отпечатка пальца. Monocles mod будет заблокирован после закрытия и его можно будет снова открыть только с помощью правильного PIN-кода или отпечатка пальца</string>
     <string name="can_not_remove_lock">Не могу снять блокировку</string>
     <string name="pref_app_lock_title">Блокировка приложения (бета-версия)</string>
     <string name="can_not_create_lock">Невозможно создать PIN-код или отпечаток пальца</string>

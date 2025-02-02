@@ -75,23 +75,23 @@ public class StorageHelper {
     }
 
     public static String getGlobalPicturesPath() {
-        return Environment.getExternalStoragePublicDirectory(Environment.DIRECTORY_PICTURES) + File.separator + "monocles chat" + File.separator;
+        return Environment.getExternalStoragePublicDirectory(Environment.DIRECTORY_PICTURES) + File.separator + "monocles mod" + File.separator;
     }
 
     public static String getGlobalVideosPath() {
-        return Environment.getExternalStoragePublicDirectory(Environment.DIRECTORY_MOVIES) + File.separator + "monocles chat"+ File.separator;
+        return Environment.getExternalStoragePublicDirectory(Environment.DIRECTORY_MOVIES) + File.separator + "monocles mod"+ File.separator;
     }
 
     public static String getGlobalDocumentsPath() {
-        return Environment.getExternalStoragePublicDirectory(Environment.DIRECTORY_DOCUMENTS) + File.separator + "monocles chat"+ File.separator;
+        return Environment.getExternalStoragePublicDirectory(Environment.DIRECTORY_DOCUMENTS) + File.separator + "monocles mod"+ File.separator;
     }
 
     public static String getGlobalDownloadsPath() {
-        return Environment.getExternalStoragePublicDirectory(Environment.DIRECTORY_DOWNLOADS) + File.separator + "monocles chat"+ File.separator;
+        return Environment.getExternalStoragePublicDirectory(Environment.DIRECTORY_DOWNLOADS) + File.separator + "monocles mod"+ File.separator;
     }
 
     public static String getGlobalAudiosPath() {
-        return Environment.getExternalStoragePublicDirectory(Environment.DIRECTORY_MUSIC) + File.separator + "monocles chat"+ File.separator;
+        return Environment.getExternalStoragePublicDirectory(Environment.DIRECTORY_MUSIC) + File.separator + "monocles mod"+ File.separator;
     }
 
     public static String getAppUpdateDirectory() {
@@ -110,19 +110,19 @@ public class StorageHelper {
             if (!isMigrated) {
                 try {
                     Log.d(Config.LOGTAG, "Migrating Media for Android 11");
-                    final File oldAudiosDirectory = new File(Environment.getExternalStorageDirectory().getAbsolutePath() + File.separator + "monocles chat" + File.separator + "Media" + File.separator + "monocles chat Audios" + File.separator);
+                    final File oldAudiosDirectory = new File(Environment.getExternalStorageDirectory().getAbsolutePath() + File.separator + "monocles mod" + File.separator + "Media" + File.separator + "monocles mod Audios" + File.separator);
                     final File newAudiosDirectory = new File(xmppConnectionService.getExternalMediaDirs()[0].getAbsolutePath() + File.separator + APP_DIRECTORY + " " + AUDIOS + File.separator);
-                    final File oldFilesDirectory = new File(Environment.getExternalStorageDirectory().getAbsolutePath() + File.separator + "monocles chat" + File.separator + "Media" + File.separator + "monocles chat Files" + File.separator);
+                    final File oldFilesDirectory = new File(Environment.getExternalStorageDirectory().getAbsolutePath() + File.separator + "monocles mod" + File.separator + "Media" + File.separator + "monocles mod Files" + File.separator);
                     final File newFilesDirectory = new File(xmppConnectionService.getExternalMediaDirs()[0].getAbsolutePath() + File.separator + APP_DIRECTORY + " " + FILES + File.separator);
-                    final File oldImagesDirectory = new File(Environment.getExternalStorageDirectory().getAbsolutePath() + File.separator + "monocles chat" + File.separator + "Media" + File.separator + "monocles chat Images" + File.separator);
+                    final File oldImagesDirectory = new File(Environment.getExternalStorageDirectory().getAbsolutePath() + File.separator + "monocles mod" + File.separator + "Media" + File.separator + "monocles mod Images" + File.separator);
                     final File newImagesDirectory = new File(xmppConnectionService.getExternalMediaDirs()[0].getAbsolutePath() + File.separator + APP_DIRECTORY + " " + IMAGES + File.separator);
-                    final File oldVideosDirectory = new File(Environment.getExternalStorageDirectory().getAbsolutePath() + File.separator + "monocles chat" + File.separator + "Media" + File.separator + "monocles chat Videos" + File.separator);
+                    final File oldVideosDirectory = new File(Environment.getExternalStorageDirectory().getAbsolutePath() + File.separator + "monocles mod" + File.separator + "Media" + File.separator + "monocles mod Videos" + File.separator);
                     final File newVideosDirectory = new File(xmppConnectionService.getExternalMediaDirs()[0].getAbsolutePath() + File.separator + APP_DIRECTORY + " " + VIDEOS + File.separator);
 
-                    final File oldDatabaseDirectory = new File(Environment.getExternalStorageDirectory().getAbsolutePath() + File.separator + "monocles chat" + File.separator + "Database" + File.separator);
+                    final File oldDatabaseDirectory = new File(Environment.getExternalStorageDirectory().getAbsolutePath() + File.separator + "monocles mod" + File.separator + "Database" + File.separator);
                     final File newDatabaseDirectory = new File(getBackupDirectory(null));
 
-                    final File oldChatsDirectory = new File(Environment.getExternalStorageDirectory().getAbsolutePath() + File.separator + "monocles chat" + File.separator + "Chats" + File.separator);
+                    final File oldChatsDirectory = new File(Environment.getExternalStorageDirectory().getAbsolutePath() + File.separator + "monocles mod" + File.separator + "Chats" + File.separator);
                     final File newChatsDirectory = new File(getAppLogsDirectory());
 
                     try {

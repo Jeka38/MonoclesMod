@@ -1,6 +1,6 @@
 <?xml version="1.0" encoding="utf-8"?>
 <resources>
-    <string name="pref_about_message" translatable="false"><b>monocles chat</b>
+    <string name="pref_about_message" translatable="false"><b>monocles mod</b>
 			\n\nCopyright © 2018-%s Arne-Brün Vogelsang
 			\n\nhttps://monocles.eu/more/
 			\n\nThis program is free software: you can redistribute it and/or modify

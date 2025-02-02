@@ -450,7 +450,7 @@ public class ConversationsActivity extends XmppActivity implements OnConversatio
 
         AlertDialog.Builder builder = new AlertDialog.Builder(this);
         builder.setTitle("Dialler Integration");
-        builder.setMessage("monocles chat is able to integrate with your system's dialler app to allow dialling calls via your configured gateway " + String.join(", ", pstnGateways) + ".\n\nEnabling this integration will require granting microphone permission to the app.  Would you like to enable it now?");
+        builder.setMessage("monocles mod is able to integrate with your system's dialler app to allow dialling calls via your configured gateway " + String.join(", ", pstnGateways) + ".\n\nEnabling this integration will require granting microphone permission to the app.  Would you like to enable it now?");
         builder.setPositiveButton(R.string.yes, (dialog, which) -> {
             final String[] permissions;
             if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.S) {
@@ -1218,10 +1218,12 @@ public class ConversationsActivity extends XmppActivity implements OnConversatio
             }
         }
         Typeface font = ResourcesCompat.getFont(this, R.font.notosanssemibold);
-        SpannableStringBuilder app_title = new SpannableStringBuilder("monocles chat");
+        SpannableStringBuilder app_title = new SpannableStringBuilder("monocles mod");
         if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.P) {
-            app_title.setSpan (new TypefaceSpan(font), 0, 13, Spanned.SPAN_EXCLUSIVE_INCLUSIVE);
+            int end = Math.min(13, app_title.length()); // Обрезаем до длины строки
+            app_title.setSpan(new TypefaceSpan(font), 0, end, Spanned.SPAN_EXCLUSIVE_INCLUSIVE);
         }
+
         actionBar.setDisplayShowCustomEnabled(false);
         actionBar.setTitle(app_title);
         actionBar.setDisplayHomeAsUpEnabled(false);

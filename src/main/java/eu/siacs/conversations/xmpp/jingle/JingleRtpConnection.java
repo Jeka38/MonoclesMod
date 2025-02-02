@@ -686,7 +686,7 @@ public class JingleRtpConnection extends AbstractJingleConnection
                     Reason.FAILED_APPLICATION,
                     String.format(
                             "%s only supports %s as a means to retract a not yet accepted %s",
-                            "monocles chat",
+                            "monocles mod",
                             JinglePacket.Action.CONTENT_REMOVE,
                             JinglePacket.Action.CONTENT_ADD));
         }

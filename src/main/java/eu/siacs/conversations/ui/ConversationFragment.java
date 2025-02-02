@@ -4009,10 +4009,10 @@ public class ConversationFragment extends XmppFragment
                 Intent tmp = ((StorageManager) activity.getSystemService(Context.STORAGE_SERVICE)).getPrimaryStorageVolume().createOpenDocumentTreeIntent();
                 uri = tmp.getParcelableExtra("android.provider.extra.INITIAL_URI");
                 if (uri != null) {
-                    uri = Uri.parse(uri.toString().replace("/root/", "/document/") + "%3ADocuments%2F" + "monocles chat%2F" + dir);
+                    uri = Uri.parse(uri.toString().replace("/root/", "/document/") + "%3ADocuments%2F" + "monocles mod%2F" + dir);
                 }
             } else {
-                uri = Uri.parse("content://com.android.externalstorage.documents/document/primary%3ADocuments%2F" + "monocles chat%2F" + dir);
+                uri = Uri.parse("content://com.android.externalstorage.documents/document/primary%3ADocuments%2F" + "monocles mod%2F" + dir);
             }
             intent.putExtra("android.provider.extra.INITIAL_URI", uri);
             intent.putExtra("android.content.extra.SHOW_ADVANCED", true);
@@ -4046,10 +4046,10 @@ public class ConversationFragment extends XmppFragment
                 Intent tmp = ((StorageManager) activity.getSystemService(Context.STORAGE_SERVICE)).getPrimaryStorageVolume().createOpenDocumentTreeIntent();
                 uri = tmp.getParcelableExtra("android.provider.extra.INITIAL_URI");
                 if (uri != null) {
-                    uri = Uri.parse(uri.toString().replace("/root/", "/document/") + "%3ADocuments%2F" + "monocles chat%2F" + dir);
+                    uri = Uri.parse(uri.toString().replace("/root/", "/document/") + "%3ADocuments%2F" + "monocles mod%2F" + dir);
                 }
             } else {
-                uri = Uri.parse("content://com.android.externalstorage.documents/document/primary%3ADocuments%2F" + "monocles chat%2F" + dir);
+                uri = Uri.parse("content://com.android.externalstorage.documents/document/primary%3ADocuments%2F" + "monocles mod%2F" + dir);
             }
             intent.putExtra("android.provider.extra.INITIAL_URI", uri);
             intent.putExtra("android.content.extra.SHOW_ADVANCED", true);

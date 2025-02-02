@@ -5,13 +5,13 @@
          xmlns:foaf="http://xmlns.com/foaf/0.1/"
          xmlns:xmpp="https://linkmauve.fr/ns/xmpp-doap#"
          xmlns:schema="https://schema.org/">
-    <name>monocles chat</name>
+    <name>monocles mod</name>
 
     <created>2021-05-04</created>
 
     <shortdesc xml:lang="en">Userfriendly XMPP Client for Android</shortdesc>
 
-    <description xml:lang="en">monocles chat is a modern and secure chat app using XMPP. Based on Conversations and Blabber.im but with many changes.</description>
+    <description xml:lang="en">monocles mod is a modern and secure chat app using XMPP. Based on Conversations and Blabber.im but with many changes.</description>
 
     <homepage rdf:resource="https://monocles.eu/more/"/>
     <download-page rdf:resource="https://f-droid.org/en/packages/de.monocles.mod/"/>
