@@ -611,36 +611,24 @@ public class UIHelper {
 
         final Conversational conversation = message.getConversation();
         if (message.getStatus() == Message.STATUS_RECEIVED) {
-            final Contact contact = message.getContact();
             if (conversation.getMode() == Conversation.MODE_MULTI) {
-                if (contact != null) {
-                    return contact.getDisplayName();
-                } else {
-                    if (conversation instanceof Conversation) {
-                        final MucOptions.User user = ((Conversation) conversation).getMucOptions().findUserByFullJid(message.getCounterpart());
-                        if (user != null) return getDisplayName(user);
-                    }
-                    return getDisplayedMucCounterpart(message.getCounterpart());
+                if (conversation instanceof Conversation) {
+                    final MucOptions.User user = ((Conversation) conversation).getMucOptions().findUserByFullJid(message.getCounterpart());
+                    if (user != null) return user.getNick(); // Используем только ник
                 }
-            } else {
-                return contact != null ? contact.getDisplayName() : "";
+                return getDisplayedMucCounterpart(message.getCounterpart());
             }
+            return ""; // Убрали привязку к контактам
         } else {
             if (conversation instanceof Conversation && conversation.getMode() == Conversation.MODE_MULTI) {
                 return ((Conversation) conversation).getMucOptions().getSelf().getNick();
             } else {
                 final Account account = conversation.getAccount();
-                final Jid jid = account.getJid();
-                final String displayName = account.getDisplayName();
-                if (Strings.isNullOrEmpty(displayName)) {
-                    return jid.getLocal() != null ? jid.getLocal() : jid.getDomain().toString();
-                } else {
-                    return displayName;
-                }
-
+                return account.getJid().getLocal() != null ? account.getJid().getLocal() : account.getJid().getDomain().toString();
             }
         }
     }
+
 
     public static String getMessageHint(Context context, Conversation conversation) {
         switch (conversation.getNextEncryption()) {
