@@ -151,6 +151,14 @@
         android:orderInCategory="100"
         android:title="@string/action_group_details"
         app:showAsAction="always" />
+
+    <item
+        android:id="@+id/action_muc_participants"
+        android:icon="?attr/icon_group_unselected"
+        android:orderInCategory="40"
+        android:title="@string/action_muc_details"
+        app:showAsAction="ifRoom" />
+
     <item
         android:id="@+id/action_contact_details"
         android:icon="?attr/icon_contact"

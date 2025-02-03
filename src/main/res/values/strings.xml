@@ -1137,6 +1137,7 @@
     <string name="error_moving_data">An error occurred while moving your old data. Please move them manually.</string>
     <string name="data_successfully_moved">Your data has been moved successfully.</string>
     <string name="invite_to_app">Invite to monocles mod</string>
+    <string name="action_muc_details">action_muc_details</string>
     <string name="unable_to_parse_invite">Unable to parse invite</string>
     <string name="server_does_not_support_easy_onboarding_invites">Server does not support generating invites</string>
     <string name="your_server">Your provider</string>

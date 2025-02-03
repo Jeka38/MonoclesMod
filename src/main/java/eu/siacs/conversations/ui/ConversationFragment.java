@@ -1834,6 +1834,7 @@ public class ConversationFragment extends XmppFragment
             final MenuItem menuGroupDetails = menu.findItem(R.id.action_group_details);
             final MenuItem menuParticipants = menu.findItem(R.id.action_participants);
             final MenuItem menuContactDetails = menu.findItem(R.id.action_contact_details);
+            final MenuItem menuMucParticipants = menu.findItem(R.id.action_muc_participants);
             final MenuItem menuCall = menu.findItem(R.id.action_call);
             final MenuItem menuOngoingCall = menu.findItem(R.id.action_ongoing_call);
             final MenuItem menuVideoCall = menu.findItem(R.id.action_video_call);
@@ -1854,6 +1855,7 @@ public class ConversationFragment extends XmppFragment
                     menuSettings.setVisible(false);
                     menuInviteToChat.setVisible(false);
                 } else {
+                    menuMucParticipants.setVisible(false);
                     final XmppConnectionService service = activity == null ? null : activity.xmppConnectionService;
                     final Optional<OngoingRtpSession> ongoingRtpSession = service == null ? Optional.absent() : service.getJingleConnectionManager().getOngoingRtpConnection(conversation.getContact());
                     if (ongoingRtpSession.isPresent()) {
@@ -2713,7 +2715,12 @@ public class ConversationFragment extends XmppFragment
             handleAttachmentSelection(item);
         } else if (itemId == R.id.action_search) {
             startSearch();
-        } else if (itemId == R.id.action_archive_chat) {
+        } else if (itemId == R.id.action_muc_participants) {
+            Intent intent_user = new Intent(activity, MucUsersActivity.class);
+            intent_user.putExtra("uuid", conversation.getUuid());
+            activity.startActivity(intent_user);
+        }
+        else if (itemId == R.id.action_archive_chat) {
             activity.xmppConnectionService.archiveConversation(conversation);
         } else if (itemId == R.id.action_leave_group) {
             final AlertDialog.Builder builder = new AlertDialog.Builder(activity);
@@ -3244,7 +3251,7 @@ public class ConversationFragment extends XmppFragment
     }
 
     private void updateChatBG() {
-        if (activity != null) {
+        if (activity != null && conversation != null) {
             if (activity.unicoloredBG()) {
                 binding.conversationsFragment.setBackgroundResource(0);
                 binding.conversationsFragment.setBackgroundColor(StyledAttributes.getColor(activity, R.attr.color_background_tertiary));
