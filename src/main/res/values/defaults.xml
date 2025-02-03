@@ -52,7 +52,7 @@
     <bool name="show_combined_search_options">false</bool>
     <bool name="scroll_to_bottom">true</bool>
     <bool name="start_searching">false</bool>
-    <bool name="show_record_voice_btn">true</bool>
+    <bool name="show_record_voice_btn">false</bool>
     <bool name="quick_share_attachment_choice">true</bool>
     <bool name="screen_security">false</bool>
     <bool name="play_gif_inside">true</bool>

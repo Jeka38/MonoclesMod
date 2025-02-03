@@ -5,7 +5,7 @@
     <bool name="use_blue_readmarkers">true</bool>
     <bool name="use_green_blue_readmarkers">false</bool>
     <bool name="show_thread_feature">false</bool>
-    <bool name="show_less_avatars">true</bool>
+    <bool name="show_less_avatars">false</bool>
     <bool name="set_text_collapsable">false</bool>
     <bool name="jump_to_commands_tab">false</bool>
     <bool name="enforce_dane">false</bool>

@@ -188,7 +188,6 @@ import eu.siacs.conversations.entities.ReadByMarker;
 import eu.siacs.conversations.entities.Transferable;
 import eu.siacs.conversations.entities.TransferablePlaceholder;
 import eu.siacs.conversations.http.HttpDownloadConnection;
-import eu.siacs.conversations.medialib.activities.EditActivity;
 import eu.siacs.conversations.persistance.FileBackend;
 import eu.siacs.conversations.services.AttachFileToConversationRunnable;
 import eu.siacs.conversations.services.CallIntegrationConnectionService;
@@ -295,7 +294,6 @@ public class ConversationFragment extends XmppFragment
     public static final int ATTACHMENT_CHOICE_LOCATION = 0x0305;
     public static final int ATTACHMENT_CHOICE_CHOOSE_VIDEO = 0x0306;
     public static final int ATTACHMENT_CHOICE_RECORD_VIDEO = 0x0307;
-    public static final int ATTACHMENT_CHOICE_EDIT_PHOTO = 0x0308;
     public static final int ATTACHMENT_CHOICE_INVALID = 0x0399;
 
     public static final String RECENTLY_USED_QUICK_ACTION = "recently_used_quick_action";
@@ -1609,27 +1607,18 @@ public class ConversationFragment extends XmppFragment
             triggerRtpSession(RtpSessionActivity.ACTION_MAKE_VIDEO_CALL);
         } else if (requestCode == ATTACHMENT_CHOICE_CHOOSE_IMAGE) {
             final List<Attachment> imageUris = Attachment.extractAttachments(getActivity(), data, Attachment.Type.IMAGE);
-            if (imageUris.size() == 1) {
-                editImage(imageUris.get(0).getUri());
-            } else {
-                mediaPreviewAdapter.addMediaPreviews(imageUris);
-                toggleInputMethod();
-            }
+
+            mediaPreviewAdapter.addMediaPreviews(imageUris);
+            toggleInputMethod();
         } else if (requestCode == ATTACHMENT_CHOICE_TAKE_PHOTO) {
             final Uri takePhotoUri = pendingTakePhotoUri.pop();
             if (takePhotoUri != null) {
-                editImage(takePhotoUri);
+                mediaPreviewAdapter.addMediaPreviews(Attachment.of(getActivity(), takePhotoUri, Attachment.Type.IMAGE));
+                activity.xmppConnectionService.sendBroadcast(new Intent(Intent.ACTION_MEDIA_SCANNER_SCAN_FILE, takePhotoUri));
+                toggleInputMethod();
             } else {
                 Log.d(Config.LOGTAG, "lost take photo uri. unable to to attach");
             }
-        } else if (requestCode == ATTACHMENT_CHOICE_EDIT_PHOTO) {
-                final Uri editedUriPhoto = data.getParcelableExtra(EditActivity.KEY_EDITED_URI);
-                if (editedUriPhoto != null) {
-                    mediaPreviewAdapter.replaceOrAddMediaPreview(data.getData(), editedUriPhoto, Attachment.Type.IMAGE);
-                    toggleInputMethod();
-                } else {
-                    Log.d(Config.LOGTAG, "lost take photo uri. unable to to attach");
-                }
         } else if (requestCode == ATTACHMENT_CHOICE_CHOOSE_FILE || requestCode == ATTACHMENT_CHOICE_RECORD_VIDEO || requestCode == ATTACHMENT_CHOICE_CHOOSE_VIDEO || requestCode == ATTACHMENT_CHOICE_RECORD_VOICE) {
             final Attachment.Type type = requestCode == ATTACHMENT_CHOICE_RECORD_VOICE ? Attachment.Type.RECORDING : Attachment.Type.FILE;
             final List<Attachment> fileUris = Attachment.extractAttachments(getActivity(), data, type);
@@ -1656,13 +1645,6 @@ public class ConversationFragment extends XmppFragment
                 }
             }
         }
-    }
-
-    public void editImage(Uri uri) {
-        Intent intent = new Intent(activity, EditActivity.class);
-        intent.setData(uri);
-        intent.putExtra(EditActivity.KEY_CHAT_NAME, conversation.getName());
-        startActivityForResult(intent, ATTACHMENT_CHOICE_EDIT_PHOTO);
     }
 
     private void commitAttachments() {

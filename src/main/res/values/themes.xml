@@ -14,10 +14,10 @@
     <style name="ConversationsTheme.FullScreen" parent="Theme.Material3.Light">
         <item name="colorPrimary">@color/primary</item>
         <item name="colorPrimaryDark">@color/primary_dark</item>
-        <item name="colorAccent">?attr/colorAccent</item>
-        <item name="colorSurface">@color/white</item>
+
         <item name="android:windowNoTitle">true</item>
         <item name="android:windowActionBar">false</item>
+        <item name="android:windowFullscreen">true</item>
         <item name="android:windowContentOverlay">@null</item>
         <item name="android:windowBackground">@android:color/black</item>
         <item name="android:navigationBarColor" >@color/black</item>

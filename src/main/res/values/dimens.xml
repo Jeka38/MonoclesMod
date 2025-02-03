@@ -65,32 +65,4 @@
 
     <!-- bottom navigation height -->
     <dimen name="nav_bar_height">70dp</dimen>
-
-    <!-- photo editor -->
-    <dimen name="selection_check_size">26dp</dimen>
-    <dimen name="bottom_actions_height">64dp</dimen>
-    <dimen name="bottom_actions_small_height">48dp</dimen>
-    <dimen name="bottom_actions_height_double">120dp</dimen>
-    <dimen name="bottom_actions_height_bigger">172dp</dimen>
-    <dimen name="bottom_editor_color_picker_size">48dp</dimen>
-    <dimen name="bottom_filters_thumbnail_size">76dp</dimen>
-    <dimen name="bottom_filters_height">90dp</dimen>
-    <dimen name="bottom_filters_height_with_margin">98dp</dimen>
-    <dimen name="bottom_editor_actions_shadow_height">180dp</dimen>
-    <dimen name="full_brush_size">40dp</dimen>
-
-    <dimen name="one_dp">1dp</dimen>
-    <dimen name="tiny_margin">2dp</dimen>
-    <dimen name="smaller_margin">6dp</dimen>
-    <dimen name="normal_margin">12dp</dimen>
-    <dimen name="large_margin">16dp</dimen>
-
-    <dimen name="tiny_text_size">8sp</dimen>
-    <dimen name="small_text_size">10sp</dimen>
-    <dimen name="normal_text_size">14sp</dimen>
-    <dimen name="medium_text_size">15sp</dimen>
-    <dimen name="bigger_text_size">16sp</dimen>
-    <dimen name="big_text_size">18sp</dimen>
-
-    <dimen name="colorpicker_hue_width">30dp</dimen>
 </resources>

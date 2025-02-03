@@ -567,11 +567,6 @@
             android:exported="false"
             android:launchMode="singleTask" />
         <activity
-            android:name="eu.siacs.conversations.medialib.activities.EditActivity"
-            android:theme="@style/ConversationsTheme.FullScreen"
-            android:configChanges="orientation"
-            android:exported="false"/>
-        <activity
             android:name=".ui.EnterNameActivity"
             android:label="@string/enter_your_name"
             android:exported="false"
