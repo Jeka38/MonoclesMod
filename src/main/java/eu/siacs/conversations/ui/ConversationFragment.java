@@ -1820,7 +1820,6 @@ public class ConversationFragment extends XmppFragment
             final MenuItem menuCall = menu.findItem(R.id.action_call);
             final MenuItem menuOngoingCall = menu.findItem(R.id.action_ongoing_call);
             final MenuItem menuVideoCall = menu.findItem(R.id.action_video_call);
-            final MenuItem menuMediaBrowser = menu.findItem(R.id.action_mediabrowser);
             final MenuItem menuTogglePinned = menu.findItem(R.id.action_toggle_pinned);
             final MenuItem menuSettings = menu.findItem(R.id.action_settings);
             final MenuItem menuInviteToChat = menu.findItem(R.id.action_invite_user);
@@ -1880,7 +1879,6 @@ public class ConversationFragment extends XmppFragment
                     menuContactDetails.setVisible(false);
                     menuSearchUpdates.setVisible(false);
                 }
-                menuMediaBrowser.setVisible(true);
                 ConversationMenuConfigurator.configureAttachmentMenu(conversation, menu, activity.getAttachmentChoicePreference(), hasAttachments);
                 ConversationMenuConfigurator.configureEncryptionMenu(conversation, menu, activity);
                 if (conversation.getBooleanAttribute(Conversation.ATTRIBUTE_PINNED_ON_TOP, false)) {
@@ -1893,7 +1891,6 @@ public class ConversationFragment extends XmppFragment
                 menuInviteContact.setVisible(false);
                 menuGroupDetails.setVisible(false);
                 menuContactDetails.setVisible(false);
-                menuMediaBrowser.setVisible(false);
             }
             deleteCustomBg.setVisible(ChatBackgroundHelper.getBgFile(activity, conversation.getUuid()).exists());
             super.onCreateOptionsMenu(menu, menuInflater);
@@ -2727,8 +2724,6 @@ public class ConversationFragment extends XmppFragment
             activity.overridePendingTransition(R.animator.fade_in, R.animator.fade_out);
         } else if (itemId == R.id.action_contact_details) {
             activity.switchToContactDetails(conversation.getContact());
-        } else if (itemId == R.id.action_mediabrowser) {
-            MediaBrowserActivity.launch(activity, conversation);
         } else if (itemId == R.id.action_block || itemId == R.id.action_unblock) {
             if (mXmppActivity instanceof XmppActivity) {
                 BlockContactDialog.show((XmppActivity) mXmppActivity, conversation);
