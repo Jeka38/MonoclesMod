@@ -320,20 +320,8 @@ public class ConferenceDetailsActivity extends XmppActivity implements OnConvers
         this.mMediaAdapter = new MediaAdapter(this, R.dimen.media_size);
         this.mUserPreviewAdapter = new UserPreviewAdapter();
         this.binding.media.setAdapter(mMediaAdapter);
-        this.binding.users.setAdapter(mUserPreviewAdapter);
         //TODO: Implement recyclerview for users list and media list
         GridManager.setupLayoutManager(this, this.binding.media, R.dimen.media_size);
-        GridManager.setupLayoutManager(this, this.binding.users, R.dimen.media_size);
-        this.binding.recentThreads.setOnItemClickListener((a0, v, pos, a3) -> {
-            final Conversation.Thread thread = (Conversation.Thread) binding.recentThreads.getAdapter().getItem(pos);
-            switchToConversation(mConversation, null, false, null, false, true, null, thread.getThreadId());
-        });
-        this.binding.invite.setOnClickListener(v -> inviteToConversation(mConversation));
-        this.binding.showUsers.setOnClickListener(v -> {
-            Intent intent = new Intent(this, MucUsersActivity.class);
-            intent.putExtra("uuid", mConversation.getUuid());
-            startActivity(intent);
-        });
         this.binding.relatedMucs.setOnClickListener(v -> {
             final Intent intent = new Intent(this, ChannelDiscoveryActivity.class);
             intent.putExtra("services", new String[]{ mConversation.getJid().getDomain().toEscapedString(), mConversation.getAccount().getJid().toEscapedString() });
@@ -701,7 +689,6 @@ public class ConferenceDetailsActivity extends XmppActivity implements OnConvers
         }
         this.binding.mucYourNick.setText(mucOptions.getActualNick());
         if (mucOptions.online()) {
-            this.binding.usersWrapper.setVisibility(View.VISIBLE);
             this.binding.mucInfoMore.setVisibility(this.mAdvancedMode ? View.VISIBLE : View.GONE);
             this.binding.jid.setVisibility(this.mAdvancedMode ? View.VISIBLE : View.GONE);
             this.binding.mucRole.setVisibility(View.VISIBLE);
@@ -777,7 +764,6 @@ public class ConferenceDetailsActivity extends XmppActivity implements OnConvers
                 });
             }
         } else {
-            this.binding.usersWrapper.setVisibility(View.GONE);
             this.binding.mucInfoMore.setVisibility(View.GONE);
             this.binding.mucSettings.setVisibility(View.GONE);
         }
@@ -820,34 +806,12 @@ public class ConferenceDetailsActivity extends XmppActivity implements OnConvers
                 }
             }
         });
-        this.mUserPreviewAdapter.submitList(MucOptions.sub(users, GridManager.getCurrentColumnCount(binding.users)));
-        this.binding.invite.setVisibility(mucOptions.canInvite() ? View.VISIBLE : View.GONE);
-        this.binding.showUsers.setVisibility(mucOptions.getUsers(true, mucOptions.getSelf().getAffiliation().ranks(MucOptions.Affiliation.ADMIN)).size() > 0 ? View.VISIBLE : View.GONE);
-        this.binding.showUsers.setText(getResources().getQuantityString(R.plurals.view_users, users.size(), users.size()));
-        this.binding.usersWrapper.setVisibility(users.size() > 0 || mucOptions.canInvite() ? View.VISIBLE : View.GONE);
-        if (users.size() == 0) {
-            this.binding.noUsersHints.setText(mucOptions.isPrivateAndNonAnonymous() ? R.string.no_users_hint_group_chat : R.string.no_users_hint_channel);
-            this.binding.noUsersHints.setVisibility(View.VISIBLE);
-        } else {
-            this.binding.noUsersHints.setVisibility(View.GONE);
-        }
         if (bookmark == null) {
             binding.tags.setVisibility(View.GONE);
             return;
         }
 
         final List<Conversation.Thread> recentThreads = mConversation.recentThreads();
-        if (recentThreads.isEmpty()) {
-            this.binding.recentThreadsWrapper.setVisibility(View.GONE);
-        } else {
-
-            if (xmppConnectionService != null && xmppConnectionService.getBooleanPreference("show_thread_feature", R.bool.show_thread_feature)) {
-                this.binding.recentThreadsWrapper.setVisibility(View.VISIBLE);
-            } else {
-                this.binding.recentThreadsWrapper.setVisibility(View.GONE);
-            }
-            Util.justifyListViewHeightBasedOnChildren(binding.recentThreads);
-        }
 
         List<ListItem.Tag> tagList = bookmark.getTags(this);
         if (tagList.size() == 0 || !showDynamicTags) {
