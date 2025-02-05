@@ -4906,7 +4906,7 @@ public class ConversationFragment extends XmppFragment
                 if (isEncryptionDisabledException() || conversation.getJid().toString().equals(account.getJid().getDomain())) {
                     hideSnackbar();
                 } else {
-                    showSnackbar(R.string.conversation_unencrypted_hint, R.string.ok, showUnencryptionHintDialog);
+                    hideSnackbar();
                 }
             } else {
                 hideSnackbar();
@@ -4920,29 +4920,6 @@ public class ConversationFragment extends XmppFragment
             hideSnackbar();
         }
     }
-
-    private OnClickListener showUnencryptionHintDialog = new OnClickListener() {
-        @Override
-        public void onClick(View v) {
-            activity.runOnUiThread(() -> {
-                final AlertDialog.Builder builder = new AlertDialog.Builder(getActivity());
-                builder.setTitle(getString(R.string.message_encryption));
-                builder.setMessage(getString(R.string.enable_message_encryption));
-                builder.setNegativeButton(getString(R.string.cancel), null);
-                builder.setPositiveButton(getString(R.string.enable),
-                        (dialog, which) -> {
-                            enableMessageEncryption();
-                        });
-                builder.setNeutralButton(getString(R.string.hide_warning),
-                        (dialog, which) -> {
-                            SharedPreferences preferences = activity.getPreferences();
-                            preferences.edit().putBoolean(WARN_UNENCRYPTED_CHAT, false).apply();
-                            hideSnackbar();
-                        });
-                builder.create().show();
-            });
-        }
-    };
 
     @Override
     public void refresh() {
