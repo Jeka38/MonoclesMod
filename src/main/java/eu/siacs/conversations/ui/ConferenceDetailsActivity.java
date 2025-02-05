@@ -262,7 +262,6 @@ public class ConferenceDetailsActivity extends XmppActivity implements OnConvers
         this.binding = DataBindingUtil.setContentView(this, R.layout.activity_muc_details);
         SharedPreferences preferences = PreferenceManager.getDefaultSharedPreferences(this);
         showDynamicTags = preferences.getBoolean(SettingsActivity.SHOW_DYNAMIC_TAGS, getResources().getBoolean(R.bool.show_dynamic_tags));
-        this.binding.changeConferenceButton.setOnClickListener(this.mChangeConferenceSettings);
         this.binding.destroy.setVisibility(View.GONE);
         this.binding.destroy.setOnClickListener(destroyListener);
         this.binding.leaveMuc.setVisibility(View.GONE);
@@ -693,15 +692,7 @@ public class ConferenceDetailsActivity extends XmppActivity implements OnConvers
             this.binding.jid.setVisibility(this.mAdvancedMode ? View.VISIBLE : View.GONE);
             this.binding.mucRole.setVisibility(View.VISIBLE);
             this.binding.mucRole.setText(getStatus(self));
-            if (mucOptions.getSelf().getAffiliation().ranks(MucOptions.Affiliation.OWNER)) {
-                this.binding.mucSettings.setVisibility(View.VISIBLE);
-                this.binding.mucConferenceType.setText(MucConfiguration.describe(this, mucOptions));
-            } else if (!mucOptions.isPrivateAndNonAnonymous() && mucOptions.nonanonymous()) {
-                this.binding.mucSettings.setVisibility(View.VISIBLE);
-                this.binding.mucConferenceType.setText(R.string.group_chat_will_make_your_jabber_id_public);
-            } else {
-                this.binding.mucSettings.setVisibility(View.GONE);
-            }
+
             if (mucOptions.mamSupport()) {
                 this.binding.mucInfoMam.setText(R.string.server_info_available);
             } else {
@@ -715,10 +706,8 @@ public class ConferenceDetailsActivity extends XmppActivity implements OnConvers
                 } else {
                     this.binding.destroy.setVisibility(View.GONE);
                 }
-                this.binding.changeConferenceButton.setVisibility(View.VISIBLE);
             } else {
                 this.binding.destroy.setVisibility(View.GONE);
-                this.binding.changeConferenceButton.setVisibility(View.INVISIBLE);
             }
             this.binding.leaveMuc.setVisibility(View.VISIBLE);
             this.binding.leaveMuc.setOnClickListener(v1 -> {
@@ -765,7 +754,6 @@ public class ConferenceDetailsActivity extends XmppActivity implements OnConvers
             }
         } else {
             this.binding.mucInfoMore.setVisibility(View.GONE);
-            this.binding.mucSettings.setVisibility(View.GONE);
         }
 
         int ic_notifications = getThemeResource(R.attr.icon_notifications, R.drawable.ic_notifications_black_24dp);
