@@ -26,8 +26,8 @@
     <!-- grey theme -->
     <color name="primary_grey">#ff999999</color>
     <color name="primary_dark_grey">#ff7f7f7f</color>
-    <color name="primary_grey_dark">#ff323232</color>
-    <color name="primary_dark_grey_dark">#ff191919</color>
+    <color name="primary_grey_dark">#c7c2c8</color>
+    <color name="primary_dark_grey_dark">#ff424242</color>
     <color name="accent_grey">#ff999999</color>
     <color name="accent_light_grey">#1a7f7f7f</color>
     <color name="accent_light_grey_disabled">#1a000000</color>
