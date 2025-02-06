@@ -258,16 +258,6 @@ public class ConversationsActivity extends XmppActivity implements OnConversatio
             }
         }
 
-        if (useInternalUpdater()) {
-            if (xmppConnectionService.getAccounts().size() != 0) {
-                if (xmppConnectionService.hasInternetConnection()) {
-                    if (xmppConnectionService.isWIFI() || (xmppConnectionService.isMobile() && !xmppConnectionService.isMobileRoaming())) {
-                        AppUpdate(xmppConnectionService.installedFrom());
-                    }
-                }
-            }
-        }
-
         for (@IdRes int id : FRAGMENT_ID_NOTIFICATION_ORDER) {
             notifyFragmentOfBackendConnected(id);
         }

@@ -931,8 +931,6 @@
     <string name="set_settings_intro">Here you can set some important privacy settings to your needs. All the settings can also be modified later.</string>
     <string name="pref_show_mappreview_inside_summary">Show map previews directly inside the chat view, a connection to the monocles-Server will be established.</string>
     <string name="pref_show_mappreview_inside">Show previews of locations in chat</string>
-    <string name="pref_use_internal_updater_summary">Let the messenger look for new app updates once a day</string>
-    <string name="pref_use_internal_updater">Look for updates</string>
     <string name="attach">Attach</string>
     <string name="delete_from_server">Delete from server</string>
     <string name="go_online_to_delete">You have to activate and/or go online with the account you want to delete from server.</string>

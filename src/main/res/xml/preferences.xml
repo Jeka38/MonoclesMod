@@ -517,11 +517,6 @@
             android:summary="@string/pref_automatically_delete_attachments_description"
             android:title="@string/pref_automatically_delete_files" />
         <SwitchPreference
-            android:defaultValue="@bool/use_internal_updater"
-            android:key="use_internal_updater"
-            android:summary="@string/pref_use_internal_updater_summary"
-            android:title="@string/pref_use_internal_updater" />
-        <SwitchPreference
             android:defaultValue="@bool/show_links_inside"
             android:key="show_links_inside"
             android:summary="@string/pref_show_links_inside_summary"

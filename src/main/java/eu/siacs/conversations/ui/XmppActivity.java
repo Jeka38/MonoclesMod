@@ -1,7 +1,5 @@
 package eu.siacs.conversations.ui;
 
-import static eu.siacs.conversations.ui.SettingsActivity.USE_INTERNAL_UPDATER;
-
 import android.graphics.BitmapFactory;
 import android.graphics.drawable.AnimatedImageDrawable;
 
@@ -89,7 +87,6 @@ import eu.siacs.conversations.entities.Presences;
 import eu.siacs.conversations.services.AvatarService;
 import eu.siacs.conversations.services.BarcodeProvider;
 import eu.siacs.conversations.services.EmojiInitializationService;
-import eu.siacs.conversations.services.UpdateService;
 import eu.siacs.conversations.services.XmppConnectionService;
 import eu.siacs.conversations.services.XmppConnectionService.XmppConnectionBinder;
 import eu.siacs.conversations.ui.util.AvatarWorkerTask;
@@ -570,10 +567,6 @@ public abstract class XmppActivity extends ActionBarActivity {
 
     protected boolean usingEnterKey() {
         return getBooleanPreference("display_enter_key", R.bool.display_enter_key);
-    }
-
-    public boolean useInternalUpdater() {
-        return getBooleanPreference(USE_INTERNAL_UPDATER, R.bool.use_internal_updater);
     }
 
     private boolean useTor() {
@@ -1555,15 +1548,11 @@ public abstract class XmppActivity extends ActionBarActivity {
                 } catch (ActivityNotFoundException e) {
                     ToastCompat.makeText(XmppActivity.this, R.string.device_does_not_support_unknown_source_op, ToastCompat.LENGTH_SHORT).show();
                 } finally {
-                    UpdateService task = new UpdateService(this, xmppConnectionService.installedFrom(), xmppConnectionService);
-                    task.executeOnExecutor(UpdateService.THREAD_POOL_EXECUTOR, beInteractive);
                     Log.d(Config.LOGTAG, "AppUpdater started");
                 }
             });
             builder.create().show();
         } else {
-            UpdateService task = new UpdateService(this, xmppConnectionService.installedFrom(), xmppConnectionService);
-            task.executeOnExecutor(UpdateService.THREAD_POOL_EXECUTOR, beInteractive);
             Log.d(Config.LOGTAG, "AppUpdater started");
         }
     }

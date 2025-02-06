@@ -900,8 +900,6 @@
     <string name="pref_use_indicate_received_summary">Если поддерживается, полученные сообщения будут помечены галочкой</string>
     <string name="pref_use_inner_storage">Использование внутреннего хранилища для хранения медиа</string>
     <string name="pref_use_inner_storage_summary">Другое приложение не сможет прочитать медиа из внутреннего хранилища</string>
-    <string name="pref_use_internal_updater">Проверять наличие обновлений</string>
-    <string name="pref_use_internal_updater_summary">Разрешить мессенджеру проверять обновления раз в день</string>
     <string name="pref_use_invidious">Замена ссылок YouTube на Invidious</string>
     <string name="pref_use_invidious_summary">Invidious - это приватный способ просмотра YouTube</string>
     <string name="pref_use_max_brightness">Максимальная яркость</string>

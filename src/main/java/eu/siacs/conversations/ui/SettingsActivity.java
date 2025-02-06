@@ -105,7 +105,6 @@ public class SettingsActivity extends XmppActivity implements OnSharedPreference
     public static final String QUICK_SHARE_ATTACHMENT_CHOICE = "quick_share_attachment_choice";
     public static final String NUMBER_OF_ACCOUNTS = "number_of_accounts";
     public static final String PLAY_GIF_INSIDE = "play_gif_inside";
-    public static final String USE_INTERNAL_UPDATER = "use_internal_updater";
     public static final String SHOW_LINKS_INSIDE = "show_links_inside";
     public static final String SHOW_MAPS_INSIDE = "show_maps_inside";
     public static final String PREFER_XMPP_AVATAR = "prefer_xmpp_avatar";
