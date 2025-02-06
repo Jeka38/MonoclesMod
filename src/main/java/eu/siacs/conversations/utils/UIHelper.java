@@ -167,14 +167,7 @@ public class UIHelper {
         TimeZone tz = TimeZone.getDefault();
         String tzString = "(" + tz.getDisplayName(tz.inDaylightTime(date),
                 TimeZone.SHORT, Locale.UK) + ")";
-        long difference = (System.currentTimeMillis() - time) / 1000;
-        if (difference < 60) {
-            return context.getString(R.string.just_now);
-        } else if (difference < 60 * 2) {
-            return context.getString(R.string.minute_ago);
-        } else if (difference < 60 * 15) {
-            return context.getString(R.string.minutes_ago, Math.round(difference / 60.0));
-        } else if (today(date)) {
+        if (today(date)) {
             java.text.DateFormat df = DateFormat.getTimeFormat(context);
             return printTz ? df.format(date) + " " + tzString : df.format(date);
         } else {

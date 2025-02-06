@@ -491,7 +491,6 @@
     <string name="join_public_channel">Присоединиться к публичной конференции</string>
     <string name="joined_an_existing_channel">Вы присоединились к существующей конференции</string>
     <string name="joining_conference">Подключение к конференции…</string>
-    <string name="just_now">только что</string>
     <string name="kick_from_conference">Выгнать из конференции</string>
     <string name="kick_from_room">Выгнать из конференции</string>
     <string name="kick_now">Выгнать</string>
@@ -557,8 +556,6 @@
     <string name="mgmt_account_publish_pgp">Опубликовать PGP - ключ</string>
     <string name="mgmt_account_reconnect">Переподключить</string>
     <string name="microphone_unavailable">Ваш микрофон недоступен</string>
-    <string name="minute_ago">1 мин. назад</string>
-    <string name="minutes_ago">%d мин. назад</string>
     <string name="missed_call">Пропущенный звонок</string>
     <string name="missed_call_timestamp">Пропущенный звонок · %s</string>
     <string name="missed_calls_channel_name">Пропущенные звонки</string>
