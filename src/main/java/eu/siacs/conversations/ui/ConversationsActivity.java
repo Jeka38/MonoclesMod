@@ -983,13 +983,6 @@ public class ConversationsActivity extends XmppActivity implements OnConversatio
                 intent.putExtra(SearchActivity.EXTRA_CONVERSATION_UUID, conversation.getUuid());
                 startActivity(intent);
                 return true;
-            case R.id.action_check_updates:
-                if (xmppConnectionService.hasInternetConnection()) {
-                    openInstallFromUnknownSourcesDialogIfNeeded(true);
-                } else {
-                    ToastCompat.makeText(this, R.string.account_status_no_internet, ToastCompat.LENGTH_LONG).show();
-                }
-                break;
             case R.id.action_invite_user:
                 inviteUser();
                 break;

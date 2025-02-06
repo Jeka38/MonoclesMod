@@ -1810,7 +1810,6 @@ public class ConversationFragment extends XmppFragment
             boolean hasAttachments = mediaPreviewAdapter != null && mediaPreviewAdapter.hasAttachments();
             menuInflater.inflate(R.menu.fragment_conversation, menu);
             final MenuItem menuInviteContact = menu.findItem(R.id.action_invite);
-            final MenuItem menuSearchUpdates = menu.findItem(R.id.action_check_updates);
             final MenuItem menuArchiveChat = menu.findItem(R.id.action_archive_chat);
             final MenuItem menuLeaveGroup = menu.findItem(R.id.action_leave_group);
             final MenuItem menuGroupDetails = menu.findItem(R.id.action_group_details);
@@ -1867,17 +1866,14 @@ public class ConversationFragment extends XmppFragment
                             menuGroupDetails.setVisible(false);
                             menuContactDetails.setVisible(!this.conversation.withSelf());
                         }
-                        menuSearchUpdates.setVisible(true);
                     } else {
                         menuGroupDetails.setVisible(false);
                         menuContactDetails.setVisible(false);
-                        menuSearchUpdates.setVisible(false);
                     }
                 } catch (Exception e) {
                     e.printStackTrace();
                     menuGroupDetails.setVisible(false);
                     menuContactDetails.setVisible(false);
-                    menuSearchUpdates.setVisible(false);
                 }
                 ConversationMenuConfigurator.configureAttachmentMenu(conversation, menu, activity.getAttachmentChoicePreference(), hasAttachments);
                 ConversationMenuConfigurator.configureEncryptionMenu(conversation, menu, activity);
@@ -1887,7 +1883,6 @@ public class ConversationFragment extends XmppFragment
                     menuTogglePinned.setTitle(R.string.add_to_favorites);
                 }
             } else {
-                menuSearchUpdates.setVisible(true);
                 menuInviteContact.setVisible(false);
                 menuGroupDetails.setVisible(false);
                 menuContactDetails.setVisible(false);
