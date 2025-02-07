@@ -553,11 +553,6 @@
             android:summary="@string/pref_omemo_setting_summary_default_on"
             android:title="@string/pref_omemo_setting" />
         <SwitchPreference
-            android:defaultValue="@bool/send_crashreport"
-            android:key="crashreport"
-            android:summary="@string/pref_send_crash_summary"
-            android:title="@string/pref_send_crash" />
-        <SwitchPreference
             android:defaultValue="@bool/use_inner_storage"
             android:key="use_inner_storage"
             android:summary="@string/pref_use_inner_storage_summary"

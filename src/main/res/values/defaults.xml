@@ -37,7 +37,6 @@
     <bool name="presence_colored_names">false</bool>
     <bool name="use_max_brightness">false</bool>
     <bool name="auto_rotate">false</bool>
-    <bool name="send_crashreport">false</bool>
     <bool name="use_invidious">false</bool>
     <bool name="use_inner_storage">false</bool>
     <string name="invidious_host">yewtu.be</string>

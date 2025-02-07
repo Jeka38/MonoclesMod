@@ -317,7 +317,6 @@ public class ConversationsActivity extends XmppActivity implements OnConversatio
         final Fragment fragment = getFragmentManager().findFragmentById(R.id.main_fragment);
         if (fragment instanceof ConversationsOverviewFragment) {
 
-            if (ExceptionHelper.checkForCrash(this)) return;
             if (offerToSetupDiallerIntegration()) return;
             if (offerToDownloadStickers()) return;
             openBatteryOptimizationDialogIfNeeded();
