@@ -1892,7 +1892,7 @@ public class Conversation extends AbstractEntity implements Blockable, Comparabl
             final IqPacket packet = new IqPacket(IqPacket.TYPE.GET);
             packet.setTo(Conversation.this.getJid().asBareJid());
             packet.addChild("query", "http://jabber.org/protocol/muc#owner");
-
+            packet.setAttribute("xml:lang", "ru");
             final TimerTask task = new TimerTask() {
                 @Override
                 public void run() {
