@@ -933,6 +933,8 @@
     <string name="pref_show_mappreview_inside">Show previews of locations in chat</string>
     <string name="attach">Attach</string>
     <string name="delete_from_server">Delete from server</string>
+    <string name="configure_room">⚙️ Configure</string>
+    <string name="execute_action">Execute</string>
     <string name="go_online_to_delete">You have to activate and/or go online with the account you want to delete from server.</string>
     <string name="discover_channels">Discover rooms</string>
     <string name="search_channels">Search rooms</string>

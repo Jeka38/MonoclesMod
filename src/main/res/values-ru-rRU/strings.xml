@@ -1405,6 +1405,8 @@
     <string name="clear_blocked_media">Очистить заблокированный носитель</string>
     <string name="monocles_account_introduction">Зарегистрируйтесь сейчас и <b>получите безопасную учетную запись monocles, питаемую регенеративной энергией</b>, чтобы напрямую начать общение.</string>
     <string name="cleanup_conversations">Очистить разговоры</string>
+    <string name="configure_room">⚙️ Настроить комнату</string>
+    <string name="execute_action">Выполнить</string>
     <string name="save_as_contact_bookmark">Сохранить как контакт/закладку</string>
     <string name="new_contact_or_group">Новый контакт или конференция</string>
     <string name="colors">Цвета</string>

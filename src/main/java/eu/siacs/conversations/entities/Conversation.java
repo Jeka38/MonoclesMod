@@ -1892,7 +1892,12 @@ public class Conversation extends AbstractEntity implements Blockable, Comparabl
             final IqPacket packet = new IqPacket(IqPacket.TYPE.GET);
             packet.setTo(Conversation.this.getJid().asBareJid());
             packet.addChild("query", "http://jabber.org/protocol/muc#owner");
-            packet.setAttribute("xml:lang", "ru");
+            Locale currentLocale = Locale.getDefault();
+
+            if (currentLocale.getLanguage().equals(new Locale("ru").getLanguage())) {
+                packet.setAttribute("xml:lang", "ru");
+            }
+
             final TimerTask task = new TimerTask() {
                 @Override
                 public void run() {
@@ -3814,21 +3819,25 @@ public class Conversation extends AbstractEntity implements Blockable, Comparabl
 
                     this.responseElement = form;
                     setupReported(form.findChild("reported", "jabber:x:data"));
-                    if (mBinding != null) mBinding.form.setLayoutManager(setupLayoutManager(mBinding.getRoot().getContext()));
+                    if (mBinding != null)
+                        mBinding.form.setLayoutManager(setupLayoutManager(mBinding.getRoot().getContext()));
 
                     if (actionsAdapter.countExceptCancel() < 1) {
-                        actionsAdapter.add(Pair.create("save", "Save"));
+                        // Добавляем перевод для кнопки "save"
+                        actionsAdapter.add(Pair.create("save", actionsAdapter.ctx.getString(R.string.save)));
                     }
 
                     if (actionsAdapter.getPosition("cancel") < 0) {
-                        actionsAdapter.insert(Pair.create("cancel", "cancel"), 0);
+                        // Добавляем перевод для кнопки "cancel"
+                        actionsAdapter.insert(Pair.create("cancel", actionsAdapter.ctx.getString(R.string.cancel)), 0);
                     }
                 } else if (iq.getType() == IqPacket.TYPE.RESULT) {
                     expectingRemoval = true;
                     removeSession(this);
                     return;
                 } else {
-                    actionsAdapter.add(Pair.create("close", "close"));
+                    // Добавляем перевод для кнопки "close"
+                    actionsAdapter.add(Pair.create("close", actionsAdapter.ctx.getString(R.string.close)));
                 }
 
                 notifyDataSetChanged();
