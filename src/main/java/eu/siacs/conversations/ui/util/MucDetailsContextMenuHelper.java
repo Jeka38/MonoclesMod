@@ -297,7 +297,7 @@ public final class MucDetailsContextMenuHelper {
                         .setSingleChoiceItems(choices.first, -1, (dialog, whichItem) -> {
                             selected[0] = whichItem;
                         })
-                        .setPositiveButton(R.string.action_complete, (dialog, whichButton) -> {
+                        .setPositiveButton(R.string.ok, (dialog, whichButton) -> {
                             switch (selected[0] >= 0 ? choices.second[selected[0]] : -1) {
                                 case ACTION_BAN:
                                     activity.xmppConnectionService.changeAffiliationInConference(conversation, jid, MucOptions.Affiliation.OUTCAST, onAffiliationChanged);

@@ -3275,15 +3275,15 @@ public class Conversation extends AbstractEntity implements Blockable, Comparabl
 
                     if (!actionsAdapter.isEmpty() || fillableFieldCount > 0) {
                         if ("completed".equals(command.getAttribute("status")) || "canceled".equals(command.getAttribute("status"))) {
-                            actionsAdapter.add(Pair.create("close", "close"));
+                            actionsAdapter.add(Pair.create("close", actionsAdapter.ctx.getString(R.string.close)));
                         } else if (actionsAdapter.getPosition("cancel") < 0 && !xmppConnectionService.isOnboarding()) {
-                            actionsAdapter.insert(Pair.create("cancel", "cancel"), 0);
+                            actionsAdapter.insert(Pair.create("cancel", actionsAdapter.ctx.getString(R.string.cancel)), 0);
                         }
                     }
                 }
 
                 if (actionsAdapter.isEmpty()) {
-                    actionsAdapter.add(Pair.create("close", "close"));
+                    actionsAdapter.add(Pair.create("close", actionsAdapter.ctx.getString(R.string.close)));
                 }
 
                 actionsAdapter.sort((x, y) -> {
