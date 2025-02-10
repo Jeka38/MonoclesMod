@@ -301,6 +301,29 @@
                             android:layout_height="0.05dp"
                             android:background="?attr/text_Color_Main" />
 
+                        <TextView
+                            android:layout_width="wrap_content"
+                            android:layout_height="wrap_content"
+                            android:padding="12dp"
+                            android:text="@string/recent_threads"
+                            android:textStyle="bold"
+                            style="@style/TextAppearance.Conversations.Subhead" />
+
+                        <LinearLayout
+                            android:id="@+id/recent_threads_wrapper"
+                            android:layout_width="match_parent"
+                            android:layout_height="wrap_content"
+                            android:padding="@dimen/card_padding_regular" >
+
+                            <ListView
+                                android:id="@+id/recent_threads"
+                                android:layout_width="fill_parent"
+                                android:layout_height="wrap_content"
+                                android:divider="@android:color/transparent"
+                                android:dividerHeight="0dp" />
+
+                        </LinearLayout>
+
                         <View
                             android:layout_width="match_parent"
                             android:layout_height="0.05dp"
@@ -390,6 +413,83 @@
                                 android:layout_marginTop="24dp" />
 
                         </LinearLayout>
+                    </LinearLayout>
+
+                    <LinearLayout
+                        android:id="@+id/users_wrapper"
+                        android:layout_width="match_parent"
+                        android:layout_height="wrap_content"
+                        android:orientation="vertical">
+                        <View
+                            android:layout_width="match_parent"
+                            android:layout_height="0.05dp"
+                            android:background="?attr/text_Color_Main" />
+                        <TextView
+                            android:layout_width="wrap_content"
+                            android:layout_height="wrap_content"
+                            android:padding="12dp"
+                            android:text="@string/participants"
+                            android:textStyle="bold"
+                            style="@style/TextAppearance.Conversations.Subhead" />
+
+                        <TextView
+                            android:id="@+id/no_users_hints"
+                            android:layout_width="wrap_content"
+                            android:layout_height="wrap_content"
+                            android:paddingStart="@dimen/card_padding_regular"
+                            android:paddingTop="@dimen/card_padding_regular"
+                            android:paddingEnd="@dimen/card_padding_regular"
+                            android:text="@string/no_users_hint_channel"
+                            android:textAppearance="@style/TextAppearance.Conversations.Body2" />
+
+                        <androidx.recyclerview.widget.RecyclerView
+                            android:id="@+id/users"
+                            android:layout_width="match_parent"
+                            android:layout_height="wrap_content"
+                            android:layout_marginStart="-2dp"
+                            android:layout_marginEnd="-2dp"
+                            android:minHeight="88dp"
+                            android:orientation="horizontal"
+                            android:paddingStart="@dimen/card_padding_regular"
+                            android:paddingTop="@dimen/card_padding_regular"
+                            android:paddingEnd="@dimen/card_padding_regular"
+                            android:paddingBottom="@dimen/card_padding_list" />
+
+                        <RelativeLayout
+                            android:layout_width="match_parent"
+                            android:layout_height="wrap_content"
+                            android:orientation="horizontal">
+
+                            <Button
+                                android:id="@+id/invite"
+                                style="@style/Widget.Conversations.Button.Borderless"
+                                android:layout_width="wrap_content"
+                                android:layout_height="wrap_content"
+                                android:layout_alignParentLeft="true"
+                                android:layout_alignParentStart="true"
+                                android:minWidth="0dp"
+                                android:paddingStart="16dp"
+                                android:paddingLeft="16dp"
+                                android:paddingEnd="16dp"
+                                android:paddingRight="16dp"
+                                android:text="@string/invite_contact"
+                                android:textColor="?attr/colorAccent" />
+
+                            <Button
+                                android:id="@+id/show_users"
+                                style="@style/Widget.Conversations.Button.Borderless"
+                                android:layout_width="wrap_content"
+                                android:layout_height="wrap_content"
+                                android:layout_alignParentRight="true"
+                                android:layout_alignParentEnd="true"
+                                android:minWidth="0dp"
+                                android:paddingStart="16dp"
+                                android:paddingLeft="16dp"
+                                android:paddingEnd="16dp"
+                                android:paddingRight="16dp"
+                                android:textColor="?attr/colorAccent"
+                                tools:text="View n Participants" />
+                        </RelativeLayout>
                     </LinearLayout>
 
                     <LinearLayout
