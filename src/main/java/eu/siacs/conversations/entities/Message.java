@@ -431,23 +431,22 @@ public class Message extends AbstractEntity implements AvatarService.Avatarable 
     public Message reply() {
         Message m;
         String name = getAvatarName();
+        String quotedText = MessageUtils.prepareQuote(this);
 
         if (name != null && !name.isEmpty() && conversation != null && conversation.getMode() == Conversational.MODE_MULTI) {
-            m = new Message(conversation, QuoteHelper.quote("<" + name + ">" + "\n" + MessageUtils.prepareQuote(this)) + "\n", ENCRYPTION_NONE);
-        } else {
-            m = new Message(conversation, QuoteHelper.quote(MessageUtils.prepareQuote(this)) + "\n", ENCRYPTION_NONE);
+            quotedText = "<" + name + ">\n" + quotedText;
         }
+
+        String fullMessage = QuoteHelper.quote(quotedText) + "\n\n";
+
+        m = new Message(conversation, fullMessage, ENCRYPTION_NONE);
 
         m.addPayload(
                 new Element("reply", "urn:xmpp:reply:0")
                         .setAttribute("to", getCounterpart())
                         .setAttribute("id", replyId())
         );
-        final Element fallback = new Element("fallback", "urn:xmpp:fallback:0").setAttribute("for", "urn:xmpp:reply:0");
-        fallback.addChild("body", "urn:xmpp:fallback:0")
-                .setAttribute("start", "0")
-                .setAttribute("end", "" + m.body.codePointCount(0, m.body.length()));
-        m.addPayload(fallback);
+
         return m;
     }
 
