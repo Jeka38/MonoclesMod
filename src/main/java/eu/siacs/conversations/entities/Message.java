@@ -481,16 +481,25 @@ public class Message extends AbstractEntity implements AvatarService.Avatarable 
     }
 
     public Message react(String emoji) {
-        final var m = reply();
-        if (getReactions() == null) {
-            m.updateReaction(this, emoji);
-        } else if (mInReplyTo != null) {
-            // Try to send react-to-reaction to parent
-            m.updateReaction(mInReplyTo, emoji);
-        } else {
-            // Do not send react-to-reaction
-            m.updateReplyTo(this, new SpannableStringBuilder(emoji));
+        Message m;
+
+        String name = getAvatarName();
+
+        String quotedText = MessageUtils.prepareQuote(this);
+        if (name != null && !name.isEmpty()) {
+            quotedText = "<" + name + ">\n" + quotedText;
         }
+
+        String fullMessage = QuoteHelper.quote(quotedText) + "\n\n" + emoji;
+        m = new Message(conversation, fullMessage, ENCRYPTION_NONE);
+
+        m.addPayload(
+                new Element("reaction", "urn:xmpp:reaction:0")
+                        .setAttribute("to", getCounterpart())
+                        .setAttribute("emoji", emoji)
+                        .setAttribute("id", replyId())
+        );
+
         return m;
     }
 
