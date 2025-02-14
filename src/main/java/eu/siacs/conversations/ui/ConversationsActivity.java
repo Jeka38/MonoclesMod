@@ -1179,12 +1179,10 @@ public class ConversationsActivity extends XmppActivity implements OnConversatio
                             }
                         }
                     } else {
-                        if (users.size() == 0) {
-                            absubtitle.setText(getString(R.string.one_participant));
-                            absubtitle.setVisibility(View.VISIBLE);
-                        } else {
-                            int size = users.size() + 1;
-                            absubtitle.setText(getString(R.string.more_participants, size));
+                        if (!users.isEmpty()) {
+                            int size = users.size();
+                            String subtitle = getResources().getQuantityString(R.plurals.participants, size, size);
+                            absubtitle.setText(subtitle);
                             absubtitle.setVisibility(View.VISIBLE);
                         }
                     }

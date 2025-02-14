@@ -1230,6 +1230,11 @@
     <string name="verifying_omemo_keys_trusted_source_account">You are about to verify the OMEMO keys of your own account. This is only secure if you followed this link from a trusted source where only you could have published this link.</string>
     <string name="continue_btn">Continue</string>
     <string name="participants">Participants</string>
+    <plurals name="participants">
+        <item quantity="one">%d participant</item>
+        <item quantity="few">%d participants</item>
+        <item quantity="many">%d participants</item>
+    </plurals>
     <string name="download_failed_invalid_file">Download failed: Invalid file</string>
     <string name="orbot_not_found">Orbot not found</string>
     <string name="account_status_temporary_auth_failure">Temporary authentication failure</string>
@@ -1273,7 +1278,7 @@
     <string name="or_use_another">... or choose another one below</string>
     <string name="monocles_account_introduction">Sign up now and <b>get an secure monocles account, powered with regenerative energies</b> to directly start chatting.</string>
     <string name="receiving_x_file">Receiving %1$s (%2$d%% completed)</string>
-    <string name="refresh_feature_discovery">Refresh Feature Discovery</string>
+<!--    <string name="refresh_feature_discovery">Refresh Feature Discovery</string>-->
     <string name="microphone_permission_for_call">Microphone permission required to complete call</string>
     <string name="i_am_snikket_user">I use Snikket</string>
     <string name="action_edit_contact">Edit contact</string>

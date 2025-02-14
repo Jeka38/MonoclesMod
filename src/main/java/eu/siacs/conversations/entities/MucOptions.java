@@ -3,6 +3,7 @@ package eu.siacs.conversations.entities;
 import android.content.Context;
 import android.net.Uri;
 import android.text.TextUtils;
+import android.util.Log;
 
 import androidx.annotation.NonNull;
 import androidx.annotation.Nullable;
@@ -403,13 +404,19 @@ public class MucOptions {
 
     public ArrayList<User> getUsers(boolean includeOffline, boolean includeOutcast) {
         synchronized (users) {
-            ArrayList<User> users = new ArrayList<>();
+            ArrayList<User> userList = new ArrayList<>();
+            User selfUser = getSelf();
             for (User user : this.users) {
-                if (!user.isDomain() && (includeOffline ? (includeOutcast || user.getAffiliation().ranks(Affiliation.NONE)) : user.getRole().ranks(Role.PARTICIPANT))) {
-                    users.add(user);
+                if (!user.isDomain() &&
+                        (includeOffline ? (includeOutcast || user.getAffiliation().ranks(Affiliation.NONE))
+                                : user.getRole().ranks(Role.PARTICIPANT))) {
+                    userList.add(user);
                 }
             }
-            return users;
+            if (selfUser != null && !userList.contains(selfUser)) {
+                userList.add(selfUser);
+            }
+            return userList;
         }
     }
 

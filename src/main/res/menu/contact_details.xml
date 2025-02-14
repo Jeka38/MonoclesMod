@@ -93,9 +93,9 @@
         android:orderInCategory="110"
         android:title="@string/pref_incoming_call_notification_settings"
         app:showAsAction="never" />
-    <item
-        android:id="@+id/action_refresh_feature_discovery"
-        android:orderInCategory="111"
-        android:title="@string/refresh_feature_discovery"
-        app:showAsAction="never" />
+<!--    <item-->
+<!--        android:id="@+id/action_refresh_feature_discovery"-->
+<!--        android:orderInCategory="111"-->
+<!--        android:title="@string/refresh_feature_discovery"-->
+<!--        app:showAsAction="never" />-->
 </menu>

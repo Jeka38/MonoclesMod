@@ -2743,8 +2743,8 @@ public class ConversationFragment extends XmppFragment
             muteConversationDialog(conversation);
         } else if (itemId == R.id.action_unmute) {
             unmuteConversation(conversation);
-        } else if (itemId == R.id.action_refresh_feature_discovery) {
-            refreshFeatureDiscovery();
+//        } else if (itemId == R.id.action_refresh_feature_discovery) {
+//            refreshFeatureDiscovery();
         } else if (itemId == R.id.action_set_custom_bg) {
             if (activity.hasStoragePermission(ChatBackgroundHelper.REQUEST_IMPORT_BACKGROUND)) {
                 ChatBackgroundHelper.openBGPicker(this);
@@ -2861,24 +2861,24 @@ public class ConversationFragment extends XmppFragment
         }
     }
 
-    private void refreshFeatureDiscovery() {
-        Set<Map.Entry<String, Presence>> presences = conversation.getContact().getPresences().getPresencesMap().entrySet();
-        if (presences.isEmpty()) {
-            presences = new HashSet<>();
-            presences.add(new AbstractMap.SimpleEntry("", null));
-        }
-        for (Map.Entry<String, Presence> entry : presences) {
-            Jid jid = conversation.getContact().getJid();
-            if (!entry.getKey().equals("")) jid = jid.withResource(entry.getKey());
-            activity.xmppConnectionService.fetchCaps(conversation.getAccount(), jid, entry.getValue(), () -> {
-                if (activity == null) return;
-                activity.runOnUiThread(() -> {
-                    refresh();
-                    refreshCommands(true);
-                });
-            });
-        }
-    }
+//    private void refreshFeatureDiscovery() {
+//        Set<Map.Entry<String, Presence>> presences = conversation.getContact().getPresences().getPresencesMap().entrySet();
+//        if (presences.isEmpty()) {
+//            presences = new HashSet<>();
+//            presences.add(new AbstractMap.SimpleEntry("", null));
+//        }
+//        for (Map.Entry<String, Presence> entry : presences) {
+//            Jid jid = conversation.getContact().getJid();
+//            if (!entry.getKey().equals("")) jid = jid.withResource(entry.getKey());
+//            activity.xmppConnectionService.fetchCaps(conversation.getAccount(), jid, entry.getValue(), () -> {
+//                if (activity == null) return;
+//                activity.runOnUiThread(() -> {
+//                    refresh();
+//                    refreshCommands(true);
+//                });
+//            });
+//        }
+//    }
 
     private void addShortcut() {
         ShortcutInfoCompat info;

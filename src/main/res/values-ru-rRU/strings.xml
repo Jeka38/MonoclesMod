@@ -565,7 +565,6 @@
     <string name="moderator">Модератор</string>
     <string name="modified_conference_options">Настройки конференции изменены!</string>
     <string name="monospace">моноширинный</string>
-    <string name="more_participants">%d участников</string>
     <string name="move_data">Перенести данные</string>
     <string name="mtm_accept_cert">Принять неизвестный сертификат\?</string>
     <string name="mtm_accept_servername">Имя сервера не совпадает. Принять\?</string>
@@ -665,7 +664,6 @@
     <string name="omemo_fingerprint_x509">v\\OMEMO отпечаток</string>
     <string name="omemo_fingerprint_x509_selected_message">v\\OMEMO отпечаток (оригинальное сообщение)</string>
     <string name="once">Один раз</string>
-    <string name="one_participant">Один участник</string>
     <string name="ongoing_call">Текущий вызов</string>
     <string name="ongoing_calls_channel_name">Исходящие звонки</string>
     <string name="ongoing_video_call">Текущий видео вызов</string>
@@ -699,6 +697,11 @@
     <string name="p1_s3_filetransfer">Обмен файла HTTP для S3</string>
     <string name="participant">Участник</string>
     <string name="participants">Участники</string>
+    <plurals name="participants">
+        <item quantity="one">%d участник</item>
+        <item quantity="few">%d участника</item>
+        <item quantity="many">%d участников</item>
+    </plurals>
     <string name="password">Пароль</string>
     <string name="password_changed">Пароль изменен!</string>
     <string name="password_forgotten_text">Забыли пароль учетной записи\? Мы попробуем открыть страницу поддержки Вашего сервера.</string>
@@ -1373,7 +1376,7 @@
     <string name="outgoing_call_duration_timestamp">Исходящий звонок (%s) · %s</string>
     <string name="outgoing_call_timestamp">Исходящие звонки · %s</string>
     <string name="note_to_self">Примечание для себя</string>
-    <string name="refresh_feature_discovery">Обнаружение функций</string>
+<!--    <string name="refresh_feature_discovery">Обнаружение функций</string>-->
     <string name="i_am_snikket_user">Я использую Сниккет</string>
     <string name="action_edit_contact">Изменить контакт</string>
     <string name="only_this_thread">Показать только эту нить</string>
