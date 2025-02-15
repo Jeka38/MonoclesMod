@@ -2,31 +2,31 @@
 <merge xmlns:android="http://schemas.android.com/apk/res/android"
     xmlns:app="http://schemas.android.com/apk/res-auto">
 
-    <LinearLayout
-        android:id="@+id/in_reply_to_box"
-        android:layout_width="wrap_content"
-        android:layout_height="wrap_content"
-        android:orientation="horizontal"
-        android:visibility="gone">
+<!--    <LinearLayout-->
+<!--&lt;!&ndash;        android:id="@+id/in_reply_to_box"&ndash;&gt;-->
+<!--&lt;!&ndash;        android:layout_width="wrap_content"&ndash;&gt;-->
+<!--&lt;!&ndash;        android:layout_height="wrap_content"&ndash;&gt;-->
+<!--&lt;!&ndash;        android:orientation="horizontal"&ndash;&gt;-->
+<!--&lt;!&ndash;        android:visibility="gone">&ndash;&gt;-->
 
-        <ImageView
-            android:src="?attr/icon_quote"
-            android:layout_width="14sp"
-            android:layout_height="14sp"
-            android:layout_gravity="center_vertical"
-            android:layout_marginStart="5dp"
-            android:layout_marginEnd="2dp"
-            android:contentDescription="in reply to" />
+<!--&lt;!&ndash;        <ImageView&ndash;&gt;-->
+<!--&lt;!&ndash;            android:src="?attr/icon_quote"&ndash;&gt;-->
+<!--&lt;!&ndash;            android:layout_width="14sp"&ndash;&gt;-->
+<!--&lt;!&ndash;            android:layout_height="14sp"&ndash;&gt;-->
+<!--&lt;!&ndash;            android:layout_gravity="center_vertical"&ndash;&gt;-->
+<!--&lt;!&ndash;            android:layout_marginStart="5dp"&ndash;&gt;-->
+<!--&lt;!&ndash;            android:layout_marginEnd="2dp"&ndash;&gt;-->
+<!--&lt;!&ndash;            android:contentDescription="in reply to" />&ndash;&gt;-->
 
-        <TextView
-            android:id="@+id/in_reply_to"
-            android:layout_width="wrap_content"
-            android:layout_height="wrap_content"
-            android:layout_marginEnd="10dp"
-            android:textStyle="bold|italic"
-            android:longClickable="false"
-            android:textAppearance="?textAppearanceBodyMedium" />
-    </LinearLayout>
+<!--&lt;!&ndash;        <TextView&ndash;&gt;-->
+<!--&lt;!&ndash;            android:id="@+id/in_reply_to"&ndash;&gt;-->
+<!--&lt;!&ndash;            android:layout_width="wrap_content"&ndash;&gt;-->
+<!--&lt;!&ndash;            android:layout_height="wrap_content"&ndash;&gt;-->
+<!--&lt;!&ndash;            android:layout_marginEnd="10dp"&ndash;&gt;-->
+<!--&lt;!&ndash;            android:textStyle="bold|italic"&ndash;&gt;-->
+<!--&lt;!&ndash;            android:longClickable="false"&ndash;&gt;-->
+<!--&lt;!&ndash;            android:textAppearance="?textAppearanceBodyMedium" />&ndash;&gt;-->
+<!--    </LinearLayout>-->
 
     <TextView
         android:id="@+id/message_body"

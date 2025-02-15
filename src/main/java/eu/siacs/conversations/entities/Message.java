@@ -433,11 +433,12 @@ public class Message extends AbstractEntity implements AvatarService.Avatarable 
         String name = getAvatarName();
         String quotedText = MessageUtils.prepareQuote(this);
 
+        String fullMessage;
         if (name != null && !name.isEmpty() && conversation != null && conversation.getMode() == Conversational.MODE_MULTI) {
-            quotedText = "<" + name + ">\n" + quotedText;
+            fullMessage = name + "\n" + QuoteHelper.quote(quotedText) + "\n\n";
+        } else {
+            fullMessage = QuoteHelper.quote(quotedText) + "\n\n";
         }
-
-        String fullMessage = QuoteHelper.quote(quotedText) + "\n\n";
 
         m = new Message(conversation, fullMessage, ENCRYPTION_NONE);
 
@@ -449,6 +450,7 @@ public class Message extends AbstractEntity implements AvatarService.Avatarable 
 
         return m;
     }
+
 
     public void clearReplyReact() {
         this.payloads.remove(getReactions());
@@ -484,13 +486,15 @@ public class Message extends AbstractEntity implements AvatarService.Avatarable 
         Message m;
 
         String name = getAvatarName();
-
         String quotedText = MessageUtils.prepareQuote(this);
+
+        String fullMessage;
         if (name != null && !name.isEmpty()) {
-            quotedText = "<" + name + ">\n" + quotedText;
+            fullMessage = name + "\n" + QuoteHelper.quote(quotedText) + "\n\n" + emoji;
+        } else {
+            fullMessage = QuoteHelper.quote(quotedText) + "\n\n" + emoji;
         }
 
-        String fullMessage = QuoteHelper.quote(quotedText) + "\n\n" + emoji;
         m = new Message(conversation, fullMessage, ENCRYPTION_NONE);
 
         m.addPayload(
@@ -502,6 +506,7 @@ public class Message extends AbstractEntity implements AvatarService.Avatarable 
 
         return m;
     }
+
 
     public void updateReaction(final Message reactTo, String emoji) {
         Set<String> emojis = new HashSet<>();
