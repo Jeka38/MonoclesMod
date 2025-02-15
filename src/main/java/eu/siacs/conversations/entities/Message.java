@@ -442,12 +442,6 @@ public class Message extends AbstractEntity implements AvatarService.Avatarable 
 
         m = new Message(conversation, fullMessage, ENCRYPTION_NONE);
 
-        m.addPayload(
-                new Element("reply", "urn:xmpp:reply:0")
-                        .setAttribute("to", getCounterpart())
-                        .setAttribute("id", replyId())
-        );
-
         return m;
     }
 
