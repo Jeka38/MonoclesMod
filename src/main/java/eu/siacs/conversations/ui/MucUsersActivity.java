@@ -55,9 +55,13 @@ public class MucUsersActivity extends XmppActivity implements XmppConnectionServ
         final String uuid = intent == null ? null : intent.getStringExtra("uuid");
         if (uuid != null) {
             mConversation = xmppConnectionService.findConversationByUuid(uuid);
+            if (mConversation != null) {
+                xmppConnectionService.fetchConferenceMembers(mConversation); // Вызов метода через сервис
+            }
         }
         loadAndSubmitUsers();
     }
+
 
     private void loadAndSubmitUsers() {
         if (mConversation != null) {

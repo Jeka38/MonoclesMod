@@ -687,7 +687,7 @@
     <string name="openpgp_messages_found">Найдены зашифрованные OpenPGP сообщения</string>
     <string name="or_long_press_for_default">(Или используйте долгое нажатие, чтобы вернуть значение по умолчанию)</string>
     <string name="other_devices">Другие устройства</string>
-    <string name="outcast">Изгой</string>
+    <string name="outcast">Заблокированный</string>
     <string name="outgoing_call">Исходящий звонок</string>
     <string name="outgoing_call_duration" formatted="false">%s · исходящий звонок · %s</string>
     <string name="outgoing_call_time">%s ·исходящий звонок</string>

@@ -4002,8 +4002,9 @@ public class XmppConnectionService extends Service {
                     if (mucOptions.mamSupport()) {
                         getMessageArchiveService().catchupMUC(conversation);
                     }
+                    fetchConferenceMembers(conversation);
                     if (mucOptions.isPrivateAndNonAnonymous()) {
-                        fetchConferenceMembers(conversation);
+
 
                         if (followedInvite) {
                             final Bookmark bookmark = conversation.getBookmark();
@@ -4061,74 +4062,46 @@ public class XmppConnectionService extends Service {
         }
     }
 
-    private void fetchConferenceMembers(final Conversation conversation) {
+    public void fetchConferenceMembers(final Conversation conversation) {
         final Account account = conversation.getAccount();
-        final AxolotlService axolotlService = account.getAxolotlService();
-        final String[] affiliations = {"member", "admin", "owner"};
-        OnIqPacketReceived callback = new OnIqPacketReceived() {
+        final String[] affiliations = {"member", "admin", "owner", "outcast"};
 
+        OnIqPacketReceived callback = new OnIqPacketReceived() {
             private int i = 0;
             private boolean success = true;
 
             @Override
             public void onIqPacketReceived(Account account, IqPacket packet) {
-                final boolean omemoEnabled = conversation.getNextEncryption() == Message.ENCRYPTION_AXOLOTL;
                 Element query = packet.query("http://jabber.org/protocol/muc#admin");
                 if (packet.getType() == IqPacket.TYPE.RESULT && query != null) {
                     for (Element child : query.getChildren()) {
                         if ("item".equals(child.getName())) {
+                            if (query == null || packet.getType() != IqPacket.TYPE.RESULT) {
+                            }
+
                             MucOptions.User user = AbstractParser.parseItem(conversation, child);
                             if (!user.realJidMatchesAccount()) {
                                 boolean isNew = conversation.getMucOptions().updateUser(user);
-                                Contact contact = user.getContact();
-                                if (omemoEnabled
-                                        && isNew
-                                        && user.getRealJid() != null
-                                        && (contact == null || !contact.mutualPresenceSubscription())
-                                        && axolotlService.hasEmptyDeviceList(user.getRealJid())) {
-                                    axolotlService.fetchDeviceIds(user.getRealJid());
-                                }
                             }
                         }
                     }
                 } else {
                     success = false;
-                    Log.d(Config.LOGTAG, account.getJid().asBareJid() + ": could not request affiliation " + affiliations[i] + " in " + conversation.getJid().asBareJid());
                 }
+
                 ++i;
                 if (i >= affiliations.length) {
-                    List<Jid> members = conversation.getMucOptions().getMembers(true);
-                    if (success) {
-                        List<Jid> cryptoTargets = conversation.getAcceptedCryptoTargets();
-                        boolean changed = false;
-                        for (ListIterator<Jid> iterator = cryptoTargets.listIterator(); iterator.hasNext(); ) {
-                            Jid jid = iterator.next();
-                            if (!members.contains(jid) && !members.contains(jid.getDomain())) {
-                                try {
-                                    iterator.remove();
-                                    Log.d(Config.LOGTAG, account.getJid().asBareJid() + ": removed " + jid + " from crypto targets of " + conversation.getName());
-                                    changed = true;
-                                } catch (Exception e) {
-                                    e.printStackTrace();
-                                }
-                            }
-                        }
-                        if (changed) {
-                            conversation.setAcceptedCryptoTargets(cryptoTargets);
-                            updateConversation(conversation);
-                        }
-                    }
-                    getAvatarService().clear(conversation);
                     updateMucRosterUi();
                     updateConversationUi();
                 }
             }
         };
+
         for (String affiliation : affiliations) {
             sendIqPacket(account, mIqGenerator.queryAffiliation(conversation, affiliation), callback);
         }
-        Log.d(Config.LOGTAG, account.getJid().asBareJid() + ": fetching members for " + conversation.getName());
     }
+
 
     public void providePasswordForMuc(Conversation conversation, String password) {
         if (conversation.getMode() == Conversation.MODE_MULTI) {

@@ -261,7 +261,6 @@ public class MucOptions {
         return user;
     }
 
-    //returns true if real jid was new;
     public boolean updateUser(User user) {
         User old;
         boolean realJidFound = false;
@@ -287,6 +286,7 @@ public class MucOptions {
             }
         }
         old = findUserByFullJid(user.getFullJid());
+
         synchronized (this.users) {
             if (old != null) {
                 users.remove(old);
@@ -295,9 +295,7 @@ public class MucOptions {
                 if (old.avatar != null && user.avatar == null) user.avatar = old.avatar;
             }
             boolean fullJidIsSelf = isOnline && user.getFullJid() != null && user.getFullJid().equals(self.getFullJid());
-            if ((!membersOnly() || user.getAffiliation().ranks(Affiliation.MEMBER))
-                    && user.getAffiliation().outranks(Affiliation.OUTCAST)
-                    && !fullJidIsSelf) {
+            if (!fullJidIsSelf) {
                 this.users.add(user);
                 return !realJidFound && user.realJid != null;
             }
