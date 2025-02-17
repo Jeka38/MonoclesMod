@@ -104,9 +104,17 @@ public class MucUsersActivity extends XmppActivity implements XmppConnectionServ
     @Override
     public boolean onOptionsItemSelected(@NonNull MenuItem item) {
         if (item.getItemId() == R.id.action_toggle_offline) {
+            // Проверка роли пользователя перед выполнением действий
+            if (mConversation != null) {
+                MucOptions.Affiliation affiliation = mConversation.getMucOptions().getSelf().getAffiliation();
+                if (affiliation != MucOptions.Affiliation.ADMIN && affiliation != MucOptions.Affiliation.OWNER) {
+                    return false; // Игнорируем нажатие
+                }
+            }
+
             hideOfflineUsers = !hideOfflineUsers;
 
-            // Меняем иконку и текст кнопки
+            // Меняем иконку
             item.setIcon(hideOfflineUsers ? R.drawable.ic_visibility_off : R.drawable.ic_visibility);
 
             // Обновляем список пользователей
@@ -115,6 +123,7 @@ public class MucUsersActivity extends XmppActivity implements XmppConnectionServ
         }
         return super.onOptionsItemSelected(item);
     }
+
 
 
     @Override
@@ -158,14 +167,29 @@ public class MucUsersActivity extends XmppActivity implements XmppConnectionServ
     @Override
     public boolean onCreateOptionsMenu(final Menu menu) {
         getMenuInflater().inflate(R.menu.muc_users_activity, menu);
+
         final MenuItem menuSearchView = menu.findItem(R.id.action_search);
         final View mSearchView = menuSearchView.getActionView();
         mSearchEditText = mSearchView.findViewById(R.id.search_field);
         mSearchEditText.addTextChangedListener(this);
         mSearchEditText.setHint(R.string.search_participants);
         menuSearchView.setOnActionExpandListener(this);
+
+        // Проверка роли пользователя и скрытие кнопки
+        if (mConversation != null) {
+            MucOptions.Affiliation affiliation = mConversation.getMucOptions().getSelf().getAffiliation();
+            if (affiliation != MucOptions.Affiliation.ADMIN && affiliation != MucOptions.Affiliation.OWNER) {
+                MenuItem toggleOfflineItem = menu.findItem(R.id.action_toggle_offline);
+                if (toggleOfflineItem != null) {
+                    toggleOfflineItem.setVisible(false);
+                }
+            }
+        }
+
         return true;
     }
+
+
 
     @Override
     public boolean onMenuItemActionExpand(MenuItem item) {
