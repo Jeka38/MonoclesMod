@@ -10,6 +10,7 @@ import android.view.Menu;
 import android.view.MenuItem;
 import android.view.View;
 import android.view.inputmethod.InputMethodManager;
+import android.widget.Button;
 import android.widget.EditText;
 
 import androidx.appcompat.widget.Toolbar;
@@ -22,6 +23,7 @@ import com.google.common.collect.Ordering;
 
 import java.util.ArrayList;
 import java.util.Collections;
+import java.util.List;
 import java.util.Locale;
 
 import eu.siacs.conversations.R;
@@ -44,6 +46,9 @@ public class MucUsersActivity extends XmppActivity implements XmppConnectionServ
     private EditText mSearchEditText;
 
     private ArrayList<MucOptions.User> allUsers = new ArrayList<>();
+
+    private boolean hideOfflineUsers = false;
+
 
     @Override
     protected void refreshUiReal() {
@@ -71,30 +76,42 @@ public class MucUsersActivity extends XmppActivity implements XmppConnectionServ
     }
 
     private void submitFilteredList(final String search) {
+        List<MucOptions.User> filteredUsers = new ArrayList<>(allUsers);
+
+        if (hideOfflineUsers) {
+            filteredUsers.removeIf(user ->
+                    user.getContact() != null && !user.isOnline());
+        }
+
         if (TextUtils.isEmpty(search)) {
-            userAdapter.submitList(Ordering.natural().immutableSortedCopy(allUsers));
+            userAdapter.submitList(Ordering.natural().immutableSortedCopy(filteredUsers));
         } else {
             final String needle = search.toLowerCase(Locale.getDefault());
             userAdapter.submitList(
                     Ordering.natural()
                             .immutableSortedCopy(
                                     Collections2.filter(
-                                            this.allUsers,
+                                            filteredUsers,
                                             user -> {
                                                 final String name = user.getName();
                                                 final Contact contact = user.getContact();
-                                                return name != null
-                                                        && name.toLowerCase(
-                                                                Locale.getDefault())
-                                                        .contains(needle)
-                                                        || contact != null
-                                                        && contact.getDisplayName()
-                                                        .toLowerCase(
-                                                                Locale.getDefault())
-                                                        .contains(needle);
+                                                return (name != null && name.toLowerCase(Locale.getDefault()).contains(needle))
+                                                        || (contact != null && contact.getDisplayName().toLowerCase(Locale.getDefault()).contains(needle));
                                             })));
         }
     }
+
+
+
+
+    public void toggleOfflineUsers(View view) {
+        hideOfflineUsers = !hideOfflineUsers;
+        Button button = (Button) view;
+        button.setText(hideOfflineUsers ? "Показать офлайн" : "Скрыть офлайн");
+        submitFilteredList(mSearchEditText != null ? mSearchEditText.getText().toString() : null);
+    }
+
+
 
     @Override
     public boolean onContextItemSelected(@NonNull MenuItem item) {
