@@ -101,16 +101,20 @@ public class MucUsersActivity extends XmppActivity implements XmppConnectionServ
         }
     }
 
+    @Override
+    public boolean onOptionsItemSelected(@NonNull MenuItem item) {
+        if (item.getItemId() == R.id.action_toggle_offline) {
+            hideOfflineUsers = !hideOfflineUsers;
 
+            // Меняем иконку и текст кнопки
+            item.setIcon(hideOfflineUsers ? R.drawable.ic_visibility_off : R.drawable.ic_visibility);
 
-
-    public void toggleOfflineUsers(View view) {
-        hideOfflineUsers = !hideOfflineUsers;
-        Button button = (Button) view;
-        button.setText(hideOfflineUsers ? getString(R.string.show_offline_users) : getString(R.string.hide_offline));
-        submitFilteredList(mSearchEditText != null ? mSearchEditText.getText().toString() : null);
+            // Обновляем список пользователей
+            submitFilteredList(mSearchEditText != null ? mSearchEditText.getText().toString() : null);
+            return true;
+        }
+        return super.onOptionsItemSelected(item);
     }
-
 
 
     @Override

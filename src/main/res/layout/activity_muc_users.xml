@@ -12,17 +12,6 @@
             android:id="@+id/toolbar"
             layout="@layout/toolbar" />
 
-        <!-- Кнопка для скрытия офлайн-пользователей -->
-        <Button
-            android:id="@+id/btn_toggle_offline"
-            android:layout_width="match_parent"
-            android:layout_height="wrap_content"
-            android:text="@string/show_offline_users"
-            android:layout_margin="8dp"
-            android:padding="10dp"
-            android:background="?attr/selectableItemBackground"
-            android:onClick="toggleOfflineUsers"/>
-
         <androidx.coordinatorlayout.widget.CoordinatorLayout
             android:id="@+id/coordinator"
             android:layout_width="match_parent"
