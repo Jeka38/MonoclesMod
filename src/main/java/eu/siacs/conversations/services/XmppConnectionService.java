@@ -4002,7 +4002,7 @@ public class XmppConnectionService extends Service {
                     if (mucOptions.mamSupport()) {
                         getMessageArchiveService().catchupMUC(conversation);
                     }
-                    fetchConferenceMembers(conversation);
+                    fetchConferenceMembers(conversation);  //todo: Нужно ли оно нам?
                     if (mucOptions.isPrivateAndNonAnonymous()) {
 
 
@@ -4077,11 +4077,18 @@ public class XmppConnectionService extends Service {
                     for (Element child : query.getChildren()) {
                         if ("item".equals(child.getName())) {
                             if (query == null || packet.getType() != IqPacket.TYPE.RESULT) {
+                                continue;
                             }
 
                             MucOptions.User user = AbstractParser.parseItem(conversation, child);
                             if (!user.realJidMatchesAccount()) {
-                                boolean isNew = conversation.getMucOptions().updateUser(user);
+                                boolean isMember = user.getAffiliation() == MucOptions.Affiliation.MEMBER;
+                                boolean isOnline = user.isOnline();
+
+                                // Фильтруем офлайн "member"
+                                if (!isMember || isOnline) {
+                                    boolean isNew = conversation.getMucOptions().updateUser(user);
+                                }
                             }
                         }
                     }
