@@ -91,6 +91,7 @@ import eu.siacs.conversations.utils.Compatibility;
 import io.michaelrocks.libphonenumber.android.NumberParseException;
 
 import java.io.File;
+import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.HashSet;
 import java.util.List;
@@ -1130,6 +1131,7 @@ public class ConversationsActivity extends XmppActivity implements OnConversatio
                 final View avatartoolbar = view.findViewById(R.id.toolbar_avatar);
                 abtitle.setText(conversation.getName());
                 abtitle.setSelected(true);
+
                 if (conversation.getMode() == Conversation.MODE_SINGLE) {
                     if (!conversation.withSelf()) {
                         ChatState state = conversation.getIncomingChatState();
@@ -1153,41 +1155,25 @@ public class ConversationsActivity extends XmppActivity implements OnConversatio
                         absubtitle.setVisibility(View.GONE);
                     }
                 } else {
-                    ChatState state = ChatState.COMPOSING;
-                    List<MucOptions.User> userWithChatStates = conversation.getMucOptions().getUsersWithChatState(state, 5);
-                    if (userWithChatStates.size() == 0) {
-                        state = ChatState.PAUSED;
-                        userWithChatStates = conversation.getMucOptions().getUsersWithChatState(state, 5);
+                    List<MucOptions.User> onlineUsers = new ArrayList<>();
+                    for (MucOptions.User user : conversation.getMucOptions().getUsers(true)) {
+                        if (user.isOnline()) {
+                            onlineUsers.add(user);
+                        }
                     }
-                    List<MucOptions.User> users = conversation.getMucOptions().getUsers(true);
-                    if (state == ChatState.COMPOSING) {
-                        if (userWithChatStates.size() > 0) {
-                            if (userWithChatStates.size() == 1) {
-                                MucOptions.User user = userWithChatStates.get(0);
-                                absubtitle.setText(getString(R.string.contact_is_typing, UIHelper.getDisplayName(user)));
-                                absubtitle.setVisibility(View.VISIBLE);
-                            } else {
-                                StringBuilder builder = new StringBuilder();
-                                for (MucOptions.User user : userWithChatStates) {
-                                    if (builder.length() != 0) {
-                                        builder.append(", ");
-                                    }
-                                    builder.append(UIHelper.getDisplayName(user));
-                                }
-                                absubtitle.setText(getString(R.string.contacts_are_typing, builder.toString()));
-                                absubtitle.setVisibility(View.VISIBLE);
-                            }
-                        }
+
+                    int onlineCount = onlineUsers.size();
+                    if (onlineCount > 0) {
+                        String subtitle = getResources().getQuantityString(R.plurals.participants, onlineCount, onlineCount);
+                        absubtitle.setText(subtitle);
+                        absubtitle.setVisibility(View.VISIBLE);
                     } else {
-                        if (!users.isEmpty()) {
-                            int size = users.size();
-                            String subtitle = getResources().getQuantityString(R.plurals.participants, size, size);
-                            absubtitle.setText(subtitle);
-                            absubtitle.setVisibility(View.VISIBLE);
-                        }
+                        absubtitle.setText(null);
+                        absubtitle.setVisibility(View.GONE);
                     }
                     absubtitle.setSelected(true);
                 }
+
                 AvatarWorkerTask.loadAvatar(conversation, (ImageView) avatartoolbar, R.dimen.avatar_actionbar);
                 findViewById(R.id.toolbar_avatar).setVisibility(View.VISIBLE);
                 ActionBarUtil.setCustomActionBarOnClickListener(
@@ -1197,10 +1183,11 @@ public class ConversationsActivity extends XmppActivity implements OnConversatio
                 return;
             }
         }
+
         Typeface font = ResourcesCompat.getFont(this, R.font.notosanssemibold);
         SpannableStringBuilder app_title = new SpannableStringBuilder("monocles mod");
         if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.P) {
-            int end = Math.min(13, app_title.length()); // Обрезаем до длины строки
+            int end = Math.min(13, app_title.length());
             app_title.setSpan(new TypefaceSpan(font), 0, end, Spanned.SPAN_EXCLUSIVE_INCLUSIVE);
         }
 
@@ -1209,6 +1196,7 @@ public class ConversationsActivity extends XmppActivity implements OnConversatio
         actionBar.setDisplayHomeAsUpEnabled(false);
         ActionBarUtil.resetCustomActionBarOnClickListeners(binding.toolbar.getRoot());
     }
+
 
     private void openConversationDetails(final Conversation conversation) {
         if (conversation.getMode() == Conversational.MODE_MULTI) {
