@@ -399,6 +399,7 @@
     <string name="sending_x_file_x">Sending %1$s (%2$s \%%)</string>
     <string name="offering_x_file">Offering %s</string>
     <string name="hide_offline">Hide offline</string>
+    <string name="show_offline_users">Show offline</string>
     <string name="is_typing">is typing…</string>
     <string name="pref_chat_states">Typing notifications</string>
     <string name="pref_chat_states_summary">Let your contacts know when you are writing messages to them</string>

@@ -410,6 +410,7 @@
     <string name="hide_inactive_devices">Скрыть не активных</string>
     <string name="hide_notification">Скрыть уведомление</string>
     <string name="hide_offline">Скрыть \"не в сети\"</string>
+    <string name="show_offline_users">Показать \"не в сети\"</string>
     <string name="hide_warning">Скрыть предупреждение</string>
     <string name="highlight_in_muc">Отметить пользователя</string>
     <string name="host_does_not_support_group_chat_avatars">Хост не поддерживает аватары конференции</string>

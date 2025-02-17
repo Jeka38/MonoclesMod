@@ -47,7 +47,7 @@ public class MucUsersActivity extends XmppActivity implements XmppConnectionServ
 
     private ArrayList<MucOptions.User> allUsers = new ArrayList<>();
 
-    private boolean hideOfflineUsers = false;
+    private boolean hideOfflineUsers = true;
 
 
     @Override
@@ -107,7 +107,7 @@ public class MucUsersActivity extends XmppActivity implements XmppConnectionServ
     public void toggleOfflineUsers(View view) {
         hideOfflineUsers = !hideOfflineUsers;
         Button button = (Button) view;
-        button.setText(hideOfflineUsers ? "Показать офлайн" : "Скрыть офлайн");
+        button.setText(hideOfflineUsers ? getString(R.string.show_offline_users) : getString(R.string.hide_offline));
         submitFilteredList(mSearchEditText != null ? mSearchEditText.getText().toString() : null);
     }
 
