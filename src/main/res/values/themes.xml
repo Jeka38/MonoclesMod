@@ -248,7 +248,6 @@
         <item name="text_Color_Main">@color/realwhite</item>
         <item name="colorOnPrimary">@color/grey800</item>
         <item name="button_text_color_disabled">@color/grey500</item>
-        <item name="android:navigationBarColor" >@color/black</item>
         <item name="chat_bg">@drawable/bg_dark_blue</item>
         <item name="icon_tint">@color/realwhite</item>
         <item name="color_background_primary">@color/grey700</item>
@@ -270,6 +269,7 @@
         <item name="color_bubble_warning">@color/darkred</item>
         <item name="color_border">@color/grey700</item>
         <item name="windowActionModeOverlay">true</item>
+        <item name="android:navigationBarColor" >@color/darkblack</item>
         <item name="android:actionModeBackground">@color/accent</item>
         <item name="android:homeAsUpIndicator" type="reference">@drawable/ic_arrow_back_white_24dp
         </item>
@@ -634,6 +634,7 @@
         <item name="color_bubble_date">@color/lightgreen</item>
         <item name="color_bubble_warning">@color/lightred</item>
         <item name="chat_bg">@drawable/bg_light_blue</item>
+        <item name="android:navigationBarColor">#ffffffff</item>
         <item name="android:actionModeBackground">@color/accent_monocles</item>
     </style>
 
@@ -649,6 +650,7 @@
         <item name="color_bubble_light">@color/middlemonocles</item>
         <item name="color_bubble_dark">@color/darkmonocles</item>
         <item name="chat_bg">@drawable/bg_dark_blue</item>
+        <item name="android:navigationBarColor">@color/darkblack</item>
         <item name="android:actionModeBackground">@color/accent_monocles</item>
     </style>
 
@@ -830,6 +832,7 @@
         <item name="color_bubble_warning">@color/lightred</item>
         <item name="chat_bg">@drawable/bg_light_orange</item>
         <item name="android:actionModeBackground">@color/accent_orange</item>
+        <item name="android:navigationBarColor">#ffffffff</item>
     </style>
 
     <!-- orange theme - dark -->
@@ -1023,6 +1026,7 @@
         <item name="color_bubble_dark">@color/lightgrey2</item>
         <item name="chat_bg">@drawable/bg_light_grey</item>
         <item name="android:actionModeBackground">@color/accent_grey</item>
+        <item name="android:navigationBarColor">#ffffffff</item>
     </style>
 
     <!-- grey theme - dark -->
@@ -1216,6 +1220,7 @@
         <item name="color_bubble_dark">@color/lightpink2</item>
         <item name="chat_bg">@drawable/bg_light_pink</item>
         <item name="android:actionModeBackground">@color/accent_pink</item>
+        <item name="android:navigationBarColor">#ffffffff</item>
     </style>
 
     <!-- pink theme - dark -->

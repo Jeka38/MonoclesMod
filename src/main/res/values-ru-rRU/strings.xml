@@ -5,6 +5,7 @@
 \nПользователь %s приглашает Вас в monocles mod. Просто перейдите по ссылке…</string>
     <string name="a_user">Пользователь</string>
     <string name="accept">Принять</string>
+    <string name="action_muc_details">Участники</string>
     <string name="account_already_exists">Этот аккаунт уже существует</string>
     <string name="account_already_setup">Этот аккаунт уже настроен</string>
     <string name="account_details">Детали аккаунта</string>
