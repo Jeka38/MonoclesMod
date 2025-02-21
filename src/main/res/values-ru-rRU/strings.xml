@@ -48,7 +48,7 @@
     <string name="action_add_phone_book">Добавить в адресную книгу</string>
     <string name="action_block_contact">Заблокировать контакт</string>
     <string name="action_block_domain">Заблокировать домен</string>
-    <string name="action_block_participant">Заблокировать участника</string>
+    <string name="action_block_participant">Добавить в черный список</string>
     <string name="action_clear_history">Очистить историю</string>
     <string name="action_contact_details">Детали контакта</string>
     <string name="action_copy_location">Копировать местоположение</string>
@@ -76,7 +76,7 @@
     <string name="add_contact_or_create_or_join_group_chat">Добавьте контакт, создайте и войдите в конференцию или откройте конференции</string>
     <string name="add_phone_book_text">Хотите добавить %s в Вашу адресную книгу\?</string>
     <string name="add_to_contact_list">Добавить в контакты</string>
-    <string name="add_to_favorites">Добавить в избранное</string>
+    <string name="add_to_favorites">Закрепить</string>
     <string name="admin">Администратор</string>
     <string name="admins_can_edit_subject">Админы могут изменять эту тему.</string>
     <string name="advanced_mode">Расширенный режим</string>
@@ -965,7 +965,7 @@
     <string name="remove_bookmark_text">Вы действительно хотите удалить %s из закладок\? Беседа, связанная с этой закладкой, не будет удалена.</string>
     <string name="remove_contact_text">Вы хотите удалить%s из Вашего списка\? Беседа, связанная с этим контактом, не будет удалена.</string>
     <string name="remove_from_channel">Удалить из конференции</string>
-    <string name="remove_from_favorites">Удалить из избранного</string>
+    <string name="remove_from_favorites">Открепить</string>
     <string name="remove_individual_notifications">Удаление отдельных уведомлений</string>
     <string name="remove_individual_notifications_message">Вы действительно хотите удалить этот индивидуальный набор уведомлений для %s\?</string>
     <string name="remove_membership">Отозвать права участника</string>
@@ -1390,7 +1390,6 @@
     <string name="save_as_sticker">Сохранить как стикер</string>
     <string name="sticker_name">Название стикера</string>
     <string name="action_execute">Выполнить действие</string>
-    <string name="block_avatar">Заблокировать аватар</string>
     <string name="block_media">Блокировать медиа</string>
     <string name="new_contact">Новый контакт</string>
     <string name="add_to_home_screen">Добавить на домашний экран</string>

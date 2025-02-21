@@ -38,7 +38,7 @@
     <bool name="use_max_brightness">false</bool>
     <bool name="auto_rotate">false</bool>
     <bool name="use_invidious">false</bool>
-    <bool name="use_inner_storage">false</bool>
+    <bool name="use_inner_storage">true</bool>
     <string name="invidious_host">yewtu.be</string>
     <bool name="plain_text_logs">false</bool>
     <bool name="show_foreground_service">true</bool>

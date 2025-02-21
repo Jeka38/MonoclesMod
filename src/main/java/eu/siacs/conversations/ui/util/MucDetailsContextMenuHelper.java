@@ -134,10 +134,6 @@ public final class MucDetailsContextMenuHelper {
         }
         MenuItem sendPrivateMessage = menu.findItem(R.id.send_private_message);
         MenuItem shareContactDetails = menu.findItem(R.id.share_contact_details);
-        MenuItem blockAvatar = menu.findItem(R.id.action_block_avatar);
-        if (user != null && user.getAvatar() != null) {
-            blockAvatar.setVisible(true);
-        }
         MenuItem blockUnblockMUCUser = menu.findItem(R.id.context_muc_contact_block_unblock);
 
         MenuItem muteParticipant = menu.findItem(R.id.action_mute_participant);
@@ -166,9 +162,6 @@ public final class MucDetailsContextMenuHelper {
             final User self = conversation.getMucOptions().getSelf();
             addToRoster.setVisible(contact != null && !contact.showInRoster());
             showContactDetails.setVisible(contact == null || !contact.isSelf());
-            if (user.getAvatar() != null) {
-                blockAvatar.setVisible(true);
-            }
             if ((activity instanceof ConferenceDetailsActivity || activity instanceof MucUsersActivity) && user.getRole() == MucOptions.Role.NONE) {
                 invite.setVisible(true);
             }
