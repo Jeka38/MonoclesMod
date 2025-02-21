@@ -57,6 +57,7 @@ import android.widget.ListView;
 import android.widget.ProgressBar;
 import android.widget.RelativeLayout;
 import android.widget.TextView;
+import android.widget.Toast;
 
 import androidx.core.app.ActivityCompat;
 import androidx.core.content.ContextCompat;
@@ -700,27 +701,95 @@ public class MessageAdapter extends ArrayAdapter<Message> {
         }, fallbackImg));
     }
 
-    private void displayTextMessage(final ViewHolder viewHolder, final Message message, boolean darkBackground, int type) {
+    // Проверяет, является ли URL изображением (даже без расширения)
+    private boolean isDirectImageUrl(String url) {
+        if (url == null) return false;
+        return url.matches("(?i)^(http|https)://.*(\\.(jpg|jpeg|png|gif|webp" +
+                "|bmp|tiff|ico|webm|heif|heic|apng)(\\?.*)?$|\\?q=tbn:.*)");
+    }
+
+    // Модифицированный метод displayTextMessage
+    private void displayTextMessage(final ViewHolder viewHolder,
+                                    final Message message, boolean darkBackground, int type) {
         viewHolder.download_button.setVisibility(GONE);
         showImages(false, viewHolder);
         viewHolder.richlinkview.setVisibility(GONE);
         viewHolder.transfer.setVisibility(GONE);
         viewHolder.audioPlayer.setVisibility(GONE);
         viewHolder.messageBody.setVisibility(GONE);
+
         if (darkBackground) {
             viewHolder.messageBody.setTextAppearance(getContext(), R.style.TextAppearance_Conversations_Body1_OnDark);
         } else {
             viewHolder.messageBody.setTextAppearance(getContext(), R.style.TextAppearance_Conversations_Body1);
         }
-        viewHolder.messageBody.setHighlightColor(darkBackground ? type == SENT ? StyledAttributes.getColor(activity, R.attr.colorAccent) : StyledAttributes.getColor(activity, R.attr.colorAccent) : StyledAttributes.getColor(activity, R.attr.colorAccent));
+        viewHolder.messageBody.setHighlightColor(darkBackground ? type == SENT ?
+                StyledAttributes.getColor(activity, R.attr.colorAccent) :
+                StyledAttributes.getColor(activity, R.attr.colorAccent) :
+                StyledAttributes.getColor(activity, R.attr.colorAccent));
         viewHolder.messageBody.setTypeface(null, Typeface.NORMAL);
+
         if (message.getBody() != null && !message.getBody().equals("")) {
             viewHolder.messageBody.setTextIsSelectable(true);
             viewHolder.messageBody.setVisibility(View.VISIBLE);
+
+            // Проверка на прямую ссылку на изображение
+            String trimmedBody = message.getBody().trim();
+            if (isDirectImageUrl(trimmedBody)) {
+                // Отображаем изображение
+                showImages(true, viewHolder);
+
+                // Устанавливаем размер превью
+                final float target = activity.getResources().getDimension(R.dimen.image_preview_width);
+                LinearLayout.LayoutParams layoutParams = new LinearLayout.LayoutParams(
+                        LinearLayout.LayoutParams.WRAP_CONTENT,
+                        LinearLayout.LayoutParams.WRAP_CONTENT
+                );
+                layoutParams.setMargins(0, (int) (metrics.density * 4), 0, (int) (metrics.density * 4));
+                viewHolder.images.setLayoutParams(layoutParams);
+
+                // Загружаем изображение с помощью Glide
+                Glide.with(activity)
+                        .load(trimmedBody)
+                        .override((int)target, (int)(target))
+                        .centerCrop()
+                        .placeholder(R.drawable.ic_image_grey600_48dp)
+                        .error(R.drawable.ic_error_white_24dp)
+                        .into(viewHolder.image);
+
+                // Обработчик клика для открытия изображения во встроенном просмотрщике
+                viewHolder.image.setOnClickListener(v -> {
+                    Uri uri = Uri.parse(trimmedBody);
+
+                    Intent intent = new Intent(Intent.ACTION_VIEW);
+                    intent.setDataAndType(uri, "image/*");
+                    intent.addFlags(Intent.FLAG_GRANT_READ_URI_PERMISSION);
+                    // Проверяем, есть ли приложение для просмотра изображений
+                    if (intent.resolveActivity(activity.getPackageManager()) != null) {
+                        activity.startActivity(intent);
+                        activity.overridePendingTransition(R.animator.fade_in, R.animator.fade_out);
+                    } else {
+                        ToastCompat.makeText(activity, R.string.error_message,
+                                ToastCompat.LENGTH_LONG).show();
+                    }
+                });
+
+                if (!message.getBody().equals(trimmedBody)) {
+                    SpannableStringBuilder body = new SpannableStringBuilder(message.getBody());
+                    viewHolder.messageBody.setText(body);
+                } else {
+                    viewHolder.messageBody.setVisibility(GONE);
+                }
+                return;
+            }
+
             final SpannableString nick = UIHelper.getColoredUsername(activity.xmppConnectionService, message);
-            Drawable fallbackImg = ResourcesCompat.getDrawable(activity.getResources(), activity.getThemeResource(R.attr.ic_attach_photo, R.drawable.ic_attach_photo), null);
-            fallbackImg.setBounds(FileBackend.rectForSize(fallbackImg.getIntrinsicWidth(), fallbackImg.getIntrinsicHeight(), (int) (metrics.density * 32)));
-            SpannableStringBuilder body =  getSpannableBody(message);
+            Drawable fallbackImg = ResourcesCompat.getDrawable(activity.getResources(),
+                    activity.getThemeResource(R.attr.ic_attach_photo, R.drawable.ic_attach_photo), null);
+            fallbackImg.setBounds(FileBackend.rectForSize(fallbackImg.getIntrinsicWidth(),
+                    fallbackImg.getIntrinsicHeight(), (int) (metrics.density * 32)));
+            SpannableStringBuilder body = getSpannableBody(message);
+
             if (message.getBody().equals(DELETED_MESSAGE_BODY)) {
                 body = body.replace(0, DELETED_MESSAGE_BODY.length(), activity.getString(R.string.message_deleted));
             } else if (message.getBody().equals(DELETED_MESSAGE_BODY_OLD)) {
@@ -757,53 +826,64 @@ public class MessageAdapter extends ArrayAdapter<Message> {
                         privateMarker = activity.getString(R.string.private_message);
                     } else {
                         Jid cp = message.getCounterpart();
-                        privateMarker = activity.getString(R.string.private_message_to, Strings.nullToEmpty(cp == null ? null : cp.getResource()));
+                        privateMarker = activity.getString(R.string.private_message_to,
+                                Strings.nullToEmpty(cp == null ? null : cp.getResource()));
                     }
                     body.insert(0, privateMarker);
                     final int privateMarkerIndex = privateMarker.length();
                     if (startsWithQuote) {
                         body.insert(privateMarkerIndex, "\n\n");
-                        body.setSpan(new DividerSpan(false), privateMarkerIndex, privateMarkerIndex + 2, Spannable.SPAN_EXCLUSIVE_EXCLUSIVE);
+                        body.setSpan(new DividerSpan(false), privateMarkerIndex, privateMarkerIndex + 2,
+                                Spannable.SPAN_EXCLUSIVE_EXCLUSIVE);
                     } else {
                         body.insert(privateMarkerIndex, " ");
                     }
-                    body.setSpan(new ForegroundColorSpan(ThemeHelper.getMessageTextColorPrivate(activity)), 0, privateMarkerIndex, Spannable.SPAN_EXCLUSIVE_EXCLUSIVE);
-                    body.setSpan(new StyleSpan(Typeface.BOLD), 0, privateMarkerIndex, Spannable.SPAN_EXCLUSIVE_EXCLUSIVE);
+                    body.setSpan(new ForegroundColorSpan(ThemeHelper.getMessageTextColorPrivate(activity)),
+                            0, privateMarkerIndex, Spannable.SPAN_EXCLUSIVE_EXCLUSIVE);
+                    body.setSpan(new StyleSpan(Typeface.BOLD), 0, privateMarkerIndex,
+                            Spannable.SPAN_EXCLUSIVE_EXCLUSIVE);
                     if (hasMeCommand) {
-                        body.setSpan(new StyleSpan(Typeface.BOLD_ITALIC), privateMarkerIndex + 1, privateMarkerIndex + 1 + nick.length(), Spannable.SPAN_EXCLUSIVE_EXCLUSIVE);
+                        body.setSpan(new StyleSpan(Typeface.BOLD_ITALIC), privateMarkerIndex + 1,
+                                privateMarkerIndex + 1 + nick.length(), Spannable.SPAN_EXCLUSIVE_EXCLUSIVE);
                     }
                 }
-                if (message.getConversation().getMode() == Conversation.MODE_MULTI && message.getStatus() == Message.STATUS_RECEIVED) {
+                if (message.getConversation().getMode() == Conversation.MODE_MULTI &&
+                        message.getStatus() == Message.STATUS_RECEIVED) {
                     if (message.getConversation() instanceof Conversation) {
                         final Conversation conversation = (Conversation) message.getConversation();
-                        Pattern pattern = NotificationService.generateNickHighlightPattern(conversation.getMucOptions().getActualNick());
+                        Pattern pattern = NotificationService.generateNickHighlightPattern(
+                                conversation.getMucOptions().getActualNick());
                         Matcher matcher = pattern.matcher(body);
                         while (matcher.find()) {
-                            body.setSpan(new StyleSpan(Typeface.BOLD), matcher.start(), matcher.end(), Spannable.SPAN_EXCLUSIVE_EXCLUSIVE);
+                            body.setSpan(new StyleSpan(Typeface.BOLD), matcher.start(), matcher.end(),
+                                    Spannable.SPAN_EXCLUSIVE_EXCLUSIVE);
                         }
 
-                        pattern = NotificationService.generateNickHighlightPattern(conversation.getMucOptions().getActualName());
+                        pattern = NotificationService.generateNickHighlightPattern(
+                                conversation.getMucOptions().getActualName());
                         matcher = pattern.matcher(body);
                         while (matcher.find()) {
-                            body.setSpan(new StyleSpan(Typeface.BOLD), matcher.start(), matcher.end(), Spannable.SPAN_EXCLUSIVE_EXCLUSIVE);
+                            body.setSpan(new StyleSpan(Typeface.BOLD), matcher.start(), matcher.end(),
+                                    Spannable.SPAN_EXCLUSIVE_EXCLUSIVE);
                         }
                     }
                 }
                 final Matcher matcher = Emoticons.getEmojiPattern(body).matcher(body);
                 while (matcher.find()) {
                     if (matcher.start() < matcher.end()) {
-                        body.setSpan(new RelativeSizeSpan(1.5f), matcher.start(), matcher.end(), Spannable.SPAN_EXCLUSIVE_EXCLUSIVE);
+                        body.setSpan(new RelativeSizeSpan(1.5f), matcher.start(), matcher.end(),
+                                Spannable.SPAN_EXCLUSIVE_EXCLUSIVE);
                     }
                 }
                 StylingHelper.format(body, viewHolder.messageBody.getCurrentTextColor(), true);
                 if (highlightedTerm != null) {
-                    StylingHelper.highlight(activity, body, highlightedTerm, StylingHelper.isDarkText(viewHolder.messageBody));
+                    StylingHelper.highlight(activity, body, highlightedTerm,
+                            StylingHelper.isDarkText(viewHolder.messageBody));
                 }
             }
             if (message.isWebUri() || message.getWebUri() != null) {
                 displayRichLinkMessage(viewHolder, message, darkBackground);
             }
-            // Make custom emoji bigger too, to match emoji
             for (final var span : body.getSpans(0, body.length(), de.monocles.mod.InlineImageSpan.class)) {
                 body.setSpan(
                         new RelativeSizeSpan(2f),
@@ -825,7 +905,8 @@ public class MessageAdapter extends ArrayAdapter<Message> {
                     }
 
                     Spannable body = (Spannable) tv.getText();
-                    ImageSpan[] imageSpans = body.getSpans(body.getSpanStart(span), body.getSpanEnd(span), ImageSpan.class);
+                    ImageSpan[] imageSpans = body.getSpans(body.getSpanStart(span), body.getSpanEnd(span),
+                            ImageSpan.class);
                     if (imageSpans.length > 0) {
                         Uri uri = Uri.parse(imageSpans[0].getSource());
                         Cid cid = BobTransfer.cid(uri);
@@ -845,7 +926,7 @@ public class MessageAdapter extends ArrayAdapter<Message> {
         } else {
             viewHolder.messageBody.setText("");
             viewHolder.messageBody.setTextIsSelectable(false);
-            toggleWhisperInfo(viewHolder,  message, false, darkBackground);
+            toggleWhisperInfo(viewHolder, message, false, darkBackground);
         }
     }
 
