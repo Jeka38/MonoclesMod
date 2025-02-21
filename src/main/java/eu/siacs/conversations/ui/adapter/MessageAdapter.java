@@ -708,7 +708,6 @@ public class MessageAdapter extends ArrayAdapter<Message> {
                 "|bmp|tiff|ico|webm|heif|heic|apng)(\\?.*)?$|\\?q=tbn:.*)");
     }
 
-    // Модифицированный метод displayTextMessage
     private void displayTextMessage(final ViewHolder viewHolder,
                                     final Message message, boolean darkBackground, int type) {
         viewHolder.download_button.setVisibility(GONE);
@@ -739,8 +738,10 @@ public class MessageAdapter extends ArrayAdapter<Message> {
                 // Отображаем изображение
                 showImages(true, viewHolder);
 
-                // Устанавливаем размер превью
-                final float target = activity.getResources().getDimension(R.dimen.image_preview_width);
+                // Устанавливаем максимальные размеры превью
+                final float maxWidth = activity.getResources().getDimension(R.dimen.image_preview_width);
+                final float maxHeight = maxWidth * 1.5f; // Ограничение по высоте (настраиваемое)
+
                 LinearLayout.LayoutParams layoutParams = new LinearLayout.LayoutParams(
                         LinearLayout.LayoutParams.WRAP_CONTENT,
                         LinearLayout.LayoutParams.WRAP_CONTENT
@@ -748,23 +749,21 @@ public class MessageAdapter extends ArrayAdapter<Message> {
                 layoutParams.setMargins(0, (int) (metrics.density * 4), 0, (int) (metrics.density * 4));
                 viewHolder.images.setLayoutParams(layoutParams);
 
-                // Загружаем изображение с помощью Glide
+                // Загружаем изображение с помощью Glide, сохраняя пропорции
                 Glide.with(activity)
                         .load(trimmedBody)
-                        .override((int)target, (int)(target))
-                        .centerCrop()
+                        .override((int) maxWidth, (int) maxHeight)
+                        .fitCenter() // Сохраняем пропорции, не обрезая
                         .placeholder(R.drawable.ic_image_grey600_48dp)
                         .error(R.drawable.ic_error_white_24dp)
                         .into(viewHolder.image);
 
-                // Обработчик клика для открытия изображения во встроенном просмотрщике
+                // Обработчик клика для открытия изображения
                 viewHolder.image.setOnClickListener(v -> {
                     Uri uri = Uri.parse(trimmedBody);
-
                     Intent intent = new Intent(Intent.ACTION_VIEW);
                     intent.setDataAndType(uri, "image/*");
                     intent.addFlags(Intent.FLAG_GRANT_READ_URI_PERMISSION);
-                    // Проверяем, есть ли приложение для просмотра изображений
                     if (intent.resolveActivity(activity.getPackageManager()) != null) {
                         activity.startActivity(intent);
                         activity.overridePendingTransition(R.animator.fade_in, R.animator.fade_out);
@@ -783,6 +782,7 @@ public class MessageAdapter extends ArrayAdapter<Message> {
                 return;
             }
 
+            // Обработка текста сообщения
             final SpannableString nick = UIHelper.getColoredUsername(activity.xmppConnectionService, message);
             Drawable fallbackImg = ResourcesCompat.getDrawable(activity.getResources(),
                     activity.getThemeResource(R.attr.ic_attach_photo, R.drawable.ic_attach_photo), null);
@@ -1273,6 +1273,7 @@ public class MessageAdapter extends ArrayAdapter<Message> {
         viewHolder.audioPlayer.setVisibility(GONE);
         viewHolder.richlinkview.setVisibility(GONE);
         viewHolder.transfer.setVisibility(GONE);
+
         final DownloadableFile file = activity.xmppConnectionService.getFileBackend().getFile(message);
         if (file != null && !file.exists() && !message.isFileDeleted()) {
             new Thread(new markFileDeletedFinisher(message, activity)).start();
@@ -1280,61 +1281,53 @@ public class MessageAdapter extends ArrayAdapter<Message> {
             ToastCompat.makeText(activity, R.string.file_deleted, ToastCompat.LENGTH_SHORT).show();
             return;
         }
+
         final String mime = file.getMimeType();
         final boolean isGif = mime != null && mime.equals("image/gif");
         final int mediaRuntime = message.getFileParams().runtime;
+
+        // Устанавливаем максимальные размеры превью
+        final float maxWidth = activity.getResources().getDimension(R.dimen.image_preview_width);
+        final float maxHeight = maxWidth * 1.5f; // Ограничение по высоте (настраиваемое)
+
+        FileParams params = message.getFileParams();
+        int width = params.width > 0 ? params.width : 1920; // Значение по умолчанию, если ширина неизвестна
+        int height = params.height > 0 ? params.height : 1080; // Значение по умолчанию, если высота неизвестна
+        float aspectRatio = (float) width / height;
+
+        // Вычисляем размеры с учётом максимальной ширины и соотношения сторон
+        int scaledW = (int) maxWidth;
+        int scaledH = (int) (maxWidth / aspectRatio);
+        if (scaledH > maxHeight) {
+            scaledH = (int) maxHeight;
+            scaledW = (int) (maxHeight * aspectRatio);
+        }
+
+        LinearLayout.LayoutParams layoutParams = new LinearLayout.LayoutParams(scaledW, scaledH);
+        layoutParams.setMargins(0, (int) (metrics.density * 4), 0, (int) (metrics.density * 4));
+        viewHolder.images.setLayoutParams(layoutParams);
+
         if (isGif && mPlayGifInside) {
             showImages(true, mediaRuntime, true, viewHolder);
             Log.d(Config.LOGTAG, "Gif Image file");
-            final FileParams params = message.getFileParams();
-            final float target = activity.getResources().getDimension(R.dimen.image_preview_width);
-            final int scaledW;
-            final int scaledH;
-            if (Math.max(params.height, params.width) * metrics.density <= target) {
-                scaledW = (int) (params.width * metrics.density);
-                scaledH = (int) (params.height * metrics.density);
-            } else if (Math.max(params.height, params.width) <= target) {
-                scaledW = params.width;
-                scaledH = params.height;
-            } else if (params.width <= params.height) {
-                scaledW = (int) (params.width / ((double) params.height / target));
-                scaledH = (int) target;
-            } else {
-                scaledW = (int) target;
-                scaledH = (int) (params.height / ((double) params.width / target));
-            }
-            final LinearLayout.LayoutParams layoutParams = new LinearLayout.LayoutParams(scaledW, scaledH);
-            layoutParams.setMargins(0, (int) (metrics.density * 4), 0, (int) (metrics.density * 4));
-            viewHolder.images.setLayoutParams(layoutParams);
-            Glide.with(activity).load(file).into(viewHolder.image);
-            viewHolder.image.setOnClickListener(v -> openDownloadable(message));
+
+            Glide.with(activity)
+                    .load(file)
+                    .override(scaledW, scaledH)
+                    .fitCenter() // Сохраняем пропорции
+                    .into(viewHolder.image);
         } else {
             showImages(true, mediaRuntime, false, viewHolder);
-            FileParams params = message.getFileParams();
-            final float target = activity.getResources().getDimension(R.dimen.image_preview_width);
-            final int scaledW;
-            final int scaledH;
-            if (Math.max(params.height, params.width) * metrics.density <= target) {
-                scaledW = (int) (params.width * metrics.density);
-                scaledH = (int) (params.height * metrics.density);
-            } else if (Math.max(params.height, params.width) <= target) {
-                scaledW = params.width;
-                scaledH = params.height;
-            } else if (params.width <= params.height) {
-                scaledW = (int) (params.width / ((double) params.height / target));
-                scaledH = (int) target;
-            } else {
-                scaledW = (int) target;
-                scaledH = (int) (params.height / ((double) params.width / target));
-            }
-            LinearLayout.LayoutParams layoutParams = new LinearLayout.LayoutParams(scaledW, scaledH);
-            layoutParams.setMargins(0, (int) (metrics.density * 4), 0, (int) (metrics.density * 4));
-            viewHolder.images.setLayoutParams(layoutParams);
-            activity.loadBitmap(message, viewHolder.image);
-            viewHolder.image.setOnClickListener(v -> openDownloadable(message));
-        }
-    }
 
+            Glide.with(activity)
+                    .load(file)
+                    .override(scaledW, scaledH)
+                    .fitCenter() // Сохраняем пропорции
+                    .into(viewHolder.image);
+        }
+
+        viewHolder.image.setOnClickListener(v -> openDownloadable(message));
+    }
     private void imagePreviewLayout(int w, int h, ImageView image) {
         final float target = activity.getResources().getDimension(R.dimen.image_preview_width);
         final int scaledW;
