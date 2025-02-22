@@ -12,6 +12,11 @@
     <string name="action_delete_contact">Delete from contact list</string>
     <string name="action_block_contact">Block contact</string>
     <string name="action_unblock_contact">Unblock contact</string>
+    <string name="user_left">leaves the room</string>
+    <string name="user_joined_as">joined as</string>
+    <string name="and">and</string>
+    <string name="pref_show_join_leave">Show entry/exit of participants</string>
+    <string name="pref_show_join_leave_summary">Enable display of login and logout messages in chats</string>
     <string name="action_block_domain">Block domain</string>
     <string name="action_unblock_domain">Unblock domain</string>
     <string name="title_activity_manage_accounts">Manage accounts</string>

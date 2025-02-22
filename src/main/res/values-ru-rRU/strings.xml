@@ -535,6 +535,11 @@
     <string name="media_usage">Использование памяти медиа-файлами</string>
     <string name="medium">Средний</string>
     <string name="member">Участник</string>
+    <string name="user_left">выходит из конференции</string>
+    <string name="user_joined_as">вошел как</string>
+    <string name="and">и</string>
+    <string name="pref_show_join_leave">Показывать вход/выход участников</string>
+    <string name="pref_show_join_leave_summary">Включить отображение сообщений о входе и выходе в чатах</string>
     <string name="memory_warning">Ваш мессенджер использует %1$s (%2$s) внутренней памяти.
 \n
 \nВы можете включить автоматическое удаление вложений или удалить медиа-файлы вручную.</string>
