@@ -87,7 +87,8 @@ public class PresenceParser extends AbstractParser implements
                     String affiliation = userAfter.getAffiliation() != null ? userAfter.getAffiliation().toString().toLowerCase() : "unknown";
                     String role = userAfter.getRole() != null ? userAfter.getRole().toString().toLowerCase() : "unknown";
                     String joinMessageText = displayName + " " + mXmppConnectionService.getString(R.string.user_joined_as) + " " +
-                            role + " " + mXmppConnectionService.getString(R.string.and) + " " + affiliation + " " + currentTime;                    Message joinMessage = new Message(conversation, joinMessageText, Message.ENCRYPTION_NONE);
+                            role + " " + mXmppConnectionService.getString(R.string.and) + " " + affiliation + " " + currentTime;
+                    Message joinMessage = new Message(conversation, joinMessageText, Message.ENCRYPTION_NONE);
                     joinMessage.setType(Message.TYPE_STATUS);
                     joinMessage.setTime(System.currentTimeMillis());
                     joinMessage.setCounterpart(null); // Убираем аватар

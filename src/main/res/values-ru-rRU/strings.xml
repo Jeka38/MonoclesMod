@@ -535,6 +535,7 @@
     <string name="media_usage">Использование памяти медиа-файлами</string>
     <string name="medium">Средний</string>
     <string name="member">Участник</string>
+    <string name="notify_active_moderators">Уведомить модераторов</string>
     <string name="user_left">выходит из конференции</string>
     <string name="user_joined_as">вошел как</string>
     <string name="and">и</string>

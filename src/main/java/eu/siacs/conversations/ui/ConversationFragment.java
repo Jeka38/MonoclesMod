@@ -1989,12 +1989,13 @@ public class ConversationFragment extends XmppFragment
                             getRecyclerView().getItemAnimator().endAnimations();
                             final var allUsers = conversation.getMucOptions().getUsers();
                             if (!conversation.getMucOptions().getUsersByRole(MucOptions.Role.MODERATOR).isEmpty()) {
-                                final var u = new MucOptions.User(conversation.getMucOptions(), null, "\0role:moderator", "Notify active moderators", new HashSet<>());
-                                u.setRole("participant");
-                                allUsers.add(u);
-                            }
-                            if (!allUsers.isEmpty() && conversation.getMucOptions().getSelf() != null && conversation.getMucOptions().getSelf().getAffiliation().ranks(MucOptions.Affiliation.MEMBER)) {
-                                final var u = new MucOptions.User(conversation.getMucOptions(), null, "\0attention", "Notify active participants", new HashSet<>());
+                                final var u = new MucOptions.User(
+                                        conversation.getMucOptions(),
+                                        null,
+                                        "\0role:moderator",
+                                        activity.getString(R.string.notify_active_moderators), // Изменено здесь
+                                        new HashSet<>()
+                                );
                                 u.setRole("participant");
                                 allUsers.add(u);
                             }
@@ -2004,8 +2005,6 @@ public class ConversationFragment extends XmppFragment
                                             allUsers,
                                             user -> {
                                                 if ("mods".contains(needle) && "\0role:moderator".equals(user.getOccupantId()))
-                                                    return true;
-                                                if ("here".contains(needle) && "\0attention".equals(user.getOccupantId()))
                                                     return true;
                                                 final String name = user.getNick();
                                                 if (name == null) return false;
@@ -2037,11 +2036,6 @@ public class ConversationFragment extends XmppFragment
                             int[] range = com.otaliastudios.autocomplete.CharPolicy.getQueryRange(editable);
                             if (range == null) return false;
                             range[0] -= 1;
-                            if ("\0attention".equals(user.getOccupantId())) {
-                                editable.delete(Math.max(0, range[0]), Math.min(editable.length(), range[1]));
-                                editable.insert(0, "@here ");
-                                return true;
-                            }
                             int colon = editable.toString().indexOf(':');
                             final var beforeColon = range[0] < colon;
                             String prefix = "";

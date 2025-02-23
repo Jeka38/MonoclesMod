@@ -14,6 +14,7 @@
     <string name="action_unblock_contact">Unblock contact</string>
     <string name="user_left">leaves the room</string>
     <string name="user_joined_as">joined as</string>
+    <string name="notify_active_moderators">Notify active moderators</string>
     <string name="and">and</string>
     <string name="pref_show_join_leave">Show entry/exit of participants</string>
     <string name="pref_show_join_leave_summary">Enable display of login and logout messages in chats</string>
