@@ -1107,6 +1107,8 @@
     <string name="smp_requested">Контакт запросил проверку SMP</string>
     <string name="snooze">Скрыть</string>
     <string name="start_conversation">Начать беседу</string>
+    <string name="role_changed_to">теперь</string>
+    <string name="affiliation_changed_to">теперь</string>
     <string name="start_orbot">Запуск Orbot</string>
     <string name="status_message">Статус</string>
     <string name="strikethrough">зачеркивание</string>

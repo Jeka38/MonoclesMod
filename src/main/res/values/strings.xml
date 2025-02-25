@@ -16,6 +16,8 @@
     <string name="user_joined_as">joined as</string>
     <string name="notify_active_moderators">Notify active moderators</string>
     <string name="and">and</string>
+    <string name="role_changed_to">role changed to</string>
+    <string name="affiliation_changed_to">affiliation changed to</string>
     <string name="pref_show_join_leave">Show entry/exit of participants</string>
     <string name="pref_show_join_leave_summary">Enable display of login and logout messages in chats</string>
     <string name="action_block_domain">Block domain</string>

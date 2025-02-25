@@ -1,5 +1,7 @@
 package eu.siacs.conversations.parser;
 
+import static eu.siacs.conversations.utils.UIHelper.getDisplayName;
+
 import android.content.SharedPreferences;
 import android.util.Log;
 
@@ -10,6 +12,7 @@ import java.util.ArrayList;
 import java.util.Date;
 import java.util.List;
 import java.util.Locale;
+import java.util.Objects;
 
 import eu.siacs.conversations.Config;
 import eu.siacs.conversations.R;
@@ -42,78 +45,22 @@ public class PresenceParser extends AbstractParser implements
 
     public void parseConferencePresence(PresencePacket packet, Account account) {
         final Conversation conversation = packet.getFrom() == null ? null : mXmppConnectionService.find(account, packet.getFrom().asBareJid());
-        if (conversation == null) {
-            Log.d("PresenceParser", "Conversation not found for: " + packet.getFrom());
-            return;
-        }
-
-        final MucOptions mucOptions = conversation.getMucOptions();
-        boolean before = mucOptions.online();
-        int count = mucOptions.getUserCount();
-        final List<MucOptions.User> allUsersBefore = mucOptions.getUsers();
-
-        // Проверяем настройку показа входа/выхода
-        SharedPreferences preferences = mXmppConnectionService.getPreferences();
-        boolean showJoinLeave = preferences.getBoolean("show_join_leave", true);
-
-        // Обрабатываем присутствие
-        processConferencePresence(packet, conversation);
-
-        final List<MucOptions.User> allUsersAfter = mucOptions.getUsers();
-
-        // Формат времени
-        SimpleDateFormat timeFormat = new SimpleDateFormat("HH:mm", Locale.getDefault());
-        String currentTime = timeFormat.format(new Date());
-
-        // Проверяем изменения в полном списке участников, только если настройка включена
-        if (showJoinLeave) {
-            for (MucOptions.User userBefore : allUsersBefore) {
-                if (!allUsersAfter.contains(userBefore)) {
-                    String displayName = getDisplayName(userBefore, mucOptions);
-                    String leaveMessageText = displayName + " " + mXmppConnectionService.getString(R.string.user_left) + " " + currentTime;
-
-                    Message leaveMessage = new Message(conversation, leaveMessageText, Message.ENCRYPTION_NONE);
-                    leaveMessage.setType(Message.TYPE_STATUS);
-                    leaveMessage.setTime(System.currentTimeMillis());
-                    leaveMessage.setCounterpart(null); // Убираем аватар
-                    conversation.add(leaveMessage);
-                    Log.d("PresenceParser", "User left: " + leaveMessageText);
-                }
+        if (conversation != null) {
+            final MucOptions mucOptions = conversation.getMucOptions();
+            boolean before = mucOptions.online();
+            int count = mucOptions.getUserCount();
+            final List<MucOptions.User> tileUserBefore = mucOptions.getUsers(5);
+            processConferencePresence(packet, conversation);
+            final List<MucOptions.User> tileUserAfter = mucOptions.getUsers(5);
+            if (!tileUserAfter.equals(tileUserBefore)) {
+                mXmppConnectionService.getAvatarService().clear(mucOptions);
             }
-
-            for (MucOptions.User userAfter : allUsersAfter) {
-                if (!allUsersBefore.contains(userAfter)) {
-                    String displayName = getDisplayName(userAfter, mucOptions);
-                    String affiliation = userAfter.getAffiliation() != null ? userAfter.getAffiliation().toString().toLowerCase() : "unknown";
-                    String role = userAfter.getRole() != null ? userAfter.getRole().toString().toLowerCase() : "unknown";
-                    String joinMessageText = displayName + " " + mXmppConnectionService.getString(R.string.user_joined_as) + " " +
-                            role + " " + mXmppConnectionService.getString(R.string.and) + " " + affiliation + " " + currentTime;
-                    Message joinMessage = new Message(conversation, joinMessageText, Message.ENCRYPTION_NONE);
-                    joinMessage.setType(Message.TYPE_STATUS);
-                    joinMessage.setTime(System.currentTimeMillis());
-                    joinMessage.setCounterpart(null); // Убираем аватар
-                    conversation.add(joinMessage);
-                    Log.d("PresenceParser", "User joined: " + joinMessageText);
-                }
+            if (before != mucOptions.online() || (mucOptions.online() && count != mucOptions.getUserCount())) {
+                mXmppConnectionService.updateConversationUi();
+            } else if (mucOptions.online()) {
+                mXmppConnectionService.updateMucRosterUi();
             }
         }
-
-        if (before != mucOptions.online() || (mucOptions.online() && count != mucOptions.getUserCount())) {
-            mXmppConnectionService.updateConversationUi();
-        } else if (mucOptions.online()) {
-            mXmppConnectionService.updateMucRosterUi();
-        }
-    }
-
-    private String getDisplayName(MucOptions.User user, MucOptions mucOptions) {
-        MucOptions.User self = mucOptions.getSelf();
-        if (self != null &&
-                (self.getAffiliation() == MucOptions.Affiliation.ADMIN ||
-                        self.getAffiliation() == MucOptions.Affiliation.OWNER)) {
-            String realJid = user.getRealJid() != null ? user.getRealJid().toString() : "unknown";
-            return String.format("%s (%s)", user.getNick(), realJid);
-        }
-        return user.getNick() != null ? user.getNick() : "unknown";
     }
 
     private void processConferencePresence(PresencePacket packet, Conversation conversation) {
@@ -121,6 +68,15 @@ public class PresenceParser extends AbstractParser implements
         final MucOptions mucOptions = conversation.getMucOptions();
         final Jid jid = conversation.getAccount().getJid();
         final Jid from = packet.getFrom();
+
+        // Проверяем настройку показа входа/выхода и изменений
+        SharedPreferences preferences = mXmppConnectionService.getPreferences();
+        boolean showJoinLeave = preferences.getBoolean("show_join_leave", true);
+
+        // Формат времени
+        SimpleDateFormat timeFormat = new SimpleDateFormat("HH:mm", Locale.getDefault());
+        String currentTime = timeFormat.format(new Date());
+
         if (!from.isBareJid()) {
             final String type = packet.getAttribute("type");
             final Element x = packet.findChild("x", Namespace.MUC_USER);
@@ -133,13 +89,72 @@ public class PresenceParser extends AbstractParser implements
             final Element occupantId = packet.findChild("occupant-id", "urn:xmpp:occupant-id:0");
             Avatar avatar = Avatar.parsePresence(packet.findChild("x", "vcard-temp:x:update"));
             final List<String> codes = getStatusCodes(x);
+
             if (type == null) {
                 if (x != null) {
                     Element item = x.findChild("item");
                     if (item != null && !from.isBareJid()) {
                         mucOptions.setError(MucOptions.Error.NONE);
                         MucOptions.User user = parseItem(conversation, item, from, occupantId, nick == null ? null : nick.getContent(), hats);
-                        if (codes.contains(MucOptions.STATUS_CODE_SELF_PRESENCE) || (codes.contains(MucOptions.STATUS_CODE_ROOM_CREATED) && jid.equals(InvalidJid.getNullForInvalid(item.getAttributeAsJid("jid"))))) {
+
+                        // Ищем существующего пользователя по полному JID
+                        MucOptions.User existingUser = null;
+                        for (MucOptions.User u : mucOptions.getUsers()) {
+                            if (u.getFullJid() != null && u.getFullJid().equals(from)) {
+                                existingUser = u;
+                                break;
+                            }
+                        }
+
+                        if (showJoinLeave) {
+                            boolean isSelfAdminOrHigher = mucOptions.getSelf().getRole() != null &&
+                                    (mucOptions.getSelf().getRole() == MucOptions.Role.MODERATOR ||
+                                            mucOptions.getSelf().getAffiliation() == MucOptions.Affiliation.ADMIN ||
+                                            mucOptions.getSelf().getAffiliation() == MucOptions.Affiliation.OWNER);
+
+                            // Формат имени в зависимости от вашей роли
+                            String displayName = isSelfAdminOrHigher && user.getRealJid() != null
+                                    ? user.getName() + " (" + user.getRealJid() + ")"
+                                    : user.getName();
+
+                            if (existingUser == null) {
+                                // Сообщение о входе нового пользователя
+                                String affiliation = user.getAffiliation() != null ? user.getAffiliation().toString().toLowerCase() : "unknown";
+                                String role = user.getRole() != null ? user.getRole().toString().toLowerCase() : "unknown";
+                                String joinMessageText = displayName + " " +
+                                        mXmppConnectionService.getString(R.string.user_joined_as) + " " +
+                                        role + " " + mXmppConnectionService.getString(R.string.and) + " " +
+                                        affiliation + " " + currentTime;
+
+                                Message joinMessage = new Message(conversation, joinMessageText, Message.ENCRYPTION_NONE);
+                                joinMessage.setType(Message.TYPE_STATUS);
+                                joinMessage.setTime(System.currentTimeMillis());
+                                joinMessage.setCounterpart(null);
+                                conversation.add(joinMessage);
+                                Log.d("PresenceParser", "User joined: " + joinMessageText);
+                            } else {
+                                // Проверка изменения аффилиации
+                                if (!Objects.equals(existingUser.getAffiliation(), user.getAffiliation()) |  !Objects.equals(existingUser.getRole(), user.getRole())) {
+                                    String newRole = user.getRole() != null ? user.getRole().toString().toLowerCase() : "unknown";
+                                    String newAffiliation = user.getAffiliation() != null ? user.getAffiliation().toString().toLowerCase() : "unknown";
+                                    String affiliationMessageText = displayName + " " +
+                                            mXmppConnectionService.getString(R.string.affiliation_changed_to) + " " +
+                                            newRole + " " + mXmppConnectionService.getString(R.string.and) + " " +
+                                            newAffiliation + " " + currentTime;
+
+                                    Message affiliationMessage = new Message(conversation, affiliationMessageText, Message.ENCRYPTION_NONE);
+                                    affiliationMessage.setType(Message.TYPE_STATUS);
+                                    affiliationMessage.setTime(System.currentTimeMillis());
+                                    affiliationMessage.setCounterpart(null);
+                                    conversation.add(affiliationMessage);
+                                    Log.d("PresenceParser", "Affiliation changed: " + affiliationMessageText);
+                                }
+                            }
+                        }
+
+                        if (codes.contains(MucOptions.STATUS_CODE_SELF_PRESENCE) ||
+                                (codes.contains(MucOptions.STATUS_CODE_ROOM_CREATED) &&
+                                        jid.equals(InvalidJid.getNullForInvalid(item.getAttributeAsJid("jid"))))) {
                             if (mucOptions.setOnline()) {
                                 mXmppConnectionService.getAvatarService().clear(mucOptions);
                             }
@@ -150,16 +165,8 @@ public class PresenceParser extends AbstractParser implements
                             mXmppConnectionService.persistSelfNick(user);
                             invokeRenameListener(mucOptions, true);
                         }
-                        boolean isNew = mucOptions.updateUser(user);
-                        final AxolotlService axolotlService = conversation.getAccount().getAxolotlService();
-                        Contact contact = user.getContact();
-                        if (isNew
-                                && user.getRealJid() != null
-                                && mucOptions.isPrivateAndNonAnonymous()
-                                && (contact == null || !contact.mutualPresenceSubscription())
-                                && axolotlService.hasEmptyDeviceList(user.getRealJid())) {
-                            axolotlService.fetchDeviceIds(user.getRealJid());
-                        }
+                        mucOptions.updateUser(user);
+
                         if (codes.contains(MucOptions.STATUS_CODE_ROOM_CREATED) && mucOptions.autoPushConfiguration()) {
                             Log.d(Config.LOGTAG, account.getJid().asBareJid()
                                     + ": room '"
@@ -169,17 +176,7 @@ public class PresenceParser extends AbstractParser implements
                                     IqGenerator.defaultChannelConfiguration(),
                                     null);
                         }
-                        if (mXmppConnectionService.getPgpEngine() != null) {
-                            Element signed = packet.findChild("x", "jabber:x:signed");
-                            if (signed != null) {
-                                Element status = packet.findChild("status");
-                                String msg = status == null ? "" : status.getContent();
-                                long keyId = mXmppConnectionService.getPgpEngine().fetchKeyId(mucOptions.getAccount(), msg, signed.getContent());
-                                if (keyId != 0) {
-                                    user.setPgpKeyId(keyId);
-                                }
-                            }
-                        }
+
                         if (avatar != null) {
                             avatar.owner = from;
                             if (mXmppConnectionService.getFileBackend().isAvatarCached(avatar)) {
@@ -244,7 +241,29 @@ public class PresenceParser extends AbstractParser implements
                         mucOptions.updateUser(parseItem(conversation, item, from, occupantId, nick == null ? null : nick.getContent(), hats));
                     }
                     MucOptions.User user = mucOptions.deleteUser(from);
-                    if (user != null) {
+                    if (user != null && showJoinLeave) {
+                        // Проверяем вашу роль в чате
+                        boolean isSelfAdminOrHigher = mucOptions.getSelf().getRole() != null &&
+                                (mucOptions.getSelf().getRole() == MucOptions.Role.MODERATOR ||
+                                        mucOptions.getSelf().getAffiliation() == MucOptions.Affiliation.ADMIN ||
+                                        mucOptions.getSelf().getAffiliation() == MucOptions.Affiliation.OWNER);
+
+                        // Формат имени в зависимости от вашей роли
+                        String displayName = isSelfAdminOrHigher && user.getRealJid() != null
+                                ? user.getName() + " (" + user.getRealJid() + ")"
+                                : user.getName();
+
+                        String leaveMessageText = displayName + " " +
+                                mXmppConnectionService.getString(R.string.user_left) + " " +
+                                currentTime;
+
+                        Message leaveMessage = new Message(conversation, leaveMessageText, Message.ENCRYPTION_NONE);
+                        leaveMessage.setType(Message.TYPE_STATUS);
+                        leaveMessage.setTime(System.currentTimeMillis());
+                        leaveMessage.setCounterpart(null);
+                        conversation.add(leaveMessage);
+                        Log.d("PresenceParser", "User left: " + leaveMessageText);
+
                         mXmppConnectionService.getAvatarService().clear(user);
                     }
                 }
