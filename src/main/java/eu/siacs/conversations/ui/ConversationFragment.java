@@ -257,6 +257,7 @@ public class ConversationFragment extends XmppFragment
     private Integer oldOrientation;
     private int mStartTime = 0;
     private boolean recording = false;
+    private boolean isChatVisible = false; // Флаг видимости чата
 
     private CountDownLatch outputFileWrittenLatch = new CountDownLatch(1);
 
@@ -4305,6 +4306,10 @@ public class ConversationFragment extends XmppFragment
         }
     }
 
+    private boolean isChatVisiblePreviously() {
+        return isChatVisible;
+    }
+
     @Override
     public void onStart() {
         super.onStart();
@@ -4317,12 +4322,25 @@ public class ConversationFragment extends XmppFragment
             }
         } else if (conversation == null && activity != null && activity.xmppConnectionService != null) {
             final String uuid = pendingConversationsUuid.pop();
-            Log.d(Config.LOGTAG, "ConversationFragment.onStart() - activity was bound but no conversation loaded. uuid=" + uuid);
             if (uuid != null) {
                 findAndReInitByUuidOrArchive(uuid);
             }
         }
         updateChatBG();
+
+        // Устанавливаем флаг видимости
+        isChatVisible = true;
+
+        // Прокрутка к первому непрочитанному только при первом открытии
+        if (binding != null && messageListAdapter != null && conversation != null && !isChatVisiblePreviously()) {
+            binding.messagesView.post(() -> {
+                if (messageListAdapter.getCount() > 0 && conversation.unreadCount() > 0) {
+                    messageListAdapter.scrollToFirstUnread(binding.messagesView);
+                } else {
+                    binding.messagesView.smoothScrollToPosition(messageListAdapter.getCount() - 1);
+                }
+            });
+        }
     }
 
     @Override
@@ -4339,6 +4357,7 @@ public class ConversationFragment extends XmppFragment
         if (activity == null || !activity.isChangingConfigurations()) {
             hideSoftKeyboard(activity);
             messageListAdapter.stopAudioPlayer();
+            isChatVisible = false; // Сбрасываем флаг при закрытии
         }
         if (this.conversation != null) {
             final String msg = this.binding.textinput.getText().toString();

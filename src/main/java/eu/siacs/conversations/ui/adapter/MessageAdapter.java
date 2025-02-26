@@ -259,6 +259,35 @@ public class MessageAdapter extends ArrayAdapter<Message> {
         return this.getItemViewType(getItem(position));
     }
 
+    /**
+     * Прокручивает список к первому непрочитанному сообщению.
+     * @param listView ListView, содержащий сообщения
+     */
+    public void scrollToFirstUnread(ListView listView) {
+        if (listView == null || getCount() == 0) {
+            Log.d(Config.LOGTAG, "scrollToFirstUnread: ListView null or empty");
+            return;
+        }
+
+        Conversation conversation = (Conversation) getItem(0).getConversation();
+        Message firstUnread = conversation.getFirstUnreadMessage();
+
+        if (firstUnread != null && firstUnread.getUuid() != null) {
+            Log.d(Config.LOGTAG, "scrollToFirstUnread: First unread message found: " + firstUnread.getUuid());
+            for (int i = 0; i < getCount(); i++) {
+                Message message = getItem(i);
+                if (message != null && message.getUuid() != null && message.getUuid().equals(firstUnread.getUuid())) {
+                    Log.d(Config.LOGTAG, "scrollToFirstUnread: Scrolling to position " + i);
+                    listView.smoothScrollToPosition(i);
+                    break;
+                }
+            }
+        } else {
+            Log.d(Config.LOGTAG, "scrollToFirstUnread: No unread messages or UUID is null, scrolling to last position");
+            listView.smoothScrollToPosition(getCount() - 1);
+        }
+    }
+
     private void displayStatus(ViewHolder viewHolder, final Message message, int type, boolean darkBackground) {
         String filesize = null;
         String info = null;
