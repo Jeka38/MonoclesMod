@@ -1575,8 +1575,9 @@ public class Conversation extends AbstractEntity implements Blockable, Comparabl
     public int unreadCount() {
         synchronized (this.messages) {
             int count = 0;
-            for(final Message message : Lists.reverse(this.messages)) {
+            for (final Message message : Lists.reverse(this.messages)) {
                 if (message.getSubject() != null && !message.isOOb() && (message.getRawBody() == null || message.getRawBody().isEmpty())) continue;
+                if (message.getType() == Message.TYPE_STATUS) continue; // Игнорируем статусные сообщения
                 if (message.isRead()) {
                     if (message.getType() == Message.TYPE_RTP_SESSION) {
                         continue;

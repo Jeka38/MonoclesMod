@@ -1,7 +1,5 @@
 package eu.siacs.conversations.parser;
 
-import static eu.siacs.conversations.utils.UIHelper.getDisplayName;
-
 import android.content.SharedPreferences;
 import android.util.Log;
 
@@ -17,7 +15,6 @@ import java.util.Objects;
 import eu.siacs.conversations.Config;
 import eu.siacs.conversations.R;
 import eu.siacs.conversations.crypto.PgpEngine;
-import eu.siacs.conversations.crypto.axolotl.AxolotlService;
 import eu.siacs.conversations.entities.Account;
 import eu.siacs.conversations.entities.Contact;
 import eu.siacs.conversations.entities.Conversation;
@@ -107,18 +104,9 @@ public class PresenceParser extends AbstractParser implements
                         }
 
                         if (showJoinLeave) {
-                            boolean isSelfAdminOrHigher = mucOptions.getSelf().getRole() != null &&
-                                    (mucOptions.getSelf().getRole() == MucOptions.Role.MODERATOR ||
-                                            mucOptions.getSelf().getAffiliation() == MucOptions.Affiliation.ADMIN ||
-                                            mucOptions.getSelf().getAffiliation() == MucOptions.Affiliation.OWNER);
-
-                            // Формат имени в зависимости от вашей роли
-                            String displayName = isSelfAdminOrHigher && user.getRealJid() != null
-                                    ? user.getName() + " (" + user.getRealJid() + ")"
-                                    : user.getName();
+                            String displayName = getDisplayName(mucOptions, user);
 
                             if (existingUser == null) {
-                                // Сообщение о входе нового пользователя
                                 String affiliation = user.getAffiliation() != null ? user.getAffiliation().toString().toLowerCase() : "unknown";
                                 String role = user.getRole() != null ? user.getRole().toString().toLowerCase() : "unknown";
                                 String joinMessageText = displayName + " " +
@@ -242,21 +230,10 @@ public class PresenceParser extends AbstractParser implements
                     }
                     MucOptions.User user = mucOptions.deleteUser(from);
                     if (user != null && showJoinLeave) {
-                        // Проверяем вашу роль в чате
-                        boolean isSelfAdminOrHigher = mucOptions.getSelf().getRole() != null &&
-                                (mucOptions.getSelf().getRole() == MucOptions.Role.MODERATOR ||
-                                        mucOptions.getSelf().getAffiliation() == MucOptions.Affiliation.ADMIN ||
-                                        mucOptions.getSelf().getAffiliation() == MucOptions.Affiliation.OWNER);
-
-                        // Формат имени в зависимости от вашей роли
-                        String displayName = isSelfAdminOrHigher && user.getRealJid() != null
-                                ? user.getName() + " (" + user.getRealJid() + ")"
-                                : user.getName();
-
+                        String displayName = getDisplayName(mucOptions, user);
                         String leaveMessageText = displayName + " " +
                                 mXmppConnectionService.getString(R.string.user_left) + " " +
                                 currentTime;
-
                         Message leaveMessage = new Message(conversation, leaveMessageText, Message.ENCRYPTION_NONE);
                         leaveMessage.setType(Message.TYPE_STATUS);
                         leaveMessage.setTime(System.currentTimeMillis());
@@ -320,6 +297,18 @@ public class PresenceParser extends AbstractParser implements
                 }
             }
         }
+    }
+
+    private static String getDisplayName(MucOptions mucOptions, MucOptions.User user) {
+        boolean isSelfAdminOrHigher = mucOptions.getSelf().getRole() != null &&
+                (mucOptions.getSelf().getRole() == MucOptions.Role.MODERATOR ||
+                        mucOptions.getSelf().getAffiliation() == MucOptions.Affiliation.ADMIN ||
+                        mucOptions.getSelf().getAffiliation() == MucOptions.Affiliation.OWNER);
+
+        // Формат имени в зависимости от вашей роли
+        return isSelfAdminOrHigher && user.getRealJid() != null
+                ? user.getName() + " (" + user.getRealJid() + ")"
+                : user.getName();
     }
 
     private static void invokeRenameListener(final MucOptions options, boolean success) {
