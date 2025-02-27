@@ -153,8 +153,9 @@
     </style>
 
     <style name="TextAppearance.Conversations.Status" parent="TextAppearance.Conversations.Caption">
-        <item name="android:textStyle">italic</item>
-        <item name="fontFamily">@font/notosansregular</item>
+        <item name="android:textColor">@color/green500</item>
+        <item name="fontFamily">@font/notosansbold</item>
+        <item name="android:textSize">12sp</item>
     </style>
 
     <style name="TextAppearance.Conversations.Tag" parent="TextAppearance.Conversations.Caption">
