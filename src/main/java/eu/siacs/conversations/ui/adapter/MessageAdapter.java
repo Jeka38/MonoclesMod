@@ -66,6 +66,8 @@ import androidx.core.graphics.ColorUtils;
 import androidx.core.graphics.drawable.DrawableCompat;
 
 import com.bumptech.glide.Glide;
+import com.bumptech.glide.load.engine.DiskCacheStrategy;
+import com.bumptech.glide.request.RequestOptions;
 import com.daimajia.swipe.SwipeLayout;
 import com.google.common.base.Strings;
 
@@ -733,7 +735,7 @@ public class MessageAdapter extends ArrayAdapter<Message> {
     // Проверяет, является ли URL изображением (даже без расширения)
     private boolean isDirectImageUrl(String url) {
         if (url == null) return false;
-        return url.matches("(?i)^(http|https)://.*(\\.(jpg|jpeg|png|gif|webp" +
+        return url.matches("(?i)^(http|https)://.*(\\.(jpg|jpeg|png|gif" +
                 "|bmp|tiff|ico|webm|heif|heic|apng)(\\?.*)?$|\\?q=tbn:.*)");
     }
 
@@ -1298,10 +1300,10 @@ public class MessageAdapter extends ArrayAdapter<Message> {
 
     private void displayMediaPreviewMessage(ViewHolder viewHolder, final Message message, final boolean darkBackground, final int type) {
         displayTextMessage(viewHolder, message, darkBackground, type);
-        viewHolder.download_button.setVisibility(GONE);
-        viewHolder.audioPlayer.setVisibility(GONE);
-        viewHolder.richlinkview.setVisibility(GONE);
-        viewHolder.transfer.setVisibility(GONE);
+        viewHolder.download_button.setVisibility(View.GONE);
+        viewHolder.audioPlayer.setVisibility(View.GONE);
+        viewHolder.richlinkview.setVisibility(View.GONE);
+        viewHolder.transfer.setVisibility(View.GONE);
 
         final DownloadableFile file = activity.xmppConnectionService.getFileBackend().getFile(message);
         if (file != null && !file.exists() && !message.isFileDeleted()) {
@@ -1315,46 +1317,66 @@ public class MessageAdapter extends ArrayAdapter<Message> {
         final boolean isGif = mime != null && mime.equals("image/gif");
         final int mediaRuntime = message.getFileParams().runtime;
 
-        // Устанавливаем максимальные размеры превью
-        final float maxWidth = activity.getResources().getDimension(R.dimen.image_preview_width);
-        final float maxHeight = maxWidth * 1.5f; // Ограничение по высоте (настраиваемое)
+        // Получаем размеры экрана для ограничения
+        DisplayMetrics metrics = activity.getResources().getDisplayMetrics();
+        float maxWidth = metrics.widthPixels * 0.75f; // 75% ширины экрана
+        float maxHeight = maxWidth * 1.5f; // Максимальная высота = 1.5 × ширина
 
+        // Параметры изображения из мета-данных
         FileParams params = message.getFileParams();
-        int width = params.width > 0 ? params.width : 1920; // Значение по умолчанию, если ширина неизвестна
-        int height = params.height > 0 ? params.height : 1080; // Значение по умолчанию, если высота неизвестна
+        int width = params.width > 0 ? params.width : 1920; // Дефолтное значение, если ширина неизвестна
+        int height = params.height > 0 ? params.height : 1080; // Дефолтное значение, если высота неизвестна
         float aspectRatio = (float) width / height;
 
-        // Вычисляем размеры с учётом максимальной ширины и соотношения сторон
-        int scaledW = (int) maxWidth;
-        int scaledH = (int) (maxWidth / aspectRatio);
-        if (scaledH > maxHeight) {
-            scaledH = (int) maxHeight;
-            scaledW = (int) (maxHeight * aspectRatio);
+        // Размеры для отображения
+        int scaledW, scaledH;
+        if (isGif) {
+            scaledW = (int) (width * 1.75f);
+            scaledH = (int) (height * 1.75f);
+            // Ограничиваем только если превышают максимальные размеры
+            if (scaledW > maxWidth) {
+                scaledW = (int) maxWidth;
+                scaledH = (int) (maxWidth / aspectRatio);
+            }
+            if (scaledH > maxHeight) {
+                scaledH = (int) maxHeight;
+                scaledW = (int) (maxHeight * aspectRatio);
+            }
+        } else {
+            // Для остальных изображений сохраняем прежнюю логику масштабирования
+            scaledW = (int) maxWidth;
+            scaledH = (int) (maxWidth / aspectRatio);
+            if (scaledH > maxHeight) {
+                scaledH = (int) maxHeight;
+                scaledW = (int) (maxHeight * aspectRatio);
+            }
         }
 
+        // Установка размеров для View
         LinearLayout.LayoutParams layoutParams = new LinearLayout.LayoutParams(scaledW, scaledH);
         layoutParams.setMargins(0, (int) (metrics.density * 4), 0, (int) (metrics.density * 4));
         viewHolder.images.setLayoutParams(layoutParams);
 
+        // Отображение изображения или GIF
         if (isGif && mPlayGifInside) {
             showImages(true, mediaRuntime, true, viewHolder);
-            Log.d(Config.LOGTAG, "Gif Image file");
-
-            Glide.with(activity)
-                    .load(file)
-                    .override(scaledW, scaledH)
-                    .fitCenter() // Сохраняем пропорции
-                    .into(viewHolder.image);
+            Log.d(Config.LOGTAG, "Gif Image file, original size: width=" + width + ", height=" + height);
         } else {
             showImages(true, mediaRuntime, false, viewHolder);
-
-            Glide.with(activity)
-                    .load(file)
-                    .override(scaledW, scaledH)
-                    .fitCenter() // Сохраняем пропорции
-                    .into(viewHolder.image);
         }
 
+        // Настройка Glide для загрузки изображения
+        RequestOptions options = new RequestOptions()
+                .override(scaledW, scaledH) // Задаём точные размеры
+                .fitCenter() // Масштабируем с сохранением пропорций внутри заданных размеров
+                .diskCacheStrategy(DiskCacheStrategy.ALL); // Кэшируем для производительности
+
+        Glide.with(activity)
+                .load(file)
+                .apply(options)
+                .into(viewHolder.image);
+
+        // Обработчик клика для открытия файла
         viewHolder.image.setOnClickListener(v -> openDownloadable(message));
     }
     private void imagePreviewLayout(int w, int h, ImageView image) {
