@@ -62,6 +62,8 @@
     <string name="action_open">Открыть</string>
     <string name="action_renew_certificate">Обновить сертификат</string>
     <string name="action_secure">Защищенная беседа</string>
+    <string name="mark_all_chats_as_read">Отметить все чаты как прочитанные</string>
+    <string name="marked_all_chats_as_read">Все чаты отмечены как прочитанные</string>
     <string name="action_settings">Настройки</string>
     <string name="action_take_photo">Сделать фото</string>
     <string name="action_take_video">Записать видео</string>
@@ -528,6 +530,7 @@
 \nВы можете использовать любую доверенную форму коммуникации, например шифрованное e-mail сообщение или телефонный звонок для обмена ими.</string>
     <string name="manually_verify">Проверить вручную</string>
     <string name="mark_as_read">Отметить как прочитанное</string>
+    <string name="marked_as_read">Отмечено как прочитанное</string>
     <string name="me">Я</string>
     <string name="me_quote">Я:</string>
     <string name="media">Медиа</string>

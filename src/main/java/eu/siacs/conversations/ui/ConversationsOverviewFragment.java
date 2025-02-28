@@ -356,6 +356,8 @@ public class ConversationsOverviewFragment extends XmppFragment {
             name = conversation.getAvatarName();
         }
         menu.setHeaderTitle(name);
+
+        // Существующие элементы меню
         final MenuItem menuMucDetails = menu.findItem(R.id.action_group_details);
         final MenuItem menuContactDetails = menu.findItem(R.id.action_contact_details);
         final MenuItem menuArchiveChat = menu.findItem(R.id.action_archive_chat);
@@ -365,16 +367,22 @@ public class ConversationsOverviewFragment extends XmppFragment {
         final MenuItem menuOngoingCall = menu.findItem(R.id.action_ongoing_call);
         final MenuItem menuTogglePinned = menu.findItem(R.id.action_toggle_pinned);
 
+        // Новый элемент меню
+        final MenuItem menuMarkAsRead = menu.findItem(R.id.action_mark_as_read);
+
         if (conversation != null) {
+            // Существующая логика видимости
             if (conversation.getMode() == Conversation.MODE_MULTI) {
                 menuContactDetails.setVisible(false);
                 menuArchiveChat.setVisible(false);
                 menuLeaveGroup.setVisible(true);
-                menuMucDetails.setTitle(conversation.getMucOptions().isPrivateAndNonAnonymous() ? R.string.conference_details : R.string.channel_details);
+                menuMucDetails.setTitle(conversation.getMucOptions().isPrivateAndNonAnonymous() ?
+                        R.string.conference_details : R.string.channel_details);
                 menuOngoingCall.setVisible(false);
             } else {
                 final XmppConnectionService service = activity == null ? null : activity.xmppConnectionService;
-                final Optional<OngoingRtpSession> ongoingRtpSession = service == null ? Optional.absent() : service.getJingleConnectionManager().getOngoingRtpConnection(conversation.getContact());
+                final Optional<OngoingRtpSession> ongoingRtpSession = service == null ?
+                        Optional.absent() : service.getJingleConnectionManager().getOngoingRtpConnection(conversation.getContact());
                 if (ongoingRtpSession.isPresent()) {
                     menuOngoingCall.setVisible(true);
                 } else {
@@ -384,16 +392,21 @@ public class ConversationsOverviewFragment extends XmppFragment {
                 menuMucDetails.setVisible(false);
                 menuLeaveGroup.setVisible(false);
             }
+
             if (conversation.isMuted()) {
                 menuMute.setVisible(false);
             } else {
                 menuUnmute.setVisible(false);
             }
+
             if (conversation.getBooleanAttribute(Conversation.ATTRIBUTE_PINNED_ON_TOP, false)) {
                 menuTogglePinned.setTitle(R.string.remove_from_favorites);
             } else {
                 menuTogglePinned.setTitle(R.string.add_to_favorites);
             }
+
+            // Управление видимостью "Отметить как прочитанное"
+            menuMarkAsRead.setVisible(!conversation.isRead());
         }
         super.onCreateContextMenu(menu, view, menuInfo);
     }
@@ -407,6 +420,18 @@ public class ConversationsOverviewFragment extends XmppFragment {
         if (conversations == null || conversations.size() <= pos || pos < 0) return false;
 
         Conversation conversation = conversations.get(pos);
+
+        // Обработка выбора нового пункта меню
+        if (item.getItemId() == R.id.action_mark_as_read) {
+            if (activity != null && activity.xmppConnectionService != null) {
+                activity.xmppConnectionService.markRead(conversation);
+                refresh();
+                Toast.makeText(activity, R.string.marked_as_read, Toast.LENGTH_SHORT).show();
+                return true;
+            }
+            return true;
+        }
+
         ConversationFragment fragment = new ConversationFragment();
         fragment.setHasOptionsMenu(false);
         fragment.onAttach(activity);

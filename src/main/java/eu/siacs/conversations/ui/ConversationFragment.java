@@ -2340,46 +2340,61 @@ public class ConversationFragment extends XmppFragment
         while (relevantForCorrection.mergeable(relevantForCorrection.next())) {
             relevantForCorrection = relevantForCorrection.next();
         }
-        if (m.getType() != Message.TYPE_STATUS && m.getType() != Message.TYPE_RTP_SESSION) {
 
-            if (m.getEncryption() == Message.ENCRYPTION_AXOLOTL_NOT_FOR_THIS_DEVICE || m.getEncryption() == Message.ENCRYPTION_AXOLOTL_FAILED) {
+        activity.getMenuInflater().inflate(R.menu.message_context, menu);
+
+        final MenuItem reportAndBlock = menu.findItem(R.id.action_report_and_block);
+        MenuItem openWith = menu.findItem(R.id.open_with);
+        MenuItem copyMessage = menu.findItem(R.id.copy_message);     // Копировать в буфер обмена
+        MenuItem quoteMessage = menu.findItem(R.id.quote_message);   // Ответить
+        MenuItem retryDecryption = menu.findItem(R.id.retry_decryption);
+        MenuItem correctMessage = menu.findItem(R.id.correct_message);
+        MenuItem retractMessage = menu.findItem(R.id.retract_message);
+        MenuItem moderateMessage = menu.findItem(R.id.moderate_message);
+        MenuItem onlyThisThread = menu.findItem(R.id.only_this_thread);
+        MenuItem deleteMessage = menu.findItem(R.id.delete_message);
+        MenuItem messageReaction = menu.findItem(R.id.message_reaction);
+        MenuItem shareWith = menu.findItem(R.id.share_with);
+        MenuItem sendAgain = menu.findItem(R.id.send_again);
+        MenuItem copyUrl = menu.findItem(R.id.copy_url);
+        MenuItem saveAsSticker = menu.findItem(R.id.save_as_sticker);
+        MenuItem saveAsGif = menu.findItem(R.id.save_as_gif);
+        MenuItem cancelTransmission = menu.findItem(R.id.cancel_transmission);
+        MenuItem downloadFile = menu.findItem(R.id.download_file);
+        MenuItem blockMedia = menu.findItem(R.id.block_media);
+        MenuItem deleteFile = menu.findItem(R.id.delete_file);
+        MenuItem showLog = menu.findItem(R.id.show_edit_log);
+        MenuItem showErrorMessage = menu.findItem(R.id.show_error_message);
+        MenuItem saveFile = menu.findItem(R.id.save_file);
+
+        onlyThisThread.setVisible(!conversation.getLockThread() && m.getThread() != null);
+        final boolean unInitiatedButKnownSize = MessageUtils.unInitiatedButKnownSize(m);
+        final boolean showError = m.getStatus() == Message.STATUS_SEND_FAILED &&
+                m.getErrorMessage() != null &&
+                !Message.ERROR_MESSAGE_CANCELLED.equals(m.getErrorMessage());
+        final Conversational conversational = m.getConversation();
+
+        if (m.getType() == Message.TYPE_STATUS) {
+            copyMessage.setVisible(!m.getBody().equals(""));    // Копировать в буфер обмена
+            quoteMessage.setVisible(!m.getBody().equals(""));   // Ответить
+
+        } else if (m.getType() != Message.TYPE_RTP_SESSION) {
+            if (m.getEncryption() == Message.ENCRYPTION_AXOLOTL_NOT_FOR_THIS_DEVICE ||
+                    m.getEncryption() == Message.ENCRYPTION_AXOLOTL_FAILED) {
                 return;
             }
-            if (m.getStatus() == Message.STATUS_RECEIVED && t != null && (t.getStatus() == Transferable.STATUS_CANCELLED || t.getStatus() == Transferable.STATUS_FAILED)) {
+            if (m.getStatus() == Message.STATUS_RECEIVED &&
+                    t != null &&
+                    (t.getStatus() == Transferable.STATUS_CANCELLED || t.getStatus() == Transferable.STATUS_FAILED)) {
                 return;
             }
+
             final boolean fileDeleted = m.isFileDeleted();
             final boolean encrypted = m.getEncryption() == Message.ENCRYPTION_DECRYPTION_FAILED
                     || m.getEncryption() == Message.ENCRYPTION_PGP;
-            final boolean receiving = m.getStatus() == Message.STATUS_RECEIVED && (t instanceof JingleFileTransferConnection || t instanceof HttpDownloadConnection);
-            activity.getMenuInflater().inflate(R.menu.message_context, menu);
-            final MenuItem reportAndBlock = menu.findItem(R.id.action_report_and_block);
-            MenuItem openWith = menu.findItem(R.id.open_with);
-            MenuItem copyMessage = menu.findItem(R.id.copy_message);
-            MenuItem quoteMessage = menu.findItem(R.id.quote_message);
-            MenuItem retryDecryption = menu.findItem(R.id.retry_decryption);
-            MenuItem correctMessage = menu.findItem(R.id.correct_message);
-            MenuItem retractMessage = menu.findItem(R.id.retract_message);
-            MenuItem moderateMessage = menu.findItem(R.id.moderate_message);
-            MenuItem onlyThisThread = menu.findItem(R.id.only_this_thread);
-            MenuItem deleteMessage = menu.findItem(R.id.delete_message);
-            MenuItem messageReaction = menu.findItem(R.id.message_reaction);  //add the most used emoticons
-            MenuItem shareWith = menu.findItem(R.id.share_with);
-            MenuItem sendAgain = menu.findItem(R.id.send_again);
-            MenuItem copyUrl = menu.findItem(R.id.copy_url);
-            MenuItem saveAsSticker = menu.findItem(R.id.save_as_sticker);
-            MenuItem saveAsGif = menu.findItem(R.id.save_as_gif);
-            MenuItem cancelTransmission = menu.findItem(R.id.cancel_transmission);
-            MenuItem downloadFile = menu.findItem(R.id.download_file);
-            MenuItem blockMedia = menu.findItem(R.id.block_media);
-            MenuItem deleteFile = menu.findItem(R.id.delete_file);
-            MenuItem showLog = menu.findItem(R.id.show_edit_log);
-            MenuItem showErrorMessage = menu.findItem(R.id.show_error_message);
-            MenuItem saveFile = menu.findItem(R.id.save_file);
-            onlyThisThread.setVisible(!conversation.getLockThread() && m.getThread() != null);
-            final boolean unInitiatedButKnownSize = MessageUtils.unInitiatedButKnownSize(m);
-            final boolean showError = m.getStatus() == Message.STATUS_SEND_FAILED && m.getErrorMessage() != null && !Message.ERROR_MESSAGE_CANCELLED.equals(m.getErrorMessage());
-            final Conversational conversational = m.getConversation();
+            final boolean receiving = m.getStatus() == Message.STATUS_RECEIVED &&
+                    (t instanceof JingleFileTransferConnection || t instanceof HttpDownloadConnection);
+
             if (m.getStatus() == Message.STATUS_RECEIVED && conversational instanceof Conversation c) {
                 final XmppConnection connection = c.getAccount().getXmppConnection();
                 if (c.isWithStranger()
@@ -2462,7 +2477,6 @@ public class ConversationFragment extends XmppFragment
                 saveFile.setTitle(activity.getString(R.string.save_x_file, UIHelper.getFileDescriptionString(activity, m)));
             }
             if (m.getFileParams() != null && !m.getFileParams().getThumbnails().isEmpty()) {
-                // We might be showing a thumbnail worth blocking
                 blockMedia.setVisible(true);
             }
             if (showError) {
