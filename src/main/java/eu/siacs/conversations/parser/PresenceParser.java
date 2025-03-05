@@ -63,129 +63,127 @@ public class PresenceParser extends AbstractParser implements
     private void processConferencePresence(PresencePacket packet, Conversation conversation) {
         final Account account = conversation.getAccount();
         final MucOptions mucOptions = conversation.getMucOptions();
-        final Jid jid = conversation.getAccount().getJid();
+        final Jid jid = account.getJid();
         final Jid from = packet.getFrom();
+
+        // Формат времени
+        SimpleDateFormat timeFormat = new SimpleDateFormat("HH:mm:ss", Locale.getDefault());
+        String currentTime = timeFormat.format(new Date());
 
         // Проверяем настройку показа входа/выхода и изменений
         SharedPreferences preferences = mXmppConnectionService.getPreferences();
         boolean showJoinLeave = preferences.getBoolean("show_join_leave", true);
 
-        // Формат времени
-        SimpleDateFormat timeFormat = new SimpleDateFormat("HH:mm", Locale.getDefault());
-        String currentTime = timeFormat.format(new Date());
+        // Пропускаем обработку, если это bare JID, но логируем для отладки
+        if (from.isBareJid()) {
+            Log.d("PresenceParser", "Skipping presence from bare JID: " + from);
+            return;
+        }
 
-        if (!from.isBareJid()) {
-            final String type = packet.getAttribute("type");
-            final Element x = packet.findChild("x", Namespace.MUC_USER);
-            final Element nick = packet.findChild("nick", Namespace.NICK);
-            Element hats = packet.findChild("hats", "urn:xmpp:hats:0");
-            if (hats == null) {
-                hats = packet.findChild("hats", "xmpp:prosody.im/protocol/hats:1");
-            }
-            if (hats == null) hats = new Element("hats", "urn:xmpp:hats:0");
-            final Element occupantId = packet.findChild("occupant-id", "urn:xmpp:occupant-id:0");
-            Avatar avatar = Avatar.parsePresence(packet.findChild("x", "vcard-temp:x:update"));
-            final List<String> codes = getStatusCodes(x);
+        final String type = packet.getAttribute("type");
+        final Element x = packet.findChild("x", Namespace.MUC_USER);
+        final Element nick = packet.findChild("nick", Namespace.NICK);
+        Element hats = packet.findChild("hats", "urn:xmpp:hats:0");
+        if (hats == null) {
+            hats = packet.findChild("hats", "xmpp:prosody.im/protocol/hats:1");
+        }
+        if (hats == null) hats = new Element("hats", "urn:xmpp:hats:0");
+        final Element occupantId = packet.findChild("occupant-id", "urn:xmpp:occupant-id:0");
+        String occupantIdValue = occupantId != null ? occupantId.getAttribute("id") : null;
+        Avatar avatar = Avatar.parsePresence(packet.findChild("x", "vcard-temp:x:update"));
+        final List<String> codes = getStatusCodes(x);
 
-            if (type == null) {
-                if (x != null) {
-                    Element item = x.findChild("item");
-                    if (item != null && !from.isBareJid()) {
-                        mucOptions.setError(MucOptions.Error.NONE);
-                        MucOptions.User user = parseItem(conversation, item, from, occupantId, nick == null ? null : nick.getContent(), hats);
+        Log.d("PresenceParser", "Processing packet: type=" + type + ", from=" + from + ", codes=" + codes + ", occupantId=" + occupantIdValue);
 
-                        // Ищем существующего пользователя по полному JID
-                        MucOptions.User existingUser = null;
-                        for (MucOptions.User u : mucOptions.getUsers()) {
-                            if (u.getFullJid() != null && u.getFullJid().equals(from)) {
-                                existingUser = u;
-                                break;
-                            }
-                        }
+        if (type == null) { // Пользователь онлайн
+            if (x != null) {
+                Element item = x.findChild("item");
+                if (item != null) {
+                    mucOptions.setError(MucOptions.Error.NONE);
+                    MucOptions.User user = parseItem(conversation, item, from, occupantId, nick == null ? null : nick.getContent(), hats);
+                    Log.d("PresenceParser", "Parsed user (online): fullJid=" + user.getFullJid() +
+                            ", occupantId=" + user.getOccupantId() +
+                            ", nick=" + user.getName() +
+                            ", realJid=" + user.getRealJid() +
+                            ", role=" + user.getRole() +
+                            ", affiliation=" + user.getAffiliation());
 
-                        if (showJoinLeave) {
-                            String displayName = getDisplayName(mucOptions, user);
-
-                            if (existingUser == null) {
-                                String affiliation = user.getAffiliation() != null ? user.getAffiliation().toString().toLowerCase() : "unknown";
-                                String role = user.getRole() != null ? user.getRole().toString().toLowerCase() : "unknown";
-                                String joinMessageText = displayName + " " +
-                                        mXmppConnectionService.getString(R.string.user_joined_as) + " " +
-                                        role + " " + mXmppConnectionService.getString(R.string.and) + " " +
-                                        affiliation + " " + currentTime;
-
-                                Message joinMessage = new Message(conversation, joinMessageText, Message.ENCRYPTION_NONE);
-                                joinMessage.setType(Message.TYPE_STATUS);
-                                joinMessage.setTime(System.currentTimeMillis());
-                                joinMessage.setCounterpart(null);
-                                conversation.add(joinMessage);
-                                Log.d("PresenceParser", "User joined: " + joinMessageText);
-                            } else {
-                                // Проверка изменения аффилиации
-                                if (!Objects.equals(existingUser.getAffiliation(), user.getAffiliation()) |  !Objects.equals(existingUser.getRole(), user.getRole())) {
-                                    String newRole = user.getRole() != null ? user.getRole().toString().toLowerCase() : "unknown";
-                                    String newAffiliation = user.getAffiliation() != null ? user.getAffiliation().toString().toLowerCase() : "unknown";
-                                    String affiliationMessageText = displayName + " " +
-                                            mXmppConnectionService.getString(R.string.affiliation_changed_to) + " " +
-                                            newRole + " " + mXmppConnectionService.getString(R.string.and) + " " +
-                                            newAffiliation + " " + currentTime;
-
-                                    Message affiliationMessage = new Message(conversation, affiliationMessageText, Message.ENCRYPTION_NONE);
-                                    affiliationMessage.setType(Message.TYPE_STATUS);
-                                    affiliationMessage.setTime(System.currentTimeMillis());
-                                    affiliationMessage.setCounterpart(null);
-                                    conversation.add(affiliationMessage);
-                                    Log.d("PresenceParser", "Affiliation changed: " + affiliationMessageText);
-                                }
-                            }
-                        }
-
-                        if (codes.contains(MucOptions.STATUS_CODE_SELF_PRESENCE) ||
-                                (codes.contains(MucOptions.STATUS_CODE_ROOM_CREATED) &&
-                                        jid.equals(InvalidJid.getNullForInvalid(item.getAttributeAsJid("jid"))))) {
-                            if (mucOptions.setOnline()) {
-                                mXmppConnectionService.getAvatarService().clear(mucOptions);
-                            }
-                            if (mucOptions.setSelf(user)) {
-                                Log.d(Config.LOGTAG, "role or affiliation changed");
-                                mXmppConnectionService.databaseBackend.updateConversation(conversation);
-                            }
-                            mXmppConnectionService.persistSelfNick(user);
-                            invokeRenameListener(mucOptions, true);
-                        }
-                        mucOptions.updateUser(user);
-
-                        if (codes.contains(MucOptions.STATUS_CODE_ROOM_CREATED) && mucOptions.autoPushConfiguration()) {
-                            Log.d(Config.LOGTAG, account.getJid().asBareJid()
-                                    + ": room '"
-                                    + mucOptions.getConversation().getJid().asBareJid()
-                                    + "' created. pushing default configuration");
-                            mXmppConnectionService.pushConferenceConfiguration(mucOptions.getConversation(),
-                                    IqGenerator.defaultChannelConfiguration(),
-                                    null);
-                        }
-
-                        if (avatar != null) {
-                            avatar.owner = from;
-                            if (mXmppConnectionService.getFileBackend().isAvatarCached(avatar)) {
-                                if (user.setAvatar(avatar)) {
-                                    mXmppConnectionService.getAvatarService().clear(user);
-                                }
-                                if (user.getRealJid() != null) {
-                                    final Contact c = conversation.getAccount().getRoster().getContact(user.getRealJid());
-                                    c.setAvatar(avatar);
-                                    mXmppConnectionService.syncRoster(conversation.getAccount());
-                                    mXmppConnectionService.getAvatarService().clear(c);
-                                    mXmppConnectionService.updateRosterUi(XmppConnectionService.UpdateRosterReason.AVATAR);
-                                }
-                            } else if (mXmppConnectionService.isDataSaverDisabled()) {
-                                mXmppConnectionService.fetchAvatar(mucOptions.getAccount(), avatar);
-                            }
-                        }
+                    // Ищем существующего пользователя
+                    MucOptions.User existingUser = null;
+                    if (user.getRealJid() != null) {
+                        existingUser = mucOptions.findUserByRealJid(user.getRealJid());
+                        Log.d("PresenceParser", "Checked by realJid: " + user.getRealJid() + ", found=" + (existingUser != null));
                     }
+                    if (existingUser == null && occupantIdValue != null) {
+                        existingUser = mucOptions.findUserByOccupantId(occupantIdValue);
+                        Log.d("PresenceParser", "Checked by occupantId: " + occupantIdValue + ", found=" + (existingUser != null));
+                    }
+                    if (existingUser == null) {
+                        existingUser = mucOptions.findUserByFullJid(from);
+                        Log.d("PresenceParser", "Checked by fullJid: " + from + ", found=" + (existingUser != null));
+                    }
+
+                    // Логируем данные для диагностики
+                    if (existingUser != null) {
+                        Log.d("PresenceParser", "Existing user: fullJid=" + existingUser.getFullJid() +
+                                ", role=" + existingUser.getRole() +
+                                ", affiliation=" + existingUser.getAffiliation());
+                    }
+
+                    // Проверяем смену роли или аффилиации
+                    if (showJoinLeave && existingUser != null &&
+                            (!Objects.equals(existingUser.getAffiliation(), user.getAffiliation()) ||
+                                    !Objects.equals(existingUser.getRole(), user.getRole()))) {
+                        String displayName = getDisplayName(mucOptions, user);
+                        String newRole = user.getRole() != null ? user.getRole().toString().toLowerCase() : "unknown";
+                        String newAffiliation = user.getAffiliation() != null ? user.getAffiliation().toString().toLowerCase() : "unknown";
+                        String affiliationMessageText = displayName + " " +
+                                mXmppConnectionService.getString(R.string.affiliation_changed_to) + " " +
+                                newRole + " " + mXmppConnectionService.getString(R.string.and) + " " +
+                                newAffiliation + " " + currentTime;
+
+                        addStatusMessage(conversation, affiliationMessageText);
+                        Log.d("PresenceParser", "Affiliation/role changed: " + affiliationMessageText);
+                        mXmppConnectionService.updateConversationUi(); // Обновляем UI
+                    }
+
+                    // Обработка нового пользователя
+                    if (showJoinLeave && existingUser == null) {
+                        String displayName = getDisplayName(mucOptions, user);
+                        String affiliation = user.getAffiliation() != null ? user.getAffiliation().toString().toLowerCase() : "unknown";
+                        String role = user.getRole() != null ? user.getRole().toString().toLowerCase() : "unknown";
+                        String joinMessageText = displayName + " " +
+                                mXmppConnectionService.getString(R.string.user_joined_as) + " " +
+                                role + " " + mXmppConnectionService.getString(R.string.and) + " " +
+                                affiliation + " " + currentTime;
+
+                        addStatusMessage(conversation, joinMessageText);
+                        Log.d("PresenceParser", "User joined: " + joinMessageText);
+                        mXmppConnectionService.updateConversationUi();
+                    }
+
+                    // Обработка собственного присутствия и создания комнаты
+                    if (codes.contains(MucOptions.STATUS_CODE_SELF_PRESENCE) ||
+                            (codes.contains(MucOptions.STATUS_CODE_ROOM_CREATED) &&
+                                    jid.equals(InvalidJid.getNullForInvalid(item.getAttributeAsJid("jid"))))) {
+                        if (mucOptions.setOnline()) {
+                            mXmppConnectionService.getAvatarService().clear(mucOptions);
+                        }
+                        if (mucOptions.setSelf(user)) {
+                            Log.d(Config.LOGTAG, "role or affiliation changed");
+                            mXmppConnectionService.databaseBackend.updateConversation(conversation);
+                        }
+                        mXmppConnectionService.persistSelfNick(user);
+                        invokeRenameListener(mucOptions, true);
+                    }
+                    mucOptions.updateUser(user);
                 }
-            } else if (type.equals("unavailable")) {
-                final boolean fullJidMatches = from.equals(mucOptions.getSelf().getFullJid());
+            }
+        } else if (type.equals("unavailable")) { // Пользователь оффлайн
+            MucOptions.User user = mucOptions.findUserByFullJid(from);
+
+            if (x != null) {
+                boolean fullJidMatches = from.equals(mucOptions.getSelf().getFullJid());
                 if (x.hasChild("destroy") && fullJidMatches) {
                     Element destroy = x.findChild("destroy");
                     final Jid alternate = destroy == null ? null : InvalidJid.getNullForInvalid(destroy.getAttributeAsJid("jid"));
@@ -196,108 +194,168 @@ public class PresenceParser extends AbstractParser implements
                 } else if (codes.contains(MucOptions.STATUS_CODE_SHUTDOWN) && fullJidMatches) {
                     mucOptions.setError(MucOptions.Error.SHUTDOWN);
                 } else if (codes.contains(MucOptions.STATUS_CODE_SELF_PRESENCE)) {
-                    if (codes.contains(MucOptions.STATUS_CODE_TECHNICAL_REASONS)) {
-                        final boolean wasOnline = mucOptions.online();
-                        mucOptions.setError(MucOptions.Error.TECHNICAL_PROBLEMS);
-                        Log.d(
-                                Config.LOGTAG,
-                                account.getJid().asBareJid()
-                                        + ": received status code 333 in room "
-                                        + mucOptions.getConversation().getJid().asBareJid()
-                                        + " online="
-                                        + wasOnline);
-                        if (wasOnline) {
-                            mXmppConnectionService.mucSelfPingAndRejoin(conversation);
-                        }
-                    } else if (codes.contains(MucOptions.STATUS_CODE_KICKED)) {
-                        mucOptions.setError(MucOptions.Error.KICKED);
-                    } else if (codes.contains(MucOptions.STATUS_CODE_BANNED)) {
-                        mucOptions.setError(MucOptions.Error.BANNED);
-                    } else if (codes.contains(MucOptions.STATUS_CODE_LOST_MEMBERSHIP)) {
-                        mucOptions.setError(MucOptions.Error.MEMBERS_ONLY);
-                    } else if (codes.contains(MucOptions.STATUS_CODE_AFFILIATION_CHANGE)) {
-                        mucOptions.setError(MucOptions.Error.MEMBERS_ONLY);
-                    } else if (codes.contains(MucOptions.STATUS_CODE_SHUTDOWN)) {
-                        mucOptions.setError(MucOptions.Error.SHUTDOWN);
-                    } else if (!codes.contains(MucOptions.STATUS_CODE_CHANGED_NICK)) {
-                        mucOptions.setError(MucOptions.Error.UNKNOWN);
-                        Log.d(Config.LOGTAG, "unknown error in conference: " + packet);
-                    }
-                } else if (!from.isBareJid()) {
+                    handleSelfPresenceError(mucOptions, account, codes, conversation);
+                } else {
                     Element item = x.findChild("item");
-                    if (item != null) {
-                        mucOptions.updateUser(parseItem(conversation, item, from, occupantId, nick == null ? null : nick.getContent(), hats));
-                    }
-                    MucOptions.User user = mucOptions.deleteUser(from);
+                    String newNick = nick != null ? nick.getContent() : (item != null ? item.getAttribute("nick") : null);
+
                     if (user != null && showJoinLeave) {
                         String displayName = getDisplayName(mucOptions, user);
-                        String leaveMessageText = displayName + " " +
-                                mXmppConnectionService.getString(R.string.user_left) + " " +
-                                currentTime;
-                        Message leaveMessage = new Message(conversation, leaveMessageText, Message.ENCRYPTION_NONE);
-                        leaveMessage.setType(Message.TYPE_STATUS);
-                        leaveMessage.setTime(System.currentTimeMillis());
-                        leaveMessage.setCounterpart(null);
-                        conversation.add(leaveMessage);
-                        Log.d("PresenceParser", "User left: " + leaveMessageText);
 
-                        mXmppConnectionService.getAvatarService().clear(user);
-                    }
-                }
-            } else if (type.equals("error")) {
-                final Element error = packet.findChild("error");
-                if (error == null) {
-                    return;
-                }
-                if (error.hasChild("conflict")) {
-                    if (mucOptions.online()) {
-                        invokeRenameListener(mucOptions, false);
-                    } else {
-                        mucOptions.setError(MucOptions.Error.NICK_IN_USE);
-                    }
-                } else if (error.hasChild("not-authorized")) {
-                    mucOptions.setError(MucOptions.Error.PASSWORD_REQUIRED);
-                } else if (error.hasChild("forbidden")) {
-                    mucOptions.setError(MucOptions.Error.BANNED);
-                } else if (error.hasChild("registration-required")) {
-                    mucOptions.setError(MucOptions.Error.MEMBERS_ONLY);
-                } else if (error.hasChild("resource-constraint")) {
-                    mucOptions.setError(MucOptions.Error.RESOURCE_CONSTRAINT);
-                } else if (error.hasChild("remote-server-timeout")) {
-                    mucOptions.setError(MucOptions.Error.REMOTE_SERVER_TIMEOUT);
-                } else if (error.hasChild("gone")) {
-                    final String gone = error.findChildContent("gone");
-                    final Jid alternate;
-                    if (gone != null) {
-                        final XmppUri xmppUri = new XmppUri(gone);
-                        if (xmppUri.isValidJid()) {
-                            alternate = xmppUri.getJid();
-                        } else {
-                            alternate = null;
+                        // Проверяем, был ли пользователь кикнут
+                        if (codes.contains(MucOptions.STATUS_CODE_KICKED)) {
+                            String kickMessageText = displayName + " " +
+                                    mXmppConnectionService.getString(R.string.user_was_kicked) + " " + currentTime;
+                            addStatusMessage(conversation, kickMessageText);
+                            Log.d("PresenceParser", "User was kicked: " + kickMessageText);
+                            mucOptions.deleteUser(from);
                         }
-                    } else {
-                        alternate = null;
+                        // Проверяем, был ли пользователь забанен
+                        else if (codes.contains(MucOptions.STATUS_CODE_BANNED)) {
+                            String banMessageText = displayName + " " +
+                                    mXmppConnectionService.getString(R.string.user_was_banned) + " " + currentTime;
+                            addStatusMessage(conversation, banMessageText);
+                            Log.d("PresenceParser", "User was banned: " + banMessageText);
+                            mucOptions.deleteUser(from);
+                        }
+                        // Проверяем, сменил ли пользователь ник
+                        else if (codes.contains(MucOptions.STATUS_CODE_CHANGED_NICK)) {
+                            if (newNick != null) {
+                                String nickChangeMessageText = displayName + " " +
+                                        mXmppConnectionService.getString(R.string.user_changed_nick) + " " + newNick + " " + currentTime;
+                                addStatusMessage(conversation, nickChangeMessageText);
+                                Log.d("PresenceParser", "User changed nick: " + nickChangeMessageText);
+
+                                // Удаляем старую запись
+                                mucOptions.deleteUser(from);
+
+                                // Создаём нового пользователя с новым ником
+                                Jid newFullJid = Jid.of(from.getLocal(), from.getDomain(), newNick);
+                                MucOptions.User updatedUser = item != null ?
+                                        parseItem(conversation, item, newFullJid, occupantId, newNick, hats) :
+                                        new MucOptions.User(mucOptions, newFullJid, user.getOccupantId(), newNick, user.getHats());
+                                if (item != null) {
+                                    updatedUser.setRealJid(item.getAttributeAsJid("jid"));
+                                    updatedUser.setRole(item.getAttribute("role"));
+                                    updatedUser.setAffiliation(item.getAttribute("affiliation"));
+                                } else {
+                                    updatedUser.setRealJid(user.getRealJid());
+                                    updatedUser.setRole(user.getRole().toString());
+                                    updatedUser.setAffiliation(user.getAffiliation().toString());
+                                }
+                                mucOptions.updateUser(updatedUser);
+                                Log.d("PresenceParser", "Updated user after nick change: fullJid=" + updatedUser.getFullJid() + ", occupantId=" + updatedUser.getOccupantId() + ", realJid=" + updatedUser.getRealJid());
+                                mXmppConnectionService.updateConversationUi();
+                            } else {
+                                Log.w("PresenceParser", "Nick change detected but new nick is null for " + from);
+                            }
+                        }
+                        // Сообщение о выходе только если это не кик, не бан и не смена ника
+                        else {
+                            String leaveMessageText = displayName + " " +
+                                    mXmppConnectionService.getString(R.string.user_left) + " " + currentTime;
+                            addStatusMessage(conversation, leaveMessageText);
+                            Log.d("PresenceParser", "User left: " + leaveMessageText);
+                            mucOptions.deleteUser(from);
+                        }
+
+                        if (!codes.contains(MucOptions.STATUS_CODE_CHANGED_NICK)) {
+                            mXmppConnectionService.getAvatarService().clear(user);
+                        }
                     }
-                    mucOptions.setError(MucOptions.Error.DESTROYED);
-                    if (alternate != null) {
-                        Log.d(Config.LOGTAG, conversation.getAccount().getJid().asBareJid() + ": muc destroyed. alternate location " + alternate);
-                    }
+                }
+            } else if (user != null && showJoinLeave) {
+                // Сообщение о выходе, если нет элемента <x>
+                String displayName = getDisplayName(mucOptions, user);
+                String leaveMessageText = displayName + " " +
+                        mXmppConnectionService.getString(R.string.user_left) + " " + currentTime;
+                addStatusMessage(conversation, leaveMessageText);
+                Log.d("PresenceParser", "User left: " + leaveMessageText);
+                mucOptions.deleteUser(from);
+                mXmppConnectionService.getAvatarService().clear(user);
+            }
+        } else if (type.equals("error")) {
+            handlePresenceError(packet, mucOptions, account, conversation);
+        }
+    }
+    // Вспомогательный метод для добавления статусных сообщений
+    private void addStatusMessage(Conversation conversation, String text) {
+        Message message = new Message(conversation, text, Message.ENCRYPTION_NONE);
+        message.setType(Message.TYPE_STATUS);
+        message.setTime(System.currentTimeMillis());
+        message.setCounterpart(null);
+        conversation.add(message);
+    }
+
+    // Обработка ошибок собственного присутствия
+    private void handleSelfPresenceError(MucOptions mucOptions, Account account, List<String> codes, Conversation conversation) {
+        if (codes.contains(MucOptions.STATUS_CODE_TECHNICAL_REASONS)) {
+            boolean wasOnline = mucOptions.online();
+            mucOptions.setError(MucOptions.Error.TECHNICAL_PROBLEMS);
+            Log.d(Config.LOGTAG, account.getJid().asBareJid() + ": received status code 333 in room " +
+                    mucOptions.getConversation().getJid().asBareJid() + " online=" + wasOnline);
+            if (wasOnline) {
+                mXmppConnectionService.mucSelfPingAndRejoin(conversation);
+            }
+        } else if (codes.contains(MucOptions.STATUS_CODE_KICKED)) {
+            mucOptions.setError(MucOptions.Error.KICKED);
+        } else if (codes.contains(MucOptions.STATUS_CODE_BANNED)) {
+            mucOptions.setError(MucOptions.Error.BANNED);
+        } else if (codes.contains(MucOptions.STATUS_CODE_LOST_MEMBERSHIP)) {
+            mucOptions.setError(MucOptions.Error.MEMBERS_ONLY);
+        } else if (codes.contains(MucOptions.STATUS_CODE_AFFILIATION_CHANGE)) {
+            mucOptions.setError(MucOptions.Error.MEMBERS_ONLY);
+        } else if (codes.contains(MucOptions.STATUS_CODE_SHUTDOWN)) {
+            mucOptions.setError(MucOptions.Error.SHUTDOWN);
+        } else if (!codes.contains(MucOptions.STATUS_CODE_CHANGED_NICK)) {
+            mucOptions.setError(MucOptions.Error.UNKNOWN);
+            Log.d(Config.LOGTAG, "unknown error in conference");
+        }
+    }
+
+    // Обработка ошибок присутствия
+    private void handlePresenceError(PresencePacket packet, MucOptions mucOptions, Account account, Conversation conversation) {
+        final Element error = packet.findChild("error");
+        if (error == null) return;
+
+        if (error.hasChild("conflict")) {
+            if (mucOptions.online()) {
+                invokeRenameListener(mucOptions, false);
+            } else {
+                mucOptions.setError(MucOptions.Error.NICK_IN_USE);
+            }
+        } else if (error.hasChild("not-authorized")) {
+            mucOptions.setError(MucOptions.Error.PASSWORD_REQUIRED);
+        } else if (error.hasChild("forbidden")) {
+            mucOptions.setError(MucOptions.Error.BANNED);
+        } else if (error.hasChild("registration-required")) {
+            mucOptions.setError(MucOptions.Error.MEMBERS_ONLY);
+        } else if (error.hasChild("resource-constraint")) {
+            mucOptions.setError(MucOptions.Error.RESOURCE_CONSTRAINT);
+        } else if (error.hasChild("remote-server-timeout")) {
+            mucOptions.setError(MucOptions.Error.REMOTE_SERVER_TIMEOUT);
+        } else if (error.hasChild("gone")) {
+            final String gone = error.findChildContent("gone");
+            final Jid alternate = gone != null && new XmppUri(gone).isValidJid() ? new XmppUri(gone).getJid() : null;
+            mucOptions.setError(MucOptions.Error.DESTROYED);
+            if (alternate != null) {
+                Log.d(Config.LOGTAG, account.getJid().asBareJid() + ": muc destroyed. alternate location " + alternate);
+            }
+        } else {
+            final String text = error.findChildContent("text");
+            if (text != null && text.contains("attribute 'to'")) {
+                if (mucOptions.online()) {
+                    invokeRenameListener(mucOptions, false);
                 } else {
-                    final String text = error.findChildContent("text");
-                    if (text != null && text.contains("attribute 'to'")) {
-                        if (mucOptions.online()) {
-                            invokeRenameListener(mucOptions, false);
-                        } else {
-                            mucOptions.setError(MucOptions.Error.INVALID_NICK);
-                        }
-                    } else {
-                        mucOptions.setError(MucOptions.Error.UNKNOWN);
-                        Log.d(Config.LOGTAG, "unknown error in conference: " + packet);
-                    }
+                    mucOptions.setError(MucOptions.Error.INVALID_NICK);
                 }
+            } else {
+                mucOptions.setError(MucOptions.Error.UNKNOWN);
+                Log.d(Config.LOGTAG, "unknown error in conference: " + packet);
             }
         }
     }
+
 
     private static String getDisplayName(MucOptions mucOptions, MucOptions.User user) {
         boolean isSelfAdminOrHigher = mucOptions.getSelf().getRole() != null &&

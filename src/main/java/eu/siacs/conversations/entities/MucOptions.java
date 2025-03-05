@@ -11,9 +11,11 @@ import androidx.annotation.Nullable;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collections;
+import java.util.HashMap;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Locale;
+import java.util.Map;
 import java.util.Set;
 
 import eu.siacs.conversations.xml.Element;
@@ -42,6 +44,7 @@ public class MucOptions {
     public static final String STATUS_CODE_LOST_MEMBERSHIP = "322";
     public static final String STATUS_CODE_SHUTDOWN = "332";
     public static final String STATUS_CODE_TECHNICAL_REASONS = "333";
+    private final Map<String, String> pendingNickChanges = new HashMap<>();
     private final Set<User> users = new HashSet<>();
     private final Conversation conversation;
     public OnRenameListener onRenameListener = null;
@@ -712,6 +715,25 @@ public class MucOptions {
             }
         }
         return members;
+    }
+
+
+    public void setPendingNickChange(String resource, String newNick) {
+        synchronized (pendingNickChanges) {
+            pendingNickChanges.put(resource, newNick);
+        }
+    }
+
+    public String getPendingNickChange(String resource) {
+        synchronized (pendingNickChanges) {
+            return pendingNickChanges.get(resource);
+        }
+    }
+
+    public void clearPendingNickChange(String resource) {
+        synchronized (pendingNickChanges) {
+            pendingNickChanges.remove(resource);
+        }
     }
 
     public enum Affiliation {

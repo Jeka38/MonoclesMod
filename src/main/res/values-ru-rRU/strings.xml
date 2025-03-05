@@ -937,6 +937,9 @@
     <string name="pref_warn_unencrypted_chat_summary">Использовать шифрование, если доступно.</string>
     <string name="preparing_file">Подготовка файла к передаче</string>
     <string name="preparing_image">Подготовка изображения к передаче</string>
+    <string name="user_was_kicked">выгнали из конференции</string>
+    <string name="user_was_banned">запретили вход в конференцию</string>
+    <string name="user_changed_nick">сменил ник на </string>
     <string name="presence_away">Отошел</string>
     <string name="presence_chat">Доступен для сообщений</string>
     <string name="presence_dnd">Занят</string>
