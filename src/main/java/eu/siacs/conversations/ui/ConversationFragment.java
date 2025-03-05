@@ -4347,19 +4347,55 @@ public class ConversationFragment extends XmppFragment
         }
         updateChatBG();
 
-        // Устанавливаем флаг видимости
         isChatVisible = true;
 
-        // Прокрутка к первому непрочитанному только при первом открытии
         if (binding != null && messageListAdapter != null && conversation != null && !isChatVisiblePreviously()) {
+            Log.d(Config.LOGTAG, "onStart: isMuc=" + (conversation.getMucOptions() != null) +
+                    ", unreadCount=" + conversation.unreadCount() +
+                    ", adapterCount=" + messageListAdapter.getCount());
+
             binding.messagesView.post(() -> {
-                if (messageListAdapter.getCount() > 0 && conversation.unreadCount() > 0) {
-                    messageListAdapter.scrollToFirstUnread(binding.messagesView);
+                boolean isMuc = conversation.getMucOptions() != null;
+                if (messageListAdapter.getCount() > 0) {
+                    if (conversation.unreadCount() > 0) {
+                        Log.d(Config.LOGTAG, "onStart: Scrolling to first unread (unreadCount > 0)");
+                        messageListAdapter.scrollToFirstUnread(binding.messagesView);
+                    } else if (isMuc && hasStatusTypeMessages()) {
+                        Log.d(Config.LOGTAG, "onStart: Scrolling to first TYPE_STATUS in MUC");
+                        messageListAdapter.scrollToFirstUnread(binding.messagesView);
+                    } else {
+                        Log.d(Config.LOGTAG, "onStart: Scrolling to last position " + (messageListAdapter.getCount() - 1));
+                        binding.messagesView.smoothScrollToPosition(messageListAdapter.getCount() - 1);
+                    }
                 } else {
-                    binding.messagesView.smoothScrollToPosition(messageListAdapter.getCount() - 1);
+                    Log.d(Config.LOGTAG, "onStart: Adapter empty, no scrolling");
                 }
             });
+        } else {
+            Log.d(Config.LOGTAG, "onStart: Conditions not met - Binding=" + (binding != null) +
+                    ", Adapter=" + (messageListAdapter != null) +
+                    ", Conversation=" + (conversation != null) +
+                    ", isChatVisiblePreviously=" + isChatVisiblePreviously());
         }
+    }
+
+    private boolean hasStatusTypeMessages() {
+        Log.d(Config.LOGTAG, "hasStatusTypeMessages: Scanning adapter, count=" + messageListAdapter.getCount());
+        for (int i = 0; i < messageListAdapter.getCount(); i++) {
+            Message message = messageListAdapter.getItem(i);
+            if (message == null) {
+                Log.d(Config.LOGTAG, "hasStatusTypeMessages: Item at " + i + " is null");
+                continue;
+            }
+            Log.d(Config.LOGTAG, "hasStatusTypeMessages: Item " + i + ", type=" + message.getType() +
+                    ", isRead=" + message.isRead() + ", body=" + message.getRawBody());
+            if (message.getType() == Message.TYPE_STATUS) {
+                Log.d(Config.LOGTAG, "hasStatusTypeMessages: Found TYPE_STATUS at " + i);
+                return true;
+            }
+        }
+        Log.d(Config.LOGTAG, "hasStatusTypeMessages: No TYPE_STATUS found");
+        return false;
     }
 
     @Override

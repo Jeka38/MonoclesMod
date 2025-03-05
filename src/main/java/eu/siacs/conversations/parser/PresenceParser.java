@@ -289,12 +289,12 @@ public class PresenceParser extends AbstractParser implements
             handlePresenceError(packet, mucOptions, account, conversation);
         }
     }
-    // Вспомогательный метод для добавления статусных сообщений
     private void addStatusMessage(Conversation conversation, String text) {
         Message message = new Message(conversation, text, Message.ENCRYPTION_NONE);
         message.setType(Message.TYPE_STATUS);
         message.setTime(System.currentTimeMillis());
         message.setCounterpart(null);
+        message.markUnread(); // Помечаем как непрочитанное
         conversation.add(message);
     }
 

@@ -267,27 +267,73 @@ public class MessageAdapter extends ArrayAdapter<Message> {
      */
     public void scrollToFirstUnread(ListView listView) {
         if (listView == null || getCount() == 0) {
-            Log.d(Config.LOGTAG, "scrollToFirstUnread: ListView null or empty");
+            Log.d(Config.LOGTAG, "scrollToFirstUnread: ListView null or empty, count=" + getCount());
             return;
         }
 
         Conversation conversation = (Conversation) getItem(0).getConversation();
+        Log.d(Config.LOGTAG, "scrollToFirstUnread: Conversation=" + conversation.getName() +
+                ", isMuc=" + (conversation.getMucOptions() != null));
+
         Message firstUnread = conversation.getFirstUnreadMessage();
+        if (firstUnread != null) {
+            Log.d(Config.LOGTAG, "scrollToFirstUnread: Standard first unread found, type=" + firstUnread.getType() +
+                    ", UUID=" + firstUnread.getUuid() + ", isRead=" + firstUnread.isRead());
+        } else {
+            Log.d(Config.LOGTAG, "scrollToFirstUnread: No standard unread message found");
+        }
+
+        // Если это MUC и нет непрочитанных, ищем TYPE_STATUS
+        if (firstUnread == null && conversation.getMucOptions() != null) {
+            Log.d(Config.LOGTAG, "scrollToFirstUnread: Scanning adapter for TYPE_STATUS, count=" + getCount());
+            for (int i = 0; i < getCount(); i++) {
+                Message message = getItem(i);
+                if (message == null) {
+                    Log.d(Config.LOGTAG, "scrollToFirstUnread: Item at position " + i + " is null");
+                    continue;
+                }
+                Log.d(Config.LOGTAG, "scrollToFirstUnread: Item " + i + ", type=" + message.getType() +
+                        ", isRead=" + message.isRead() + ", body=" + message.getRawBody());
+                if (message.getType() == Message.TYPE_STATUS) {
+                    Log.d(Config.LOGTAG, "scrollToFirstUnread: Found TYPE_STATUS at position " + i +
+                            ", UUID=" + message.getUuid());
+                    firstUnread = message;
+                    break;
+                }
+            }
+        }
 
         if (firstUnread != null && firstUnread.getUuid() != null) {
-            Log.d(Config.LOGTAG, "scrollToFirstUnread: First unread message found: " + firstUnread.getUuid());
+            Log.d(Config.LOGTAG, "scrollToFirstUnread: Final first unread message: " + firstUnread.getUuid());
             for (int i = 0; i < getCount(); i++) {
                 Message message = getItem(i);
                 if (message != null && message.getUuid() != null && message.getUuid().equals(firstUnread.getUuid())) {
                     Log.d(Config.LOGTAG, "scrollToFirstUnread: Scrolling to position " + i);
                     listView.smoothScrollToPosition(i);
-                    break;
+                    return; // Выходим после прокрутки
                 }
             }
+            Log.d(Config.LOGTAG, "scrollToFirstUnread: Could not find message with UUID " + firstUnread.getUuid() + " in adapter");
         } else {
-            Log.d(Config.LOGTAG, "scrollToFirstUnread: No unread messages or UUID is null, scrolling to last position");
+            Log.d(Config.LOGTAG, "scrollToFirstUnread: No unread messages or UUID is null, scrolling to last position " + (getCount() - 1));
             listView.smoothScrollToPosition(getCount() - 1);
         }
+    }
+
+    private Message findFirstUnreadMessage(Conversation conversation) {
+        Message originalFirstUnread = conversation.getFirstUnreadMessage();
+        if (originalFirstUnread != null) {
+            return originalFirstUnread;
+        }
+
+        // Если нет стандартных непрочитанных сообщений, ищем первое сообщение с TYPE_STATUS
+        for (int i = 0; i < getCount(); i++) {
+            Message message = getItem(i);
+            if (message != null && message.getType() == Message.TYPE_STATUS) {
+                return message;
+            }
+        }
+        return null;
     }
 
     private void displayStatus(ViewHolder viewHolder, final Message message, int type, boolean darkBackground) {
