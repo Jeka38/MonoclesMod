@@ -177,6 +177,17 @@ public class PresenceParser extends AbstractParser implements
                         invokeRenameListener(mucOptions, true);
                     }
                     mucOptions.updateUser(user);
+                    if (avatar != null) {
+                        avatar.owner = from;
+                        if (mXmppConnectionService.getFileBackend().isAvatarCached(avatar)) {
+                            if (user.setAvatar(avatar)) {
+                                mXmppConnectionService.getAvatarService().clear(user);
+                                mXmppConnectionService.updateMucRosterUi();
+                            }
+                        } else if (mXmppConnectionService.isDataSaverDisabled()) {
+                            mXmppConnectionService.fetchAvatar(account, avatar);
+                        }
+                    }
                 }
             }
         } else if (type.equals("unavailable")) { // Пользователь оффлайн
