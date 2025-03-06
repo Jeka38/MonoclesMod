@@ -5038,13 +5038,14 @@ public class ConversationFragment extends XmppFragment
         }
         storeNextMessage();
         updateChatMsgHint();
+
         SharedPreferences p = PreferenceManager.getDefaultSharedPreferences(activity);
-        final boolean prefScrollToBottom = p.getBoolean("scroll_to_bottom", activity.getResources().getBoolean(R.bool.scroll_to_bottom));
-        if (prefScrollToBottom || scrolledToBottom()) {
-            new Handler().post(() -> {
-                int size = messageList.size();
-                this.binding.messagesView.setSelection(size - 1);
-            });
+        boolean prefScrollToBottom = p.getBoolean("scroll_to_bottom", activity.getResources().getBoolean(R.bool.scroll_to_bottom));
+
+        // Убедитесь, что список обновлен
+        int size = messageList.size();
+        if (size > 0 && (prefScrollToBottom || scrolledToBottom())) {
+            binding.messagesView.setSelection(size - 1);
         }
     }
 
