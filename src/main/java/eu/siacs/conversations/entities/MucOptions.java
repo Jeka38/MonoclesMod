@@ -56,6 +56,7 @@ public class MucOptions {
     private User self;
     private String password = null;
     private boolean tookProposedNickFromBookmark = false;
+    private boolean fullyInitialized = false;
 
     public MucOptions(Conversation conversation) {
         this.account = conversation.getAccount();
@@ -717,23 +718,12 @@ public class MucOptions {
         return members;
     }
 
-
-    public void setPendingNickChange(String resource, String newNick) {
-        synchronized (pendingNickChanges) {
-            pendingNickChanges.put(resource, newNick);
-        }
+    public boolean isFullyInitialized() {
+        return fullyInitialized;
     }
 
-    public String getPendingNickChange(String resource) {
-        synchronized (pendingNickChanges) {
-            return pendingNickChanges.get(resource);
-        }
-    }
-
-    public void clearPendingNickChange(String resource) {
-        synchronized (pendingNickChanges) {
-            pendingNickChanges.remove(resource);
-        }
+    public void markAsFullyInitialized() {
+        this.fullyInitialized = true;
     }
 
     public enum Affiliation {

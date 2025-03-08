@@ -129,8 +129,8 @@ public class PresenceParser extends AbstractParser implements
                         mXmppConnectionService.updateConversationUi();
                     }
 
-                    // Обработка нового пользователя
-                    if (showJoinLeave && existingUser == null) {
+                    // Обработка нового пользователя, но только если это не первый вход
+                    if (showJoinLeave && existingUser == null && mucOptions.isFullyInitialized()) {
                         String displayName = getDisplayName(mucOptions, user);
                         String affiliation = user.getAffiliation() != null ? user.getAffiliation().toString().toLowerCase() : "unknown";
                         String role = user.getRole() != null ? user.getRole().toString().toLowerCase() : "unknown";
@@ -156,6 +156,7 @@ public class PresenceParser extends AbstractParser implements
                         }
                         mXmppConnectionService.persistSelfNick(user);
                         invokeRenameListener(mucOptions, true);
+                        mucOptions.markAsFullyInitialized();
                     }
                     mucOptions.updateUser(user);
                     if (avatar != null) {
