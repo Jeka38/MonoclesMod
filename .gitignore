@@ -50,3 +50,9 @@ src/standardPush/res/values/gcm.xml
 crowdin.properties
 /languages.sh
 /google-services.json
+/playstore/release/baselineProfiles/
+/playstore/release/monocles mod-1.8.0.11-playstore-arm64-v8a-release.apk
+/playstore/release/monocles mod-1.8.0.11-playstore-armeabi-v7a-release.apk
+/playstore/release/monocles mod-1.8.0.11-playstore-universal-release.apk
+/playstore/release/monocles mod-1.8.0.11-playstore-x86-release.apk
+/playstore/release/monocles mod-1.8.0.11-playstore-x86_64-release.apk

@@ -14,8 +14,8 @@
     <string name="action_unblock_contact">Unblock contact</string>
     <string name="user_left">leaves the room</string>
     <string name="user_joined_as">joined as</string>
-    <string name="user_was_kicked">KICK</string>
-    <string name="user_was_banned">BAN</string>
+    <string name="user_was_kicked">kicked out of the conference</string>
+    <string name="user_was_banned">banned from the conference</string>
     <string name="user_changed_nick">changed_nick</string>
     <string name="notify_active_moderators">Notify active moderators</string>
     <string name="and">and</string>
@@ -741,6 +741,8 @@
     <string name="mtm_connect_anyway">Do you want to connect anyway?</string>
     <string name="mtm_cert_details">Certificate details:</string>
     <string name="once">Once</string>
+    <string name="pref_show_system_messages_summary">MUC System Messages</string>
+    <string name="pref_show_system_messages">Show Nick Changes, Kicks/Bans, and Role/Affiliation updates</string>
     <string name="qr_code_scanner_needs_access_to_camera">The QR code scanner needs access to the camera</string>
     <string name="pref_scroll_to_bottom_summary">Scroll down after sending a message</string>
     <string name="pref_scroll_to_bottom">Scroll to bottom</string>

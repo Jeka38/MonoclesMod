@@ -21,7 +21,6 @@ import eu.siacs.conversations.entities.Conversation;
 import eu.siacs.conversations.entities.Message;
 import eu.siacs.conversations.entities.MucOptions;
 import eu.siacs.conversations.entities.Presence;
-import eu.siacs.conversations.generator.IqGenerator;
 import eu.siacs.conversations.generator.PresenceGenerator;
 import eu.siacs.conversations.services.XmppConnectionService;
 import eu.siacs.conversations.utils.XmppUri;
@@ -70,11 +69,11 @@ public class PresenceParser extends AbstractParser implements
         SimpleDateFormat timeFormat = new SimpleDateFormat("HH:mm:ss", Locale.getDefault());
         String currentTime = timeFormat.format(new Date());
 
-        // Проверяем настройку показа входа/выхода и изменений
+        // Проверяем настройки показа событий
         SharedPreferences preferences = mXmppConnectionService.getPreferences();
         boolean showJoinLeave = preferences.getBoolean("show_join_leave", true);
+        boolean showSystemMessages = preferences.getBoolean("show_muc_system_messages", true);
 
-        // Пропускаем обработку, если это bare JID, но логируем для отладки
         if (from.isBareJid()) {
             Log.d("PresenceParser", "Skipping presence from bare JID: " + from);
             return;
@@ -101,37 +100,21 @@ public class PresenceParser extends AbstractParser implements
                 if (item != null) {
                     mucOptions.setError(MucOptions.Error.NONE);
                     MucOptions.User user = parseItem(conversation, item, from, occupantId, nick == null ? null : nick.getContent(), hats);
-                    Log.d("PresenceParser", "Parsed user (online): fullJid=" + user.getFullJid() +
-                            ", occupantId=" + user.getOccupantId() +
-                            ", nick=" + user.getName() +
-                            ", realJid=" + user.getRealJid() +
-                            ", role=" + user.getRole() +
-                            ", affiliation=" + user.getAffiliation());
 
-                    // Ищем существующего пользователя
+                    // Поиск существующего пользователя
                     MucOptions.User existingUser = null;
                     if (user.getRealJid() != null) {
                         existingUser = mucOptions.findUserByRealJid(user.getRealJid());
-                        Log.d("PresenceParser", "Checked by realJid: " + user.getRealJid() + ", found=" + (existingUser != null));
                     }
                     if (existingUser == null && occupantIdValue != null) {
                         existingUser = mucOptions.findUserByOccupantId(occupantIdValue);
-                        Log.d("PresenceParser", "Checked by occupantId: " + occupantIdValue + ", found=" + (existingUser != null));
                     }
                     if (existingUser == null) {
                         existingUser = mucOptions.findUserByFullJid(from);
-                        Log.d("PresenceParser", "Checked by fullJid: " + from + ", found=" + (existingUser != null));
                     }
 
-                    // Логируем данные для диагностики
-                    if (existingUser != null) {
-                        Log.d("PresenceParser", "Existing user: fullJid=" + existingUser.getFullJid() +
-                                ", role=" + existingUser.getRole() +
-                                ", affiliation=" + existingUser.getAffiliation());
-                    }
-
-                    // Проверяем смену роли или аффилиации
-                    if (showJoinLeave && existingUser != null &&
+                    // Обработка смены роли/аффилиации под show_muc_system_messages
+                    if (showSystemMessages && existingUser != null &&
                             (!Objects.equals(existingUser.getAffiliation(), user.getAffiliation()) ||
                                     !Objects.equals(existingUser.getRole(), user.getRole()))) {
                         String displayName = getDisplayName(mucOptions, user);
@@ -141,10 +124,9 @@ public class PresenceParser extends AbstractParser implements
                                 mXmppConnectionService.getString(R.string.affiliation_changed_to) + " " +
                                 newRole + " " + mXmppConnectionService.getString(R.string.and) + " " +
                                 newAffiliation + " " + currentTime;
-
                         addStatusMessage(conversation, affiliationMessageText);
                         Log.d("PresenceParser", "Affiliation/role changed: " + affiliationMessageText);
-                        mXmppConnectionService.updateConversationUi(); // Обновляем UI
+                        mXmppConnectionService.updateConversationUi();
                     }
 
                     // Обработка нового пользователя
@@ -156,7 +138,6 @@ public class PresenceParser extends AbstractParser implements
                                 mXmppConnectionService.getString(R.string.user_joined_as) + " " +
                                 role + " " + mXmppConnectionService.getString(R.string.and) + " " +
                                 affiliation + " " + currentTime;
-
                         addStatusMessage(conversation, joinMessageText);
                         Log.d("PresenceParser", "User joined: " + joinMessageText);
                         mXmppConnectionService.updateConversationUi();
@@ -206,77 +187,91 @@ public class PresenceParser extends AbstractParser implements
                     mucOptions.setError(MucOptions.Error.SHUTDOWN);
                 } else if (codes.contains(MucOptions.STATUS_CODE_SELF_PRESENCE)) {
                     handleSelfPresenceError(mucOptions, account, codes, conversation);
-                } else {
+                } else if (user != null) {
+                    String displayName = getDisplayName(mucOptions, user);
                     Element item = x.findChild("item");
                     String newNick = nick != null ? nick.getContent() : (item != null ? item.getAttribute("nick") : null);
 
-                    if (user != null && showJoinLeave) {
-                        String displayName = getDisplayName(mucOptions, user);
-
-                        // Проверяем, был ли пользователь кикнут
+                    // Обработка событий под show_muc_system_messages
+                    if (showSystemMessages) {
                         if (codes.contains(MucOptions.STATUS_CODE_KICKED)) {
                             String kickMessageText = displayName + " " +
                                     mXmppConnectionService.getString(R.string.user_was_kicked) + " " + currentTime;
                             addStatusMessage(conversation, kickMessageText);
                             Log.d("PresenceParser", "User was kicked: " + kickMessageText);
                             mucOptions.deleteUser(from);
-                        }
-                        // Проверяем, был ли пользователь забанен
-                        else if (codes.contains(MucOptions.STATUS_CODE_BANNED)) {
+                        } else if (codes.contains(MucOptions.STATUS_CODE_BANNED)) {
                             String banMessageText = displayName + " " +
                                     mXmppConnectionService.getString(R.string.user_was_banned) + " " + currentTime;
                             addStatusMessage(conversation, banMessageText);
                             Log.d("PresenceParser", "User was banned: " + banMessageText);
                             mucOptions.deleteUser(from);
-                        }
-                        // Проверяем, сменил ли пользователь ник
-                        else if (codes.contains(MucOptions.STATUS_CODE_CHANGED_NICK)) {
-                            if (newNick != null) {
-                                String nickChangeMessageText = displayName + " " +
-                                        mXmppConnectionService.getString(R.string.user_changed_nick) + " " + newNick + " " + currentTime;
-                                addStatusMessage(conversation, nickChangeMessageText);
-                                Log.d("PresenceParser", "User changed nick: " + nickChangeMessageText);
+                        } else if (codes.contains(MucOptions.STATUS_CODE_CHANGED_NICK) && newNick != null) {
+                            String nickChangeMessageText = displayName + " " +
+                                    mXmppConnectionService.getString(R.string.user_changed_nick) + " " + newNick + " " + currentTime;
+                            addStatusMessage(conversation, nickChangeMessageText);
+                            Log.d("PresenceParser", "User changed nick: " + nickChangeMessageText);
 
-                                // Удаляем старую запись
-                                mucOptions.deleteUser(from);
-
-                                // Создаём нового пользователя с новым ником
-                                Jid newFullJid = Jid.of(from.getLocal(), from.getDomain(), newNick);
-                                MucOptions.User updatedUser = item != null ?
-                                        parseItem(conversation, item, newFullJid, occupantId, newNick, hats) :
-                                        new MucOptions.User(mucOptions, newFullJid, user.getOccupantId(), newNick, user.getHats());
-                                if (item != null) {
-                                    updatedUser.setRealJid(item.getAttributeAsJid("jid"));
-                                    updatedUser.setRole(item.getAttribute("role"));
-                                    updatedUser.setAffiliation(item.getAttribute("affiliation"));
-                                } else {
-                                    updatedUser.setRealJid(user.getRealJid());
-                                    updatedUser.setRole(user.getRole().toString());
-                                    updatedUser.setAffiliation(user.getAffiliation().toString());
-                                }
-                                mucOptions.updateUser(updatedUser);
-                                Log.d("PresenceParser", "Updated user after nick change: fullJid=" + updatedUser.getFullJid() + ", occupantId=" + updatedUser.getOccupantId() + ", realJid=" + updatedUser.getRealJid());
-                                mXmppConnectionService.updateConversationUi();
+                            mucOptions.deleteUser(from);
+                            Jid newFullJid = Jid.of(from.getLocal(), from.getDomain(), newNick);
+                            MucOptions.User updatedUser = item != null ?
+                                    parseItem(conversation, item, newFullJid, occupantId, newNick, hats) :
+                                    new MucOptions.User(mucOptions, newFullJid, user.getOccupantId(), newNick, user.getHats());
+                            if (item != null) {
+                                updatedUser.setRealJid(item.getAttributeAsJid("jid"));
+                                updatedUser.setRole(item.getAttribute("role"));
+                                updatedUser.setAffiliation(item.getAttribute("affiliation"));
                             } else {
-                                Log.w("PresenceParser", "Nick change detected but new nick is null for " + from);
+                                updatedUser.setRealJid(user.getRealJid());
+                                updatedUser.setRole(user.getRole().toString());
+                                updatedUser.setAffiliation(user.getAffiliation().toString());
                             }
-                        }
-                        // Сообщение о выходе только если это не кик, не бан и не смена ника
-                        else {
+                            mucOptions.updateUser(updatedUser);
+                            mXmppConnectionService.updateConversationUi();
+                        } else if (showJoinLeave) { // Обычный выход, если нет других событий
                             String leaveMessageText = displayName + " " +
                                     mXmppConnectionService.getString(R.string.user_left) + " " + currentTime;
                             addStatusMessage(conversation, leaveMessageText);
                             Log.d("PresenceParser", "User left: " + leaveMessageText);
                             mucOptions.deleteUser(from);
                         }
-
-                        if (!codes.contains(MucOptions.STATUS_CODE_CHANGED_NICK)) {
-                            mXmppConnectionService.getAvatarService().clear(user);
+                    } else {
+                        // Тихая обработка кика, бана и смены ника, если show_muc_system_messages выключен
+                        if (codes.contains(MucOptions.STATUS_CODE_KICKED) || codes.contains(MucOptions.STATUS_CODE_BANNED)) {
+                            mucOptions.deleteUser(from);
+                            Log.d("PresenceParser", "User was silently kicked or banned: " + from);
+                        } else if (codes.contains(MucOptions.STATUS_CODE_CHANGED_NICK) && newNick != null) {
+                            mucOptions.deleteUser(from);
+                            Jid newFullJid = Jid.of(from.getLocal(), from.getDomain(), newNick);
+                            MucOptions.User updatedUser = item != null ?
+                                    parseItem(conversation, item, newFullJid, occupantId, newNick, hats) :
+                                    new MucOptions.User(mucOptions, newFullJid, user.getOccupantId(), newNick, user.getHats());
+                            if (item != null) {
+                                updatedUser.setRealJid(item.getAttributeAsJid("jid"));
+                                updatedUser.setRole(item.getAttribute("role"));
+                                updatedUser.setAffiliation(item.getAttribute("affiliation"));
+                            } else {
+                                updatedUser.setRealJid(user.getRealJid());
+                                updatedUser.setRole(user.getRole().toString());
+                                updatedUser.setAffiliation(user.getAffiliation().toString());
+                            }
+                            mucOptions.updateUser(updatedUser);
+                            mXmppConnectionService.updateConversationUi();
+                            Log.d("PresenceParser", "User silently changed nick: " + from + " to " + newNick);
+                        } else if (showJoinLeave) { // Обычный выход, если нет специальных событий
+                            String leaveMessageText = displayName + " " +
+                                    mXmppConnectionService.getString(R.string.user_left) + " " + currentTime;
+                            addStatusMessage(conversation, leaveMessageText);
+                            Log.d("PresenceParser", "User left: " + leaveMessageText);
+                            mucOptions.deleteUser(from);
                         }
+                    }
+
+                    if (!codes.contains(MucOptions.STATUS_CODE_CHANGED_NICK)) {
+                        mXmppConnectionService.getAvatarService().clear(user);
                     }
                 }
             } else if (user != null && showJoinLeave) {
-                // Сообщение о выходе, если нет элемента <x>
                 String displayName = getDisplayName(mucOptions, user);
                 String leaveMessageText = displayName + " " +
                         mXmppConnectionService.getString(R.string.user_left) + " " + currentTime;
@@ -289,6 +284,7 @@ public class PresenceParser extends AbstractParser implements
             handlePresenceError(packet, mucOptions, account, conversation);
         }
     }
+
     private void addStatusMessage(Conversation conversation, String text) {
         Message message = new Message(conversation, text, Message.ENCRYPTION_NONE);
         message.setType(Message.TYPE_STATUS);
