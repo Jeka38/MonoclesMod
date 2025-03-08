@@ -5045,7 +5045,7 @@ public class ConversationFragment extends XmppFragment
         // Убедитесь, что список обновлен
         int size = messageList.size();
         if (size > 0 && (prefScrollToBottom || scrolledToBottom())) {
-            binding.messagesView.setSelection(size - 1);
+            binding.messagesView.smoothScrollToPosition(size - 1); // TODO: FIXME !!!!
         }
     }
 
