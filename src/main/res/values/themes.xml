@@ -450,6 +450,7 @@
         <item name="color_background_tertiary">@color/primary_black</item>
         <item name="color_bubble_light">@color/middleblack</item>
         <item name="color_bubble_dark">@color/darkblack</item>
+        <item name="android:navigationBarColor">@color/primary_black</item>
     </style>
 
     <!-- blue dialog -->

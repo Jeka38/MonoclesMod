@@ -364,12 +364,14 @@ public class ConversationsOverviewFragment extends XmppFragment {
         final MenuItem menuUnmute = menu.findItem(R.id.action_unmute);
         final MenuItem menuOngoingCall = menu.findItem(R.id.action_ongoing_call);
         final MenuItem menuTogglePinned = menu.findItem(R.id.action_toggle_pinned);
+        final MenuItem menuMarkAsRead = menu.findItem(R.id.action_mark_as_read);
 
         if (conversation != null) {
             if (conversation.getMode() == Conversation.MODE_MULTI) {
                 menuContactDetails.setVisible(false);
                 menuArchiveChat.setVisible(false);
                 menuLeaveGroup.setVisible(true);
+                menuMucDetails.setTitle(conversation.getMucOptions().isPrivateAndNonAnonymous() ? R.string.conference_details : R.string.channel_details);
                 menuMucDetails.setTitle(conversation.getMucOptions().isPrivateAndNonAnonymous() ? R.string.conference_details : R.string.channel_details);
                 menuOngoingCall.setVisible(false);
             } else {
@@ -394,6 +396,7 @@ public class ConversationsOverviewFragment extends XmppFragment {
             } else {
                 menuTogglePinned.setTitle(R.string.add_to_favorites);
             }
+            menuMarkAsRead.setVisible(!conversation.isRead());
         }
         super.onCreateContextMenu(menu, view, menuInfo);
     }
@@ -407,6 +410,15 @@ public class ConversationsOverviewFragment extends XmppFragment {
         if (conversations == null || conversations.size() <= pos || pos < 0) return false;
 
         Conversation conversation = conversations.get(pos);
+        if (item.getItemId() == R.id.action_mark_as_read) {
+            if (activity != null && activity.xmppConnectionService != null) {
+                activity.xmppConnectionService.markRead(conversation);
+                refresh();
+                Toast.makeText(activity, R.string.marked_as_read, Toast.LENGTH_SHORT).show();
+                return true;
+            }
+            return true;
+        }
         ConversationFragment fragment = new ConversationFragment();
         fragment.setHasOptionsMenu(false);
         fragment.onAttach(activity);

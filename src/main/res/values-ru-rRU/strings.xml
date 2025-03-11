@@ -493,6 +493,9 @@
     <string name="join_public_channel">Присоединиться к публичной конференции</string>
     <string name="joined_an_existing_channel">Вы присоединились к существующей конференции</string>
     <string name="joining_conference">Подключение к конференции…</string>
+    <string name="mark_all_chats_as_read">Отметить все чаты как прочитанные</string>
+    <string name="marked_as_read">Отмечено как прочитанное</string>
+    <string name="marked_all_chats_as_read">Все чаты отмечены как прочитанные</string>
     <string name="kick_from_conference">Выгнать из конференции</string>
     <string name="kick_from_room">Выгнать из конференции</string>
     <string name="kick_now">Выгнать</string>

@@ -40,6 +40,9 @@
         android:title="@string/enable_notifications"
         app:showAsAction="never" />
     <item
+        android:id="@+id/action_mark_as_read"
+        android:title="@string/mark_as_read"/>
+    <item
         android:id="@+id/action_archive_chat"
         android:orderInCategory="50"
         android:title="@string/action_end_conversation"

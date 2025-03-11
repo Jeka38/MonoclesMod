@@ -1962,7 +1962,7 @@ public class ConversationFragment extends XmppFragment
         });
 
 
-        if (activity.xmppConnectionService.getBooleanPreference("message_autocomplete", R.bool.message_autocomplete)) {
+        if (activity.xmppConnectionService != null && activity.xmppConnectionService.getBooleanPreference("message_autocomplete", R.bool.message_autocomplete)) {
             Autocomplete.<MucOptions.User>on(binding.textinput)
                     .with(activity.getDrawable(R.drawable.input_bubble_light))
                     .with(new CharPolicy('@'))

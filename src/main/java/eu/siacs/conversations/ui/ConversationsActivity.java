@@ -766,6 +766,7 @@ public class ConversationsActivity extends XmppActivity implements OnConversatio
         getMenuInflater().inflate(R.menu.activity_conversations, menu);
         final MenuItem qrCodeScanMenuItem = menu.findItem(R.id.action_scan_qr_code);
         final MenuItem inviteUser = menu.findItem(R.id.action_invite_user);
+        final MenuItem markAllChatsAsRead = menu.findItem(R.id.action_mark_all_chats_as_read); // Новый пункт меню
         if (qrCodeScanMenuItem != null) {
             if (isCameraFeatureAvailable()) {
                 Fragment fragment = getFragmentManager().findFragmentById(R.id.main_fragment);
@@ -778,11 +779,29 @@ public class ConversationsActivity extends XmppActivity implements OnConversatio
         }
         if (xmppConnectionServiceBound && xmppConnectionService.getAccounts().size() > 0) {
             inviteUser.setVisible(true);
+            markAllChatsAsRead.setVisible(xmppConnectionService.getConversations().stream().anyMatch(c -> c.unreadCount() > 0));
         } else {
             inviteUser.setVisible(false);
+            markAllChatsAsRead.setVisible(false);
         }
 
         return super.onCreateOptionsMenu(menu);
+    }
+
+
+    // Новый метод для отметки всех чатов как прочитанных
+    private void markAllChatsAsRead() {
+        if (xmppConnectionService != null) {
+            List<Conversation> conversations = xmppConnectionService.getConversations();
+            for (Conversation conv : conversations) {
+                if (conv.unreadCount() > 0) {
+                    xmppConnectionService.markRead(conv);
+                }
+            }
+            // Обновляем UI
+            refreshUiReal();
+            ToastCompat.makeText(this, R.string.marked_all_chats_as_read, ToastCompat.LENGTH_SHORT).show();
+        }
     }
 
     @Override
@@ -976,6 +995,9 @@ public class ConversationsActivity extends XmppActivity implements OnConversatio
             case R.id.action_invite_user:
                 inviteUser();
                 break;
+            case R.id.action_mark_all_chats_as_read:
+                markAllChatsAsRead();
+                return true;
         }
         return super.onOptionsItemSelected(item);
     }
