@@ -1576,9 +1576,6 @@ public class Conversation extends AbstractEntity implements Blockable, Comparabl
         synchronized (this.messages) {
             int count = 0;
             for(final Message message : Lists.reverse(this.messages)) {
-                if (message.getType() == Message.TYPE_STATUS) {
-                    continue;
-                }
                 if (message.getSubject() != null && !message.isOOb() && (message.getRawBody() == null || message.getRawBody().isEmpty())) continue;
                 if (message.isRead()) {
                     if (message.getType() == Message.TYPE_RTP_SESSION) {

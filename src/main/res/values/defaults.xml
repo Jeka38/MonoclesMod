@@ -6,7 +6,6 @@
     <string name="type_web" translatable="false">Web browser</string>
     <string name="type_console" translatable="false">Console</string>
 
-    <bool name="show_join_leave">false</bool>
     <bool name="portrait_only">true</bool>
     <bool name="enter_is_send">false</bool>
     <bool name="dnd_on_silent_mode">false</bool>

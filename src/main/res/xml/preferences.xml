@@ -152,11 +152,6 @@
         </PreferenceCategory>
         <PreferenceCategory android:title="@string/pref_expert_options_other">
         <SwitchPreference
-            android:defaultValue="@bool/show_join_leave"
-            android:key="show_join_leave"
-            android:title="@string/show_join_leave_summary"
-            android:summary="@string/pref_show_join_leave"/>
-        <SwitchPreference
             android:defaultValue="@bool/show_nav_bar"
             android:key="show_nav_bar"
             android:summary="@string/pref_show_navigation_bar_summary"

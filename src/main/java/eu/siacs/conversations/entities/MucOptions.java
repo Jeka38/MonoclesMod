@@ -54,12 +54,6 @@ public class MucOptions {
     private String password = null;
     private boolean tookProposedNickFromBookmark = false;
 
-    // Поля для отслеживания смены ника
-    private Jid lastNickChangeFrom = null;
-    private String lastNickChangeTo = null;
-    private long lastNickChangeTimestamp = 0;
-    private static final long NICK_CHANGE_TIMEOUT = 5000; // 5 секунд
-
     public MucOptions(Conversation conversation) {
         this.account = conversation.getAccount();
         this.conversation = conversation;
@@ -67,42 +61,6 @@ public class MucOptions {
         this.self = new User(this, createJoinJid(nick), null, nick, new HashSet<>());
         this.self.affiliation = Affiliation.of(conversation.getAttribute("affiliation"));
         this.self.role = Role.of(conversation.getAttribute("role"));
-    }
-
-    /**
-     * Сохраняет информацию о смене ника.
-     *
-     * @param from Исходный JID пользователя.
-     * @param newNick Новый ник пользователя.
-     */
-    public void setNickChange(Jid from, String newNick) {
-        this.lastNickChangeFrom = from;
-        this.lastNickChangeTo = newNick;
-        this.lastNickChangeTimestamp = System.currentTimeMillis();
-    }
-
-    /**
-     * Проверяет, является ли данный JID и ник частью недавней смены ника.
-     *
-     * @param from JID пользователя.
-     * @param nick Текущий ник.
-     * @return true, если это недавняя смена ника.
-     */
-    public boolean isRecentNickChange(Jid from, String nick) {
-        if (lastNickChangeFrom != null && lastNickChangeTo != null &&
-                System.currentTimeMillis() - lastNickChangeTimestamp < NICK_CHANGE_TIMEOUT) {
-            return lastNickChangeFrom.asBareJid().equals(from.asBareJid()) && lastNickChangeTo.equals(nick);
-        }
-        return false;
-    }
-
-    /**
-     * Очищает состояние смены ника.
-     */
-    public void clearNickChange() {
-        this.lastNickChangeFrom = null;
-        this.lastNickChangeTo = null;
-        this.lastNickChangeTimestamp = 0;
     }
 
     public Account getAccount() {
@@ -1003,10 +961,6 @@ public class MucOptions {
                 return true;
             }
         }
-
-
-
-
 
         public String getAvatar() {
             if (avatar != null) {
