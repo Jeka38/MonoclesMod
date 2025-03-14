@@ -495,6 +495,32 @@
     <string name="joining_conference">Подключение к конференции…</string>
     <string name="mark_all_chats_as_read">Отметить все чаты как прочитанные</string>
     <string name="marked_as_read">Отмечено как прочитанное</string>
+    <string name="show_join_leave_summary">Показывать вход/выход</string>
+    <string name="pref_show_join_leave">Отображать сообщения о входе и выходе участников</string>
+
+    <string name="user_joins_as_detailed">"%1$s (%2$s) заходит как %3$s %4$s"</string>
+    <string name="user_leaves_as_detailed">"%1$s (%2$s) выходит из конференции %4$s"</string>
+    <string name="role_participant">"участник"</string>
+    <string name="role_moderator">"модератор"</string>
+    <string name="affiliation_none">"незарегистрированный"</string>
+    <string name="affiliation_member">"зарегистрированный пользователь"</string>
+    <string name="affiliation_owner">"владелец"</string>
+    <string name="and">" и "</string>
+
+    <string name="user_joins_conference">"%1$s заходит в конференцию %2$s"</string>
+    <string name="user_leaves_conference">"%1$s выходит из конференции %2$s"</string>
+
+    <string name="kicked_suffix">" (кикнут)"</string>
+    <string name="banned_suffix">" (забанен)"</string>
+
+    <string name="changed_nick">"%1$s сменил ник на %2$s"</string>
+
+
+    <!-- Новые строки для изменения роли и аффилиации -->
+    <string name="user_role_changed">%1$s изменил роль с %2$s на %3$s в %4$s</string>
+    <string name="user_affiliation_changed">%1$s изменил аффилиацию с %2$s на %3$s в %4$s</string>
+    <string name="user_role_and_affiliation_changed">%1$s изменил роль с %2$s на %3$s и аффилиацию с %4$s на %5$s в %6$s</string>
+
     <string name="marked_all_chats_as_read">Все чаты отмечены как прочитанные</string>
     <string name="kick_from_conference">Выгнать из конференции</string>
     <string name="kick_from_room">Выгнать из конференции</string>
