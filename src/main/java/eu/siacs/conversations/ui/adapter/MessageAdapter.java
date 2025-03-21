@@ -1269,10 +1269,10 @@ public class MessageAdapter extends ArrayAdapter<Message> {
 
     private void displayMediaPreviewMessage(ViewHolder viewHolder, final Message message, final boolean darkBackground, final int type) {
         displayTextMessage(viewHolder, message, darkBackground, type);
-        viewHolder.download_button.setVisibility(GONE);
-        viewHolder.audioPlayer.setVisibility(GONE);
-        viewHolder.richlinkview.setVisibility(GONE);
-        viewHolder.transfer.setVisibility(GONE);
+        viewHolder.download_button.setVisibility(View.GONE);
+        viewHolder.audioPlayer.setVisibility(View.GONE);
+        viewHolder.richlinkview.setVisibility(View.GONE);
+        viewHolder.transfer.setVisibility(View.GONE);
 
         final DownloadableFile file = activity.xmppConnectionService.getFileBackend().getFile(message);
         if (file != null && !file.exists() && !message.isFileDeleted()) {
@@ -1301,6 +1301,12 @@ public class MessageAdapter extends ArrayAdapter<Message> {
         if (scaledH > maxHeight) {
             scaledH = (int) maxHeight;
             scaledW = (int) (maxHeight * aspectRatio);
+        }
+
+        // Уменьшаем размеры для GIF
+        if (isGif) {
+            scaledW = (int) (scaledW * 0.5f); // Уменьшаем ширину на 30%
+            scaledH = (int) (scaledH * 0.5f); // Уменьшаем высоту на 30%
         }
 
         LinearLayout.LayoutParams layoutParams = new LinearLayout.LayoutParams(scaledW, scaledH);
