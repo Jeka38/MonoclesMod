@@ -165,7 +165,7 @@ public class XmppConnection implements Runnable {
         mXmppConnectionService.deleteAccount(account);
     }
 
-    protected final Account account;
+    public final Account account;
     private final Features features = new Features(this);
     private final HashMap<Jid, ServiceDiscoveryResult> disco = new HashMap<>();
     private final HashMap<String, Jid> commands = new HashMap<>();
@@ -2333,6 +2333,7 @@ public class XmppConnection implements Runnable {
         } else {
             changeStatusToOnline();
         }
+        mXmppConnectionService.startKeepAlive(this); // Запуск keep-alive
     }
 
     private void enableAdvancedStreamFeatures() {
@@ -2738,9 +2739,8 @@ public class XmppConnection implements Runnable {
     }
 
     private void forceCloseSocket() {
-        Log.d(Config.LOGTAG, account.getJid().asBareJid() + ": forcing socket close");
-        FileBackend.close(socket);
-        socket = null; // Явно сбрасываем
+        FileBackend.close(this.socket);
+        FileBackend.close(this.tagReader);
     }
 
     public void interrupt() {
@@ -2752,26 +2752,53 @@ public class XmppConnection implements Runnable {
     public void disconnect(final boolean force) {
         interrupt();
         Log.d(Config.LOGTAG, account.getJid().asBareJid() + ": disconnecting force=" + force);
+
+        mXmppConnectionService.stopKeepAlive(); // Остановка keep-alive
+
         if (force) {
             forceCloseSocket();
         } else {
             final TagWriter currentTagWriter = this.tagWriter;
-            if (currentTagWriter != null && currentTagWriter.isActive()) {
+            if (currentTagWriter.isActive()) {
+                currentTagWriter.finish();
+                final Socket currentSocket = this.socket;
+                final CountDownLatch streamCountDownLatch = this.mStreamCountDownLatch;
                 try {
-                    currentTagWriter.finish();
-                    currentTagWriter.writeTag(Tag.end("stream:stream")); // Отправляем без ожидания
+                    currentTagWriter.await(1, TimeUnit.SECONDS);
                     Log.d(Config.LOGTAG, account.getJid().asBareJid() + ": closing stream");
-                } catch (IOException e) {
-                    Log.d(Config.LOGTAG, account.getJid().asBareJid() + ": io exception during disconnect (" + e.getMessage() + ")");
+                    currentTagWriter.writeTag(Tag.end("stream:stream"));
+                    if (streamCountDownLatch != null) {
+                        if (streamCountDownLatch.await(1, TimeUnit.SECONDS)) {
+                            Log.d(
+                                    Config.LOGTAG,
+                                    account.getJid().asBareJid() + ": remote ended stream");
+                        } else {
+                            Log.d(
+                                    Config.LOGTAG,
+                                    account.getJid().asBareJid()
+                                            + ": remote has not closed socket. force closing");
+                        }
+                    }
+                } catch (InterruptedException e) {
+                    Log.d(
+                            Config.LOGTAG,
+                            account.getJid().asBareJid()
+                                    + ": interrupted while gracefully closing stream");
+                } catch (final IOException e) {
+                    Log.d(
+                            Config.LOGTAG,
+                            account.getJid().asBareJid()
+                                    + ": io exception during disconnect ("
+                                    + e.getMessage()
+                                    + ")");
                 } finally {
-                    FileBackend.close(socket); // Закрываем сразу
+                    FileBackend.close(currentSocket);
                 }
             } else {
                 forceCloseSocket();
             }
         }
     }
-
     public void resetStreamId() {
         this.streamId = null;
         this.boundStreamFeatures = null;

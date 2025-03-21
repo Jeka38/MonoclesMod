@@ -192,7 +192,7 @@ public class Resolver {
         final Result result = new Result();
         result.hostname = DnsName.from(hostname);
         result.port = port;
-        result.directTls = true;
+        result.directTls = useDirectTls(port);
         result.authenticated = true;
         return Collections.singletonList(result);
     }

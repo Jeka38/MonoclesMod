@@ -19,7 +19,6 @@ public final class Config {
 
     public static final long MILLISECONDS_IN_DAY = 24 * 60 * 60 * 1000;
     public static final long CONTACT_SYNC_RETRY_INTERVAL = 1000L * 60 * 5;
-    public static final Jid ONBOARDING_DOMAIN = Jid.of("onboarding.monocles.eu");
     public static final int IMAGE_SIZE = 1920;
 
     private static final int UNENCRYPTED = 1;
@@ -77,8 +76,7 @@ public final class Config {
     public static final String privacyURL = "https://monocles.eu/legal-privacy/#privacy-monocles-chat-android";
     public static final String migrationURL = Locale.getDefault().getLanguage().equalsIgnoreCase("de") ? "https://codeberg.org/Arne/monocles_chat" : "https://codeberg.org/Arne/monocles_chat";
 
-    public static final String CHANGELOG_URL = "https://codeberg.org/monocles/monocles_chat/releases";
-    public static final String GIT_URL = "https://codeberg.org/Arne/monocles_chat";
+
     public static final String XMPP_IP = null; //BuildConfig.XMPP_IP; // set to null means disable
     public static final Integer[] XMPP_Ports = null; //BuildConfig.XMPP_Ports; // set to null means disable
     public static final String DOMAIN_LOCK = BuildConfig.DOMAIN_LOCK; //only allow account creation for this domain

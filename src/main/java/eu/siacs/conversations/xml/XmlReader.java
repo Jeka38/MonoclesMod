@@ -56,6 +56,7 @@ public class XmlReader implements Closeable {
 
 	public Tag readTag() throws IOException {
 		try {
+			Log.d(Config.LOGTAG, "Before parser.next(), input stream available: " + this.is.available());
 			while (this.is != null && parser.next() != XmlPullParser.END_DOCUMENT) {
 				if (parser.getEventType() == XmlPullParser.START_TAG) {
 					Tag tag = Tag.start(parser.getName());

@@ -245,6 +245,9 @@ import me.leolin.shortcutbadger.ShortcutBadger;
 import okhttp3.HttpUrl;
 import okhttp3.OkHttpClient;
 
+import java.util.Timer;
+import java.util.TimerTask;
+
 public class XmppConnectionService extends Service {
 
     public static final String ACTION_REPLY_TO_CONVERSATION = "reply_to_conversations";
@@ -613,6 +616,46 @@ public class XmppConnectionService extends Service {
     private String[] filesPaths;
     private String[] filesNames;
     File dirGifs = new File(Environment.getExternalStoragePublicDirectory(Environment.DIRECTORY_DOCUMENTS) + File.separator + APP_DIRECTORY + File.separator + "GIFs");
+
+    private Timer pingTimer; // Таймер для keep-alive
+
+    private void sendPing(XmppConnection connection) {
+        if (connection != null) {
+            if (connection.getFeatures().sm()) {
+                connection.r(); // Используем SM-запрос, если поддерживается
+                Log.d("Starting keep-aliveG", connection.account.getJid().asBareJid() + ": Sent SM request for keep-alive");
+            } else {
+                connection.sendPing(); // Иначе отправляем обычный ping
+                Log.d("Starting keep-aliveG", connection.account.getJid().asBareJid() + ": Sent XMPP ping for keep-alive");
+            }
+        } else {
+            Log.w("Starting keep-aliveG", "Cannot send ping: XmppConnection is null");
+        }
+    }
+
+    // Запуск keep-alive
+    public void startKeepAlive(XmppConnection connection) {
+        Log.d("Starting keep-aliveG", connection.account.getJid().asBareJid() + ": Starting keep-alive");
+        if (pingTimer != null) {
+            pingTimer.cancel();
+        }
+        pingTimer = new Timer();
+        pingTimer.scheduleAtFixedRate(new TimerTask() {
+            @Override
+            public void run() {
+                sendPing(connection);
+            }
+        }, 0, 30000); // Каждые 30 секунд
+    }
+
+    // Остановка keep-alive
+    public void stopKeepAlive() {
+        if (pingTimer != null) {
+            pingTimer.cancel();
+            pingTimer = null;
+            Log.d(Config.LOGTAG, "Stopped keep-alive");
+        }
+    }
 
     public void LoadStickers() {
         if (!hasStoragePermission(this)) return;
