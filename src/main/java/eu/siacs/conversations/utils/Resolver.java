@@ -192,7 +192,7 @@ public class Resolver {
         final Result result = new Result();
         result.hostname = DnsName.from(hostname);
         result.port = port;
-        result.directTls = useDirectTls(port);
+        result.directTls = true;
         result.authenticated = true;
         return Collections.singletonList(result);
     }
@@ -407,22 +407,9 @@ public class Resolver {
 
     private static <D extends Data> ResolverResult<D> resolveWithFallback(DnsName dnsName, Class<D> type) throws IOException {
         final Question question = new Question(dnsName, Record.TYPE.getType(type));
-        if (!DNSSECLESS_TLDS.contains(dnsName.getLabels()[0].toString())) {
-            try {
-                ResolverResult<D> result = DnssecResolverApi.INSTANCE.resolve(question);
-                if (result.wasSuccessful() && !result.isAuthenticData()) {
-                    Log.d(Config.LOGTAG, "DNSSEC validation failed for " + type.getSimpleName() + " : " + result.getUnverifiedReasons());
-                }
-                return result;
-            } catch (DnssecValidationFailedException e) {
-                Log.d(Config.LOGTAG, Resolver.class.getSimpleName() + ": error resolving " + type.getSimpleName() + " with DNSSEC. Trying DNS instead.", e);
-            } catch (IOException e) {
-                throw e;
-            } catch (Throwable throwable) {
-                Log.d(Config.LOGTAG, Resolver.class.getSimpleName() + ": error resolving " + type.getSimpleName() + " with DNSSEC. Trying DNS instead.", throwable);
-            }
-        }
-        return ResolverApi.INSTANCE.resolve(question);
+        // Используем только ResolverApi без DNSSEC
+        ResolverResult<D> result = ResolverApi.INSTANCE.resolve(question);
+        return result;
     }
 
     public static class Result implements Comparable<Result> {

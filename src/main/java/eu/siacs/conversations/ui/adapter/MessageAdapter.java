@@ -1671,7 +1671,7 @@ public class MessageAdapter extends ArrayAdapter<Message> {
         swipeLayout.setShowMode(SwipeLayout.ShowMode.PullOut);
 
 //add drag edge.(If the BottomView has 'layout_gravity' attribute, this line is unnecessary)
-        swipeLayout.addDrag(SwipeLayout.DragEdge.Left, view.findViewById(R.id.bottom_wrapper));
+        swipeLayout.addDrag(SwipeLayout.DragEdge.Right, view.findViewById(R.id.bottom_wrapper));
 
         swipeLayout.addSwipeListener(new SwipeLayout.SwipeListener() {
             @Override
@@ -1683,8 +1683,8 @@ public class MessageAdapter extends ArrayAdapter<Message> {
 
             @Override
             public void onUpdate(SwipeLayout layout, int leftOffset, int topOffset) {
-                swipeLayout.setClickToClose(true);
-                //you are swiping.
+                layout.setClickToClose(true);
+                Log.d("SwipeDebug", "Offset: " + leftOffset + ", Top: " + topOffset + ", Width: " + layout.getWidth());
             }
 
             @Override

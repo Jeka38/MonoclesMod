@@ -2191,6 +2191,7 @@ public class XmppConnection implements Runnable {
         final IqPacket iq = new IqPacket(IqPacket.TYPE.GET);
         iq.setTo(jid);
         iq.query("http://jabber.org/protocol/disco#info");
+        Log.d(Config.LOGTAG, account.getJid().asBareJid() + ": sending disco#info to " + jid.toString());
         this.sendIqPacket(
                 iq,
                 (account, packet) -> {
@@ -2199,8 +2200,7 @@ public class XmppConnection implements Runnable {
                         synchronized (XmppConnection.this.disco) {
                             ServiceDiscoveryResult result = new ServiceDiscoveryResult(packet);
                             if (jid.equals(account.getDomain())) {
-                                mXmppConnectionService.databaseBackend.insertDiscoveryResult(
-                                        result);
+                                mXmppConnectionService.databaseBackend.insertDiscoveryResult(result);
                             }
                             disco.put(jid, result);
                             advancedStreamFeaturesLoaded =
@@ -2235,14 +2235,34 @@ public class XmppConnection implements Runnable {
                         if (advancedStreamFeaturesLoaded) {
                             enableAdvancedStreamFeatures();
                         }
-                    }
-                    if (packet.getType() != IqPacket.TYPE.TIMEOUT) {
-                        if (mPendingServiceDiscoveries.decrementAndGet() == 0
-                                && mWaitForDisco.compareAndSet(true, false)) {
-                            finalizeBind();
+                    } else if (packet.getType() == IqPacket.TYPE.TIMEOUT) {
+                        Log.d(
+                                Config.LOGTAG,
+                                account.getJid().asBareJid()
+                                        + ": disco#info timeout for "
+                                        + jid.toString()
+                                        + " after 5 seconds");
+                        // Уменьшаем счетчик и финализируем для основного домена
+                        if (jid.equals(account.getDomain())) {
+                            mPendingServiceDiscoveries.decrementAndGet();
+                            if (mPendingServiceDiscoveries.get() > 0) {
+                                mPendingServiceDiscoveries.set(0); // Сбрасываем остальные
+                            }
+                            if (mWaitForDisco.compareAndSet(true, false)) {
+                                Log.d(Config.LOGTAG, account.getJid().asBareJid() + ": forcing finalize bind after domain timeout");
+                                finalizeBind();
+                            }
                         }
                     }
-                });
+                    // Обрабатываем финализацию для всех случаев
+                    int pending = mPendingServiceDiscoveries.decrementAndGet();
+                    Log.d(Config.LOGTAG, account.getJid().asBareJid() + ": pending service discoveries: " + pending);
+                    if (pending == 0 && mWaitForDisco.compareAndSet(true, false)) {
+                        Log.d(Config.LOGTAG, account.getJid().asBareJid() + ": all disco requests completed, finalizing bind");
+                        finalizeBind();
+                    }
+                },
+                5_000L); // 5 секунд
     }
 
     private void discoverMamPreferences() {
@@ -2610,7 +2630,7 @@ public class XmppConnection implements Runnable {
                             final Pair<IqPacket, Pair<OnIqPacketReceived, ScheduledFuture>> removedCallback = packetCallbacks.remove(packet.getId());
                             if (removedCallback != null) removedCallback.second.first.onIqPacketReceived(account, failurePacket);
                         }
-                    }, timeout, TimeUnit.SECONDS);
+                    }, timeout, TimeUnit.MILLISECONDS);
                 }
                 packetCallbacks.put(packet.getId(), new Pair<>(packet, new Pair<>(callback, timeoutFuture)));
             }
@@ -2718,8 +2738,9 @@ public class XmppConnection implements Runnable {
     }
 
     private void forceCloseSocket() {
-        FileBackend.close(this.socket);
-        FileBackend.close(this.tagReader);
+        Log.d(Config.LOGTAG, account.getJid().asBareJid() + ": forcing socket close");
+        FileBackend.close(socket);
+        socket = null; // Явно сбрасываем
     }
 
     public void interrupt() {
@@ -2735,40 +2756,15 @@ public class XmppConnection implements Runnable {
             forceCloseSocket();
         } else {
             final TagWriter currentTagWriter = this.tagWriter;
-            if (currentTagWriter.isActive()) {
-                currentTagWriter.finish();
-                final Socket currentSocket = this.socket;
-                final CountDownLatch streamCountDownLatch = this.mStreamCountDownLatch;
+            if (currentTagWriter != null && currentTagWriter.isActive()) {
                 try {
-                    currentTagWriter.await(1, TimeUnit.SECONDS);
+                    currentTagWriter.finish();
+                    currentTagWriter.writeTag(Tag.end("stream:stream")); // Отправляем без ожидания
                     Log.d(Config.LOGTAG, account.getJid().asBareJid() + ": closing stream");
-                    currentTagWriter.writeTag(Tag.end("stream:stream"));
-                    if (streamCountDownLatch != null) {
-                        if (streamCountDownLatch.await(1, TimeUnit.SECONDS)) {
-                            Log.d(
-                                    Config.LOGTAG,
-                                    account.getJid().asBareJid() + ": remote ended stream");
-                        } else {
-                            Log.d(
-                                    Config.LOGTAG,
-                                    account.getJid().asBareJid()
-                                            + ": remote has not closed socket. force closing");
-                        }
-                    }
-                } catch (InterruptedException e) {
-                    Log.d(
-                            Config.LOGTAG,
-                            account.getJid().asBareJid()
-                                    + ": interrupted while gracefully closing stream");
-                } catch (final IOException e) {
-                    Log.d(
-                            Config.LOGTAG,
-                            account.getJid().asBareJid()
-                                    + ": io exception during disconnect ("
-                                    + e.getMessage()
-                                    + ")");
+                } catch (IOException e) {
+                    Log.d(Config.LOGTAG, account.getJid().asBareJid() + ": io exception during disconnect (" + e.getMessage() + ")");
                 } finally {
-                    FileBackend.close(currentSocket);
+                    FileBackend.close(socket); // Закрываем сразу
                 }
             } else {
                 forceCloseSocket();

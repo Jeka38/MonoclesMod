@@ -116,7 +116,7 @@ public final class Config {
     public static final int SOCKET_TIMEOUT = 30;
     public static final int CONNECT_TIMEOUT = 60;
     public static final int POST_CONNECTIVITY_CHANGE_PING_INTERVAL = 30;
-    public static final int CONNECT_DISCO_TIMEOUT = 30;
+    public static final int CONNECT_DISCO_TIMEOUT = 5;
     public static final int MINI_GRACE_PERIOD = 750;
 
     public static final boolean XEP_0392 = true; //enables XEP-0392 v0.6.0
