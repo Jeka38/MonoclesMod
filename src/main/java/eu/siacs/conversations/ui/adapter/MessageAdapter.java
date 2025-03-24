@@ -59,6 +59,7 @@ import android.widget.RelativeLayout;
 import android.widget.TextView;
 import android.widget.Toast;
 
+import androidx.annotation.Nullable;
 import androidx.core.app.ActivityCompat;
 import androidx.core.content.ContextCompat;
 import androidx.core.content.res.ResourcesCompat;
@@ -66,6 +67,10 @@ import androidx.core.graphics.ColorUtils;
 import androidx.core.graphics.drawable.DrawableCompat;
 
 import com.bumptech.glide.Glide;
+import com.bumptech.glide.load.DataSource;
+import com.bumptech.glide.load.engine.GlideException;
+import com.bumptech.glide.request.RequestListener;
+import com.bumptech.glide.request.target.Target;
 import com.daimajia.swipe.SwipeLayout;
 import com.google.common.base.Strings;
 
@@ -701,21 +706,16 @@ public class MessageAdapter extends ArrayAdapter<Message> {
         }, fallbackImg));
     }
 
-    // Проверяет, является ли URL изображением (даже без расширения)
-    private boolean isDirectImageUrl(String url) {
-        if (url == null) return false;
-        return url.matches("(?i)^(http|https)://.*(\\.(jpg|jpeg|png|gif|webp" +
-                "|bmp|tiff|ico|webm|heif|heic|apng)(\\?.*)?$|\\?q=tbn:.*)");
-    }
-
     private void displayTextMessage(final ViewHolder viewHolder,
                                     final Message message, boolean darkBackground, int type) {
-        viewHolder.download_button.setVisibility(GONE);
-        showImages(false, viewHolder);
-        viewHolder.richlinkview.setVisibility(GONE);
-        viewHolder.transfer.setVisibility(GONE);
-        viewHolder.audioPlayer.setVisibility(GONE);
-        viewHolder.messageBody.setVisibility(GONE);
+        viewHolder.download_button.setVisibility(View.GONE);
+        viewHolder.richlinkview.setVisibility(View.GONE);
+        viewHolder.transfer.setVisibility(View.GONE);
+        viewHolder.audioPlayer.setVisibility(View.GONE);
+        viewHolder.messageBody.setVisibility(View.GONE);
+        viewHolder.images.setVisibility(View.GONE);
+
+        Log.d("ChatDebug", "Starting displayTextMessage for message: " + message.getBody());
 
         if (darkBackground) {
             viewHolder.messageBody.setTextAppearance(getContext(), R.style.TextAppearance_Conversations_Body1_OnDark);
@@ -729,18 +729,27 @@ public class MessageAdapter extends ArrayAdapter<Message> {
         viewHolder.messageBody.setTypeface(null, Typeface.NORMAL);
 
         if (message.getBody() != null && !message.getBody().equals("")) {
+            Log.d("ChatDebug", "Processing message: " + message.getBody());
             viewHolder.messageBody.setTextIsSelectable(true);
             viewHolder.messageBody.setVisibility(View.VISIBLE);
 
-            // Проверка на прямую ссылку на изображение
             String trimmedBody = message.getBody().trim();
-            if (isDirectImageUrl(trimmedBody)) {
-                // Отображаем изображение
-                showImages(true, viewHolder);
+            Log.d("ChatDebug", "Trimmed body: " + trimmedBody);
 
-                // Устанавливаем максимальные размеры превью
+            String imageUrl = extractFirstImageUrl(trimmedBody);
+            Log.d("ChatDebug", "Extracted image URL: " + imageUrl);
+
+            if (imageUrl != null && isDirectImageUrl(imageUrl)) {
+                Log.d("ChatDebug", "Image URL detected: " + imageUrl);
+
+                viewHolder.images.setVisibility(View.VISIBLE);
+                Log.d("ChatDebug", "Set images visibility to VISIBLE");
+                viewHolder.image.setVisibility(View.VISIBLE);
+                Log.d("ChatDebug", "Set image visibility to VISIBLE");
+
+                // Максимальные размеры превью
                 final float maxWidth = activity.getResources().getDimension(R.dimen.image_preview_width);
-                final float maxHeight = maxWidth * 1.5f; // Ограничение по высоте (настраиваемое)
+                final float maxHeight = maxWidth * 1.5f; // Максимальная высота
 
                 LinearLayout.LayoutParams layoutParams = new LinearLayout.LayoutParams(
                         LinearLayout.LayoutParams.WRAP_CONTENT,
@@ -749,18 +758,66 @@ public class MessageAdapter extends ArrayAdapter<Message> {
                 layoutParams.setMargins(0, (int) (metrics.density * 4), 0, (int) (metrics.density * 4));
                 viewHolder.images.setLayoutParams(layoutParams);
 
-                // Загружаем изображение с помощью Glide, сохраняя пропорции
                 Glide.with(activity)
-                        .load(trimmedBody)
+                        .load(imageUrl)
                         .override((int) maxWidth, (int) maxHeight)
-                        .fitCenter() // Сохраняем пропорции, не обрезая
+                        .fitCenter() // Вписываем изображение без обрезки
                         .placeholder(R.drawable.ic_image_grey600_48dp)
                         .error(R.drawable.ic_error_white_24dp)
+                        .listener(new RequestListener<Drawable>() {
+                            @Override
+                            public boolean onLoadFailed(@Nullable GlideException e, Object model, Target<Drawable> target, boolean isFirstResource) {
+                                Log.e("GlideDebug", "Failed to load image: " + imageUrl + ", error: " + (e != null ? e.getMessage() : "unknown"));
+                                viewHolder.images.setVisibility(View.GONE);
+                                return false;
+                            }
+
+                            @Override
+                            public boolean onResourceReady(Drawable resource, Object model, Target<Drawable> target, DataSource dataSource, boolean isFirstResource) {
+                                Log.d("GlideDebug", "Image loaded successfully: " + imageUrl);
+                                viewHolder.images.setVisibility(View.VISIBLE);
+                                viewHolder.image.setVisibility(View.VISIBLE);
+
+                                // Вычисляем размеры с сохранением пропорций
+                                int intrinsicWidth = resource.getIntrinsicWidth();
+                                int intrinsicHeight = resource.getIntrinsicHeight();
+                                float aspectRatio = (float) intrinsicWidth / intrinsicHeight;
+
+                                int finalWidth, finalHeight;
+                                if (intrinsicWidth > maxWidth || intrinsicHeight > maxHeight) {
+                                    // Если изображение больше максимальных размеров, масштабируем
+                                    if (aspectRatio > 1) { // Широкое изображение
+                                        finalWidth = (int) maxWidth;
+                                        finalHeight = (int) (maxWidth / aspectRatio);
+                                    } else { // Высокое изображение
+                                        finalHeight = (int) maxHeight;
+                                        finalWidth = (int) (maxHeight * aspectRatio);
+                                    }
+                                } else {
+                                    // Если изображение меньше, используем оригинальные размеры
+                                    finalWidth = intrinsicWidth;
+                                    finalHeight = intrinsicHeight;
+                                }
+
+                                // Устанавливаем минимальные размеры, если нужно
+                                finalWidth = Math.max(finalWidth, (int) (maxWidth * 0.5f)); // Минимум половина maxWidth
+                                finalHeight = Math.max(finalHeight, (int) (maxWidth * 0.5f)); // Минимум половина maxWidth
+
+                                LinearLayout.LayoutParams imageParams = new LinearLayout.LayoutParams(
+                                        finalWidth,
+                                        finalHeight
+                                );
+                                viewHolder.image.setLayoutParams(imageParams);
+
+                                Log.d("ChatDebug", "Image intrinsic dimensions - width: " + intrinsicWidth + ", height: " + intrinsicHeight);
+                                Log.d("ChatDebug", "Image final dimensions - width: " + finalWidth + ", height: " + finalHeight);
+                                return false;
+                            }
+                        })
                         .into(viewHolder.image);
 
-                // Обработчик клика для открытия изображения
                 viewHolder.image.setOnClickListener(v -> {
-                    Uri uri = Uri.parse(trimmedBody);
+                    Uri uri = Uri.parse(imageUrl);
                     Intent intent = new Intent(Intent.ACTION_VIEW);
                     intent.setDataAndType(uri, "image/*");
                     intent.addFlags(Intent.FLAG_GRANT_READ_URI_PERMISSION);
@@ -768,166 +825,46 @@ public class MessageAdapter extends ArrayAdapter<Message> {
                         activity.startActivity(intent);
                         activity.overridePendingTransition(R.animator.fade_in, R.animator.fade_out);
                     } else {
-                        ToastCompat.makeText(activity, R.string.error_message,
-                                ToastCompat.LENGTH_LONG).show();
+                        ToastCompat.makeText(activity, R.string.error_message, ToastCompat.LENGTH_LONG).show();
                     }
                 });
-
-                if (!message.getBody().equals(trimmedBody)) {
-                    SpannableStringBuilder body = new SpannableStringBuilder(message.getBody());
-                    viewHolder.messageBody.setText(body);
-                } else {
-                    viewHolder.messageBody.setVisibility(GONE);
-                }
-                return;
-            }
-
-            // Обработка текста сообщения
-            final SpannableString nick = UIHelper.getColoredUsername(activity.xmppConnectionService, message);
-            Drawable fallbackImg = ResourcesCompat.getDrawable(activity.getResources(),
-                    activity.getThemeResource(R.attr.ic_attach_photo, R.drawable.ic_attach_photo), null);
-            fallbackImg.setBounds(FileBackend.rectForSize(fallbackImg.getIntrinsicWidth(),
-                    fallbackImg.getIntrinsicHeight(), (int) (metrics.density * 32)));
-            SpannableStringBuilder body = getSpannableBody(message);
-
-            if (message.getBody().equals(DELETED_MESSAGE_BODY)) {
-                body = body.replace(0, DELETED_MESSAGE_BODY.length(), activity.getString(R.string.message_deleted));
-            } else if (message.getBody().equals(DELETED_MESSAGE_BODY_OLD)) {
-                body = body.replace(0, DELETED_MESSAGE_BODY_OLD.length(), activity.getString(R.string.message_deleted));
             } else {
-                boolean hasMeCommand = message.hasMeCommand();
-                if (hasMeCommand) {
-                    body = body.replace(0, Message.ME_COMMAND.length(), nick);
-                }
-                if (body.length() > Config.MAX_DISPLAY_MESSAGE_CHARS) {
-                    body = new SpannableStringBuilder(body, 0, Config.MAX_DISPLAY_MESSAGE_CHARS);
-                    body.append("\u2026");
-                }
-                final Message.MergeSeparator[] mergeSeparators = body.getSpans(0, body.length(), Message.MergeSeparator.class);
-                for (Message.MergeSeparator mergeSeparator : mergeSeparators) {
-                    int start = body.getSpanStart(mergeSeparator);
-                    int end = body.getSpanEnd(mergeSeparator);
-                    body.setSpan(new DividerSpan(true), start, end, Spannable.SPAN_EXCLUSIVE_EXCLUSIVE);
-                }
-                final boolean startsWithQuote = handleTextQuotes(viewHolder.messageBody, body, darkBackground, true);
-                for (final android.text.style.QuoteSpan quote : body.getSpans(0, body.length(), android.text.style.QuoteSpan.class)) {
-                    int start = body.getSpanStart(quote);
-                    int end = body.getSpanEnd(quote);
-                    body.removeSpan(quote);
-                    applyQuoteSpan(viewHolder.messageBody, body, start, end, darkBackground, true);
-                }
-                if (!message.isPrivateMessage()) {
-                    if (hasMeCommand) {
-                        body.setSpan(new StyleSpan(Typeface.BOLD_ITALIC), 0, nick.length(), Spannable.SPAN_EXCLUSIVE_EXCLUSIVE);
-                    }
-                } else {
-                    String privateMarker;
-                    if (message.getStatus() <= Message.STATUS_RECEIVED) {
-                        privateMarker = activity.getString(R.string.private_message);
-                    } else {
-                        Jid cp = message.getCounterpart();
-                        privateMarker = activity.getString(R.string.private_message_to,
-                                Strings.nullToEmpty(cp == null ? null : cp.getResource()));
-                    }
-                    body.insert(0, privateMarker);
-                    final int privateMarkerIndex = privateMarker.length();
-                    if (startsWithQuote) {
-                        body.insert(privateMarkerIndex, "\n\n");
-                        body.setSpan(new DividerSpan(false), privateMarkerIndex, privateMarkerIndex + 2,
-                                Spannable.SPAN_EXCLUSIVE_EXCLUSIVE);
-                    } else {
-                        body.insert(privateMarkerIndex, " ");
-                    }
-                    body.setSpan(new ForegroundColorSpan(ThemeHelper.getMessageTextColorPrivate(activity)),
-                            0, privateMarkerIndex, Spannable.SPAN_EXCLUSIVE_EXCLUSIVE);
-                    body.setSpan(new StyleSpan(Typeface.BOLD), 0, privateMarkerIndex,
-                            Spannable.SPAN_EXCLUSIVE_EXCLUSIVE);
-                    if (hasMeCommand) {
-                        body.setSpan(new StyleSpan(Typeface.BOLD_ITALIC), privateMarkerIndex + 1,
-                                privateMarkerIndex + 1 + nick.length(), Spannable.SPAN_EXCLUSIVE_EXCLUSIVE);
-                    }
-                }
-                if (message.getConversation().getMode() == Conversation.MODE_MULTI &&
-                        message.getStatus() == Message.STATUS_RECEIVED) {
-                    if (message.getConversation() instanceof Conversation) {
-                        final Conversation conversation = (Conversation) message.getConversation();
-                        Pattern pattern = NotificationService.generateNickHighlightPattern(
-                                conversation.getMucOptions().getActualNick());
-                        Matcher matcher = pattern.matcher(body);
-                        while (matcher.find()) {
-                            body.setSpan(new StyleSpan(Typeface.BOLD), matcher.start(), matcher.end(),
-                                    Spannable.SPAN_EXCLUSIVE_EXCLUSIVE);
-                        }
-
-                        pattern = NotificationService.generateNickHighlightPattern(
-                                conversation.getMucOptions().getActualName());
-                        matcher = pattern.matcher(body);
-                        while (matcher.find()) {
-                            body.setSpan(new StyleSpan(Typeface.BOLD), matcher.start(), matcher.end(),
-                                    Spannable.SPAN_EXCLUSIVE_EXCLUSIVE);
-                        }
-                    }
-                }
-                final Matcher matcher = Emoticons.getEmojiPattern(body).matcher(body);
-                while (matcher.find()) {
-                    if (matcher.start() < matcher.end()) {
-                        body.setSpan(new RelativeSizeSpan(1.5f), matcher.start(), matcher.end(),
-                                Spannable.SPAN_EXCLUSIVE_EXCLUSIVE);
-                    }
-                }
-                StylingHelper.format(body, viewHolder.messageBody.getCurrentTextColor(), true);
-                if (highlightedTerm != null) {
-                    StylingHelper.highlight(activity, body, highlightedTerm,
-                            StylingHelper.isDarkText(viewHolder.messageBody));
-                }
-            }
-            if (message.isWebUri() || message.getWebUri() != null) {
-                displayRichLinkMessage(viewHolder, message, darkBackground);
-            }
-            for (final var span : body.getSpans(0, body.length(), de.monocles.mod.InlineImageSpan.class)) {
-                body.setSpan(
-                        new RelativeSizeSpan(2f),
-                        body.getSpanStart(span),
-                        body.getSpanEnd(span),
-                        Spannable.SPAN_EXCLUSIVE_EXCLUSIVE);
+                Log.d("ChatDebug", "No valid image URL found");
             }
 
+            SpannableStringBuilder body = getSpannableBody(message);
+            Log.d("ChatDebug", "Displaying text: " + body.toString());
             MyLinkify.addLinks(body, message.getConversation().getAccount(), message.getConversation().getJid());
             viewHolder.messageBody.setText(body);
             viewHolder.messageBody.setAutoLinkMask(0);
-            BetterLinkMovementMethod method = new BetterLinkMovementMethod() {
-                @Override
-                protected void dispatchUrlLongClick(TextView tv, ClickableSpan span) {
-                    if (span instanceof URLSpan || mOnInlineImageLongClickedListener == null) {
-                        tv.dispatchTouchEvent(MotionEvent.obtain(0, 0, MotionEvent.ACTION_CANCEL, 0f, 0f, 0));
-                        super.dispatchUrlLongClick(tv, span);
-                        return;
-                    }
-
-                    Spannable body = (Spannable) tv.getText();
-                    ImageSpan[] imageSpans = body.getSpans(body.getSpanStart(span), body.getSpanEnd(span),
-                            ImageSpan.class);
-                    if (imageSpans.length > 0) {
-                        Uri uri = Uri.parse(imageSpans[0].getSource());
-                        Cid cid = BobTransfer.cid(uri);
-                        if (cid == null) return;
-                        if (mOnInlineImageLongClickedListener.onInlineImageLongClicked(cid)) {
-                            tv.dispatchTouchEvent(MotionEvent.obtain(0, 0, MotionEvent.ACTION_CANCEL, 0f, 0f, 0));
-                        }
-                    }
-                }
-            };
-            method.setOnLinkLongClickListener((tv, url) -> {
-                tv.dispatchTouchEvent(MotionEvent.obtain(0, 0, MotionEvent.ACTION_CANCEL, 0f, 0f, 0));
-                ShareUtil.copyLinkToClipboard(activity, url);
-                return true;
-            });
-            viewHolder.messageBody.setMovementMethod(method);
+            viewHolder.messageBody.setMovementMethod(BetterLinkMovementMethod.getInstance());
         } else {
+            Log.d("ChatDebug", "Message is empty");
             viewHolder.messageBody.setText("");
             viewHolder.messageBody.setTextIsSelectable(false);
             toggleWhisperInfo(viewHolder, message, false, darkBackground);
+            viewHolder.images.setVisibility(View.GONE);
         }
+    }
+
+    private boolean isDirectImageUrl(String url) {
+        if (url == null) return false;
+        boolean matches = url.matches("(?i)^(http|https)://.*(\\.(jpg|jpeg|png|gif|webp|bmp|tiff|ico|webm|heif|heic|apng)(\\?.*)?$|\\?q=tbn:.*)");
+        Log.d("ChatDebug", "Checking URL: " + url + ", isDirectImageUrl: " + matches);
+        return matches;
+    }
+
+    private String extractFirstImageUrl(String text) {
+        if (text == null) return null;
+        // Обновлённое регулярное выражение
+        Pattern pattern = Pattern.compile("(?i)(http|https)://[^\\s]+?\\.(jpg|jpeg|png|gif|webp|bmp|tiff|ico|webm|heif|heic|apng)(?:\\?.*?)?(?=\\s|$)");
+        Matcher matcher = pattern.matcher(text);
+        if (matcher.find()) {
+            String url = matcher.group();
+            Log.d("ChatDebug", "Found potential image URL: " + url);
+            return url;
+        }
+        return null;
     }
 
     private void displayDownloadableMessage(ViewHolder viewHolder, final Message message, String text, final boolean darkBackground, final int type) {
