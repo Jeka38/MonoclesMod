@@ -1630,34 +1630,19 @@ public class MessageAdapter extends ArrayAdapter<Message> {
 
         SwipeLayout swipeLayout = view.findViewById(R.id.layout_swipe);
 
-// Найдите bottom_wrapper как ViewGroup (общий родительский класс для LinearLayout и RelativeLayout)
         ViewGroup bottomWrapper = view.findViewById(R.id.bottom_wrapper);
         ImageView swipeArrow = view.findViewById(R.id.swipe_arrow);
 
-// Создайте анимацию пульсации
-        ObjectAnimator pulseAnimator = ObjectAnimator.ofPropertyValuesHolder(
-                swipeArrow,
-                PropertyValuesHolder.ofFloat("scaleX", 1.0f, 1.2f),
-                PropertyValuesHolder.ofFloat("scaleY", 1.0f, 1.2f)
-        );
-        pulseAnimator.setDuration(1000);
-        pulseAnimator.setRepeatMode(ValueAnimator.REVERSE);
-        pulseAnimator.setRepeatCount(ValueAnimator.INFINITE);
-
-// Установите режим отображения
         swipeLayout.setShowMode(SwipeLayout.ShowMode.PullOut);
 
-// Добавьте край перетаскивания
         swipeLayout.addDrag(SwipeLayout.DragEdge.Right, bottomWrapper);
 
-// Добавьте слушатель свайпа
         swipeLayout.addSwipeListener(new SwipeLayout.SwipeListener() {
             @Override
             public void onClose(SwipeLayout layout) {
                 swipeLayout.refreshDrawableState();
                 swipeLayout.clearAnimation();
                 swipeArrow.setVisibility(View.GONE);
-                pulseAnimator.cancel();
             }
 
             @Override
@@ -1666,10 +1651,6 @@ public class MessageAdapter extends ArrayAdapter<Message> {
                 swipeArrow.setVisibility(View.VISIBLE);
                 float progress = Math.abs((float) leftOffset / layout.getWidth());
                 swipeArrow.setAlpha(progress);
-                if (!pulseAnimator.isRunning()) {
-                    pulseAnimator.start();
-                }
-                Log.d("SwipeDebug", "Смещение: " + leftOffset + ", Верх: " + topOffset + ", Ширина: " + layout.getWidth());
             }
 
             @Override
@@ -1677,16 +1658,12 @@ public class MessageAdapter extends ArrayAdapter<Message> {
                 swipeLayout.setClickToClose(true);
                 swipeArrow.setVisibility(View.VISIBLE);
                 swipeArrow.setAlpha(0.5f);
-                pulseAnimator.start();
             }
 
             @Override
             public void onOpen(SwipeLayout layout) {
                 swipeLayout.refreshDrawableState();
                 swipeArrow.setAlpha(1f);
-                if (!pulseAnimator.isRunning()) {
-                    pulseAnimator.start();
-                }
                 if (mOnMessageBoxSwipedListener != null) {
                     mOnMessageBoxSwipedListener.onContactPictureClicked(message);
                 }
@@ -1699,7 +1676,6 @@ public class MessageAdapter extends ArrayAdapter<Message> {
                 swipeLayout.close(true);
                 swipeLayout.setClickToClose(true);
                 swipeArrow.setVisibility(View.GONE);
-                pulseAnimator.cancel();
             }
 
             @Override
@@ -1707,7 +1683,6 @@ public class MessageAdapter extends ArrayAdapter<Message> {
                 swipeLayout.refreshDrawableState();
                 swipeLayout.close(true);
                 swipeArrow.setVisibility(View.GONE);
-                pulseAnimator.cancel();
             }
         });
 
