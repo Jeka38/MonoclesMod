@@ -623,10 +623,8 @@ public class XmppConnectionService extends Service {
         if (connection != null) {
             if (connection.getFeatures().sm()) {
                 connection.r(); // Используем SM-запрос, если поддерживается
-                Log.d("Starting keep-aliveG", connection.account.getJid().asBareJid() + ": Sent SM request for keep-alive");
             } else {
                 connection.sendPing(); // Иначе отправляем обычный ping
-                Log.d("Starting keep-aliveG", connection.account.getJid().asBareJid() + ": Sent XMPP ping for keep-alive");
             }
         } else {
             Log.w("Starting keep-aliveG", "Cannot send ping: XmppConnection is null");
@@ -635,7 +633,6 @@ public class XmppConnectionService extends Service {
 
     // Запуск keep-alive
     public void startKeepAlive(XmppConnection connection) {
-        Log.d("Starting keep-aliveG", connection.account.getJid().asBareJid() + ": Starting keep-alive");
         if (pingTimer != null) {
             pingTimer.cancel();
         }

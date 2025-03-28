@@ -1,0 +1,23 @@
+<!-- res/drawable/ic_swipe_arrow.xml -->
+<vector
+    android:height="32dp"
+    android:viewportHeight="32"
+    android:viewportWidth="32"
+    android:width="32dp"
+    xmlns:android="http://schemas.android.com/apk/res/android">
+    <!-- Полупрозрачный круглый фон -->
+    <path
+        android:fillColor="#424242"
+        android:fillAlpha="1"
+        android:pathData="M16,16m-16,0a16,16 0 1,0 32,0a16,16 0 1,0 -32,0" />
+    <!-- Стрелка -->
+    <group
+        android:scaleX="0.75"
+        android:scaleY="0.75"
+        android:translateX="6"
+        android:translateY="6">
+        <path
+            android:fillColor="@android:color/white"
+            android:pathData="M10,9V7.41c0,-0.89 -1.08,-1.34 -1.71,-0.71L3.7,11.29c-0.39,0.39 -0.39,1.02 0,1.41l4.59,4.59c0.63,0.63 1.71,0.19 1.71,-0.7V14.9c5,0 8.5,1.6 11,5.1 -1,-5 -4,-10 -11,-11z"/>
+    </group>
+</vector>

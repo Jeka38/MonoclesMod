@@ -17,12 +17,22 @@
 
     <RelativeLayout
         android:id="@+id/bottom_wrapper"
-        android:layout_width="200dp"
+        android:layout_width="100dp"
         android:weightSum="1"
-        android:layout_height="50dp"
-        android:orientation="horizontal"
+        android:layout_height="wrap_content"
+        android:orientation="vertical"
         android:clickable="true"
         android:focusable="true">
+
+        <!-- Arrow ImageView -->
+        <ImageView
+            android:id="@+id/swipe_arrow"
+            android:layout_width="32dp"
+            android:layout_height="32dp"
+            android:layout_marginTop="30dp"
+            android:src="@drawable/ic_arrow_left"
+            android:visibility="gone" />
+
     </RelativeLayout>
 
     <RelativeLayout
@@ -45,125 +55,125 @@
             android:layout_width="48dp"
             android:layout_height="0dp" />
 
-    <LinearLayout
-        android:id="@+id/message_box"
-        android:layout_width="wrap_content"
-        android:layout_height="wrap_content"
-        android:layout_alignParentBottom="true"
-        android:layout_alignWithParentIfMissing="true"
-        android:layout_marginLeft="20dp"
-        android:layout_marginStart="20dp"
-        android:layout_marginEnd="4dp"
-        android:layout_marginRight="4dp"
-        android:layout_toStartOf="@+id/message_photo"
-        android:layout_toLeftOf="@+id/message_photo"
-        android:background="@drawable/message_bubble_sent"
-        android:longClickable="true"
-        android:minHeight="48dp">
-
         <LinearLayout
+            android:id="@+id/message_box"
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"
-            android:gravity="center_vertical"
-            android:orientation="vertical"
-            android:padding="2dp">
+            android:layout_alignParentBottom="true"
+            android:layout_alignWithParentIfMissing="true"
+            android:layout_marginLeft="20dp"
+            android:layout_marginStart="20dp"
+            android:layout_marginEnd="4dp"
+            android:layout_marginRight="4dp"
+            android:layout_toStartOf="@+id/message_photo"
+            android:layout_toLeftOf="@+id/message_photo"
+            android:background="@drawable/message_bubble_sent"
+            android:longClickable="true"
+            android:minHeight="48dp">
 
-            <TextView
-                android:id="@+id/username"
+            <LinearLayout
                 android:layout_width="wrap_content"
                 android:layout_height="wrap_content"
-                android:layout_gravity="center_vertical"
                 android:gravity="center_vertical"
-                android:text="@string/user"
-                android:textSize="15dp"
-                android:textAppearance="@style/TextAppearance.Conversations.Caption"
-                android:visibility="gone"/>
-
-            <include
-                android:id="@+id/message_content"
-                layout="@layout/message_content" />
-
-            <Button
-                android:id="@+id/resend_button"
-                android:layout_width="wrap_content"
-                android:layout_height="wrap_content"
-                android:longClickable="true"
-                android:visibility="gone" />
-
-            <com.wefika.flowlayout.FlowLayout
-                android:layout_width="wrap_content"
-                android:layout_height="wrap_content"
-                android:layout_gravity="end"
-                android:orientation="horizontal"
-                android:paddingBottom="2dp">
+                android:orientation="vertical"
+                android:padding="2dp">
 
                 <TextView
-                    android:id="@+id/message_subject"
-                    android:visibility="gone"
+                    android:id="@+id/username"
                     android:layout_width="wrap_content"
                     android:layout_height="wrap_content"
                     android:layout_gravity="center_vertical"
                     android:gravity="center_vertical"
-                    android:layout_marginRight="4sp"
-                    android:accessibilityTraversalAfter="@id/message_photo"
-                    android:accessibilityTraversalBefore="@id/message_time"
-                    android:textAppearance="@style/TextAppearance.Conversations.Subject"/>
-
-                <TextView
-                    android:id="@+id/message_time"
-                    android:layout_width="wrap_content"
-                    android:layout_height="wrap_content"
-                    android:layout_gravity="center_vertical"
-                    android:accessibilityTraversalAfter="@id/message_photo"
-                    android:accessibilityTraversalBefore="@id/message_content"
-                    android:gravity="center_vertical"
-                    android:text="@string/sending"
+                    android:text="@string/user"
+                    android:textSize="15dp"
                     android:textAppearance="@style/TextAppearance.Conversations.Caption"
-                    tools:ignore="UnusedAttribute" />
+                    android:visibility="gone"/>
 
-                <ImageView
-                    android:id="@+id/security_indicator"
-                    android:layout_width="?attr/TextSizeCaption"
-                    android:layout_height="?attr/TextSizeCaption"
-                    android:layout_gravity="center_vertical"
-                    android:layout_marginStart="1sp"
-                    android:layout_marginLeft="1sp"
-                    android:padding="1dp"
-                    android:alpha="?attr/icon_alpha"
-                    android:gravity="center_vertical"
-                    android:src="@drawable/ic_lock_black_18dp" />
+                <include
+                    android:id="@+id/message_content"
+                    layout="@layout/message_content" />
 
-                <ImageView
-                    android:id="@+id/edit_indicator"
-                    android:layout_width="?attr/TextSizeCaption"
-                    android:layout_height="?attr/TextSizeCaption"
-                    android:layout_gravity="center_vertical"
-                    android:padding="1dp"
-                    android:alpha="?attr/icon_alpha"
-                    android:gravity="center_vertical"
-                    android:src="@drawable/ic_mode_edit_black_18dp" />
+                <Button
+                    android:id="@+id/resend_button"
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:longClickable="true"
+                    android:visibility="gone" />
 
-                <ImageView
-                    android:id="@+id/retract_indicator"
-                    android:layout_width="?attr/TextSizeCaption"
-                    android:layout_height="?attr/TextSizeCaption"
-                    android:layout_gravity="center_vertical"
-                    android:padding="1dp"
-                    android:alpha="?attr/icon_alpha"
-                    android:gravity="center_vertical"
-                    android:src="@drawable/ic_delete_black_24dp" />
+                <com.wefika.flowlayout.FlowLayout
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:layout_gravity="end"
+                    android:orientation="horizontal"
+                    android:paddingBottom="2dp">
 
-                <ImageView
-                    android:id="@+id/indicator_received"
-                    android:layout_width="?attr/IconSize"
-                    android:layout_height="?attr/IconSize"
-                    android:layout_gravity="center_vertical"
-                    android:alpha="?attr/icon_alpha"
-                    android:gravity="center_vertical"
-                    android:padding="1dp"
-                    android:src="@drawable/ic_check_black_18dp" />
-            </com.wefika.flowlayout.FlowLayout>
+                    <TextView
+                        android:id="@+id/message_subject"
+                        android:visibility="gone"
+                        android:layout_width="wrap_content"
+                        android:layout_height="wrap_content"
+                        android:layout_gravity="center_vertical"
+                        android:gravity="center_vertical"
+                        android:layout_marginRight="4sp"
+                        android:accessibilityTraversalAfter="@id/message_photo"
+                        android:accessibilityTraversalBefore="@id/message_time"
+                        android:textAppearance="@style/TextAppearance.Conversations.Subject"/>
+
+                    <TextView
+                        android:id="@+id/message_time"
+                        android:layout_width="wrap_content"
+                        android:layout_height="wrap_content"
+                        android:layout_gravity="center_vertical"
+                        android:accessibilityTraversalAfter="@id/message_photo"
+                        android:accessibilityTraversalBefore="@id/message_content"
+                        android:gravity="center_vertical"
+                        android:text="@string/sending"
+                        android:textAppearance="@style/TextAppearance.Conversations.Caption"
+                        tools:ignore="UnusedAttribute" />
+
+                    <ImageView
+                        android:id="@+id/security_indicator"
+                        android:layout_width="?attr/TextSizeCaption"
+                        android:layout_height="?attr/TextSizeCaption"
+                        android:layout_gravity="center_vertical"
+                        android:layout_marginStart="1sp"
+                        android:layout_marginLeft="1sp"
+                        android:padding="1dp"
+                        android:alpha="?attr/icon_alpha"
+                        android:gravity="center_vertical"
+                        android:src="@drawable/ic_lock_black_18dp" />
+
+                    <ImageView
+                        android:id="@+id/edit_indicator"
+                        android:layout_width="?attr/TextSizeCaption"
+                        android:layout_height="?attr/TextSizeCaption"
+                        android:layout_gravity="center_vertical"
+                        android:padding="1dp"
+                        android:alpha="?attr/icon_alpha"
+                        android:gravity="center_vertical"
+                        android:src="@drawable/ic_mode_edit_black_18dp" />
+
+                    <ImageView
+                        android:id="@+id/retract_indicator"
+                        android:layout_width="?attr/TextSizeCaption"
+                        android:layout_height="?attr/TextSizeCaption"
+                        android:layout_gravity="center_vertical"
+                        android:padding="1dp"
+                        android:alpha="?attr/icon_alpha"
+                        android:gravity="center_vertical"
+                        android:src="@drawable/ic_delete_black_24dp" />
+
+                    <ImageView
+                        android:id="@+id/indicator_received"
+                        android:layout_width="?attr/IconSize"
+                        android:layout_height="?attr/IconSize"
+                        android:layout_gravity="center_vertical"
+                        android:alpha="?attr/icon_alpha"
+                        android:gravity="center_vertical"
+                        android:padding="1dp"
+                        android:src="@drawable/ic_check_black_18dp" />
+                </com.wefika.flowlayout.FlowLayout>
+            </LinearLayout>
         </LinearLayout>
-    </LinearLayout>
     </RelativeLayout>
 </com.daimajia.swipe.SwipeLayout>

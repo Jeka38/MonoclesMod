@@ -15,6 +15,9 @@ import static eu.siacs.conversations.ui.util.MyLinkify.removeTrailingBracket;
 import static eu.siacs.conversations.ui.util.MyLinkify.replaceYoutube;
 
 import android.Manifest;
+import android.animation.ObjectAnimator;
+import android.animation.PropertyValuesHolder;
+import android.animation.ValueAnimator;
 import android.annotation.SuppressLint;
 import android.app.Activity;
 import android.content.Intent;
@@ -1610,37 +1613,66 @@ public class MessageAdapter extends ArrayAdapter<Message> {
 
         SwipeLayout swipeLayout = view.findViewById(R.id.layout_swipe);
 
-//set show mode.
+// Найдите bottom_wrapper как ViewGroup (общий родительский класс для LinearLayout и RelativeLayout)
+        ViewGroup bottomWrapper = view.findViewById(R.id.bottom_wrapper);
+        ImageView swipeArrow = view.findViewById(R.id.swipe_arrow);
+
+// Создайте анимацию пульсации
+        ObjectAnimator pulseAnimator = ObjectAnimator.ofPropertyValuesHolder(
+                swipeArrow,
+                PropertyValuesHolder.ofFloat("scaleX", 1.0f, 1.2f),
+                PropertyValuesHolder.ofFloat("scaleY", 1.0f, 1.2f)
+        );
+        pulseAnimator.setDuration(1000);
+        pulseAnimator.setRepeatMode(ValueAnimator.REVERSE);
+        pulseAnimator.setRepeatCount(ValueAnimator.INFINITE);
+
+// Установите режим отображения
         swipeLayout.setShowMode(SwipeLayout.ShowMode.PullOut);
 
-//add drag edge.(If the BottomView has 'layout_gravity' attribute, this line is unnecessary)
-        swipeLayout.addDrag(SwipeLayout.DragEdge.Right, view.findViewById(R.id.bottom_wrapper));
+// Добавьте край перетаскивания
+        swipeLayout.addDrag(SwipeLayout.DragEdge.Right, bottomWrapper);
 
+// Добавьте слушатель свайпа
         swipeLayout.addSwipeListener(new SwipeLayout.SwipeListener() {
             @Override
             public void onClose(SwipeLayout layout) {
                 swipeLayout.refreshDrawableState();
                 swipeLayout.clearAnimation();
-                //when the SurfaceView totally cover the BottomView.
+                swipeArrow.setVisibility(View.GONE);
+                pulseAnimator.cancel();
             }
 
             @Override
             public void onUpdate(SwipeLayout layout, int leftOffset, int topOffset) {
                 layout.setClickToClose(true);
-                Log.d("SwipeDebug", "Offset: " + leftOffset + ", Top: " + topOffset + ", Width: " + layout.getWidth());
+                swipeArrow.setVisibility(View.VISIBLE);
+                float progress = Math.abs((float) leftOffset / layout.getWidth());
+                swipeArrow.setAlpha(progress);
+                if (!pulseAnimator.isRunning()) {
+                    pulseAnimator.start();
+                }
+                Log.d("SwipeDebug", "Смещение: " + leftOffset + ", Верх: " + topOffset + ", Ширина: " + layout.getWidth());
             }
 
             @Override
             public void onStartOpen(SwipeLayout layout) {
                 swipeLayout.setClickToClose(true);
-
+                swipeArrow.setVisibility(View.VISIBLE);
+                swipeArrow.setAlpha(0.5f);
+                pulseAnimator.start();
             }
 
             @Override
             public void onOpen(SwipeLayout layout) {
                 swipeLayout.refreshDrawableState();
-                //when the BottomView totally show.
-                if (mOnMessageBoxSwipedListener != null) mOnMessageBoxSwipedListener.onContactPictureClicked(message);
+                swipeArrow.setAlpha(1f);
+                if (!pulseAnimator.isRunning()) {
+                    pulseAnimator.start();
+                }
+                if (mOnMessageBoxSwipedListener != null) {
+                    mOnMessageBoxSwipedListener.onContactPictureClicked(message);
+                }
                 swipeLayout.close(true);
                 swipeLayout.setClickToClose(true);
             }
@@ -1649,18 +1681,18 @@ public class MessageAdapter extends ArrayAdapter<Message> {
             public void onStartClose(SwipeLayout layout) {
                 swipeLayout.close(true);
                 swipeLayout.setClickToClose(true);
+                swipeArrow.setVisibility(View.GONE);
+                pulseAnimator.cancel();
             }
 
             @Override
             public void onHandRelease(SwipeLayout layout, float xvel, float yvel) {
                 swipeLayout.refreshDrawableState();
                 swipeLayout.close(true);
+                swipeArrow.setVisibility(View.GONE);
+                pulseAnimator.cancel();
             }
         });
-
-
-
-
 
         // Treat touch-up as click so we don't have to touch twice
         // (touch twice is because it's waiting to see if you double-touch for text selection)
@@ -2004,7 +2036,7 @@ public class MessageAdapter extends ArrayAdapter<Message> {
         protected ImageView indicatorReceived;
         protected TextView time;
         protected TextView subject;
-//        protected TextView inReplyTo;
+        //        protected TextView inReplyTo;
 //        protected LinearLayout inReplyToBox;
         protected TextView messageBody;
         protected TextView user;
@@ -2052,7 +2084,7 @@ public class MessageAdapter extends ArrayAdapter<Message> {
     }
 
     public void setInputBubbleBackgroundColor(final View viewHolder,
-                                         final boolean isPrivateMessage) {
+                                              final boolean isPrivateMessage) {
         if (isPrivateMessage) {
             viewHolder.setBackgroundResource(R.drawable.input_bubble_sent_private);
             activity.setBubbleColor(viewHolder, StyledAttributes.getColor(activity, R.attr.color_bubble_dark), StyledAttributes.getColor(activity, R.attr.colorAccent));

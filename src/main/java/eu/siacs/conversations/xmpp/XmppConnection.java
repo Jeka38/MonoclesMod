@@ -165,7 +165,7 @@ public class XmppConnection implements Runnable {
         mXmppConnectionService.deleteAccount(account);
     }
 
-    public final Account account;
+    protected final Account account;
     private final Features features = new Features(this);
     private final HashMap<Jid, ServiceDiscoveryResult> disco = new HashMap<>();
     private final HashMap<String, Jid> commands = new HashMap<>();
@@ -390,7 +390,7 @@ public class XmppConnection implements Runnable {
                 } catch (final Exception e) {
                     throw new IOException("Could not start stream", e);
                 }
-           } else if (useI2P) {
+            } else if (useI2P) {
                 String destination;
                 if (account.getHostname().isEmpty() || account.isI2P()) {
                     destination = account.getServer();
@@ -2191,7 +2191,6 @@ public class XmppConnection implements Runnable {
         final IqPacket iq = new IqPacket(IqPacket.TYPE.GET);
         iq.setTo(jid);
         iq.query("http://jabber.org/protocol/disco#info");
-        Log.d(Config.LOGTAG, account.getJid().asBareJid() + ": sending disco#info to " + jid.toString());
         this.sendIqPacket(
                 iq,
                 (account, packet) -> {
@@ -2200,7 +2199,8 @@ public class XmppConnection implements Runnable {
                         synchronized (XmppConnection.this.disco) {
                             ServiceDiscoveryResult result = new ServiceDiscoveryResult(packet);
                             if (jid.equals(account.getDomain())) {
-                                mXmppConnectionService.databaseBackend.insertDiscoveryResult(result);
+                                mXmppConnectionService.databaseBackend.insertDiscoveryResult(
+                                        result);
                             }
                             disco.put(jid, result);
                             advancedStreamFeaturesLoaded =
@@ -2235,34 +2235,14 @@ public class XmppConnection implements Runnable {
                         if (advancedStreamFeaturesLoaded) {
                             enableAdvancedStreamFeatures();
                         }
-                    } else if (packet.getType() == IqPacket.TYPE.TIMEOUT) {
-                        Log.d(
-                                Config.LOGTAG,
-                                account.getJid().asBareJid()
-                                        + ": disco#info timeout for "
-                                        + jid.toString()
-                                        + " after 5 seconds");
-                        // Уменьшаем счетчик и финализируем для основного домена
-                        if (jid.equals(account.getDomain())) {
-                            mPendingServiceDiscoveries.decrementAndGet();
-                            if (mPendingServiceDiscoveries.get() > 0) {
-                                mPendingServiceDiscoveries.set(0); // Сбрасываем остальные
-                            }
-                            if (mWaitForDisco.compareAndSet(true, false)) {
-                                Log.d(Config.LOGTAG, account.getJid().asBareJid() + ": forcing finalize bind after domain timeout");
-                                finalizeBind();
-                            }
+                    }
+                    if (packet.getType() != IqPacket.TYPE.TIMEOUT) {
+                        if (mPendingServiceDiscoveries.decrementAndGet() == 0
+                                && mWaitForDisco.compareAndSet(true, false)) {
+                            finalizeBind();
                         }
                     }
-                    // Обрабатываем финализацию для всех случаев
-                    int pending = mPendingServiceDiscoveries.decrementAndGet();
-                    Log.d(Config.LOGTAG, account.getJid().asBareJid() + ": pending service discoveries: " + pending);
-                    if (pending == 0 && mWaitForDisco.compareAndSet(true, false)) {
-                        Log.d(Config.LOGTAG, account.getJid().asBareJid() + ": all disco requests completed, finalizing bind");
-                        finalizeBind();
-                    }
-                },
-                5_000L); // 5 секунд
+                });
     }
 
     private void discoverMamPreferences() {
@@ -2631,7 +2611,7 @@ public class XmppConnection implements Runnable {
                             final Pair<IqPacket, Pair<OnIqPacketReceived, ScheduledFuture>> removedCallback = packetCallbacks.remove(packet.getId());
                             if (removedCallback != null) removedCallback.second.first.onIqPacketReceived(account, failurePacket);
                         }
-                    }, timeout, TimeUnit.MILLISECONDS);
+                    }, timeout, TimeUnit.SECONDS);
                 }
                 packetCallbacks.put(packet.getId(), new Pair<>(packet, new Pair<>(callback, timeoutFuture)));
             }
@@ -2799,6 +2779,7 @@ public class XmppConnection implements Runnable {
             }
         }
     }
+
     public void resetStreamId() {
         this.streamId = null;
         this.boundStreamFeatures = null;
