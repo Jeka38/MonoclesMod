@@ -744,15 +744,11 @@ public class MessageAdapter extends ArrayAdapter<Message> {
 
             if (imageUrl != null && isDirectImageUrl(imageUrl)) {
                 Log.d("ChatDebug", "Image URL detected: " + imageUrl);
-
                 viewHolder.images.setVisibility(View.VISIBLE);
-                Log.d("ChatDebug", "Set images visibility to VISIBLE");
                 viewHolder.image.setVisibility(View.VISIBLE);
-                Log.d("ChatDebug", "Set image visibility to VISIBLE");
 
-                // Максимальные размеры превью
                 final float maxWidth = activity.getResources().getDimension(R.dimen.image_preview_width);
-                final float maxHeight = maxWidth * 1.5f; // Максимальная высота
+                final float maxHeight = maxWidth * 1.5f;
 
                 LinearLayout.LayoutParams layoutParams = new LinearLayout.LayoutParams(
                         LinearLayout.LayoutParams.WRAP_CONTENT,
@@ -764,7 +760,7 @@ public class MessageAdapter extends ArrayAdapter<Message> {
                 Glide.with(activity)
                         .load(imageUrl)
                         .override((int) maxWidth, (int) maxHeight)
-                        .fitCenter() // Вписываем изображение без обрезки
+                        .fitCenter()
                         .placeholder(R.drawable.ic_image_grey600_48dp)
                         .error(R.drawable.ic_error_white_24dp)
                         .listener(new RequestListener<Drawable>() {
@@ -781,30 +777,26 @@ public class MessageAdapter extends ArrayAdapter<Message> {
                                 viewHolder.images.setVisibility(View.VISIBLE);
                                 viewHolder.image.setVisibility(View.VISIBLE);
 
-                                // Вычисляем размеры с сохранением пропорций
                                 int intrinsicWidth = resource.getIntrinsicWidth();
                                 int intrinsicHeight = resource.getIntrinsicHeight();
                                 float aspectRatio = (float) intrinsicWidth / intrinsicHeight;
 
                                 int finalWidth, finalHeight;
                                 if (intrinsicWidth > maxWidth || intrinsicHeight > maxHeight) {
-                                    // Если изображение больше максимальных размеров, масштабируем
-                                    if (aspectRatio > 1) { // Широкое изображение
+                                    if (aspectRatio > 1) {
                                         finalWidth = (int) maxWidth;
                                         finalHeight = (int) (maxWidth / aspectRatio);
-                                    } else { // Высокое изображение
+                                    } else {
                                         finalHeight = (int) maxHeight;
                                         finalWidth = (int) (maxHeight * aspectRatio);
                                     }
                                 } else {
-                                    // Если изображение меньше, используем оригинальные размеры
                                     finalWidth = intrinsicWidth;
                                     finalHeight = intrinsicHeight;
                                 }
 
-                                // Устанавливаем минимальные размеры, если нужно
-                                finalWidth = Math.max(finalWidth, (int) (maxWidth * 0.5f)); // Минимум половина maxWidth
-                                finalHeight = Math.max(finalHeight, (int) (maxWidth * 0.5f)); // Минимум половина maxWidth
+                                finalWidth = Math.max(finalWidth, (int) (maxWidth * 0.5f));
+                                finalHeight = Math.max(finalHeight, (int) (maxWidth * 0.5f));
 
                                 LinearLayout.LayoutParams imageParams = new LinearLayout.LayoutParams(
                                         finalWidth,
@@ -812,8 +804,7 @@ public class MessageAdapter extends ArrayAdapter<Message> {
                                 );
                                 viewHolder.image.setLayoutParams(imageParams);
 
-                                Log.d("ChatDebug", "Image intrinsic dimensions - width: " + intrinsicWidth + ", height: " + intrinsicHeight);
-                                Log.d("ChatDebug", "Image final dimensions - width: " + finalWidth + ", height: " + finalHeight);
+                                Log.d("ChatDebug", "Image dimensions - width: " + finalWidth + ", height: " + finalHeight);
                                 return false;
                             }
                         })
@@ -831,12 +822,38 @@ public class MessageAdapter extends ArrayAdapter<Message> {
                         ToastCompat.makeText(activity, R.string.error_message, ToastCompat.LENGTH_LONG).show();
                     }
                 });
-            } else {
-                Log.d("ChatDebug", "No valid image URL found");
+
+                if (!message.getBody().equals(trimmedBody)) {
+                    SpannableStringBuilder body = getSpannableBody(message);
+                    viewHolder.messageBody.setText(body);
+                } else {
+                    viewHolder.messageBody.setVisibility(View.GONE);
+                }
             }
 
+            // Обработка текста сообщения
             SpannableStringBuilder body = getSpannableBody(message);
-            Log.d("ChatDebug", "Displaying text: " + body.toString());
+            boolean hasMeCommand = message.hasMeCommand();
+            final SpannableString nick = UIHelper.getColoredUsername(activity.xmppConnectionService, message);
+
+            if (hasMeCommand) {
+                body = body.replace(0, Message.ME_COMMAND.length(), nick);
+            }
+
+            // Обработка цитат
+            final boolean startsWithQuote = handleTextQuotes(viewHolder.messageBody, body, darkBackground, true);
+            for (final android.text.style.QuoteSpan quote : body.getSpans(0, body.length(), android.text.style.QuoteSpan.class)) {
+                int start = body.getSpanStart(quote);
+                int end = body.getSpanEnd(quote);
+                body.removeSpan(quote);
+                applyQuoteSpan(viewHolder.messageBody, body, start, end, darkBackground, true);
+            }
+
+            // Стилизация для /me
+            if (!message.isPrivateMessage() && hasMeCommand) {
+                body.setSpan(new StyleSpan(Typeface.BOLD_ITALIC), 0, nick.length(), Spannable.SPAN_EXCLUSIVE_EXCLUSIVE);
+            }
+
             MyLinkify.addLinks(body, message.getConversation().getAccount(), message.getConversation().getJid());
             viewHolder.messageBody.setText(body);
             viewHolder.messageBody.setAutoLinkMask(0);
