@@ -1390,7 +1390,6 @@
     <string name="thread_marker">Маркер нити</string>
     <string name="thread_locked">Тема заблокирована</string>
     <string name="tags">Теги</string>
-    <string name="save_as_sticker">Сохранить как стикер</string>
     <string name="sticker_name">Название стикера</string>
     <string name="action_execute">Выполнить действие</string>
     <string name="block_media">Блокировать медиа</string>

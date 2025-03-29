@@ -2372,7 +2372,6 @@ public class ConversationFragment extends XmppFragment
             MenuItem shareWith = menu.findItem(R.id.share_with);
             MenuItem sendAgain = menu.findItem(R.id.send_again);
             MenuItem copyUrl = menu.findItem(R.id.copy_url);
-            MenuItem saveAsSticker = menu.findItem(R.id.save_as_sticker);
             MenuItem saveAsGif = menu.findItem(R.id.save_as_gif);
             MenuItem cancelTransmission = menu.findItem(R.id.cancel_transmission);
             MenuItem downloadFile = menu.findItem(R.id.download_file);
@@ -2458,7 +2457,6 @@ public class ConversationFragment extends XmppFragment
                     deleteFile.setVisible(true);
                     deleteFile.setTitle(activity.getString(R.string.delete_x_file, UIHelper.getFileDescriptionString(activity, m)));
                 } else if (path == null || !path.startsWith("/") || path.contains(getConversationsDirectory(this.activity, "null").getAbsolutePath())) {
-                    saveAsSticker.setVisible(true);
                     blockMedia.setVisible(true);
                     deleteFile.setVisible(true);
                     deleteFile.setTitle(activity.getString(R.string.delete_x_file, UIHelper.getFileDescriptionString(activity, m)));
@@ -2568,9 +2566,6 @@ public class ConversationFragment extends XmppFragment
             return true;
         } else if (itemId == R.id.copy_url) {
             ShareUtil.copyUrlToClipboard(activity, selectedMessage);
-            return true;
-        } else if (itemId == R.id.save_as_sticker) {
-            saveAsSticker(selectedMessage);
             return true;
         } else if (itemId == R.id.save_as_gif) {
             saveAsGif(selectedMessage);

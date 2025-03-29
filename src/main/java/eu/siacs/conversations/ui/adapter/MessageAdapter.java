@@ -822,13 +822,6 @@ public class MessageAdapter extends ArrayAdapter<Message> {
                         ToastCompat.makeText(activity, R.string.error_message, ToastCompat.LENGTH_LONG).show();
                     }
                 });
-
-                if (!message.getBody().equals(trimmedBody)) {
-                    SpannableStringBuilder body = getSpannableBody(message);
-                    viewHolder.messageBody.setText(body);
-                } else {
-                    viewHolder.messageBody.setVisibility(View.GONE);
-                }
             }
 
             // Обработка текста сообщения
