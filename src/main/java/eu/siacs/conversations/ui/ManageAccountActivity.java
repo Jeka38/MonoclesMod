@@ -51,8 +51,7 @@ import eu.siacs.conversations.utils.Resolver;
 import eu.siacs.conversations.xmpp.XmppConnection;
 import me.drakeet.support.toast.ToastCompat;
 
-public class ManageAccountActivity extends XmppActivity implements OnAccountUpdate, KeyChainAliasCallback, XmppConnectionService.OnAccountCreated, AccountAdapter.OnTglAccountState {
-
+public class ManageAccountActivity extends XmppActivity implements XmppConnectionService.OnConversationUpdate, OnAccountUpdate, KeyChainAliasCallback, XmppConnectionService.OnAccountCreated, AccountAdapter.OnTglAccountState {
     private final String STATE_SELECTED_ACCOUNT = "selected_account";
 
     private static final int REQUEST_IMPORT_BACKUP = 0x63fb;
@@ -75,12 +74,24 @@ public class ManageAccountActivity extends XmppActivity implements OnAccountUpda
     }
 
     @Override
+    public void onConversationUpdate() {
+        refreshUi();
+    }
+
+    @Override
     protected void refreshUiReal() {
         synchronized (this.accountList) {
             accountList.clear();
             accountList.addAll(xmppConnectionService.getAccounts());
         }
         ActionBar actionBar = getSupportActionBar();
+        // Show badge for unread message in bottom nav
+        int unreadCount = xmppConnectionService.unreadCount();
+        BottomNavigationView bottomnav = findViewById(R.id.bottom_navigation);
+        var bottomBadge = bottomnav.getOrCreateBadge(R.id.chats);
+        bottomBadge.setNumber(unreadCount);
+        bottomBadge.setVisible(unreadCount > 0);
+        bottomBadge.setHorizontalOffset(20);
         boolean showNavBar = findViewById(R.id.bottom_navigation).getVisibility() == VISIBLE;
         if (actionBar != null) {
             actionBar.setHomeButtonEnabled(!this.accountList.isEmpty() && !showNavBar);

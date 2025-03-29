@@ -392,10 +392,10 @@
             android:title="@string/internal_meda_viewer_title"
             android:summary="@string/internal_meda_viewer_summary" />
         <!-- TODO: Add option to import own stickers with loading in database etc -->
-        <Preference
-            android:title="@string/import_own_stickers"
-            android:summary="@string/import_own_stickers_summary"
-            android:key="import_own_stickers" />
+<!--        <Preference-->
+<!--            android:title="@string/import_own_stickers"-->
+<!--            android:summary="@string/import_own_stickers_summary"-->
+<!--            android:key="import_own_stickers" />-->
         <Preference
             android:title="@string/update_default_stickers"
             android:key="download_default_stickers" />

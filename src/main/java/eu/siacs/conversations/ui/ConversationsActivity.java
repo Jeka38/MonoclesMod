@@ -211,6 +211,14 @@ public class ConversationsActivity extends XmppActivity implements OnConversatio
         }
         refreshForNewCaps = false;
         newCapsJids.clear();
+
+        // Показ значка для непрочитанных сообщений в нижней навигации
+        int unreadCount = xmppConnectionService.unreadCount();
+        BottomNavigationView bottomnav = findViewById(R.id.bottom_navigation);
+        var bottomBadge = bottomnav.getOrCreateBadge(R.id.chats);
+        bottomBadge.setNumber(unreadCount);
+        bottomBadge.setVisible(unreadCount > 0);
+        bottomBadge.setHorizontalOffset(20);
     }
 
     @Override

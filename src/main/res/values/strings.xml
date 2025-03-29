@@ -1382,8 +1382,8 @@
     <string name="pref_delete_background_summary">Remove your custom background image from the chat</string>
     <string name="no_background_set">No custom background set</string>
     <string name="input_field">Input field</string>
-    <string name="import_own_stickers">Import stickers</string>
-    <string name="import_own_stickers_summary">Import your own stickers. Use them with the original filename.</string>
+<!--    <string name="import_own_stickers">Import stickers</string>-->
+<!--    <string name="import_own_stickers_summary">Import your own stickers. Use them with the original filename.</string>-->
     <string name="thanks">Thanks for using monocles mod! Please consider supporting the development with a little donation.❤️</string>
     <string name="donation_link">https://monocles.eu/more/#donation-section</string>
     <string name="donate">Donate</string>

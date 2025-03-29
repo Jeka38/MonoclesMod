@@ -1005,17 +1005,17 @@ public class SettingsActivity extends XmppActivity implements OnSharedPreference
             );
         }
 
-        final Preference importOwnStickers = mSettingsFragment.findPreference("import_own_stickers");
-        if (importOwnStickers != null) {
-            importOwnStickers.setOnPreferenceClickListener(
-                preference -> {
-                    if (hasStoragePermission(REQUEST_IMPORT_STICKERS)) {
-                        importStickers();
-                    }
-                    return true;
-                }
-            );
-        }
+//        final Preference importOwnStickers = mSettingsFragment.findPreference("import_own_stickers");
+//        if (importOwnStickers != null) {
+//            importOwnStickers.setOnPreferenceClickListener(
+//                preference -> {
+//                    if (hasStoragePermission(REQUEST_IMPORT_STICKERS)) {
+//                        importStickers();
+//                    }
+//                    return true;
+//                }
+//            );
+//        }
 
         final Preference importOwnGifs = mSettingsFragment.findPreference("import_own_gifs");
         if (importOwnGifs != null) {

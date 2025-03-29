@@ -1482,8 +1482,8 @@
     <string name="pref_delete_background_summary">Удалите собственное фоновое изображение из чата</string>
     <string name="no_background_set">Нет пользовательского набора фона</string>
     <string name="input_field">Поле ввода</string>
-    <string name="import_own_stickers">Импорт стикеров</string>
-    <string name="import_own_stickers_summary">Импортируйте свои собственные стикеры. Используйте их с исходным именем файла.</string>
+<!--    <string name="import_own_stickers">Импорт стикеров</string>-->
+<!--    <string name="import_own_stickers_summary">Импортируйте свои собственные стикеры. Используйте их с исходным именем файла.</string>-->
     <string name="thanks">Спасибо за использование чата монокли! Пожалуйста, рассмотрите возможность поддержать разработку небольшим пожертвованием.❤️</string>
     <string name="donation_link">https://monocles.eu/more/#donation-section</string>
     <string name="donate">Пожертвовать</string>
