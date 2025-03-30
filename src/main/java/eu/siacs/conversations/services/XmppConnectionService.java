@@ -623,8 +623,11 @@ public class XmppConnectionService extends Service {
         if (connection != null) {
             if (connection.getFeatures().sm()) {
                 connection.r(); // Используем SM-запрос, если поддерживается
+                Log.d("Starting keep-aliveG", "send ping ");
             } else {
                 connection.sendPing(); // Иначе отправляем обычный ping
+                Log.d("Starting keep-aliveG", "send ping ");
+
             }
         } else {
             Log.w("Starting keep-aliveG", "Cannot send ping: XmppConnection is null");
@@ -803,6 +806,11 @@ public class XmppConnectionService extends Service {
             message = conversation.getReplyTo().reply();
             message.setEncryption(conversation.getNextEncryption());
         }
+
+        if (conversation.getCaption() != null) {
+            message.appendBody(conversation.getCaption().getBody() + " ");
+            message.setEncryption(conversation.getNextEncryption());
+        }
         if (conversation.getNextEncryption() == Message.ENCRYPTION_PGP) {
             message.setEncryption(Message.ENCRYPTION_DECRYPTED);
         }
@@ -848,6 +856,11 @@ public class XmppConnectionService extends Service {
             message = new Message(conversation, "", conversation.getNextEncryption());
         } else {
             message = conversation.getReplyTo().reply();
+            message.setEncryption(conversation.getNextEncryption());
+        }
+
+        if (conversation.getCaption() != null) {
+            message.appendBody(conversation.getCaption().getBody() + " ");
             message.setEncryption(conversation.getNextEncryption());
         }
         if (conversation.getNextEncryption() == Message.ENCRYPTION_PGP) {

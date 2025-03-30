@@ -830,7 +830,7 @@ public class MessageAdapter extends ArrayAdapter<Message> {
             final SpannableString nick = UIHelper.getColoredUsername(activity.xmppConnectionService, message);
 
             if (hasMeCommand) {
-                body = body.replace(0, Message.ME_COMMAND.length(), nick);
+                body = body.replace(0, Message.ME_COMMAND.length(), "* " + nick);
             }
 
             // Обработка цитат
@@ -844,7 +844,7 @@ public class MessageAdapter extends ArrayAdapter<Message> {
 
             // Стилизация для /me
             if (!message.isPrivateMessage() && hasMeCommand) {
-                body.setSpan(new StyleSpan(Typeface.BOLD_ITALIC), 0, nick.length(), Spannable.SPAN_EXCLUSIVE_EXCLUSIVE);
+                body.setSpan(new StyleSpan(Typeface.BOLD_ITALIC), 0, body.length(), Spannable.SPAN_EXCLUSIVE_EXCLUSIVE);
             }
 
             MyLinkify.addLinks(body, message.getConversation().getAccount(), message.getConversation().getJid());

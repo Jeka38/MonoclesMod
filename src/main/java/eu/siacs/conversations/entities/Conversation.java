@@ -212,6 +212,7 @@ public class Conversation extends AbstractEntity implements Blockable, Comparabl
     protected boolean lockThread = false;
     protected boolean userSelectedThread = false;
     protected Message replyTo = null;
+    protected Message caption = null;
     protected HashMap<String, Thread> threads = new HashMap<>();
     protected XmppConnectionService xmppConnectionService;
 
@@ -629,6 +630,17 @@ public class Conversation extends AbstractEntity implements Blockable, Comparabl
     public Message getReplyTo() {
         return this.replyTo;
     }
+
+
+    public void setCaption(Message m) {
+        this.caption = m;
+    }
+
+    public Message getCaption() {
+        return this.caption;
+    }
+
+
 
     public Message findSentMessageWithUuid(String id) {
         synchronized (this.messages) {

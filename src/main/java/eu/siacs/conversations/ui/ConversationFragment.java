@@ -1406,20 +1406,35 @@ public class ConversationFragment extends XmppFragment
 
     private void sendMessage(Long sendAt) {
         if (sendAt != null && sendAt < System.currentTimeMillis()) sendAt = null; // No sending in past plz
-        if (mediaPreviewAdapter.hasAttachments()) {
+
+        Editable body = this.binding.textinput.getText();
+        final int attachmentCount = mediaPreviewAdapter.getItemCount();
+
+        // Если есть несколько вложений, отправляем их независимо от текста
+        if (attachmentCount > 1) {
             commitAttachments();
+            conversation.setCaption(null); // Очищаем caption после отправки
             return;
         }
-        Editable body = this.binding.textinput.getText();
-        if (body == null) body = new SpannableStringBuilder("");
+
+        // Если текста нет, создаем пустой body
+        if (body == null || body.length() == 0) {
+            body = new SpannableStringBuilder("");
+        }
+
         final Conversation conversation = this.conversation;
         final boolean hasSubject = binding.textinputSubject.getText().length() > 0;
-        if (conversation == null || (body.length() == 0 && (conversation.getThread() == null || !hasSubject))) {
+
+        // Проверяем, можно ли отправить сообщение:
+        // - либо есть текст, либо есть вложение, либо есть тема и поток
+        if (conversation == null || (body.length() == 0 && attachmentCount == 0 && (conversation.getThread() == null || !hasSubject))) {
             return;
         }
+
         if (trustKeysIfNeeded(conversation, REQUEST_TRUST_KEYS_TEXT)) {
             return;
         }
+
         final Message message;
         if (conversation.getCorrectingMessage() == null) {
             boolean attention = false;
@@ -1428,6 +1443,7 @@ public class ConversationFragment extends XmppFragment
                 body.delete(0, 6);
                 while (body.length() > 0 && Character.isWhitespace(body.charAt(0))) body.delete(0, 1);
             }
+
             if (conversation.getReplyTo() != null) {
                 if (Emoticons.isEmoji(body.toString().replaceAll("\\s", ""))) {
                     message = conversation.getReplyTo().react(body.toString().replaceAll("\\s", ""));
@@ -1438,12 +1454,19 @@ public class ConversationFragment extends XmppFragment
                 message.setEncryption(conversation.getNextEncryption());
             } else {
                 message = new Message(conversation, body.toString(), conversation.getNextEncryption());
+                // Обрабатываем случай с одним вложением
+                if (attachmentCount == 1) {
+                    conversation.setCaption(message);
+                    commitAttachments(); // Отправляем вложение
+                    binding.textinput.setText(""); // Очищаем поле ввода
+                    conversation.setCaption(null); // Очищаем caption после отправки
+                    return;
+                }
                 message.setBody(hasSubject && body.length() == 0 ? null : body);
                 if (message.bodyIsOnlyEmojis()) {
                     SpannableStringBuilder spannable = message.getSpannableBody(null, null);
                     ImageSpan[] imageSpans = spannable.getSpans(0, spannable.length(), ImageSpan.class);
                     if (imageSpans.length == 1) {
-                        // Only one inline image, so it's a sticker
                         String source = imageSpans[0].getSource();
                         if (source != null && source.length() > 0 && source.substring(0, 4).equals("cid:")) {
                             try {
@@ -1455,11 +1478,13 @@ public class ConversationFragment extends XmppFragment
                                     message.setRelativeFilePath(f.getAbsolutePath());
                                     activity.xmppConnectionService.getFileBackend().updateFileParams(message);
                                 }
-                            } catch (final Exception e) { }
+                            } catch (final Exception e) {
+                            }
                         }
                     }
                 }
             }
+
             if (hasSubject) message.setSubject(binding.textinputSubject.getText().toString());
             message.setThread(conversation.getThread());
             if (attention) {
@@ -1730,11 +1755,16 @@ public class ConversationFragment extends XmppFragment
     }
 
     public void toggleInputMethod() {
-        boolean hasAttachments = mediaPreviewAdapter.hasAttachments();
-        binding.textinput.setVisibility(hasAttachments ? GONE : View.VISIBLE);
-        binding.mediaPreview.setVisibility(hasAttachments ? View.VISIBLE : GONE);
-        if (mOptionsMenu != null) {
-            ConversationMenuConfigurator.configureAttachmentMenu(conversation, mOptionsMenu, activity.getAttachmentChoicePreference(), hasAttachments);
+
+        // Maybe add
+        // if(conversation.getNextEncryption() == Message.ENCRYPTION_NONE && mediaPreviewAdapter.getItemCount() == 1) {
+        if (mediaPreviewAdapter.getItemCount() == 1) {
+            binding.textinput.setVisibility(VISIBLE);
+            binding.mediaPreview.setVisibility(View.VISIBLE);
+        } else {
+            final boolean hasAttachments = mediaPreviewAdapter.hasAttachments();
+            binding.textinput.setVisibility(hasAttachments ? View.GONE : View.VISIBLE);
+            binding.mediaPreview.setVisibility(hasAttachments ? View.VISIBLE : View.GONE);
         }
         updateSendButton();
     }
