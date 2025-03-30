@@ -24,6 +24,7 @@ import android.content.Intent;
 import android.content.SharedPreferences;
 import android.content.pm.PackageManager;
 import android.content.res.Resources;
+import android.graphics.Color;
 import android.graphics.Rect;
 import android.graphics.Typeface;
 import android.graphics.drawable.Drawable;
@@ -829,10 +830,6 @@ public class MessageAdapter extends ArrayAdapter<Message> {
             boolean hasMeCommand = message.hasMeCommand();
             final SpannableString nick = UIHelper.getColoredUsername(activity.xmppConnectionService, message);
 
-            if (hasMeCommand) {
-                body = body.replace(0, Message.ME_COMMAND.length(), "* " + nick);
-            }
-
             // Обработка цитат
             final boolean startsWithQuote = handleTextQuotes(viewHolder.messageBody, body, darkBackground, true);
             for (final android.text.style.QuoteSpan quote : body.getSpans(0, body.length(), android.text.style.QuoteSpan.class)) {
@@ -840,6 +837,22 @@ public class MessageAdapter extends ArrayAdapter<Message> {
                 int end = body.getSpanEnd(quote);
                 body.removeSpan(quote);
                 applyQuoteSpan(viewHolder.messageBody, body, start, end, darkBackground, true);
+            }
+
+            if (message.getConversation().getMode() == Conversation.MODE_MULTI && message.getStatus() == Message.STATUS_RECEIVED) {
+                if (message.getConversation() instanceof Conversation) {
+                    final Conversation conversation = (Conversation) message.getConversation();
+                    Pattern pattern = NotificationService.generateNickHighlightPattern(conversation.getMucOptions().getActualNick());
+                    Matcher matcher = pattern.matcher(body);
+                    if (matcher.find()) { // Если ник найден
+                        body.setSpan(new RelativeSizeSpan(1.1f), 0, body.length(), Spannable.SPAN_EXCLUSIVE_EXCLUSIVE);
+                        body.setSpan(new StyleSpan(Typeface.BOLD_ITALIC), 0, body.length(), Spannable.SPAN_EXCLUSIVE_EXCLUSIVE);
+                    }
+                }
+            }
+
+            if (hasMeCommand) {
+                body = body.replace(0, Message.ME_COMMAND.length(), "* " + nick);
             }
 
             // Стилизация для /me
