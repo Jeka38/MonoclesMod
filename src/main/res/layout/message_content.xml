@@ -65,7 +65,7 @@
     <LinearLayout
         android:id="@+id/images"
         android:layout_width="match_parent"
-        android:layout_height="match_parent"
+        android:layout_height="wrap_content"
         android:layout_marginTop="8dp"
         android:layout_marginBottom="2dp"
         android:visibility="gone"
@@ -73,13 +73,10 @@
 
         <com.google.android.material.imageview.ShapeableImageView
             android:id="@+id/message_image"
-            android:layout_width="match_parent"
+            android:layout_width="0dp"
             android:layout_height="match_parent"
-            android:adjustViewBounds="true"
-            android:maxWidth="500dp"
-            android:maxHeight="500dp"
+            android:layout_weight="1"
             android:longClickable="true"
-            android:scaleType="fitCenter"
             app:shapeAppearance="@style/ShapeAppearanceOverlay.PhotoSquare" />
 
         <TextView

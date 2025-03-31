@@ -749,7 +749,7 @@ public class MessageAdapter extends ArrayAdapter<Message> {
                 viewHolder.image.setVisibility(View.VISIBLE);
 
                 final float maxWidth = activity.getResources().getDimension(R.dimen.image_preview_width);
-                final float maxHeight = maxWidth * 1.5f;
+                final float maxHeight = maxWidth * 0.5f;
 
                 LinearLayout.LayoutParams layoutParams = new LinearLayout.LayoutParams(
                         LinearLayout.LayoutParams.WRAP_CONTENT,
@@ -1259,22 +1259,27 @@ public class MessageAdapter extends ArrayAdapter<Message> {
         float aspectRatio = (float) width / height;
 
         // Вычисляем размеры с учётом максимальной ширины и соотношения сторон
-        int scaledW = (int) maxWidth;
-        int scaledH = (int) (maxWidth / aspectRatio);
-        if (scaledH > maxHeight) {
+        int scaledW, scaledH;
+
+        if (width > height) {
+            scaledW = (int) maxWidth;
+            scaledH = (int) (maxWidth / aspectRatio);
+        } else {
             scaledH = (int) maxHeight;
             scaledW = (int) (maxHeight * aspectRatio);
         }
 
         // Уменьшаем размеры для GIF
         if (isGif) {
-            scaledW = (int) (scaledW * 0.5f); // Уменьшаем ширину на 30%
-            scaledH = (int) (scaledH * 0.5f); // Уменьшаем высоту на 30%
+            scaledW *= 0.5;
+            scaledH *= 0.5;
         }
 
+        // Устанавливаем размеры для контейнера и ImageView
         LinearLayout.LayoutParams layoutParams = new LinearLayout.LayoutParams(scaledW, scaledH);
         layoutParams.setMargins(0, (int) (metrics.density * 4), 0, (int) (metrics.density * 4));
         viewHolder.images.setLayoutParams(layoutParams);
+        viewHolder.image.setLayoutParams(layoutParams);
 
         if (isGif && mPlayGifInside) {
             showImages(true, mediaRuntime, true, viewHolder);
@@ -1283,7 +1288,7 @@ public class MessageAdapter extends ArrayAdapter<Message> {
             Glide.with(activity)
                     .load(file)
                     .override(scaledW, scaledH)
-                    .fitCenter() // Сохраняем пропорции
+                    .centerInside() // Сохраняем пропорции без кадрирования
                     .into(viewHolder.image);
         } else {
             showImages(true, mediaRuntime, false, viewHolder);
@@ -1291,7 +1296,7 @@ public class MessageAdapter extends ArrayAdapter<Message> {
             Glide.with(activity)
                     .load(file)
                     .override(scaledW, scaledH)
-                    .fitCenter() // Сохраняем пропорции
+                    .centerInside() // Сохраняем пропорции без кадрирования
                     .into(viewHolder.image);
         }
 
