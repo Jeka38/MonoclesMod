@@ -33,10 +33,13 @@ import eu.siacs.conversations.entities.MucOptions;
 import eu.siacs.conversations.entities.MucOptions.User;
 import eu.siacs.conversations.entities.RawBlockable;
 import eu.siacs.conversations.services.XmppConnectionService;
+import android.content.Intent;
+
 import eu.siacs.conversations.ui.ConferenceDetailsActivity;
 import eu.siacs.conversations.ui.ConversationFragment;
 import eu.siacs.conversations.ui.ConversationsActivity;
 import eu.siacs.conversations.ui.MucUsersActivity;
+import eu.siacs.conversations.ui.PrivateMucChatActivity;
 import eu.siacs.conversations.ui.XmppActivity;
 import eu.siacs.conversations.xmpp.Jid;
 import eu.siacs.conversations.xml.Element;
@@ -321,15 +324,10 @@ public final class MucDetailsContextMenuHelper {
                 kickFromRoom(user, activity, onAffiliationChanged);
                 return true;
             case R.id.send_private_message:
-                if (activity instanceof ConversationsActivity) {
-                    ConversationFragment conversationFragment = ConversationFragment.get(activity);
-                    if (conversationFragment != null) {
-                        activity.invalidateOptionsMenu();
-                        conversationFragment.privateMessageWith(user.getFullJid());
-                        return true;
-                    }
-                }
-                activity.privateMsgInMuc(conversation, user.getNick());
+                Intent intent = new Intent(activity, PrivateMucChatActivity.class);
+                intent.putExtra("uuid", conversation.getUuid());
+                intent.putExtra("counterpart", user.getFullJid().toString());
+                activity.startActivity(intent);
                 return true;
             case R.id.invite:
                 // TODO use direct invites for public conferences

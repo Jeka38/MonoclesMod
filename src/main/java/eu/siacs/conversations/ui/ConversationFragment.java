@@ -304,7 +304,7 @@ public class ConversationFragment extends XmppFragment
 
     private static final String STATE_LAST_MESSAGE_UUID = "state_last_message_uuid";
 
-    private final List<Message> messageList = new ArrayList<>();
+    protected final List<Message> messageList = new ArrayList<>();
     private final PendingItem<ActivityResult> postponedActivityResult = new PendingItem<>();
     private final PendingItem<String> pendingConversationsUuid = new PendingItem<>();
     private final PendingItem<ArrayList<Attachment>> pendingMediaPreviews = new PendingItem<>();
@@ -315,13 +315,13 @@ public class ConversationFragment extends XmppFragment
     private final PendingItem<String> pendingLastMessageUuid = new PendingItem<>();
     private final PendingItem<Message> pendingMessage = new PendingItem<>();
     public Uri mPendingEditorContent = null;
-    public FragmentConversationBinding binding;
+    protected FragmentConversationBinding binding;
     protected MessageAdapter messageListAdapter;
     protected CommandAdapter commandAdapter;
     private String lastMessageUuid = null;
-    private Conversation conversation;
+    protected Conversation conversation;
     private Toast messageLoaderToast;
-    private static ConversationsActivity activity;
+    protected XmppActivity activity;
     private Menu mOptionsMenu;
     //Stickerspaths
     private File[] filesStickers;
@@ -1551,7 +1551,7 @@ public class ConversationFragment extends XmppFragment
         }
     }
 
-    public void updateChatMsgHint() {
+    protected void updateChatMsgHint() {
         final boolean multi = conversation.getMode() == Conversation.MODE_MULTI;
         if (conversation.getCorrectingMessage() != null) {
             this.binding.textInputHint.setVisibility(View.VISIBLE);
@@ -3798,7 +3798,7 @@ public class ConversationFragment extends XmppFragment
         }
         return false;
     }
-    private void fireReadEvent() {
+    protected void fireReadEvent() {
         if (activity != null && this.conversation != null) {
             String uuid = getLastVisibleMessageUuid();
             if (uuid != null) {
@@ -4421,7 +4421,7 @@ public class ConversationFragment extends XmppFragment
         resetUnreadMessagesCount();
     }
 
-    private void reInit(Conversation conversation) {
+    public void reInit(Conversation conversation) {
         reInit(conversation, false);
         if (activity != null) {
             activity.getWindow().setSoftInputMode(WindowManager.LayoutParams.SOFT_INPUT_ADJUST_PAN);
@@ -5029,7 +5029,7 @@ public class ConversationFragment extends XmppFragment
         return connection == null ? -1 : connection.getFeatures().getMaxHttpUploadSize();
     }
 
-    private void updateEditablity() {
+    protected void updateEditablity() {
         boolean canWrite = this.conversation.getMode() == Conversation.MODE_SINGLE || this.conversation.getMucOptions().participating() || this.conversation.getNextCounterpart() != null;
         this.binding.textinput.setFocusable(canWrite);
         this.binding.textinput.setFocusableInTouchMode(canWrite);
@@ -5038,7 +5038,7 @@ public class ConversationFragment extends XmppFragment
         this.binding.textinput.setEnabled(canWrite);
     }
 
-    public void updateSendButton() {
+    protected void updateSendButton() {
         messageListAdapter.setInputBubbleBackgroundColor(binding.inputArea, isPrivateMessage());
         boolean hasAttachments = mediaPreviewAdapter != null && mediaPreviewAdapter.hasAttachments();
         boolean useSendButtonToIndicateStatus = activity != null && PreferenceManager.getDefaultSharedPreferences(activity).getBoolean("send_button_status", getResources().getBoolean(R.bool.send_button_status));
