@@ -40,7 +40,12 @@ public class PrivateMucChatActivity extends XmppActivity implements XmppConnecti
 
     @Override
     protected void onBackendConnected() {
-        Log.d(Config.LOGTAG, "PrivateMucChatActivity.onBackendConnected()");
+        Log.d(Config.LOGTAG, "PrivateMucChatActivity.onBackendConnected() uuid=" + conversationUuid + " counterpart=" + counterpartJid);
+        if (conversationUuid == null) {
+            Log.w(Config.LOGTAG, "conversationUuid is null");
+            finish();
+            return;
+        }
         Conversation conversation = xmppConnectionService.findConversationByUuid(conversationUuid);
         if (conversation == null) {
             Log.w(Config.LOGTAG, "Conversation not found: " + conversationUuid);
@@ -49,9 +54,14 @@ public class PrivateMucChatActivity extends XmppActivity implements XmppConnecti
         }
 
         try {
-            Jid counterpart = Jid.of(counterpartJid);
-            setTitle(counterpart.getResource());
-        } catch (IllegalArgumentException e) {
+            if (counterpartJid != null) {
+                Jid counterpart = Jid.of(counterpartJid);
+                setTitle(counterpart.getResource());
+            } else {
+                setTitle(conversation.getName());
+            }
+        } catch (Exception e) {
+            Log.d(Config.LOGTAG, "Failed to parse counterpart JID: " + counterpartJid);
             setTitle(conversation.getName());
         }
 
@@ -67,9 +77,15 @@ public class PrivateMucChatActivity extends XmppActivity implements XmppConnecti
                     .replace(R.id.fragment_container, fragment)
                     .commit();
             getFragmentManager().executePendingTransactions();
+            // Re-fetch to be sure we have the one currently in the manager
+            fragment = (PrivateMucConversationFragment) getFragmentManager().findFragmentById(R.id.fragment_container);
         }
+
         if (fragment != null) {
+            Log.d(Config.LOGTAG, "Calling fragment.reInit()");
             fragment.reInit(conversation);
+        } else {
+            Log.e(Config.LOGTAG, "Fragment is still null after attempt to create it");
         }
     }
 

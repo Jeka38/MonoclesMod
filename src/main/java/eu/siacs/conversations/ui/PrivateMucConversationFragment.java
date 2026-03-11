@@ -18,26 +18,43 @@ public class PrivateMucConversationFragment extends ConversationFragment {
     private Jid counterpart;
 
     @Override
-    public View onCreateView(final LayoutInflater inflater, ViewGroup container, Bundle savedInstanceState) {
-        Log.d(Config.LOGTAG, "PrivateMucConversationFragment.onCreateView()");
-        View view = super.onCreateView(inflater, container, savedInstanceState);
+    public void onCreate(Bundle savedInstanceState) {
+        super.onCreate(savedInstanceState);
+        Log.d(Config.LOGTAG, "PrivateMucConversationFragment.onCreate()");
         if (getArguments() != null) {
             String jid = getArguments().getString("counterpart");
             if (jid != null) {
                 try {
                     this.counterpart = Jid.of(jid);
+                    Log.d(Config.LOGTAG, "PrivateMucConversationFragment: initialized counterpart=" + this.counterpart);
                 } catch (IllegalArgumentException e) {
+                    Log.e(Config.LOGTAG, "PrivateMucConversationFragment: failed to parse counterpart JID=" + jid);
                     this.counterpart = null;
                 }
             }
         }
-        return view;
+    }
+
+    @Override
+    public View onCreateView(final LayoutInflater inflater, ViewGroup container, Bundle savedInstanceState) {
+        Log.d(Config.LOGTAG, "PrivateMucConversationFragment.onCreateView()");
+        return super.onCreateView(inflater, container, savedInstanceState);
     }
 
     @Override
     protected void populateMessageList() {
         if (this.conversation != null) {
-            Log.d(Config.LOGTAG, "PrivateMucConversationFragment.populateMessageList()");
+            if (this.counterpart == null && getArguments() != null) {
+                String jid = getArguments().getString("counterpart");
+                if (jid != null) {
+                    try {
+                        this.counterpart = Jid.of(jid);
+                    } catch (IllegalArgumentException e) {
+                        // ignore
+                    }
+                }
+            }
+            Log.d(Config.LOGTAG, "PrivateMucConversationFragment.populateMessageList() counterpart=" + this.counterpart);
             conversation.populateWithMessages(this.messageList, activity == null ? null : activity.xmppConnectionService);
             int before = this.messageList.size();
             // Filter messages to only show private messages with the specific counterpart
@@ -50,7 +67,9 @@ public class PrivateMucConversationFragment extends ConversationFragment {
                 if (m.getType() != Message.TYPE_PRIVATE && m.getType() != Message.TYPE_PRIVATE_FILE) {
                     remove = true;
                 } else {
-                    remove = counterpart != null && !counterpart.equals(m.getCounterpart());
+                    // Check both counterpart and true counterpart for robustness
+                    Jid mCounterpart = m.getCounterpart();
+                    remove = counterpart != null && !counterpart.equals(mCounterpart) && !counterpart.asBareJid().equals(mCounterpart);
                 }
                 if (remove) {
                     i.remove();

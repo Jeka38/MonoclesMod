@@ -4418,6 +4418,11 @@ public class ConversationFragment extends XmppFragment
     }
 
     public void reInit(final Conversation conversation, final Bundle extras) {
+        if (conversation == null) {
+            Log.w(Config.LOGTAG, "ConversationFragment.reInit() called with null conversation");
+            return;
+        }
+        Log.d(Config.LOGTAG, "ConversationFragment.reInit(" + conversation.getUuid() + ")");
         QuickLoader.set(conversation.getUuid());
         final boolean changedConversation = this.conversation != conversation;
         if (changedConversation) {
@@ -4430,6 +4435,7 @@ public class ConversationFragment extends XmppFragment
             }
             this.reInitRequiredOnStart = false;
         } else {
+            Log.d(Config.LOGTAG, "ConversationFragment.reInit() deferred reInitRequiredOnStart=true");
             this.reInitRequiredOnStart = true;
             pendingExtras.push(extras);
         }
@@ -4447,6 +4453,7 @@ public class ConversationFragment extends XmppFragment
         if (conversation == null) {
             return false;
         }
+        Log.d(Config.LOGTAG, "ConversationFragment.reInit(internal) activity=" + (activity != null) + " binding=" + (binding != null));
         final Conversation originalConversation = this.conversation;
         this.conversation = conversation;
         //once we set the conversation all is good and it will automatically do the right thing in onStart()
