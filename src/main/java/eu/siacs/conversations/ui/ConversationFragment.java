@@ -1086,11 +1086,16 @@ public class ConversationFragment extends XmppFragment
     private Message mPendingDownloadableMessage;
 
     private static ConversationFragment findConversationFragment(Activity activity) {
-        Fragment fragment = activity.getFragmentManager().findFragmentById(R.id.main_fragment);
+        FragmentManager fragmentManager = activity.getFragmentManager();
+        Fragment fragment = fragmentManager.findFragmentById(R.id.main_fragment);
         if (fragment instanceof ConversationFragment) {
             return (ConversationFragment) fragment;
         }
-        fragment = activity.getFragmentManager().findFragmentById(R.id.secondary_fragment);
+        fragment = fragmentManager.findFragmentById(R.id.secondary_fragment);
+        if (fragment instanceof ConversationFragment) {
+            return (ConversationFragment) fragment;
+        }
+        fragment = fragmentManager.findFragmentById(R.id.fragment_container);
         if (fragment instanceof ConversationFragment) {
             return (ConversationFragment) fragment;
         }
@@ -1146,10 +1151,16 @@ public class ConversationFragment extends XmppFragment
         Fragment fragment = fragmentManager.findFragmentById(R.id.main_fragment);
         if (fragment instanceof ConversationFragment) {
             return (ConversationFragment) fragment;
-        } else {
-            fragment = fragmentManager.findFragmentById(R.id.secondary_fragment);
-            return fragment instanceof ConversationFragment ? (ConversationFragment) fragment : null;
         }
+        fragment = fragmentManager.findFragmentById(R.id.secondary_fragment);
+        if (fragment instanceof ConversationFragment) {
+            return (ConversationFragment) fragment;
+        }
+        fragment = fragmentManager.findFragmentById(R.id.fragment_container);
+        if (fragment instanceof ConversationFragment) {
+            return (ConversationFragment) fragment;
+        }
+        return null;
     }
 
     public static Conversation getConversationReliable(Activity activity) {
@@ -1809,11 +1820,11 @@ public class ConversationFragment extends XmppFragment
     @Override
     public void onAttach(Activity activity) {
         super.onAttach(activity);
-        Log.d(Config.LOGTAG, "ConversationFragment.onAttach()");
+        Log.d(Config.LOGTAG, "ConversationFragment.onAttach(" + activity.getClass().getName() + ")");
         if (activity instanceof XmppActivity) {
             this.activity = (XmppActivity) activity;
         } else {
-            throw new IllegalStateException("Trying to attach fragment to activity that is not the XmppActivity");
+            throw new IllegalStateException("Trying to attach fragment to activity that is not the XmppActivity: " + activity.getClass().getName());
         }
     }
 
@@ -1901,7 +1912,7 @@ public class ConversationFragment extends XmppFragment
                         menuContactDetails.setVisible(false);
                     }
                 } catch (Exception e) {
-                    e.printStackTrace();
+                    Log.d(Config.LOGTAG, "Error configuring menu: " + e.getMessage());
                     menuGroupDetails.setVisible(false);
                     menuContactDetails.setVisible(false);
                 }
@@ -1912,19 +1923,21 @@ public class ConversationFragment extends XmppFragment
                 } else {
                     menuTogglePinned.setTitle(R.string.add_to_favorites);
                 }
+                deleteCustomBg.setVisible(ChatBackgroundHelper.getBgFile(activity, conversation.getUuid()).exists());
             } else {
                 menuInviteContact.setVisible(false);
                 menuGroupDetails.setVisible(false);
                 menuContactDetails.setVisible(false);
+                deleteCustomBg.setVisible(false);
             }
-            deleteCustomBg.setVisible(ChatBackgroundHelper.getBgFile(activity, conversation.getUuid()).exists());
             super.onCreateOptionsMenu(menu, menuInflater);
-        }
-        Fragment secondaryFragment = activity.getFragmentManager().findFragmentById(R.id.secondary_fragment);
-        if (secondaryFragment instanceof ConversationFragment) {
-            this.activity.showNavigationBar();
-        } else {
-            this.activity.hideNavigationBar();
+
+            Fragment secondaryFragment = activity.getFragmentManager().findFragmentById(R.id.secondary_fragment);
+            if (secondaryFragment instanceof ConversationFragment) {
+                this.activity.showNavigationBar();
+            } else {
+                this.activity.hideNavigationBar();
+            }
         }
     }
 
@@ -1969,7 +1982,7 @@ public class ConversationFragment extends XmppFragment
         binding.messagesView.setTranscriptMode(ListView.TRANSCRIPT_MODE_NORMAL);
         mediaPreviewAdapter = new MediaPreviewAdapter(this);
         binding.mediaPreview.setAdapter(mediaPreviewAdapter);
-        messageListAdapter = new MessageAdapter((XmppActivity) getActivity(), this.messageList);
+        messageListAdapter = new MessageAdapter(this.activity, this.messageList);
         messageListAdapter.setOnContactPictureClicked(this);
         messageListAdapter.setOnContactPictureLongClicked(this);
         messageListAdapter.setOnInlineImageLongClicked(this);
@@ -1992,7 +2005,7 @@ public class ConversationFragment extends XmppFragment
         });
 
 
-        if (activity.xmppConnectionService != null && activity.xmppConnectionService.getBooleanPreference("message_autocomplete", R.bool.message_autocomplete)) {
+        if (activity != null && activity.xmppConnectionService != null && activity.xmppConnectionService.getBooleanPreference("message_autocomplete", R.bool.message_autocomplete)) {
             Autocomplete.<MucOptions.User>on(binding.textinput)
                     .with(activity.getDrawable(R.drawable.input_bubble_light))
                     .with(new CharPolicy('@'))
@@ -4981,13 +4994,15 @@ public class ConversationFragment extends XmppFragment
         synchronized (this.messageList) {
             if (this.conversation != null) {
                 populateMessageList();
-                if (conversation.unreadCount() > 0) {
+                if (conversation.unreadCount() > 0 && binding != null) {
                     binding.unreadCountCustomView.setVisibility(View.VISIBLE);
                     binding.unreadCountCustomView.setUnreadCount(conversation.unreadCount());
                 }
-                this.messageListAdapter.notifyDataSetChanged();
+                if (this.messageListAdapter != null) {
+                    this.messageListAdapter.notifyDataSetChanged();
+                }
                 updateChatMsgHint();
-                if (notifyConversationRead && activity != null) {
+                if (notifyConversationRead && activity != null && binding != null) {
                     binding.messagesView.post(this::fireReadEvent);
                 }
                 updateSendButton();

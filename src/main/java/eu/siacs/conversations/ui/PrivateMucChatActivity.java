@@ -63,11 +63,14 @@ public class PrivateMucChatActivity extends XmppActivity implements XmppConnecti
             args.putString("counterpart", counterpartJid);
             fragment.setArguments(args);
 
-            FragmentTransaction transaction = getFragmentManager().beginTransaction();
-            transaction.replace(R.id.fragment_container, fragment);
-            transaction.commit();
+            getFragmentManager().beginTransaction()
+                    .replace(R.id.fragment_container, fragment)
+                    .commit();
+            getFragmentManager().executePendingTransactions();
         }
-        fragment.reInit(conversation);
+        if (fragment != null) {
+            fragment.reInit(conversation);
+        }
     }
 
     @Override

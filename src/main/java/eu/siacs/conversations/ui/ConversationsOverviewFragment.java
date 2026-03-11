@@ -467,7 +467,7 @@ public class ConversationsOverviewFragment extends XmppFragment {
     public void onPrepareOptionsMenu(Menu menu) {
         super.onPrepareOptionsMenu(menu);
 
-        boolean navBarVisible = activity instanceof ConversationsActivity && ((ConversationsActivity) activity).navigationBarVisible();
+        boolean navBarVisible = activity != null && activity.navigationBarVisible();
         MenuItem manageAccount = menu.findItem(R.id.action_account);
         MenuItem manageAccounts = menu.findItem(R.id.action_accounts);
         if (navBarVisible) {
@@ -486,8 +486,8 @@ public class ConversationsOverviewFragment extends XmppFragment {
             refresh();
         }
 
-        if (activity instanceof ConversationsActivity) {
-            boolean showed = ((ConversationsActivity) activity).showNavigationBar();
+        if (activity != null) {
+            boolean showed = activity.showNavigationBar();
 
             if (showed) {
                 this.binding.fab.setVisibility(View.GONE);

@@ -536,6 +536,10 @@ public abstract class XmppActivity extends ActionBarActivity implements OnConver
     public void hideNavigationBar() {
     }
 
+    public boolean navigationBarVisible() {
+        return false;
+    }
+
     public void clearPendingViewIntent() {
     }
 

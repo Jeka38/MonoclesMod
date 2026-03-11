@@ -501,12 +501,10 @@ public class MessageAdapter extends ArrayAdapter<Message> {
                 viewHolder.cancel_transfer.setEnabled(true);
                 viewHolder.cancel_transfer.setOnClickListener(v -> {
                     try {
-                        if (activity instanceof ConversationsActivity) {
-                            ConversationFragment conversationFragment = ConversationFragment.get(activity);
-                            if (conversationFragment != null) {
-                                activity.invalidateOptionsMenu();
-                                conversationFragment.cancelTransmission(message);
-                            }
+                        ConversationFragment conversationFragment = ConversationFragment.get(activity);
+                        if (conversationFragment != null) {
+                            activity.invalidateOptionsMenu();
+                            conversationFragment.cancelTransmission(message);
                         }
                     } catch (Exception e) {
                         viewHolder.cancel_transfer.setEnabled(false);
@@ -1824,12 +1822,10 @@ public class MessageAdapter extends ArrayAdapter<Message> {
                 viewHolder.answer_button.setImageDrawable(drawable);
                 viewHolder.answer_button.setOnClickListener(v -> {
                     try {
-                        if (activity instanceof ConversationsActivity) {
-                            ConversationFragment conversationFragment = ConversationFragment.get(activity);
-                            if (conversationFragment != null) {
-                                activity.invalidateOptionsMenu();
-                                conversationFragment.privateMessageWith(message.getCounterpart());
-                            }
+                        ConversationFragment conversationFragment = ConversationFragment.get(activity);
+                        if (conversationFragment != null) {
+                            activity.invalidateOptionsMenu();
+                            conversationFragment.privateMessageWith(message.getCounterpart());
                         }
                     } catch (Exception e) {
                         viewHolder.answer_button.setVisibility(GONE);

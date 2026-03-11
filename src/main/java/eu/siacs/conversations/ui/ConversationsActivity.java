@@ -829,6 +829,7 @@ public class ConversationsActivity extends XmppActivity implements OnConversatio
     }
 
 
+    @Override
     public boolean navigationBarVisible() {
         return findViewById(R.id.bottom_navigation).getVisibility() == View.VISIBLE;
     }
