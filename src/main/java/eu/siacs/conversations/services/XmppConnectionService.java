@@ -6665,7 +6665,7 @@ public class XmppConnectionService extends Service {
     }
 
     public interface OnConversationUpdate {
-        default void onConversationUpdate() { onConversationUpdate(false); }
+        default void onConversationUpdate() { }
         default void onConversationUpdate(boolean newCaps) { onConversationUpdate(); }
     }
 

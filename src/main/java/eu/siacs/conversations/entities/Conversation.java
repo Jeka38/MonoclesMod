@@ -3,6 +3,7 @@ package eu.siacs.conversations.entities;
 import static eu.siacs.conversations.entities.Bookmark.printableValue;
 
 import android.content.Intent;
+import android.util.Log;
 
 import eu.siacs.conversations.databinding.CommandSliderFieldBinding;
 import eu.siacs.conversations.http.HttpConnectionManager;
@@ -1777,6 +1778,7 @@ public class Conversation extends AbstractEntity implements Blockable, Comparabl
         protected boolean mOnboarding = false;
 
         public void setupViewPager(ViewPager pager, TabLayout tabs, boolean onboarding, Conversation oldConversation) {
+            Log.d(Config.LOGTAG, "Conversation.setupViewPager() pager=" + (pager != null) + " tabs=" + (tabs != null));
             mPager = pager;
             mTabs = tabs;
             mOnboarding = onboarding;
@@ -1799,10 +1801,11 @@ public class Conversation extends AbstractEntity implements Blockable, Comparabl
                 page1 = null;
                 page2 = null;
             }
-            if (page1 == null) page1 = oldConversation.pagerAdapter.page1;
-            if (page2 == null) page2 = oldConversation.pagerAdapter.page2;
+            if (page1 == null && oldConversation != null) page1 = oldConversation.pagerAdapter.page1;
+            if (page2 == null && oldConversation != null) page2 = oldConversation.pagerAdapter.page2;
             if (page1 == null || page2 == null) {
-                throw new IllegalStateException("page1 or page2 were not present as child or in model?");
+                Log.w(Config.LOGTAG, "Conversation: page1 or page2 were not present as child or in model (p1=" + (page1 != null) + ", p2=" + (page2 != null) + ")");
+                return;
             }
             pager.removeView(page1);
             pager.removeView(page2);

@@ -4422,24 +4422,34 @@ public class ConversationFragment extends XmppFragment
             Log.w(Config.LOGTAG, "ConversationFragment.reInit() called with null conversation");
             return;
         }
-        Log.d(Config.LOGTAG, "ConversationFragment.reInit(" + conversation.getUuid() + ")");
-        QuickLoader.set(conversation.getUuid());
-        final boolean changedConversation = this.conversation != conversation;
-        if (changedConversation) {
-            this.saveMessageDraftStopAudioPlayer();
+        Log.d(Config.LOGTAG, "ConversationFragment.reInit(" + conversation.getUuid() + ") isAdded=" + isAdded());
+        if (activity == null) {
+            Log.w(Config.LOGTAG, "ConversationFragment.reInit() activity is null");
         }
-        this.clearPending();
-        if (this.reInit(conversation, extras != null)) {
-            if (extras != null) {
-                processExtras(extras);
+        if (binding == null) {
+            Log.w(Config.LOGTAG, "ConversationFragment.reInit() binding is null");
+        }
+        try {
+            QuickLoader.set(conversation.getUuid());
+            final boolean changedConversation = this.conversation != conversation;
+            if (changedConversation) {
+                this.saveMessageDraftStopAudioPlayer();
             }
-            this.reInitRequiredOnStart = false;
-        } else {
-            Log.d(Config.LOGTAG, "ConversationFragment.reInit() deferred reInitRequiredOnStart=true");
-            this.reInitRequiredOnStart = true;
-            pendingExtras.push(extras);
+            this.clearPending();
+            if (this.reInit(conversation, extras != null)) {
+                if (extras != null) {
+                    processExtras(extras);
+                }
+                this.reInitRequiredOnStart = false;
+            } else {
+                Log.d(Config.LOGTAG, "ConversationFragment.reInit() deferred reInitRequiredOnStart=true");
+                this.reInitRequiredOnStart = true;
+                pendingExtras.push(extras);
+            }
+            resetUnreadMessagesCount();
+        } catch (Throwable t) {
+            Log.e(Config.LOGTAG, "Error in reInit", t);
         }
-        resetUnreadMessagesCount();
     }
 
     public void reInit(Conversation conversation) {
@@ -5604,26 +5614,38 @@ public class ConversationFragment extends XmppFragment
 
     @Override
     public void onBackendConnected() {
-        Log.d(Config.LOGTAG, "ConversationFragment.onBackendConnected()");
-        String uuid = pendingConversationsUuid.pop();
+        Log.d(Config.LOGTAG, "ConversationFragment.onBackendConnected() conversation=" + (conversation == null ? "null" : conversation.getUuid()));
+        try {
+            String uuid = pendingConversationsUuid.pop();
 
-        if (uuid != null) {
-            if (!findAndReInitByUuidOrArchive(uuid)) {
-                return;
+            if (uuid != null) {
+                Log.d(Config.LOGTAG, "Found pending uuid: " + uuid);
+                if (!findAndReInitByUuidOrArchive(uuid)) {
+                    Log.d(Config.LOGTAG, "findAndReInitByUuidOrArchive returned false for " + uuid);
+                    return;
+                }
+            } else if (conversation != null) {
+                Log.d(Config.LOGTAG, "No pending uuid, checking current conversation: " + conversation.getUuid());
+                if (!activity.xmppConnectionService.isConversationStillOpen(conversation)) {
+                    Log.d(Config.LOGTAG, "Conversation no longer open, archiving");
+                    clearPending();
+                    this.activity.onConversationArchived(conversation);
+                    return;
+                }
+                reInit(conversation);
+            } else {
+                Log.d(Config.LOGTAG, "No pending uuid and no current conversation");
             }
-        } else {
-            if (!activity.xmppConnectionService.isConversationStillOpen(conversation)) {
-                clearPending();
-                this.activity.onConversationArchived(conversation);
-                return;
+            ActivityResult activityResult = postponedActivityResult.pop();
+            if (activityResult != null) {
+                Log.d(Config.LOGTAG, "Handling postponed activity result");
+                handleActivityResult(activityResult);
             }
+            setupEmojiSearch();
+            clearPending();
+        } catch (Throwable t) {
+            Log.e(Config.LOGTAG, "Error in onBackendConnected", t);
         }
-        ActivityResult activityResult = postponedActivityResult.pop();
-        if (activityResult != null) {
-            handleActivityResult(activityResult);
-        }
-        setupEmojiSearch();
-        clearPending();
     }
 
     private boolean findAndReInitByUuidOrArchive(@NonNull final String uuid) {

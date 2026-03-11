@@ -17,83 +17,130 @@ public class PrivateMucChatActivity extends XmppActivity implements XmppConnecti
 
     private String conversationUuid;
     private String counterpartJid;
+    private boolean mInitialized = false;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
-        super.onCreate(savedInstanceState);
-        Log.d(Config.LOGTAG, "PrivateMucChatActivity.onCreate()");
-        ActivityPrivateMucChatBinding binding = DataBindingUtil.setContentView(this, R.layout.activity_private_muc_chat);
-        setSupportActionBar((Toolbar) binding.toolbar.getRoot());
-        configureActionBar(getSupportActionBar());
-        if (getSupportActionBar() != null) {
-            getSupportActionBar().setDisplayHomeAsUpEnabled(true);
-        }
+        try {
+            super.onCreate(savedInstanceState);
+            Log.d(Config.LOGTAG, "PrivateMucChatActivity.onCreate()");
+            ActivityPrivateMucChatBinding binding = DataBindingUtil.setContentView(this, R.layout.activity_private_muc_chat);
+            setSupportActionBar((Toolbar) binding.toolbar.getRoot());
+            configureActionBar(getSupportActionBar());
+            if (getSupportActionBar() != null) {
+                getSupportActionBar().setDisplayHomeAsUpEnabled(true);
+            }
 
-        if (savedInstanceState != null) {
-            conversationUuid = savedInstanceState.getString("uuid");
-            counterpartJid = savedInstanceState.getString("counterpart");
-        } else {
-            conversationUuid = getIntent().getStringExtra("uuid");
-            counterpartJid = getIntent().getStringExtra("counterpart");
+            if (savedInstanceState != null) {
+                conversationUuid = savedInstanceState.getString("uuid");
+                counterpartJid = savedInstanceState.getString("counterpart");
+            } else {
+                conversationUuid = getIntent().getStringExtra("uuid");
+                counterpartJid = getIntent().getStringExtra("counterpart");
+            }
+        } catch (Throwable e) {
+            Log.e(Config.LOGTAG, "PrivateMucChatActivity.onCreate() failed", e);
+            finish();
         }
     }
 
     @Override
     protected void onBackendConnected() {
-        Log.d(Config.LOGTAG, "PrivateMucChatActivity.onBackendConnected() uuid=" + conversationUuid + " counterpart=" + counterpartJid);
-        if (conversationUuid == null) {
-            Log.w(Config.LOGTAG, "conversationUuid is null");
-            finish();
-            return;
-        }
-        Conversation conversation = xmppConnectionService.findConversationByUuid(conversationUuid);
-        if (conversation == null) {
-            Log.w(Config.LOGTAG, "Conversation not found: " + conversationUuid);
-            finish();
-            return;
-        }
-
         try {
-            if (counterpartJid != null) {
-                Jid counterpart = Jid.of(counterpartJid);
-                setTitle(counterpart.getResource());
-            } else {
+            Log.d(Config.LOGTAG, "PrivateMucChatActivity.onBackendConnected() uuid=" + conversationUuid + " counterpart=" + counterpartJid);
+            initialize();
+        } catch (Throwable e) {
+            Log.e(Config.LOGTAG, "PrivateMucChatActivity.onBackendConnected() failed", e);
+        }
+    }
+
+    @Override
+    public void onConversationUpdate(boolean newCaps) {
+        try {
+            Log.d(Config.LOGTAG, "PrivateMucChatActivity.onConversationUpdate(newCaps=" + newCaps + ")");
+            if (!mInitialized) {
+                initialize();
+            }
+            refreshUi();
+        } catch (Throwable e) {
+            Log.e(Config.LOGTAG, "PrivateMucChatActivity.onConversationUpdate() failed", e);
+        }
+    }
+
+    private synchronized void initialize() {
+        try {
+            if (mInitialized || xmppConnectionService == null) {
+                return;
+            }
+
+            if (conversationUuid == null) {
+                Log.w(Config.LOGTAG, "PrivateMucChatActivity: conversationUuid is null, finishing");
+                finish();
+                return;
+            }
+
+            Conversation conversation = xmppConnectionService.findConversationByUuid(conversationUuid);
+            if (conversation == null) {
+                if (xmppConnectionService.areMessagesInitialized()) {
+                    Log.w(Config.LOGTAG, "PrivateMucChatActivity: Conversation not found: " + conversationUuid + ", finishing");
+                    finish();
+                } else {
+                    Log.d(Config.LOGTAG, "PrivateMucChatActivity: Waiting for conversations to be restored...");
+                }
+                return;
+            }
+
+            Log.d(Config.LOGTAG, "PrivateMucChatActivity: Conversation found, initializing fragment");
+            mInitialized = true;
+
+            try {
+                if (counterpartJid != null) {
+                    Jid counterpart = Jid.of(counterpartJid);
+                    setTitle(counterpart.getResource());
+                } else {
+                    setTitle(conversation.getName());
+                }
+            } catch (Throwable e) {
+                Log.e(Config.LOGTAG, "PrivateMucChatActivity: Failed to parse counterpart JID or set title: " + counterpartJid, e);
                 setTitle(conversation.getName());
             }
-        } catch (Exception e) {
-            Log.d(Config.LOGTAG, "Failed to parse counterpart JID: " + counterpartJid);
-            setTitle(conversation.getName());
-        }
 
-        PrivateMucConversationFragment fragment = (PrivateMucConversationFragment) getFragmentManager().findFragmentById(R.id.fragment_container);
-        if (fragment == null) {
-            Log.d(Config.LOGTAG, "Creating new PrivateMucConversationFragment for " + counterpartJid);
-            fragment = new PrivateMucConversationFragment();
-            Bundle args = new Bundle();
-            args.putString("counterpart", counterpartJid);
-            fragment.setArguments(args);
+            PrivateMucConversationFragment fragment = (PrivateMucConversationFragment) getFragmentManager().findFragmentById(R.id.fragment_container);
+            if (fragment == null) {
+                Log.d(Config.LOGTAG, "PrivateMucChatActivity: Creating new PrivateMucConversationFragment for " + counterpartJid);
+                fragment = new PrivateMucConversationFragment();
+                Bundle args = new Bundle();
+                args.putString("counterpart", counterpartJid);
+                fragment.setArguments(args);
 
-            getFragmentManager().beginTransaction()
-                    .replace(R.id.fragment_container, fragment)
-                    .commit();
-            getFragmentManager().executePendingTransactions();
-            // Re-fetch to be sure we have the one currently in the manager
-            fragment = (PrivateMucConversationFragment) getFragmentManager().findFragmentById(R.id.fragment_container);
-        }
+                getFragmentManager().beginTransaction()
+                        .replace(R.id.fragment_container, fragment)
+                        .commit();
+                getFragmentManager().executePendingTransactions();
+                // Re-fetch to be sure we have the one currently in the manager
+                fragment = (PrivateMucConversationFragment) getFragmentManager().findFragmentById(R.id.fragment_container);
+            }
 
-        if (fragment != null) {
-            Log.d(Config.LOGTAG, "Calling fragment.reInit()");
-            fragment.reInit(conversation);
-        } else {
-            Log.e(Config.LOGTAG, "Fragment is still null after attempt to create it");
+            if (fragment != null) {
+                Log.d(Config.LOGTAG, "PrivateMucChatActivity: Calling fragment.reInit() isAdded=" + fragment.isAdded());
+                fragment.reInit(conversation);
+            } else {
+                Log.e(Config.LOGTAG, "PrivateMucChatActivity: Fragment is still null after attempt to create it");
+            }
+        } catch (Throwable e) {
+            Log.e(Config.LOGTAG, "PrivateMucChatActivity: Error during initialization", e);
         }
     }
 
     @Override
     protected void refreshUiReal() {
-        XmppFragment fragment = (XmppFragment) getFragmentManager().findFragmentById(R.id.fragment_container);
-        if (fragment != null) {
-            fragment.refresh();
+        try {
+            XmppFragment fragment = (XmppFragment) getFragmentManager().findFragmentById(R.id.fragment_container);
+            if (fragment != null) {
+                fragment.refresh();
+            }
+        } catch (Throwable e) {
+            Log.e(Config.LOGTAG, "PrivateMucChatActivity.refreshUiReal() failed", e);
         }
     }
 
@@ -103,12 +150,6 @@ public class PrivateMucChatActivity extends XmppActivity implements XmppConnecti
             Log.d(Config.LOGTAG, "PrivateMucChatActivity.onConversationArchived()");
             finish();
         }
-    }
-
-    @Override
-    public void onConversationUpdate(boolean newCaps) {
-        Log.d(Config.LOGTAG, "PrivateMucChatActivity.onConversationUpdate(newCaps=" + newCaps + ")");
-        refreshUi();
     }
 
     @Override
