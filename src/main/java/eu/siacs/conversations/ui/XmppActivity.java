@@ -529,13 +529,14 @@ public abstract class XmppActivity extends ActionBarActivity implements OnConver
         return getBooleanPreference(SettingsActivity.WARN_UNENCRYPTED_CHAT, R.bool.warn_unencrypted_chat);
     }
 
-    public void showNavigationBar() {
+    public boolean showNavigationBar() {
+        return false;
     }
 
     public void hideNavigationBar() {
     }
 
-    public void verifyOtrSessionDialog(final Conversation conversation, View view) {
+    public void verifyOtrSessionDialog(final Conversation conversation, final View view) {
         if (!conversation.hasValidOtrSession() || conversation.getOtrSession().getSessionStatus() != SessionStatus.ENCRYPTED) {
             ToastCompat.makeText(this, R.string.otr_session_not_started, Toast.LENGTH_LONG).show();
             return;

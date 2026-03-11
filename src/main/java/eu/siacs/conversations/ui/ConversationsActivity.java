@@ -834,13 +834,14 @@ public class ConversationsActivity extends XmppActivity implements OnConversatio
     }
 
     @Override
-    public void showNavigationBar() {
+    public boolean showNavigationBar() {
         if (!getBooleanPreference("show_nav_bar", R.bool.show_nav_bar)) {
             findViewById(R.id.bottom_navigation).setVisibility(View.GONE);
-            return;
+            return false;
         }
 
         findViewById(R.id.bottom_navigation).setVisibility(View.VISIBLE);
+        return true;
     }
 
     public void hideNavigationBar() {
