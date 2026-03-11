@@ -2,9 +2,11 @@ package eu.siacs.conversations.ui;
 
 import android.app.FragmentTransaction;
 import android.os.Bundle;
+import android.util.Log;
 import android.view.MenuItem;
 import androidx.appcompat.widget.Toolbar;
 import androidx.databinding.DataBindingUtil;
+import eu.siacs.conversations.Config;
 import eu.siacs.conversations.R;
 import eu.siacs.conversations.databinding.ActivityPrivateMucChatBinding;
 import eu.siacs.conversations.entities.Conversation;
@@ -19,6 +21,7 @@ public class PrivateMucChatActivity extends XmppActivity implements XmppConnecti
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
+        Log.d(Config.LOGTAG, "PrivateMucChatActivity.onCreate()");
         ActivityPrivateMucChatBinding binding = DataBindingUtil.setContentView(this, R.layout.activity_private_muc_chat);
         setSupportActionBar((Toolbar) binding.toolbar.getRoot());
         configureActionBar(getSupportActionBar());
@@ -37,8 +40,10 @@ public class PrivateMucChatActivity extends XmppActivity implements XmppConnecti
 
     @Override
     protected void onBackendConnected() {
+        Log.d(Config.LOGTAG, "PrivateMucChatActivity.onBackendConnected()");
         Conversation conversation = xmppConnectionService.findConversationByUuid(conversationUuid);
         if (conversation == null) {
+            Log.w(Config.LOGTAG, "Conversation not found: " + conversationUuid);
             finish();
             return;
         }
@@ -52,6 +57,7 @@ public class PrivateMucChatActivity extends XmppActivity implements XmppConnecti
 
         PrivateMucConversationFragment fragment = (PrivateMucConversationFragment) getFragmentManager().findFragmentById(R.id.fragment_container);
         if (fragment == null) {
+            Log.d(Config.LOGTAG, "Creating new PrivateMucConversationFragment for " + counterpartJid);
             fragment = new PrivateMucConversationFragment();
             Bundle args = new Bundle();
             args.putString("counterpart", counterpartJid);
@@ -75,17 +81,20 @@ public class PrivateMucChatActivity extends XmppActivity implements XmppConnecti
     @Override
     public void onConversationArchived(Conversation conversation) {
         if (conversation != null && conversation.getUuid().equals(conversationUuid)) {
+            Log.d(Config.LOGTAG, "PrivateMucChatActivity.onConversationArchived()");
             finish();
         }
     }
 
     @Override
     public void onConversationUpdate(boolean newCaps) {
+        Log.d(Config.LOGTAG, "PrivateMucChatActivity.onConversationUpdate(newCaps=" + newCaps + ")");
         refreshUi();
     }
 
     @Override
     public void onAccountUpdate() {
+        Log.d(Config.LOGTAG, "PrivateMucChatActivity.onAccountUpdate()");
         refreshUi();
     }
 
@@ -101,6 +110,7 @@ public class PrivateMucChatActivity extends XmppActivity implements XmppConnecti
     @Override
     protected void onSaveInstanceState(Bundle outState) {
         super.onSaveInstanceState(outState);
+        Log.d(Config.LOGTAG, "PrivateMucChatActivity.onSaveInstanceState()");
         outState.putString("uuid", conversationUuid);
         outState.putString("counterpart", counterpartJid);
     }

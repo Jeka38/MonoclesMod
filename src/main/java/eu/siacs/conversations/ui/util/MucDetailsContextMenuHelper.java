@@ -2,6 +2,7 @@ package eu.siacs.conversations.ui.util;
 
 import android.app.Activity;
 import android.graphics.Typeface;
+import android.util.Log;
 import android.preference.PreferenceManager;
 import android.text.SpannableString;
 import android.text.SpannableStringBuilder;
@@ -324,6 +325,7 @@ public final class MucDetailsContextMenuHelper {
                 kickFromRoom(user, activity, onAffiliationChanged);
                 return true;
             case R.id.send_private_message:
+                Log.d(Config.LOGTAG, "Launching PrivateMucChatActivity for " + user.getFullJid());
                 Intent intent = new Intent(activity, PrivateMucChatActivity.class);
                 intent.putExtra("uuid", conversation.getUuid());
                 intent.putExtra("counterpart", user.getFullJid().toString());

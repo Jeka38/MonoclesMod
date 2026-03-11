@@ -1,10 +1,12 @@
 package eu.siacs.conversations.ui;
 
 import android.os.Bundle;
+import android.util.Log;
 import android.view.LayoutInflater;
 import android.view.View;
 import android.view.ViewGroup;
 
+import eu.siacs.conversations.Config;
 import eu.siacs.conversations.entities.Message;
 import eu.siacs.conversations.xmpp.Jid;
 
@@ -17,6 +19,7 @@ public class PrivateMucConversationFragment extends ConversationFragment {
 
     @Override
     public View onCreateView(final LayoutInflater inflater, ViewGroup container, Bundle savedInstanceState) {
+        Log.d(Config.LOGTAG, "PrivateMucConversationFragment.onCreateView()");
         View view = super.onCreateView(inflater, container, savedInstanceState);
         if (getArguments() != null) {
             String jid = getArguments().getString("counterpart");
@@ -34,7 +37,9 @@ public class PrivateMucConversationFragment extends ConversationFragment {
     @Override
     protected void populateMessageList() {
         if (this.conversation != null) {
+            Log.d(Config.LOGTAG, "PrivateMucConversationFragment.populateMessageList()");
             conversation.populateWithMessages(this.messageList, activity == null ? null : activity.xmppConnectionService);
+            int before = this.messageList.size();
             // Filter messages to only show private messages with the specific counterpart
             for (java.util.Iterator<Message> i = this.messageList.iterator(); i.hasNext(); ) {
                 Message m = i.next();
@@ -51,6 +56,7 @@ public class PrivateMucConversationFragment extends ConversationFragment {
                     i.remove();
                 }
             }
+            Log.d(Config.LOGTAG, "Filtered messages: " + before + " -> " + this.messageList.size());
             updateStatusMessages();
         }
     }
@@ -71,6 +77,7 @@ public class PrivateMucConversationFragment extends ConversationFragment {
     @Override
     protected void sendMessage(Long sendAt) {
         if (conversation != null && counterpart != null) {
+            Log.d(Config.LOGTAG, "PrivateMucConversationFragment.sendMessage() to " + counterpart);
             conversation.setNextCounterpart(counterpart);
         }
         super.sendMessage(sendAt);

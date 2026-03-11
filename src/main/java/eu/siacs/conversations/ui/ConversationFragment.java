@@ -4966,13 +4966,16 @@ public class ConversationFragment extends XmppFragment
 
     protected void populateMessageList() {
         if (this.conversation != null) {
+            Log.d(Config.LOGTAG, "ConversationFragment.populateMessageList() for " + conversation.getUuid());
             conversation.populateWithMessages(this.messageList, activity == null ? null : activity.xmppConnectionService);
             updateStatusMessages();
         }
     }
 
     protected void refresh(boolean notifyConversationRead) {
+        Log.d(Config.LOGTAG, "ConversationFragment.refresh(notifyConversationRead=" + notifyConversationRead + ")");
         if (this.binding == null || this.messageListAdapter == null) {
+            Log.d(Config.LOGTAG, "ConversationFragment.refresh() skipped: binding or adapter is null");
             return;
         }
         synchronized (this.messageList) {
