@@ -536,6 +536,9 @@ public abstract class XmppActivity extends ActionBarActivity implements OnConver
     public void hideNavigationBar() {
     }
 
+    public void clearPendingViewIntent() {
+    }
+
     public void verifyOtrSessionDialog(final Conversation conversation, final View view) {
         if (!conversation.hasValidOtrSession() || conversation.getOtrSession().getSessionStatus() != SessionStatus.ENCRYPTED) {
             ToastCompat.makeText(this, R.string.otr_session_not_started, Toast.LENGTH_LONG).show();

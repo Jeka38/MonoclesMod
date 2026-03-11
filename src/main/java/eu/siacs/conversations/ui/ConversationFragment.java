@@ -1810,10 +1810,10 @@ public class ConversationFragment extends XmppFragment
     public void onAttach(Activity activity) {
         super.onAttach(activity);
         Log.d(Config.LOGTAG, "ConversationFragment.onAttach()");
-        if (activity instanceof ConversationsActivity) {
-            this.activity = (ConversationsActivity) activity;
+        if (activity instanceof XmppActivity) {
+            this.activity = (XmppActivity) activity;
         } else {
-            throw new IllegalStateException("Trying to attach fragment to activity that is not the ConversationsActivity");
+            throw new IllegalStateException("Trying to attach fragment to activity that is not the XmppActivity");
         }
     }
 
@@ -3243,8 +3243,8 @@ public class ConversationFragment extends XmppFragment
             refresh();
         }
         if (cameraGranted(grantResults, permissions) || audioGranted(grantResults, permissions)) {
-            if (activity instanceof ConversationsActivity) {
-                XmppConnectionService.toggleForegroundService((ConversationsActivity) activity);
+            if (activity != null) {
+                XmppConnectionService.toggleForegroundService(activity);
             }
         }
     }
@@ -4288,8 +4288,8 @@ public class ConversationFragment extends XmppFragment
     @Override
     public void startActivityForResult(Intent intent, int requestCode) {
         final Activity activity = getActivity();
-        if (activity instanceof ConversationsActivity) {
-            ((ConversationsActivity) activity).clearPendingViewIntent();
+        if (activity instanceof XmppActivity) {
+            ((XmppActivity) activity).clearPendingViewIntent();
         }
         super.startActivityForResult(intent, requestCode);
     }
@@ -4519,12 +4519,12 @@ public class ConversationFragment extends XmppFragment
         }
         if (commandAdapter == null && conversation != null) {
             conversation.setupViewPager(binding.conversationViewPager, binding.tabLayout, activity.xmppConnectionService.isOnboarding(), null);
-            commandAdapter = new CommandAdapter((XmppActivity) getActivity());
+            commandAdapter = new CommandAdapter(activity);
             binding.commandsView.setAdapter(commandAdapter);
             binding.commandsView.setOnItemClickListener((parent, view, position, id) -> {
                 if (activity == null) return;
 
-                commandAdapter.getItem(position).start((ConversationsActivity) activity, ConversationFragment.this.conversation);
+                commandAdapter.getItem(position).start(activity, ConversationFragment.this.conversation);
             });
             refreshCommands(false);
         }
@@ -4964,11 +4964,20 @@ public class ConversationFragment extends XmppFragment
     }
 
 
+    protected void populateMessageList() {
+        if (this.conversation != null) {
+            conversation.populateWithMessages(this.messageList, activity == null ? null : activity.xmppConnectionService);
+            updateStatusMessages();
+        }
+    }
+
     protected void refresh(boolean notifyConversationRead) {
+        if (this.binding == null || this.messageListAdapter == null) {
+            return;
+        }
         synchronized (this.messageList) {
             if (this.conversation != null) {
-                conversation.populateWithMessages(this.messageList, activity == null ? null : activity.xmppConnectionService);
-                updateStatusMessages();
+                populateMessageList();
                 if (conversation.unreadCount() > 0) {
                     binding.unreadCountCustomView.setVisibility(View.VISIBLE);
                     binding.unreadCountCustomView.setUnreadCount(conversation.unreadCount());
@@ -5411,8 +5420,11 @@ public class ConversationFragment extends XmppFragment
         builder.create().show();
     }
     protected void sendOtrMessage(final Message message) {
-        final ConversationsActivity activity = (ConversationsActivity) getActivity();
-        final XmppConnectionService xmppService = activity.xmppConnectionService;
+        final XmppActivity activity = (XmppActivity) getActivity();
+        final XmppConnectionService xmppService = activity == null ? null : activity.xmppConnectionService;
+        if (activity == null || xmppService == null) {
+            return;
+        }
         activity.selectPresence(conversation,
                 () -> {
                     message.setCounterpart(conversation.getNextCounterpart());

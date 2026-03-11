@@ -8,18 +8,18 @@ import androidx.databinding.DataBindingUtil;
 import eu.siacs.conversations.R;
 import eu.siacs.conversations.databinding.ActivityPrivateMucChatBinding;
 import eu.siacs.conversations.entities.Conversation;
+import eu.siacs.conversations.services.XmppConnectionService;
 import eu.siacs.conversations.xmpp.Jid;
 
-public class PrivateMucChatActivity extends XmppActivity {
+public class PrivateMucChatActivity extends XmppActivity implements XmppConnectionService.OnConversationUpdate, XmppConnectionService.OnAccountUpdate {
 
-    private ActivityPrivateMucChatBinding binding;
     private String conversationUuid;
     private String counterpartJid;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
-        binding = DataBindingUtil.setContentView(this, R.layout.activity_private_muc_chat);
+        ActivityPrivateMucChatBinding binding = DataBindingUtil.setContentView(this, R.layout.activity_private_muc_chat);
         setSupportActionBar((Toolbar) binding.toolbar.getRoot());
         configureActionBar(getSupportActionBar());
         if (getSupportActionBar() != null) {
@@ -50,20 +50,43 @@ public class PrivateMucChatActivity extends XmppActivity {
             setTitle(conversation.getName());
         }
 
-        PrivateMucConversationFragment fragment = new PrivateMucConversationFragment();
-        Bundle args = new Bundle();
-        args.putString("counterpart", counterpartJid);
-        fragment.setArguments(args);
-        fragment.reInit(conversation);
+        PrivateMucConversationFragment fragment = (PrivateMucConversationFragment) getFragmentManager().findFragmentById(R.id.fragment_container);
+        if (fragment == null) {
+            fragment = new PrivateMucConversationFragment();
+            Bundle args = new Bundle();
+            args.putString("counterpart", counterpartJid);
+            fragment.setArguments(args);
 
-        FragmentTransaction transaction = getFragmentManager().beginTransaction();
-        transaction.replace(R.id.fragment_container, fragment);
-        transaction.commit();
+            FragmentTransaction transaction = getFragmentManager().beginTransaction();
+            transaction.replace(R.id.fragment_container, fragment);
+            transaction.commit();
+        }
+        fragment.reInit(conversation);
     }
 
     @Override
     protected void refreshUiReal() {
-        // Refresh handled by fragment
+        XmppFragment fragment = (XmppFragment) getFragmentManager().findFragmentById(R.id.fragment_container);
+        if (fragment != null) {
+            fragment.refresh();
+        }
+    }
+
+    @Override
+    public void onConversationArchived(Conversation conversation) {
+        if (conversation != null && conversation.getUuid().equals(conversationUuid)) {
+            finish();
+        }
+    }
+
+    @Override
+    public void onConversationUpdate(boolean newCaps) {
+        refreshUi();
+    }
+
+    @Override
+    public void onAccountUpdate() {
+        refreshUi();
     }
 
     @Override

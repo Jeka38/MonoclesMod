@@ -32,39 +32,34 @@ public class PrivateMucConversationFragment extends ConversationFragment {
     }
 
     @Override
-    protected void refresh(boolean notifyConversationRead) {
-        synchronized (this.messageList) {
-            if (this.conversation != null) {
-                conversation.populateWithMessages(this.messageList, activity == null ? null : activity.xmppConnectionService);
-                // Filter messages to only show private messages with the specific counterpart
-                this.messageList.removeIf(m -> {
-                    if (m.getType() == Message.TYPE_STATUS) {
-                        return false;
-                    }
-                    if (m.getType() != Message.TYPE_PRIVATE && m.getType() != Message.TYPE_PRIVATE_FILE) {
-                        return true;
-                    }
-                    return counterpart != null && !counterpart.equals(m.getCounterpart());
-                });
-                updateStatusMessages();
-                if (conversation.unreadCount() > 0) {
-                    binding.unreadCountCustomView.setVisibility(View.VISIBLE);
-                    binding.unreadCountCustomView.setUnreadCount(conversation.unreadCount());
+    protected void populateMessageList() {
+        if (this.conversation != null) {
+            conversation.populateWithMessages(this.messageList, activity == null ? null : activity.xmppConnectionService);
+            // Filter messages to only show private messages with the specific counterpart
+            for (java.util.Iterator<Message> i = this.messageList.iterator(); i.hasNext(); ) {
+                Message m = i.next();
+                if (m.getType() == Message.TYPE_STATUS) {
+                    continue;
                 }
-                this.messageListAdapter.notifyDataSetChanged();
-                updateChatMsgHint();
-                if (notifyConversationRead && activity != null) {
-                    binding.messagesView.post(this::fireReadEvent);
+                boolean remove;
+                if (m.getType() != Message.TYPE_PRIVATE && m.getType() != Message.TYPE_PRIVATE_FILE) {
+                    remove = true;
+                } else {
+                    remove = counterpart != null && !counterpart.equals(m.getCounterpart());
                 }
-                updateSendButton();
-                updateEditablity();
-                conversation.refreshSessions();
+                if (remove) {
+                    i.remove();
+                }
             }
+            updateStatusMessages();
         }
     }
 
     @Override
     public void updateChatMsgHint() {
+        if (this.binding == null) {
+            return;
+        }
         if (conversation != null && counterpart != null) {
             this.binding.textInputHint.setVisibility(View.GONE);
             this.binding.textinput.setHint(counterpart.getResource());

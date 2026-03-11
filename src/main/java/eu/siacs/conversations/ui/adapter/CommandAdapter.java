@@ -32,7 +32,7 @@ public class CommandAdapter extends ArrayAdapter<CommandAdapter.Command> {
 
     public interface Command {
         String getName(@NonNull android.content.Context context); // Modify to accept context for localization
-        void start(final ConversationsActivity activity, final Conversation conversation);
+        void start(final XmppActivity activity, final Conversation conversation);
     }
 
     public static class Command0050 implements Command {
@@ -43,7 +43,7 @@ public class CommandAdapter extends ArrayAdapter<CommandAdapter.Command> {
             return el.getAttribute("name");
         }
 
-        public void start(final ConversationsActivity activity, final Conversation conversation) {
+        public void start(final XmppActivity activity, final Conversation conversation) {
             activity.startCommand(conversation.getAccount(), el.getAttributeAsJid("jid"), el.getAttribute("node"));
         }
     }
@@ -56,7 +56,7 @@ public class CommandAdapter extends ArrayAdapter<CommandAdapter.Command> {
             return context.getString(R.string.configure_room); // Localized string from resources
         }
 
-        public void start(final ConversationsActivity activity, final Conversation conversation) {
+        public void start(final XmppActivity activity, final Conversation conversation) {
             conversation.startMucConfig(activity.xmppConnectionService);
         }
     }
