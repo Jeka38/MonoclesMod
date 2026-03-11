@@ -1400,11 +1400,11 @@ public class ConversationFragment extends XmppFragment
         }
     }
 
-    private void sendMessage() {
+    protected void sendMessage() {
         sendMessage((Long) null);
     }
 
-    private void sendMessage(Long sendAt) {
+    protected void sendMessage(Long sendAt) {
         if (sendAt != null && sendAt < System.currentTimeMillis()) sendAt = null; // No sending in past plz
 
         Editable body = this.binding.textinput.getText();
@@ -4964,7 +4964,7 @@ public class ConversationFragment extends XmppFragment
     }
 
 
-    private void refresh(boolean notifyConversationRead) {
+    protected void refresh(boolean notifyConversationRead) {
         synchronized (this.messageList) {
             if (this.conversation != null) {
                 conversation.populateWithMessages(this.messageList, activity == null ? null : activity.xmppConnectionService);

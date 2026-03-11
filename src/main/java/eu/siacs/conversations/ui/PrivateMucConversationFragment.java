@@ -8,6 +8,9 @@ import android.view.ViewGroup;
 import eu.siacs.conversations.entities.Message;
 import eu.siacs.conversations.xmpp.Jid;
 
+import androidx.annotation.NonNull;
+import androidx.annotation.Nullable;
+
 public class PrivateMucConversationFragment extends ConversationFragment {
 
     private Jid counterpart;
