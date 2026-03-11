@@ -1385,7 +1385,7 @@ public class ConversationFragment extends XmppFragment
                     @Override
                     public void error(final int error, final Message message) {
                         hidePrepareFileToast(prepareFileToast);
-                        final ConversationsActivity activity = ConversationFragment.this.activity;
+                        final XmppActivity activity = ConversationFragment.this.activity;
                         if (activity == null) {
                             return;
                         }
@@ -1905,7 +1905,7 @@ public class ConversationFragment extends XmppFragment
                     menuGroupDetails.setVisible(false);
                     menuContactDetails.setVisible(false);
                 }
-                ConversationMenuConfigurator.configureAttachmentMenu(conversation, menu, activity.getAttachmentChoicePreference(), hasAttachments);
+                ConversationMenuConfigurator.configureAttachmentMenu(conversation, menu, ((XmppActivity) activity).getAttachmentChoicePreference(), hasAttachments);
                 ConversationMenuConfigurator.configureEncryptionMenu(conversation, menu, activity);
                 if (conversation.getBooleanAttribute(Conversation.ATTRIBUTE_PINNED_ON_TOP, false)) {
                     menuTogglePinned.setTitle(R.string.remove_from_favorites);
@@ -1922,9 +1922,9 @@ public class ConversationFragment extends XmppFragment
         }
         Fragment secondaryFragment = activity.getFragmentManager().findFragmentById(R.id.secondary_fragment);
         if (secondaryFragment instanceof ConversationFragment) {
-            activity.showNavigationBar();
+            this.activity.showNavigationBar();
         } else {
-            activity.hideNavigationBar();
+            this.activity.hideNavigationBar();
         }
     }
 
@@ -2619,7 +2619,7 @@ public class ConversationFragment extends XmppFragment
                         if (activity.xmppConnectionService.getFileBackend().deleteFile(selectedMessage)) {
                             activity.xmppConnectionService.evictPreview(f);
                             activity.xmppConnectionService.updateMessage(selectedMessage, false);
-                            activity.onConversationsListItemUpdated();
+                            this.activity.onConversationsListItemUpdated();
                             refresh();
                         }
                     })
@@ -3243,7 +3243,9 @@ public class ConversationFragment extends XmppFragment
             refresh();
         }
         if (cameraGranted(grantResults, permissions) || audioGranted(grantResults, permissions)) {
-            XmppConnectionService.toggleForegroundService(activity);
+            if (activity instanceof ConversationsActivity) {
+                XmppConnectionService.toggleForegroundService((ConversationsActivity) activity);
+            }
         }
     }
 
@@ -3351,7 +3353,7 @@ public class ConversationFragment extends XmppFragment
             if (endConversationCheckBox.isChecked()) {
                 this.activity.xmppConnectionService.archiveConversation(conversation);
             } else {
-                activity.onConversationsListItemUpdated();
+                this.activity.onConversationsListItemUpdated();
                 refresh();
             }
         });
@@ -3378,7 +3380,7 @@ public class ConversationFragment extends XmppFragment
             }
             conversation.setMutedTill(till);
             activity.xmppConnectionService.updateConversation(conversation);
-            activity.onConversationsListItemUpdated();
+            this.activity.onConversationsListItemUpdated();
             refresh();
             activity.invalidateOptionsMenu();
         });
@@ -3710,9 +3712,9 @@ public class ConversationFragment extends XmppFragment
         }
     }
 
-    private static File generateOutputFilename(Context context) {
+    private File generateOutputFilename(Context context) {
         final SimpleDateFormat dateFormat = new SimpleDateFormat("yyyyMMdd_HHmmssSSS", Locale.US);
-        if (activity.xmppConnectionService.getBooleanPreference("alternative_voice_settings", R.bool.alternative_voice_settings)) {
+        if (this.activity.xmppConnectionService.getBooleanPreference("alternative_voice_settings", R.bool.alternative_voice_settings)) {
             return new File(getConversationsDirectory(context, SENT_AUDIOS)
                     + dateFormat.format(new Date())
                     + ".opus");
@@ -3802,7 +3804,7 @@ public class ConversationFragment extends XmppFragment
         if (activity != null && this.conversation != null) {
             String uuid = getLastVisibleMessageUuid();
             if (uuid != null) {
-                activity.onConversationRead(this.conversation, uuid);
+                this.activity.onConversationRead(this.conversation, uuid);
             }
         }
     }
@@ -3975,7 +3977,7 @@ public class ConversationFragment extends XmppFragment
                 activity.xmppConnectionService.deleteMessage(conversation, retractmessage);
             }
             activity.xmppConnectionService.deleteMessage(conversation, message);
-            activity.onConversationsListItemUpdated();
+            this.activity.onConversationsListItemUpdated();
             refresh();
         });
         builder.create().show();
@@ -4110,7 +4112,7 @@ public class ConversationFragment extends XmppFragment
                 ToastCompat.makeText(activity, R.string.file_deleted, ToastCompat.LENGTH_SHORT).show();
                 message.setFileDeleted(true);
                 activity.xmppConnectionService.updateMessage(message, false);
-                activity.onConversationsListItemUpdated();
+                this.activity.onConversationsListItemUpdated();
                 refresh();
                 return;
             }
@@ -4155,7 +4157,7 @@ public class ConversationFragment extends XmppFragment
 
     private void retryDecryption(Message message) {
         message.setEncryption(Message.ENCRYPTION_PGP);
-        activity.onConversationsListItemUpdated();
+        this.activity.onConversationsListItemUpdated();
         refresh();
         conversation.getAccount().getPgpDecryptionService().decrypt(message, false);
     }
@@ -4443,7 +4445,7 @@ public class ConversationFragment extends XmppFragment
             activity.getWindow().setSoftInputMode(WindowManager.LayoutParams.SOFT_INPUT_ADJUST_PAN);
         }
         if (!activity.xmppConnectionService.isConversationStillOpen(this.conversation)) {
-            activity.onConversationArchived(this.conversation);
+            this.activity.onConversationArchived(this.conversation);
             return false;
         }
         setupReply(conversation.getReplyTo());
@@ -4522,7 +4524,7 @@ public class ConversationFragment extends XmppFragment
             binding.commandsView.setOnItemClickListener((parent, view, position, id) -> {
                 if (activity == null) return;
 
-                commandAdapter.getItem(position).start(activity, ConversationFragment.this.conversation);
+                commandAdapter.getItem(position).start((ConversationsActivity) activity, ConversationFragment.this.conversation);
             });
             refreshCommands(false);
         }
@@ -4919,7 +4921,7 @@ public class ConversationFragment extends XmppFragment
                 && !conversation.isBlocked()
                 && conversation.isWithStranger()) {
             showSnackbar(R.string.received_message_from_stranger, R.string.block, mBlockClickListener);
-        } else if (activity != null && activity.warnUnecryptedChat()) {
+        } else if (activity != null && ((XmppActivity) activity).warnUnecryptedChat()) {
             if (conversation.getNextEncryption() == Message.ENCRYPTION_NONE && conversation.isSingleOrPrivateAndNonAnonymous() && ((Config.supportOmemo() && Conversation.suitableForOmemoByDefault(conversation)) ||
                     (Config.supportOpenPgp() && account.isPgpDecryptionServiceConnected()) || (
                     mode == Conversation.MODE_SINGLE && Config.supportOtr()))) {
@@ -4954,7 +4956,7 @@ public class ConversationFragment extends XmppFragment
         disableEncrpytionForExceptions();
         if (this.conversation != null && this.activity != null && this.activity.xmppConnectionService != null) {
             if (!activity.xmppConnectionService.isConversationStillOpen(this.conversation)) {
-                activity.onConversationArchived(this.conversation);
+                this.activity.onConversationArchived(this.conversation);
                 return;
             }
         }
@@ -5501,7 +5503,7 @@ public class ConversationFragment extends XmppFragment
             if (activity == null) {
                 return;
             }
-            activity.onConversationsListItemUpdated();
+            this.activity.onConversationsListItemUpdated();
         });
         runOnUiThread(this::updateSendButton);
     }
@@ -5575,7 +5577,7 @@ public class ConversationFragment extends XmppFragment
         } else {
             if (!activity.xmppConnectionService.isConversationStillOpen(conversation)) {
                 clearPending();
-                activity.onConversationArchived(conversation);
+                this.activity.onConversationArchived(conversation);
                 return;
             }
         }
@@ -5591,7 +5593,7 @@ public class ConversationFragment extends XmppFragment
         Conversation conversation = activity.xmppConnectionService.findConversationByUuid(uuid);
         if (conversation == null) {
             clearPending();
-            activity.onConversationArchived(null);
+            this.activity.onConversationArchived(null);
             return false;
         }
         reInit(conversation);
@@ -5790,7 +5792,7 @@ public class ConversationFragment extends XmppFragment
             message.setFileDeleted(true);
             activity.xmppConnectionService.evictPreview(activity.xmppConnectionService.getFileBackend().getFile(message));
             activity.xmppConnectionService.updateMessage(message, false);
-            activity.onConversationsListItemUpdated();
+            this.activity.onConversationsListItemUpdated();
             refresh();
         }
     }

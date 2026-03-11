@@ -89,6 +89,9 @@ import eu.siacs.conversations.services.BarcodeProvider;
 import eu.siacs.conversations.services.EmojiInitializationService;
 import eu.siacs.conversations.services.XmppConnectionService;
 import eu.siacs.conversations.services.XmppConnectionService.XmppConnectionBinder;
+import eu.siacs.conversations.ui.interfaces.OnConversationArchived;
+import eu.siacs.conversations.ui.interfaces.OnConversationRead;
+import eu.siacs.conversations.ui.interfaces.OnConversationsListItemUpdated;
 import eu.siacs.conversations.ui.util.AvatarWorkerTask;
 import eu.siacs.conversations.ui.util.CustomTab;
 import eu.siacs.conversations.ui.util.PresenceSelector;
@@ -118,7 +121,7 @@ import java.util.concurrent.RejectedExecutionException;
 
 import static eu.siacs.conversations.ui.SettingsActivity.ENABLE_OTR_ENCRYPTION;
 
-public abstract class XmppActivity extends ActionBarActivity {
+public abstract class XmppActivity extends ActionBarActivity implements OnConversationRead, OnConversationArchived, OnConversationsListItemUpdated {
 
     protected static final int REQUEST_ANNOUNCE_PGP = 0x0101;
     protected static final int REQUEST_INVITE_TO_CONVERSATION = 0x0102;
@@ -514,6 +517,59 @@ public abstract class XmppActivity extends ActionBarActivity {
 
     public boolean isDarkTheme() {
         return ThemeHelper.isDark(mTheme);
+    }
+
+    public boolean getAttachmentChoicePreference() {
+        return getBooleanPreference(SettingsActivity.QUICK_SHARE_ATTACHMENT_CHOICE, R.bool.quick_share_attachment_choice);
+    }
+
+    public boolean warnUnecryptedChat() {
+        return getBooleanPreference(SettingsActivity.WARN_UNENCRYPTED_CHAT, R.bool.warn_unencrypted_chat);
+    }
+
+    public void showNavigationBar() {
+    }
+
+    public void hideNavigationBar() {
+    }
+
+    public void verifyOtrSessionDialog(final Conversation conversation, View view) {
+        if (!conversation.hasValidOtrSession() || conversation.getOtrSession().getSessionStatus() != SessionStatus.ENCRYPTED) {
+            ToastCompat.makeText(this, R.string.otr_session_not_started, Toast.LENGTH_LONG).show();
+            return;
+        }
+        if (view == null) {
+            return;
+        }
+        PopupMenu popup = new PopupMenu(this, view);
+        popup.inflate(R.menu.verification_choices);
+        popup.setOnMenuItemClickListener(menuItem -> {
+            Intent intent = new Intent(this, VerifyOTRActivity.class);
+            intent.setAction(VerifyOTRActivity.ACTION_VERIFY_CONTACT);
+            intent.putExtra("contact", conversation.getContact().getJid().asBareJid().toString());
+            intent.putExtra(EXTRA_ACCOUNT, conversation.getAccount().getJid().asBareJid().toString());
+            switch (menuItem.getItemId()) {
+                case R.id.ask_question:
+                    intent.putExtra("mode", VerifyOTRActivity.MODE_ASK_QUESTION);
+                    break;
+            }
+            startActivity(intent);
+            overridePendingTransition(R.animator.fade_in, R.animator.fade_out);
+            return true;
+        });
+        popup.show();
+    }
+
+    @Override
+    public void onConversationRead(Conversation conversation, String upToUuid) {
+    }
+
+    @Override
+    public void onConversationArchived(Conversation conversation) {
+    }
+
+    @Override
+    public void onConversationsListItemUpdated() {
     }
 
     public String getThemeColor() {

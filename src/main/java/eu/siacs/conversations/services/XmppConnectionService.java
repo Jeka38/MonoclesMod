@@ -6820,6 +6820,13 @@ public class XmppConnectionService extends Service {
         toggleForegroundService(activity.xmppConnectionService);
     }
 
+    public static void toggleForegroundService(final eu.siacs.conversations.ui.XmppActivity activity) {
+        if (activity == null) {
+            return;
+        }
+        toggleForegroundService(activity.xmppConnectionService);
+    }
+
     public static enum UpdateRosterReason {
         INIT,
         AVATAR,
