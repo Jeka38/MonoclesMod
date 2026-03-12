@@ -1008,7 +1008,11 @@ public class Conversation extends AbstractEntity implements Blockable, Comparabl
     CharSequence getName() {
         if (getMode() == MODE_MULTI) {
             if (nextCounterpart != null) {
-                return String.format("%s (%s)", nextCounterpart.getResource(), getMucOptions().getName());
+                String roomName = getMucOptions().getName();
+                if (roomName == null) {
+                    roomName = getJid().getLocal();
+                }
+                return String.format("%s (%s)", nextCounterpart.getResource(), roomName);
             }
             final String roomName = getMucOptions().getName();
             final String subject = getMucOptions().getSubject();
