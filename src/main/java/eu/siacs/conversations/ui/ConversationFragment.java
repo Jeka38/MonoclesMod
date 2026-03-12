@@ -4851,7 +4851,8 @@ public class ConversationFragment extends XmppFragment
             showSnackbar(R.string.contact_asks_for_presence_subscription, R.string.allow, this.mAllowPresenceSubscription, this.mLongPressBlockListener);
         } else if (mode == Conversation.MODE_MULTI
                 && !conversation.getMucOptions().online()
-                && account.getStatus() == Account.State.ONLINE) {
+                && account.getStatus() == Account.State.ONLINE
+                && !conversation.hasPermanentCounterpart()) {
             MucOptions.Error error = conversation.getMucOptions().getError();
             if (Objects.requireNonNull(error) == MucOptions.Error.NICK_IN_USE) {
                 showSnackbar(R.string.nick_in_use, R.string.edit, clickToMuc);

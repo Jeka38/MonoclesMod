@@ -3364,9 +3364,8 @@ public class XmppConnectionService extends Service {
                         }
                     }
                 }
-                if (joinAfterCreate) {
+                if (joinAfterCreate && !c.hasPermanentCounterpart()) {
                     joinMuc(c);
-
                 }
             };
             if (async) {
@@ -3965,7 +3964,7 @@ public class XmppConnectionService extends Service {
     private void connectMultiModeConversations(Account account) {
         List<Conversation> conversations = getConversations();
         for (Conversation conversation : conversations) {
-            if (conversation.getMode() == Conversation.MODE_MULTI && conversation.getAccount() == account) {
+            if (conversation.getMode() == Conversation.MODE_MULTI && conversation.getAccount() == account && !conversation.hasPermanentCounterpart()) {
                 joinMuc(conversation);
             }
         }
