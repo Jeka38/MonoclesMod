@@ -197,7 +197,6 @@ public class Conversation extends AbstractEntity implements Blockable, Comparabl
     private int mode;
     private JSONObject attributes;
     private Jid nextCounterpart;
-    private transient WeakReference<Conversation> parentConversation;
     private transient SessionImpl otrSession;
     private transient String otrFingerprint = null;
     private Smp mSmp = new Smp();
@@ -256,7 +255,7 @@ public class Conversation extends AbstractEntity implements Blockable, Comparabl
                 cursor.getInt(cursor.getColumnIndex(MODE)),
                 cursor.getString(cursor.getColumnIndex(ATTRIBUTES)));
         int index = cursor.getColumnIndex(NEXT_COUNTERPART);
-        if (index >= 0) {
+        if (index >= 0 && !cursor.isNull(index)) {
             conversation.nextCounterpart = JidHelper.parseOrFallbackToInvalid(cursor.getString(index));
         }
         return conversation;
@@ -1245,14 +1244,6 @@ public class Conversation extends AbstractEntity implements Blockable, Comparabl
 
     public boolean hasPermanentCounterpart() {
         return nextCounterpart != null;
-    }
-
-    public void setParentConversation(Conversation conversation) {
-        this.parentConversation = new WeakReference<>(conversation);
-    }
-
-    public Conversation getParentConversation() {
-        return this.parentConversation != null ? this.parentConversation.get() : null;
     }
 
     public int getNextEncryption() {

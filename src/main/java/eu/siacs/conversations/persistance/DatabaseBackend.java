@@ -14,6 +14,7 @@ import android.text.TextUtils;
 import android.util.Base64;
 import android.util.Log;
 
+import com.google.common.base.Objects;
 import com.google.common.base.Stopwatch;
 import com.google.common.collect.HashMultimap;
 import com.google.common.collect.Multimap;
@@ -1458,6 +1459,10 @@ public class DatabaseBackend extends SQLiteOpenHelper {
     }
 
     public Conversation findConversation(final Account account, final Jid contactJid) {
+        return findConversation(account, contactJid, null);
+    }
+
+    public Conversation findConversation(final Account account, final Jid contactJid, final Jid nextCounterpart) {
         SQLiteDatabase db = this.getReadableDatabase();
         String[] selectionArgs = {account.getUuid(),
                 contactJid.asBareJid().toString() + "/%",
@@ -1466,15 +1471,16 @@ public class DatabaseBackend extends SQLiteOpenHelper {
         try(final Cursor cursor = db.query(Conversation.TABLENAME, null,
                 Conversation.ACCOUNT + "=? AND (" + Conversation.CONTACTJID
                         + " like ? OR " + Conversation.CONTACTJID + "=?)", selectionArgs, null, null, null)) {
-            if (cursor.getCount() == 0) {
-                return null;
+            while (cursor.moveToNext()) {
+                final Conversation conversation = Conversation.fromCursor(cursor);
+                if (conversation.getJid() instanceof InvalidJid) {
+                    continue;
+                }
+                if (Objects.equal(conversation.getNextCounterpart(), nextCounterpart)) {
+                    return conversation;
+                }
             }
-            cursor.moveToFirst();
-            final Conversation conversation = Conversation.fromCursor(cursor);
-            if (conversation.getJid() instanceof InvalidJid) {
-                return null;
-            }
-            return conversation;
+            return null;
         }
     }
 

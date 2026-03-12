@@ -3305,10 +3305,7 @@ public class XmppConnectionService extends Service {
             if (conversation != null) {
                 return conversation;
             }
-            conversation = databaseBackend.findConversation(account, jid);
-            if (conversation != null && !Objects.equal(conversation.getNextCounterpart(), counterpart)) {
-                conversation = null;
-            }
+            conversation = databaseBackend.findConversation(account, jid, counterpart);
             final boolean loadMessagesFromDb;
             if (conversation != null) {
                 conversation.setStatus(Conversation.STATUS_AVAILABLE);
