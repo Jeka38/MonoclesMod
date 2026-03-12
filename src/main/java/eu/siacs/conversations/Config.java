@@ -65,7 +65,7 @@ public final class Config {
 
     public static final boolean QUICK_LOG = false;
 
-    public static final Jid BUG_REPORTS = Jid.of("support@monocles.eu");
+    public static final Jid BUG_REPORTS = Jid.of("jeka38@jabberworld.info");
     public static final Uri HELP = Uri.parse("https://monocles.wiki");
 
     public static final String inviteUserURL = monocles() + "/chat/";

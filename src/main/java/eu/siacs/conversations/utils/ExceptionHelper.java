@@ -1,7 +1,12 @@
 package eu.siacs.conversations.utils;
 
 import android.content.Context;
+
+import com.google.common.io.ByteStreams;
+
+import java.io.FileInputStream;
 import java.io.IOException;
+import java.io.InputStream;
 import java.io.OutputStream;
 import java.text.SimpleDateFormat;
 import java.util.Locale;
@@ -25,5 +30,21 @@ public class ExceptionHelper {
             os.close();
         } catch (IOException ignored) {
         }
+    }
+
+    public static boolean hasStacktrace(Context context) {
+        return context.getFileStreamPath(FILENAME).exists();
+    }
+
+    public static String getStacktrace(Context context) {
+        try (InputStream is = new FileInputStream(context.getFileStreamPath(FILENAME))) {
+            return new String(ByteStreams.toByteArray(is));
+        } catch (IOException e) {
+            return null;
+        }
+    }
+
+    public static void deleteStacktrace(Context context) {
+        context.deleteFile(FILENAME);
     }
 }

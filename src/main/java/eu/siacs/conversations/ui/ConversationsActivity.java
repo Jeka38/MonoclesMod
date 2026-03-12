@@ -56,6 +56,8 @@ import android.os.Build;
 import android.os.Bundle;
 import android.preference.PreferenceManager;
 import android.provider.Settings;
+import android.text.Html;
+import android.text.TextUtils;
 import android.text.SpannableStringBuilder;
 import android.text.Spanned;
 import android.text.style.TypefaceSpan;
@@ -121,6 +123,7 @@ import eu.siacs.conversations.ui.util.IntroHelper;
 import eu.siacs.conversations.ui.util.PendingItem;
 import eu.siacs.conversations.ui.util.StyledAttributes;
 import eu.siacs.conversations.ui.util.UpdateHelper;
+import eu.siacs.conversations.utils.AccountUtils;
 import eu.siacs.conversations.utils.ExceptionHelper;
 import eu.siacs.conversations.utils.MenuDoubleTabUtil;
 import eu.siacs.conversations.xml.Namespace;
@@ -325,7 +328,7 @@ public class ConversationsActivity extends XmppActivity implements OnConversatio
         }
         final Fragment fragment = getFragmentManager().findFragmentById(R.id.main_fragment);
         if (fragment instanceof ConversationsOverviewFragment) {
-
+            showCrashReportIfAvailable();
             if (offerToSetupDiallerIntegration()) return;
             if (offerToDownloadStickers()) return;
             openBatteryOptimizationDialogIfNeeded();
@@ -1380,5 +1383,34 @@ public class ConversationsActivity extends XmppActivity implements OnConversatio
         Conversation conversation = ConversationFragment.getConversationReliable(this);
         final boolean groupChat = conversation != null && conversation.isPrivateAndNonAnonymous();
         displayToast(getString(groupChat ? R.string.destroy_room_failed : R.string.destroy_channel_failed));
+    }
+
+    private void showCrashReportIfAvailable() {
+        if (ExceptionHelper.hasStacktrace(this)) {
+            final String stacktrace = ExceptionHelper.getStacktrace(this);
+            ExceptionHelper.deleteStacktrace(this);
+            if (TextUtils.isEmpty(stacktrace)) {
+                return;
+            }
+            final AlertDialog.Builder builder = new AlertDialog.Builder(this);
+            builder.setTitle(R.string.crash_report_title);
+            builder.setMessage(Html.fromHtml(getString(R.string.crash_report_message)));
+            builder.setPositiveButton(R.string.ok, null);
+            builder.setNeutralButton(R.string.copy_to_clipboard, (dialog, which) -> {
+                if (copyTextToClipboard(stacktrace, R.string.crash_report_title)) {
+                    Toast.makeText(this, R.string.message_copied_to_clipboard, Toast.LENGTH_SHORT).show();
+                }
+            });
+            if (xmppConnectionServiceBound) {
+                final Account account = AccountUtils.getFirstEnabled(xmppConnectionService);
+                if (account != null) {
+                    builder.setNegativeButton(R.string.send_now, (dialog, which) -> {
+                        final Conversation conversation = xmppConnectionService.findOrCreateConversation(account, Config.BUG_REPORTS, false, true);
+                        switchToConversation(conversation, stacktrace);
+                    });
+                }
+            }
+            builder.show();
+        }
     }
 }
