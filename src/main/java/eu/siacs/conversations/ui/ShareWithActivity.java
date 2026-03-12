@@ -199,7 +199,7 @@ public class ShareWithActivity extends XmppActivity implements XmppConnectionSer
             mPendingConversation = conversation;
             return;
         }
-        Intent intent = new Intent(this, ConversationsActivity.class);
+        Intent intent = getConversationStartIntent(conversation);
         intent.putExtra(ConversationsActivity.EXTRA_CONVERSATION, conversation.getUuid());
         if (share.uris.size() > 0) {
             intent.setAction(Intent.ACTION_SEND_MULTIPLE);

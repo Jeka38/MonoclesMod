@@ -133,6 +133,21 @@ public abstract class XmppActivity extends ActionBarActivity implements OnConver
     protected static final int REQUEST_UNKNOWN_SOURCE_OP = 0x98ff;
 
     public static final String EXTRA_ACCOUNT = "account";
+    public static final String EXTRA_CONVERSATION = "conversationUuid";
+    public static final String EXTRA_DOWNLOAD_UUID = "eu.siacs.conversations.download_uuid";
+    public static final String EXTRA_AS_QUOTE = "eu.siacs.conversations.as_quote";
+    public static final String EXTRA_NICK = "nick";
+    public static final String EXTRA_USER = "user";
+    public static final String EXTRA_IS_PRIVATE_MESSAGE = "pm";
+    public static final String EXTRA_DO_NOT_APPEND = "do_not_append";
+    public static final String EXTRA_POST_INIT_ACTION = "post_init_action";
+    public static final String POST_ACTION_RECORD_VOICE = "record_voice";
+    public static final String EXTRA_THREAD = "threadId";
+    public static final String EXTRA_TYPE = "type";
+    public static final String EXTRA_NODE = "node";
+    public static final String EXTRA_JID = "jid";
+
+    public static final String ACTION_VIEW_CONVERSATION = "eu.siacs.conversations.VIEW";
 
     public XmppConnectionService xmppConnectionService;
     public MediaBrowserActivity mediaBrowserActivity;
@@ -651,13 +666,26 @@ public abstract class XmppActivity extends ActionBarActivity implements OnConver
         return getPreferences().getBoolean(name, getResources().getBoolean(res));
     }
 
+    public static Intent getConversationStartIntent(Context context, Conversation conversation) {
+        if (conversation != null && conversation.getMode() == Conversation.MODE_SINGLE && conversation.getJid().isFullJid()) {
+            return new Intent(context, MucPrivateChatActivity.class);
+        } else {
+            return new Intent(context, ConversationsActivity.class);
+        }
+    }
+
+    public Intent getConversationStartIntent(Conversation conversation) {
+        return getConversationStartIntent(this, conversation);
+    }
+
     public void startCommand(final Account account, final Jid jid, final String node) {
-        Intent intent = new Intent(this, ConversationsActivity.class);
-        intent.setAction(ConversationsActivity.ACTION_VIEW_CONVERSATION);
-        intent.putExtra(ConversationsActivity.EXTRA_CONVERSATION, xmppConnectionService.findOrCreateConversation(account, jid, false, false).getUuid());
-        intent.putExtra(ConversationsActivity.EXTRA_POST_INIT_ACTION, "command");
-        intent.putExtra(ConversationsActivity.EXTRA_NODE, node);
-        intent.putExtra(ConversationsActivity.EXTRA_JID, (CharSequence) jid);
+        final Conversation conversation = xmppConnectionService.findOrCreateConversation(account, jid, false, false);
+        Intent intent = getConversationStartIntent(conversation);
+        intent.setAction(ACTION_VIEW_CONVERSATION);
+        intent.putExtra(EXTRA_CONVERSATION, conversation.getUuid());
+        intent.putExtra(EXTRA_POST_INIT_ACTION, "command");
+        intent.putExtra(EXTRA_NODE, node);
+        intent.putExtra(EXTRA_JID, (CharSequence) jid);
         intent.setFlags(intent.getFlags() | Intent.FLAG_ACTIVITY_CLEAR_TOP);
         startActivity(intent);
     }
@@ -709,25 +737,25 @@ public abstract class XmppActivity extends ActionBarActivity implements OnConver
 
     public void switchToConversation(Conversation conversation, String text, boolean asQuote, String nick, boolean pm, boolean doNotAppend, String postInit, String thread) {
         if (conversation == null) return;
-        Intent intent = new Intent(this, ConversationsActivity.class);
-        intent.setAction(ConversationsActivity.ACTION_VIEW_CONVERSATION);
-        intent.putExtra(ConversationsActivity.EXTRA_CONVERSATION, conversation.getUuid());
-        intent.putExtra(ConversationsActivity.EXTRA_THREAD, thread);
+        Intent intent = getConversationStartIntent(conversation);
+        intent.setAction(ACTION_VIEW_CONVERSATION);
+        intent.putExtra(EXTRA_CONVERSATION, conversation.getUuid());
+        intent.putExtra(EXTRA_THREAD, thread);
         if (text != null) {
             intent.putExtra(Intent.EXTRA_TEXT, text);
             if (asQuote) {
-                intent.putExtra(ConversationsActivity.EXTRA_AS_QUOTE, true);
-                intent.putExtra(ConversationsActivity.EXTRA_USER, nick);
+                intent.putExtra(EXTRA_AS_QUOTE, true);
+                intent.putExtra(EXTRA_USER, nick);
             }
         }
         if (nick != null && !asQuote) {
-            intent.putExtra(ConversationsActivity.EXTRA_NICK, nick);
-            intent.putExtra(ConversationsActivity.EXTRA_IS_PRIVATE_MESSAGE, pm);
+            intent.putExtra(EXTRA_NICK, nick);
+            intent.putExtra(EXTRA_IS_PRIVATE_MESSAGE, pm);
         }
         if (doNotAppend) {
-            intent.putExtra(ConversationsActivity.EXTRA_DO_NOT_APPEND, true);
+            intent.putExtra(EXTRA_DO_NOT_APPEND, true);
         }
-        intent.putExtra(ConversationsActivity.EXTRA_POST_INIT_ACTION, postInit);
+        intent.putExtra(EXTRA_POST_INIT_ACTION, postInit);
         intent.setFlags(intent.getFlags() | Intent.FLAG_ACTIVITY_CLEAR_TOP);
         startActivity(intent);
         overridePendingTransition(R.animator.fade_in, R.animator.fade_out);

@@ -1380,7 +1380,7 @@ public class RtpSessionActivity extends XmppActivity
         final Jid with = Jid.ofEscaped(intent.getStringExtra(EXTRA_WITH));
         final Conversation conversation =
                 xmppConnectionService.findOrCreateConversation(account, with, false, true);
-        final Intent launchIntent = new Intent(this, ConversationsActivity.class);
+        final Intent launchIntent = getConversationStartIntent(conversation);
         launchIntent.setAction(ConversationsActivity.ACTION_VIEW_CONVERSATION);
         launchIntent.putExtra(ConversationsActivity.EXTRA_CONVERSATION, conversation.getUuid());
         launchIntent.setFlags(intent.getFlags() | Intent.FLAG_ACTIVITY_CLEAR_TOP);

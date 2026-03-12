@@ -85,6 +85,7 @@ import eu.siacs.conversations.persistance.FileBackend;
 import eu.siacs.conversations.ui.ConversationsActivity;
 import eu.siacs.conversations.ui.EditAccountActivity;
 import eu.siacs.conversations.ui.RtpSessionActivity;
+import eu.siacs.conversations.ui.XmppActivity;
 import eu.siacs.conversations.ui.TimePreference;
 import eu.siacs.conversations.utils.AccountUtils;
 import eu.siacs.conversations.utils.Compatibility;
@@ -1945,9 +1946,10 @@ public class NotificationService {
     }
 
     private PendingIntent createContentIntent(final String conversationUuid, final String downloadMessageUuid) {
-        final Intent viewConversationIntent = new Intent(mXmppConnectionService, ConversationsActivity.class);
-        viewConversationIntent.setAction(ConversationsActivity.ACTION_VIEW_CONVERSATION);
-        viewConversationIntent.putExtra(ConversationsActivity.EXTRA_CONVERSATION, conversationUuid);
+        final Conversation conversation = mXmppConnectionService.findConversationByUuid(conversationUuid);
+        final Intent viewConversationIntent = XmppActivity.getConversationStartIntent(mXmppConnectionService, conversation);
+        viewConversationIntent.setAction(XmppActivity.ACTION_VIEW_CONVERSATION);
+        viewConversationIntent.putExtra(XmppActivity.EXTRA_CONVERSATION, conversationUuid);
         if (downloadMessageUuid != null) {
             viewConversationIntent.putExtra(ConversationsActivity.EXTRA_DOWNLOAD_UUID, downloadMessageUuid);
             return PendingIntent.getActivity(mXmppConnectionService,

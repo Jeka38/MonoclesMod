@@ -143,16 +143,6 @@ import com.google.android.material.bottomnavigation.BottomNavigationView;
 
 public class ConversationsActivity extends XmppActivity implements OnConversationSelected, OnConversationArchived, OnConversationsListItemUpdated, OnConversationRead, XmppConnectionService.OnAccountUpdate, XmppConnectionService.OnConversationUpdate, XmppConnectionService.OnRosterUpdate, OnUpdateBlocklist, XmppConnectionService.OnShowErrorToast, XmppConnectionService.OnAffiliationChanged, XmppConnectionService.OnRoomDestroy {
 
-    public static final String ACTION_VIEW_CONVERSATION = "eu.siacs.conversations.VIEW";
-    public static final String EXTRA_CONVERSATION = "conversationUuid";
-    public static final String EXTRA_DOWNLOAD_UUID = "eu.siacs.conversations.download_uuid";
-    public static final String EXTRA_AS_QUOTE = "eu.siacs.conversations.as_quote";
-    public static final String EXTRA_NICK = "nick";
-    public static final String EXTRA_USER = "user";
-    public static final String EXTRA_IS_PRIVATE_MESSAGE = "pm";
-    public static final String EXTRA_DO_NOT_APPEND = "do_not_append";
-    public static final String EXTRA_POST_INIT_ACTION = "post_init_action";
-    public static final String POST_ACTION_RECORD_VOICE = "record_voice";
     public static final String ACTION_DESTROY_MUC = "eu.siacs.conversations.DESTROY_MUC";
     public static final int REQUEST_OPEN_MESSAGE = 0x9876;
     public static final int REQUEST_PLAY_PAUSE = 0x5432;
@@ -160,10 +150,6 @@ public class ConversationsActivity extends XmppActivity implements OnConversatio
     public static final int DIALLER_INTEGRATION = 0x5432ff;
     public static final int REQUEST_DOWNLOAD_STICKERS = 0xbf8702;
     public static final int REQUEST_CODE_ULOCK = 0xbf8706;
-    public static final String EXTRA_THREAD = "threadId";
-    public static final String EXTRA_TYPE = "type";
-    public static final String EXTRA_NODE = "node";
-    public static final String EXTRA_JID = "jid";
 
     public static BottomNavigationView bottomNavigationView;
 
@@ -196,7 +182,7 @@ public class ConversationsActivity extends XmppActivity implements OnConversatio
 
     private static boolean isViewOrShareIntent(Intent i) {
         Log.d(Config.LOGTAG, "action: " + (i == null ? null : i.getAction()));
-        return i != null && VIEW_AND_SHARE_ACTIONS.contains(i.getAction()) && i.hasExtra(EXTRA_CONVERSATION);
+        return i != null && (ACTION_VIEW_CONVERSATION.equals(i.getAction()) || Intent.ACTION_SEND.equals(i.getAction()) || Intent.ACTION_SEND_MULTIPLE.equals(i.getAction())) && i.hasExtra(EXTRA_CONVERSATION);
     }
 
     private static Intent createLauncherIntent(Context context) {
@@ -819,11 +805,7 @@ public class ConversationsActivity extends XmppActivity implements OnConversatio
     @Override
     public void onConversationSelected(Conversation conversation) {
         clearPendingViewIntent();
-        if (ConversationFragment.getConversation(this) == conversation) {
-            Log.d(Config.LOGTAG, "ignore onConversationSelected() because conversation is already open");
-            return;
-        }
-        openConversation(conversation, null);
+        switchToConversation(conversation);
     }
 
     public void clearPendingViewIntent() {
@@ -1309,8 +1291,60 @@ public class ConversationsActivity extends XmppActivity implements OnConversatio
 
     @Override
     public void switchToConversation(Conversation conversation) {
-        Log.d(Config.LOGTAG, "override");
-        openConversation(conversation, null);
+        switchToConversation(conversation, null, false, null, false, false);
+    }
+
+    @Override
+    public void switchToConversation(Conversation conversation, String text, boolean asQuote, String nick, boolean pm, boolean doNotAppend, String postInit, String thread) {
+        if (conversation == null) return;
+        if (conversation.getMode() == Conversation.MODE_SINGLE && conversation.getJid().isFullJid()) {
+            Intent intent = getConversationStartIntent(conversation);
+            intent.setAction(ACTION_VIEW_CONVERSATION);
+            intent.putExtra(EXTRA_CONVERSATION, conversation.getUuid());
+            intent.putExtra(EXTRA_THREAD, thread);
+            if (text != null) {
+                intent.putExtra(Intent.EXTRA_TEXT, text);
+                if (asQuote) {
+                    intent.putExtra(EXTRA_AS_QUOTE, true);
+                    intent.putExtra(EXTRA_USER, nick);
+                }
+            }
+            if (nick != null && !asQuote) {
+                intent.putExtra(EXTRA_NICK, nick);
+                intent.putExtra(EXTRA_IS_PRIVATE_MESSAGE, pm);
+            }
+            if (doNotAppend) {
+                intent.putExtra(EXTRA_DO_NOT_APPEND, true);
+            }
+            intent.putExtra(EXTRA_POST_INIT_ACTION, postInit);
+            intent.setFlags(intent.getFlags() | Intent.FLAG_ACTIVITY_CLEAR_TOP);
+            startActivity(intent);
+            overridePendingTransition(R.animator.fade_in, R.animator.fade_out);
+        } else {
+            if (ConversationFragment.getConversation(this) == conversation) {
+                Log.d(Config.LOGTAG, "ignore openConversation() because conversation is already open");
+                // if we have text we still want to process it even if it's already open, but openConversation does that via conversationFragment.reInit
+            }
+            Bundle extras = new Bundle();
+            if (thread != null) extras.putString(EXTRA_THREAD, thread);
+            if (text != null) {
+                extras.putString(Intent.EXTRA_TEXT, text);
+                if (asQuote) {
+                    extras.putBoolean(EXTRA_AS_QUOTE, true);
+                    extras.putString(EXTRA_USER, nick);
+                }
+            }
+            if (nick != null && !asQuote) {
+                extras.putString(EXTRA_NICK, nick);
+                extras.putBoolean(EXTRA_IS_PRIVATE_MESSAGE, pm);
+            }
+            if (doNotAppend) {
+                extras.putBoolean(EXTRA_DO_NOT_APPEND, true);
+            }
+            extras.putString(EXTRA_POST_INIT_ACTION, postInit);
+
+            openConversation(conversation, extras);
+        }
     }
 
     @Override

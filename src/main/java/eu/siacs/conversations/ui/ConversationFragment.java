@@ -1095,6 +1095,10 @@ public class ConversationFragment extends XmppFragment
         if (fragment instanceof ConversationFragment) {
             return (ConversationFragment) fragment;
         }
+        fragment = fragmentManager.findFragmentById(R.id.fragment_container);
+        if (fragment instanceof ConversationFragment) {
+            return (ConversationFragment) fragment;
+        }
         return null;
     }
 
@@ -1143,16 +1147,7 @@ public class ConversationFragment extends XmppFragment
     }
 
     public static ConversationFragment get(Activity activity) {
-        FragmentManager fragmentManager = activity.getFragmentManager();
-        Fragment fragment = fragmentManager.findFragmentById(R.id.main_fragment);
-        if (fragment instanceof ConversationFragment) {
-            return (ConversationFragment) fragment;
-        }
-        fragment = fragmentManager.findFragmentById(R.id.secondary_fragment);
-        if (fragment instanceof ConversationFragment) {
-            return (ConversationFragment) fragment;
-        }
-        return null;
+        return findConversationFragment(activity);
     }
 
     public static Conversation getConversationReliable(Activity activity) {
@@ -1160,7 +1155,11 @@ public class ConversationFragment extends XmppFragment
         if (conversation != null) {
             return conversation;
         }
-        return getConversation(activity, R.id.main_fragment);
+        final Conversation conversationMain = getConversation(activity, R.id.main_fragment);
+        if (conversationMain != null) {
+            return conversationMain;
+        }
+        return getConversation(activity, R.id.fragment_container);
     }
 
     private static boolean scrolledToBottom(AbsListView listView) {
