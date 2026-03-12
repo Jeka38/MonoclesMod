@@ -257,10 +257,6 @@
             android:enableOnBackInvokedCallback="false"
             android:windowSoftInputMode="adjustPan|stateHidden" />
         <activity
-            android:name=".ui.PrivateMucChatActivity"
-            android:exported="false"
-            android:windowSoftInputMode="adjustPan|stateHidden" />
-        <activity
             android:name=".ui.ScanActivity"
             android:screenOrientation="portrait"
             android:exported="false"

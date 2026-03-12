@@ -40,7 +40,6 @@ import eu.siacs.conversations.ui.ConferenceDetailsActivity;
 import eu.siacs.conversations.ui.ConversationFragment;
 import eu.siacs.conversations.ui.ConversationsActivity;
 import eu.siacs.conversations.ui.MucUsersActivity;
-import eu.siacs.conversations.ui.PrivateMucChatActivity;
 import eu.siacs.conversations.ui.XmppActivity;
 import eu.siacs.conversations.xmpp.Jid;
 import eu.siacs.conversations.xml.Element;
@@ -325,11 +324,7 @@ public final class MucDetailsContextMenuHelper {
                 kickFromRoom(user, activity, onAffiliationChanged);
                 return true;
             case R.id.send_private_message:
-                Log.d(Config.LOGTAG, "Launching PrivateMucChatActivity for " + user.getFullJid());
-                Intent intent = new Intent(activity, PrivateMucChatActivity.class);
-                intent.putExtra("uuid", conversation.getUuid());
-                intent.putExtra("counterpart", user.getFullJid().toString());
-                activity.startActivity(intent);
+                sendPrivateMessage(user, activity);
                 return true;
             case R.id.invite:
                 // TODO use direct invites for public conferences
@@ -415,5 +410,10 @@ public final class MucDetailsContextMenuHelper {
             Conversation newConversation = activity.xmppConnectionService.findOrCreateConversation(user.getAccount(), user.getRealJid().asBareJid(), false, true);
             activity.switchToConversation(newConversation);
         }
+    }
+
+    private static void sendPrivateMessage(User user, XmppActivity activity) {
+        Conversation newConversation = activity.xmppConnectionService.findOrCreateConversation(user.getAccount(), user.getFullJid(), false, true);
+        activity.switchToConversation(newConversation);
     }
 }

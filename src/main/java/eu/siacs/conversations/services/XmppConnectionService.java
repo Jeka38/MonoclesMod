@@ -2260,7 +2260,7 @@ public class XmppConnectionService extends Service {
         final boolean inProgressJoin = isJoinInProgress(conversation);
 
         if (message.getCounterpart() == null && !message.isPrivateMessage()) {
-            message.setCounterpart(message.getConversation().getJid().asBareJid());
+            message.setCounterpart(message.getConversation().getJid());
         }
 
         boolean waitForPreview = false;
@@ -3172,13 +3172,18 @@ public class XmppConnectionService extends Service {
         if (jid == null) {
             return null;
         }
+        Conversation bareMatch = null;
         for (final Conversation conversation : haystack) {
-            if ((account == null || conversation.getAccount() == account)
-                    && (conversation.getJid().asBareJid().equals(jid.asBareJid()))) {
-                return conversation;
+            if (account == null || conversation.getAccount() == account) {
+                if (conversation.getJid().equals(jid)) {
+                    return conversation;
+                }
+                if (conversation.getJid().asBareJid().equals(jid.asBareJid())) {
+                    bareMatch = conversation;
+                }
             }
         }
-        return null;
+        return bareMatch;
     }
 
     public boolean isConversationsListEmpty(final Conversation ignore) {
@@ -3279,10 +3284,13 @@ public class XmppConnectionService extends Service {
     public Conversation findOrCreateConversation(final Account account, final Jid jid, final boolean muc, final boolean joinAfterCreate, final MessageArchiveService.Query query, final boolean async, final String password) {
         synchronized (this.conversations) {
             Conversation conversation = find(account, jid);
-            if (conversation != null) {
+            if (conversation != null && (conversation.getMode() == Conversation.MODE_MULTI) == muc) {
                 return conversation;
             }
             conversation = databaseBackend.findConversation(account, jid);
+            if (conversation != null && (conversation.getMode() == Conversation.MODE_MULTI) != muc) {
+                conversation = null;
+            }
             final boolean loadMessagesFromDb;
             if (conversation != null) {
                 conversation.setStatus(Conversation.STATUS_AVAILABLE);
@@ -3293,7 +3301,7 @@ public class XmppConnectionService extends Service {
                     if (password != null) conversation.getMucOptions().setPassword(password);
                 } else {
                     conversation.setMode(Conversation.MODE_SINGLE);
-                    conversation.setContactJid(jid.asBareJid());
+                    conversation.setContactJid(jid);
                 }
                 databaseBackend.updateConversation(conversation);
                 loadMessagesFromDb = conversation.messagesLoaded.compareAndSet(true, false);
@@ -3303,14 +3311,14 @@ public class XmppConnectionService extends Service {
                 if (contact != null) {
                     conversationName = contact.getDisplayName();
                 } else {
-                    conversationName = jid.getLocal();
+                    conversationName = jid.isBareJid() ? jid.getLocal() : jid.getResource();
                 }
                 if (muc) {
                     conversation = new Conversation(conversationName, account, jid,
                             Conversation.MODE_MULTI);
                     if (password != null) conversation.getMucOptions().setPassword(password);
                 } else {
-                    conversation = new Conversation(conversationName, account, jid.asBareJid(),
+                    conversation = new Conversation(conversationName, account, jid,
                             Conversation.MODE_SINGLE);
                 }
                 this.databaseBackend.createConversation(conversation);

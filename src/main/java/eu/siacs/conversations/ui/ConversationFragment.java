@@ -1095,10 +1095,6 @@ public class ConversationFragment extends XmppFragment
         if (fragment instanceof ConversationFragment) {
             return (ConversationFragment) fragment;
         }
-        fragment = fragmentManager.findFragmentById(R.id.fragment_container);
-        if (fragment instanceof ConversationFragment) {
-            return (ConversationFragment) fragment;
-        }
         return null;
     }
 
@@ -1153,10 +1149,6 @@ public class ConversationFragment extends XmppFragment
             return (ConversationFragment) fragment;
         }
         fragment = fragmentManager.findFragmentById(R.id.secondary_fragment);
-        if (fragment instanceof ConversationFragment) {
-            return (ConversationFragment) fragment;
-        }
-        fragment = fragmentManager.findFragmentById(R.id.fragment_container);
         if (fragment instanceof ConversationFragment) {
             return (ConversationFragment) fragment;
         }

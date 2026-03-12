@@ -1455,23 +1455,45 @@ public class DatabaseBackend extends SQLiteOpenHelper {
 
     public Conversation findConversation(final Account account, final Jid contactJid) {
         SQLiteDatabase db = this.getReadableDatabase();
-        String[] selectionArgs = {account.getUuid(),
-                contactJid.asBareJid().toString() + "/%",
-                contactJid.asBareJid().toString()
-        };
-        try(final Cursor cursor = db.query(Conversation.TABLENAME, null,
-                Conversation.ACCOUNT + "=? AND (" + Conversation.CONTACTJID
-                        + " like ? OR " + Conversation.CONTACTJID + "=?)", selectionArgs, null, null, null)) {
-            if (cursor.getCount() == 0) {
-                return null;
+        String[] exactSelectionArgs = {account.getUuid(), contactJid.toString()};
+        try (final Cursor cursor = db.query(Conversation.TABLENAME, null,
+                Conversation.ACCOUNT + "=? AND " + Conversation.CONTACTJID + "=?",
+                exactSelectionArgs, null, null, null)) {
+            if (cursor.getCount() > 0) {
+                cursor.moveToFirst();
+                final Conversation conversation = Conversation.fromCursor(cursor);
+                if (!(conversation.getJid() instanceof InvalidJid)) {
+                    return conversation;
+                }
             }
-            cursor.moveToFirst();
-            final Conversation conversation = Conversation.fromCursor(cursor);
-            if (conversation.getJid() instanceof InvalidJid) {
-                return null;
-            }
-            return conversation;
         }
+        if (!contactJid.isBareJid()) {
+            String[] bareSelectionArgs = {account.getUuid(), contactJid.asBareJid().toString()};
+            try (final Cursor cursor = db.query(Conversation.TABLENAME, null,
+                    Conversation.ACCOUNT + "=? AND " + Conversation.CONTACTJID + "=?",
+                    bareSelectionArgs, null, null, null)) {
+                if (cursor.getCount() > 0) {
+                    cursor.moveToFirst();
+                    final Conversation conversation = Conversation.fromCursor(cursor);
+                    if (!(conversation.getJid() instanceof InvalidJid)) {
+                        return conversation;
+                    }
+                }
+            }
+        }
+        String[] searchSelectionArgs = {account.getUuid(), contactJid.asBareJid().toString() + "/%"};
+        try (final Cursor cursor = db.query(Conversation.TABLENAME, null,
+                Conversation.ACCOUNT + "=? AND " + Conversation.CONTACTJID + " like ?",
+                searchSelectionArgs, null, null, null)) {
+            if (cursor.getCount() > 0) {
+                cursor.moveToFirst();
+                final Conversation conversation = Conversation.fromCursor(cursor);
+                if (!(conversation.getJid() instanceof InvalidJid)) {
+                    return conversation;
+                }
+            }
+        }
+        return null;
     }
 
     public void updateConversation(final Conversation conversation) {

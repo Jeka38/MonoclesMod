@@ -704,7 +704,7 @@ public class MessageParser extends AbstractParser implements OnMessagePacketRece
         }
 
         if ((body != null || pgpEncrypted != null || (axolotlEncrypted != null && axolotlEncrypted.hasChild("payload")) || !attachments.isEmpty() || html != null || (packet.hasChild("subject") && packet.hasChild("thread"))) && !isMucStatusMessage) {
-            final Conversation conversation = mXmppConnectionService.findOrCreateConversation(account, counterpart.asBareJid(), conversationIsProbablyMuc, false, query, false);
+            final Conversation conversation = mXmppConnectionService.findOrCreateConversation(account, isTypeGroupChat ? counterpart.asBareJid() : counterpart, conversationIsProbablyMuc, false, query, false);
             final boolean conversationMultiMode = conversation.getMode() == Conversation.MODE_MULTI;
 
             if (serverMsgId == null) {

@@ -817,6 +817,8 @@ public class Conversation extends AbstractEntity implements Blockable, Comparabl
             }
             if (m.wasMergedIntoPrevious(xmppConnectionService) || (m.getSubject() != null && !m.isOOb() && (m.getRawBody() == null || m.getRawBody().isEmpty())) || (getLockThread() && !extraIds.contains(m.replyId()) && (mthread == null || !mthread.getContent().equals(getThread() == null ? "" : getThread().getContent())))) {
                 iterator.remove();
+            } else if (mode == MODE_MULTI && m.isPrivateMessage() && (m.getServerMsgId() == null || !m.getServerMsgId().startsWith("MUC_INVITATION_"))) {
+                iterator.remove();
             } else if (getLockThread() && mthread != null) {
                 Element reply = m.getReply();
                 if (reply != null && reply.getAttribute("id") != null) extraIds.add(reply.getAttribute("id"));
