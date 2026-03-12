@@ -1031,6 +1031,7 @@
     <string name="send_message_to_x">Отправить сообщение %s</string>
     <string name="send_never">Больше не спрашивать</string>
     <string name="send_now">Отправить сейчас</string>
+    <string name="dismiss">Закрыть</string>
     <string name="send_omemo_message">Сообщение…</string>
     <string name="send_omemo_x509_message">Отправить сообщение, зашифрованное v\\OMEMO</string>
     <string name="send_pgp_message">Сообщение…</string>

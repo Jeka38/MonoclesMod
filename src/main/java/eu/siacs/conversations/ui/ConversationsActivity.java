@@ -188,6 +188,7 @@ public class ConversationsActivity extends XmppActivity implements OnConversatio
     private ActivityConversationsBinding binding;
     private boolean mActivityPaused = true;
     private AtomicBoolean mRedirectInProcess = new AtomicBoolean(false);
+    private boolean mCrashReportShown = false;
     private boolean refreshForNewCaps = false;
     private Set<Jid> newCapsJids = new HashSet<>();
     private int mRequestCode = -1;
@@ -294,6 +295,7 @@ public class ConversationsActivity extends XmppActivity implements OnConversatio
         }
 
         invalidateActionBarTitle();
+        showCrashReportIfAvailable();
         showDialogsIfMainIsOverview();
     }
 
@@ -328,7 +330,6 @@ public class ConversationsActivity extends XmppActivity implements OnConversatio
         }
         final Fragment fragment = getFragmentManager().findFragmentById(R.id.main_fragment);
         if (fragment instanceof ConversationsOverviewFragment) {
-            showCrashReportIfAvailable();
             if (offerToSetupDiallerIntegration()) return;
             if (offerToDownloadStickers()) return;
             openBatteryOptimizationDialogIfNeeded();
@@ -1386,31 +1387,35 @@ public class ConversationsActivity extends XmppActivity implements OnConversatio
     }
 
     private void showCrashReportIfAvailable() {
-        if (ExceptionHelper.hasStacktrace(this)) {
-            final String stacktrace = ExceptionHelper.getStacktrace(this);
-            ExceptionHelper.deleteStacktrace(this);
-            if (TextUtils.isEmpty(stacktrace)) {
-                return;
-            }
-            final AlertDialog.Builder builder = new AlertDialog.Builder(this);
-            builder.setTitle(R.string.crash_report_title);
-            builder.setMessage(Html.fromHtml(getString(R.string.crash_report_message)));
-            builder.setPositiveButton(R.string.ok, null);
-            builder.setNeutralButton(R.string.copy_to_clipboard, (dialog, which) -> {
-                if (copyTextToClipboard(stacktrace, R.string.crash_report_title)) {
-                    Toast.makeText(this, R.string.message_copied_to_clipboard, Toast.LENGTH_SHORT).show();
-                }
-            });
-            if (xmppConnectionServiceBound) {
-                final Account account = AccountUtils.getFirstEnabled(xmppConnectionService);
-                if (account != null) {
-                    builder.setNegativeButton(R.string.send_now, (dialog, which) -> {
-                        final Conversation conversation = xmppConnectionService.findOrCreateConversation(account, Config.BUG_REPORTS, false, true);
-                        switchToConversation(conversation, stacktrace);
-                    });
-                }
-            }
-            builder.show();
+        if (mCrashReportShown || !ExceptionHelper.hasStacktrace(this)) {
+            return;
         }
+        final String stacktrace = ExceptionHelper.getStacktrace(this);
+        if (TextUtils.isEmpty(stacktrace)) {
+            ExceptionHelper.deleteStacktrace(this);
+            return;
+        }
+        mCrashReportShown = true;
+        final AlertDialog.Builder builder = new AlertDialog.Builder(this);
+        builder.setTitle(R.string.crash_report_title);
+        builder.setMessage(Html.fromHtml(getString(R.string.crash_report_message)));
+        builder.setPositiveButton(R.string.dismiss, (dialog, which) -> ExceptionHelper.deleteStacktrace(this));
+        builder.setNeutralButton(R.string.copy_to_clipboard, (dialog, which) -> {
+            if (copyTextToClipboard(stacktrace, R.string.crash_report_title)) {
+                Toast.makeText(this, R.string.message_copied_to_clipboard, Toast.LENGTH_SHORT).show();
+            }
+            ExceptionHelper.deleteStacktrace(this);
+        });
+        if (xmppConnectionServiceBound) {
+            final Account account = AccountUtils.getFirstEnabled(xmppConnectionService);
+            if (account != null) {
+                builder.setNegativeButton(R.string.send_now, (dialog, which) -> {
+                    final Conversation conversation = xmppConnectionService.findOrCreateConversation(account, Config.BUG_REPORTS, false, true);
+                    switchToConversation(conversation, stacktrace);
+                    ExceptionHelper.deleteStacktrace(this);
+                });
+            }
+        }
+        builder.show();
     }
 }

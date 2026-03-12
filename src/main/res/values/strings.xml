@@ -67,6 +67,7 @@
     <string name="crash_report_title">monocles mod has crashed</string>
     <string name="crash_report_message">By sending in stack traces you are helping the ongoing development of monocles mod\n<b>Warning:</b> This will use your XMPP account to send the stack trace to the developer.</string>
     <string name="send_now">Send now</string>
+    <string name="dismiss">Dismiss</string>
     <string name="mark_all_chats_as_read">Mark all chats as read</string>
     <string name="marked_as_read">Мarked as readе</string>
     <string name="marked_all_chats_as_read">All chats are marked as read</string>
