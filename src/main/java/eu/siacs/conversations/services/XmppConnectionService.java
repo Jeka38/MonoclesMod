@@ -3434,22 +3434,24 @@ public class XmppConnectionService extends Service {
         synchronized (this.conversations) {
             getMessageArchiveService().kill(conversation);
             if (conversation.getMode() == Conversation.MODE_MULTI) {
-                if (conversation.getAccount().getStatus() == Account.State.ONLINE) {
-                    final Bookmark bookmark = conversation.getBookmark();
-                    if (maySynchronizeWithBookmarks && bookmark != null && synchronizeWithBookmarks()) {
-                        if (conversation.getMucOptions().getError() == MucOptions.Error.DESTROYED) {
-                            Account account = bookmark.getAccount();
-                            bookmark.setConversation(null);
-                            deleteBookmark(account, bookmark);
-                        } else if (bookmark.autojoin()) {
-                            bookmark.setAutojoin(false);
-                            createBookmark(bookmark.getAccount(), bookmark);
+                if (!conversation.hasPermanentCounterpart()) {
+                    if (conversation.getAccount().getStatus() == Account.State.ONLINE) {
+                        final Bookmark bookmark = conversation.getBookmark();
+                        if (maySynchronizeWithBookmarks && bookmark != null && synchronizeWithBookmarks()) {
+                            if (conversation.getMucOptions().getError() == MucOptions.Error.DESTROYED) {
+                                Account account = bookmark.getAccount();
+                                bookmark.setConversation(null);
+                                deleteBookmark(account, bookmark);
+                            } else if (bookmark.autojoin()) {
+                                bookmark.setAutojoin(false);
+                                createBookmark(bookmark.getAccount(), bookmark);
+                            }
                         }
                     }
+                    deregisterWithMuc(conversation);
+                    leaveMuc(conversation);
                 }
-                deregisterWithMuc(conversation);
-                leaveMuc(conversation);
-            } else {
+            } else if (conversation.getMode() == Conversation.MODE_SINGLE) {
                 if (conversation.getContact().getOption(Contact.Options.PENDING_SUBSCRIPTION_REQUEST)) {
                     stopPresenceUpdatesTo(conversation.getContact());
                 }
@@ -6094,7 +6096,9 @@ public class XmppConnectionService extends Service {
         for (Conversation conversation : getConversations()) {
             if ((conversation.getAccount().isEnabled() || accountJid != null)
                     && (accountJid == null || accountJid.equals(conversation.getAccount().getJid().asBareJid().toString()))
-                    && conversation.getJid().asBareJid().equals(jid.asBareJid()) && conversation.getMode() == Conversation.MODE_MULTI) {
+                    && conversation.getJid().asBareJid().equals(jid.asBareJid())
+                    && conversation.getMode() == Conversation.MODE_MULTI
+                    && !conversation.hasPermanentCounterpart()) {
                 return conversation;
             }
         }
