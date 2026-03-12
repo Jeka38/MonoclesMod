@@ -1855,7 +1855,7 @@ public class ConversationFragment extends XmppFragment
             final MenuItem deleteCustomBg = menu.findItem(R.id.action_delete_custom_bg);
 
             if (conversation != null) {
-                if (conversation.getMode() == Conversation.MODE_MULTI || (activity.xmppConnectionService != null && !activity.xmppConnectionService.hasInternetConnection())) {
+                if ((conversation.getMode() == Conversation.MODE_MULTI && !conversation.hasPermanentCounterpart()) || (activity.xmppConnectionService != null && !activity.xmppConnectionService.hasInternetConnection())) {
                     menuInviteContact.setVisible(conversation.getMucOptions().canInvite());
                     menuArchiveChat.setVisible(false);
                     menuLeaveGroup.setVisible(true);
@@ -1888,7 +1888,7 @@ public class ConversationFragment extends XmppFragment
                 try {
                     Fragment secondaryFragment = activity.getFragmentManager().findFragmentById(R.id.secondary_fragment);
                     if (secondaryFragment instanceof ConversationFragment) {
-                        if (conversation.getMode() == Conversation.MODE_MULTI) {
+                        if (conversation.getMode() == Conversation.MODE_MULTI && !conversation.hasPermanentCounterpart()) {
                             menuGroupDetails.setTitle(conversation.getMucOptions().isPrivateAndNonAnonymous() ? R.string.action_group_details : R.string.channel_details);
                             menuGroupDetails.setVisible(true);
                             menuContactDetails.setVisible(false);

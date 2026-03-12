@@ -1361,7 +1361,9 @@ public class MessageAdapter extends ArrayAdapter<Message> {
         } else {
             viewHolder.messageBody.setTextAppearance(getContext(), R.style.TextAppearance_Conversations_Body1);
         }
-        if (message.isPrivateMessage()) {
+        final Conversational conversation = message.getConversation();
+        final boolean isPersistentPm = conversation instanceof Conversation && ((Conversation) conversation).hasPermanentCounterpart();
+        if (message.isPrivateMessage() && !isPersistentPm) {
             final String privateMarker;
             if (message.getStatus() <= Message.STATUS_RECEIVED) {
                 privateMarker = activity.getString(R.string.private_message);
