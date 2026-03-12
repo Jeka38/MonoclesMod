@@ -4167,18 +4167,11 @@ public class ConversationFragment extends XmppFragment
                 ToastCompat.makeText(getActivity(), activity.getString(R.string.user_has_left_conference, counterpart.getResource()), ToastCompat.LENGTH_SHORT).show();
                 return;
             }
-            if (conversation.setOutgoingChatState(Config.DEFAULT_CHAT_STATE)) {
-                activity.xmppConnectionService.sendChatState(conversation);
-            }
-            this.binding.textinput.setText("");
-            this.conversation.setNextCounterpart(counterpart);
+            Conversation pmConversation = activity.xmppConnectionService.findOrCreateConversation(conversation.getAccount(), conversation.getJid().asBareJid(), counterpart, true, false, null, true, null);
+            activity.switchToConversation(pmConversation);
         } catch (Exception e) {
             e.printStackTrace();
             ToastCompat.makeText(getActivity(), activity.getString(R.string.user_has_left_conference, activity.getString(R.string.user)), ToastCompat.LENGTH_SHORT).show();
-        } finally {
-            updateChatMsgHint();
-            updateSendButton();
-            updateEditablity();
         }
     }
 

@@ -669,10 +669,16 @@ public class MessageParser extends AbstractParser implements OnMessagePacketRece
         }
 
         final boolean conversationIsProbablyMuc = isTypeGroupChat || mucUserElement != null || account.getXmppConnection().getMucServersWithholdAccount().contains(counterpart.getDomain().toEscapedString());
+        final boolean isPrivateMucMessage = mucUserElement != null && !isTypeGroupChat && counterpart.isFullJid();
         final Element webxdc = packet.findChild("x", "urn:xmpp:webxdc:0");
         final Element thread = packet.findChild("thread");
         if (webxdc != null && thread != null) {
-            final Conversation conversation = mXmppConnectionService.findOrCreateConversation(account, counterpart.asBareJid(), conversationIsProbablyMuc, false, query, false);
+            final Conversation conversation;
+            if (isPrivateMucMessage) {
+                conversation = mXmppConnectionService.findOrCreateConversation(account, counterpart.asBareJid(), counterpart, true, false, query, false, null);
+            } else {
+                conversation = mXmppConnectionService.findOrCreateConversation(account, counterpart.asBareJid(), conversationIsProbablyMuc, false, query, false);
+            }
             Jid webxdcSender = counterpart.asBareJid();
             if (conversation.getMode() == Conversation.MODE_MULTI) {
                 if(conversation.getMucOptions().nonanonymous()) {
@@ -704,7 +710,12 @@ public class MessageParser extends AbstractParser implements OnMessagePacketRece
         }
 
         if ((body != null || pgpEncrypted != null || (axolotlEncrypted != null && axolotlEncrypted.hasChild("payload")) || !attachments.isEmpty() || html != null || (packet.hasChild("subject") && packet.hasChild("thread"))) && !isMucStatusMessage) {
-            final Conversation conversation = mXmppConnectionService.findOrCreateConversation(account, counterpart.asBareJid(), conversationIsProbablyMuc, false, query, false);
+            final Conversation conversation;
+            if (isPrivateMucMessage) {
+                conversation = mXmppConnectionService.findOrCreateConversation(account, counterpart.asBareJid(), counterpart, true, false, query, false, null);
+            } else {
+                conversation = mXmppConnectionService.findOrCreateConversation(account, counterpart.asBareJid(), conversationIsProbablyMuc, false, query, false);
+            }
             final boolean conversationMultiMode = conversation.getMode() == Conversation.MODE_MULTI;
 
             if (serverMsgId == null) {
@@ -796,7 +807,7 @@ public class MessageParser extends AbstractParser implements OnMessagePacketRece
                     message = trial;
                 }
                 if (message == null) {
-                    if (query == null && extractChatState(mXmppConnectionService.find(account, counterpart.asBareJid()), isTypeGroupChat, packet)) {
+                    if (query == null && extractChatState(conversation, isTypeGroupChat, packet)) {
                         mXmppConnectionService.updateConversationUi();
                     }
                     if (query != null && status == Message.STATUS_SEND && remoteMsgId != null) {
@@ -1115,7 +1126,7 @@ public class MessageParser extends AbstractParser implements OnMessagePacketRece
             }
 
             if (query == null) {
-                extractChatState(mXmppConnectionService.find(account, counterpart.asBareJid()), isTypeGroupChat, packet);
+                extractChatState(conversation, isTypeGroupChat, packet);
                 mXmppConnectionService.updateConversationUi();
             }
 
@@ -1170,7 +1181,12 @@ public class MessageParser extends AbstractParser implements OnMessagePacketRece
                 }
             }
         } else if (!packet.hasChild("body")) { //no body
-            final Conversation conversation = mXmppConnectionService.find(account, from.asBareJid());
+            final Conversation conversation;
+            if (isPrivateMucMessage) {
+                conversation = mXmppConnectionService.find(account, counterpart.asBareJid(), counterpart);
+            } else {
+                conversation = mXmppConnectionService.find(account, from.asBareJid());
+            }
             if (axolotlEncrypted != null) {
                 Jid origin;
                 if (conversation != null && conversation.getMode() == Conversation.MODE_MULTI) {
@@ -1195,7 +1211,7 @@ public class MessageParser extends AbstractParser implements OnMessagePacketRece
                 }
             }
 
-            if (query == null && extractChatState(mXmppConnectionService.find(account, counterpart.asBareJid()), isTypeGroupChat, packet)) {
+            if (query == null && extractChatState(conversation, isTypeGroupChat, packet)) {
                 mXmppConnectionService.updateConversationUi();
             }
 
@@ -1399,8 +1415,12 @@ public class MessageParser extends AbstractParser implements OnMessagePacketRece
             final String id = displayed.getAttribute("id");
             final Jid sender = InvalidJid.getNullForInvalid(displayed.getAttributeAsJid("sender"));
             if (packet.fromAccount(account) && !selfAddressed) {
-                final Conversation c =
-                        mXmppConnectionService.find(account, counterpart.asBareJid());
+                final Conversation c;
+                if (isPrivateMucMessage) {
+                    c = mXmppConnectionService.find(account, counterpart.asBareJid(), counterpart);
+                } else {
+                    c = mXmppConnectionService.find(account, counterpart.asBareJid());
+                }
                 final Message message =
                         (c == null || id == null) ? null : c.findReceivedWithRemoteId(id);
                 if (message != null && (query == null || query.isCatchup())) {
@@ -1502,7 +1522,10 @@ public class MessageParser extends AbstractParser implements OnMessagePacketRece
     }
 
     private void dismissNotification(Account account, Jid counterpart, MessageArchiveService.Query query, final String id) {
-        final Conversation conversation = mXmppConnectionService.find(account, counterpart.asBareJid());
+        Conversation conversation = mXmppConnectionService.find(account, counterpart.asBareJid(), counterpart);
+        if (conversation == null) {
+            conversation = mXmppConnectionService.find(account, counterpart.asBareJid());
+        }
         if (conversation != null && (query == null || query.isCatchup())) {
             final String displayableId = conversation.findMostRecentRemoteDisplayableId();
             if (displayableId != null && displayableId.equals(id)) {

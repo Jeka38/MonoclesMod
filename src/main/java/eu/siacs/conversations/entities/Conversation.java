@@ -129,6 +129,7 @@ import org.json.JSONArray;
 import org.json.JSONException;
 import org.json.JSONObject;
 
+import java.lang.ref.WeakReference;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
@@ -165,6 +166,7 @@ public class Conversation extends AbstractEntity implements Blockable, Comparabl
     public static final String CREATED = "created";
     public static final String MODE = "mode";
     public static final String ATTRIBUTES = "attributes";
+    public static final String NEXT_COUNTERPART = "next_counterpart";
 
     public static final String ATTRIBUTE_MUTED_TILL = "muted_till";
     public static final String ATTRIBUTE_ALWAYS_NOTIFY = "always_notify";
@@ -195,6 +197,7 @@ public class Conversation extends AbstractEntity implements Blockable, Comparabl
     private int mode;
     private JSONObject attributes;
     private Jid nextCounterpart;
+    private transient WeakReference<Conversation> parentConversation;
     private transient SessionImpl otrSession;
     private transient String otrFingerprint = null;
     private Smp mSmp = new Smp();
@@ -243,7 +246,7 @@ public class Conversation extends AbstractEntity implements Blockable, Comparabl
     }
 
     public static Conversation fromCursor(Cursor cursor) {
-        return new Conversation(cursor.getString(cursor.getColumnIndex(UUID)),
+        Conversation conversation = new Conversation(cursor.getString(cursor.getColumnIndex(UUID)),
                 cursor.getString(cursor.getColumnIndex(NAME)),
                 cursor.getString(cursor.getColumnIndex(CONTACT)),
                 cursor.getString(cursor.getColumnIndex(ACCOUNT)),
@@ -252,6 +255,11 @@ public class Conversation extends AbstractEntity implements Blockable, Comparabl
                 cursor.getInt(cursor.getColumnIndex(STATUS)),
                 cursor.getInt(cursor.getColumnIndex(MODE)),
                 cursor.getString(cursor.getColumnIndex(ATTRIBUTES)));
+        int index = cursor.getColumnIndex(NEXT_COUNTERPART);
+        if (index >= 0) {
+            conversation.nextCounterpart = JidHelper.parseOrFallbackToInvalid(cursor.getString(index));
+        }
+        return conversation;
     }
 
     public static Message getLatestMarkableMessage(final List<Message> messages, boolean isPrivateAndNonAnonymousMuc) {
@@ -1000,6 +1008,9 @@ public class Conversation extends AbstractEntity implements Blockable, Comparabl
     public @NonNull
     CharSequence getName() {
         if (getMode() == MODE_MULTI) {
+            if (nextCounterpart != null) {
+                return String.format("%s (%s)", nextCounterpart.getResource(), getMucOptions().getName());
+            }
             final String roomName = getMucOptions().getName();
             final String subject = getMucOptions().getSubject();
             final Bookmark bookmark = getBookmark();
@@ -1069,6 +1080,7 @@ public class Conversation extends AbstractEntity implements Blockable, Comparabl
         synchronized (this.attributes) {
             values.put(ATTRIBUTES, attributes.toString());
         }
+        values.put(NEXT_COUNTERPART, nextCounterpart != null ? nextCounterpart.toString() : null);
         return values;
     }
 
@@ -1229,6 +1241,18 @@ public class Conversation extends AbstractEntity implements Blockable, Comparabl
 
     public void setNextCounterpart(Jid jid) {
         this.nextCounterpart = jid;
+    }
+
+    public boolean hasPermanentCounterpart() {
+        return nextCounterpart != null;
+    }
+
+    public void setParentConversation(Conversation conversation) {
+        this.parentConversation = new WeakReference<>(conversation);
+    }
+
+    public Conversation getParentConversation() {
+        return this.parentConversation != null ? this.parentConversation.get() : null;
     }
 
     public int getNextEncryption() {
@@ -1534,18 +1558,33 @@ public class Conversation extends AbstractEntity implements Blockable, Comparabl
     }
 
     public void add(Message message) {
+        if (nextCounterpart != null && !nextCounterpart.equals(message.getCounterpart())) {
+            return;
+        }
         synchronized (this.messages) {
             this.messages.add(message);
         }
     }
 
     public void prepend(int offset, Message message) {
+        if (nextCounterpart != null && !nextCounterpart.equals(message.getCounterpart())) {
+            return;
+        }
         synchronized (this.messages) {
             this.messages.add(Math.min(offset, this.messages.size()), message);
         }
     }
 
     public void addAll(int index, List<Message> messages) {
+        if (nextCounterpart != null) {
+            ArrayList<Message> filtered = new ArrayList<>();
+            for (Message message : messages) {
+                if (nextCounterpart.equals(message.getCounterpart())) {
+                    filtered.add(message);
+                }
+            }
+            messages = filtered;
+        }
         synchronized (this.messages) {
             this.messages.addAll(index, messages);
         }

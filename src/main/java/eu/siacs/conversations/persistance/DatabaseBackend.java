@@ -77,7 +77,7 @@ import io.ipfs.cid.Cid;
 public class DatabaseBackend extends SQLiteOpenHelper {
 
     public static final String DATABASE_NAME = "history";
-    public static final int DATABASE_VERSION = 59; // = Conversations DATABASE_VERSION + 7
+    public static final int DATABASE_VERSION = 60; // = Conversations DATABASE_VERSION + 7
     private static boolean requiresMessageIndexRebuild = false;
     private static DatabaseBackend instance = null;
     private static final List<String> DB_PRAGMAS = Collections.unmodifiableList(Arrays.asList(
@@ -426,7 +426,8 @@ public class DatabaseBackend extends SQLiteOpenHelper {
                 + Conversation.ACCOUNT + " TEXT, " + Conversation.CONTACTJID
                 + " TEXT, " + Conversation.CREATED + " NUMBER, "
                 + Conversation.STATUS + " NUMBER, " + Conversation.MODE
-                + " NUMBER, " + Conversation.ATTRIBUTES + " TEXT, FOREIGN KEY("
+                + " NUMBER, " + Conversation.ATTRIBUTES + " TEXT, "
+                + Conversation.NEXT_COUNTERPART + " TEXT, FOREIGN KEY("
                 + Conversation.ACCOUNT + ") REFERENCES " + Account.TABLENAME
                 + "(" + Account.UUID + ") ON DELETE CASCADE);");
         db.execSQL("create table " + Message.TABLENAME + "( " + Message.UUID
@@ -824,6 +825,9 @@ public class DatabaseBackend extends SQLiteOpenHelper {
         if (oldVersion < 59 && newVersion >= 59) {
             db.execSQL("ALTER TABLE " + Account.TABLENAME + " ADD COLUMN " + Account.FAST_MECHANISM + " TEXT");
             db.execSQL("ALTER TABLE " + Account.TABLENAME + " ADD COLUMN " + Account.FAST_TOKEN + " TEXT");
+        }
+        if (oldVersion < 60 && newVersion >= 60) {
+            db.execSQL("ALTER TABLE " + Conversation.TABLENAME + " ADD COLUMN " + Conversation.NEXT_COUNTERPART + " TEXT");
         }
     }
 

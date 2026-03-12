@@ -630,7 +630,14 @@ public abstract class XmppActivity extends ActionBarActivity {
     }
 
     public void privateMsgInMuc(Conversation conversation, String nick) {
-        switchToConversation(conversation, null, false, nick, true, false);
+        Jid jid = conversation.getJid();
+        try {
+            Jid next = Jid.of(jid.getLocal(), jid.getDomain(), nick);
+            Conversation pmConversation = xmppConnectionService.findOrCreateConversation(conversation.getAccount(), jid.asBareJid(), next, true, false, null, true, null);
+            switchToConversation(pmConversation);
+        } catch (final IllegalArgumentException ignored) {
+            switchToConversation(conversation, null, false, nick, true, false);
+        }
     }
 
     public void switchToConversation(Conversation conversation, String text, boolean asQuote, String nick, boolean pm, boolean doNotAppend) {

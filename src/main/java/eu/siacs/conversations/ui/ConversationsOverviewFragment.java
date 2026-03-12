@@ -158,7 +158,7 @@ public class ConversationsOverviewFragment extends XmppFragment {
             }
             final Conversation c = swipedConversation.peek();
             final int title;
-            if (c.getMode() == Conversational.MODE_MULTI) {
+            if (c.getMode() == Conversational.MODE_MULTI && !c.hasPermanentCounterpart()) {
                 if (c.getMucOptions().isPrivateAndNonAnonymous()) {
                     title = R.string.title_undo_swipe_out_group_chat;
                 } else {
@@ -213,7 +213,8 @@ public class ConversationsOverviewFragment extends XmppFragment {
         @Override
         public int getMovementFlags(RecyclerView recyclerView, RecyclerView.ViewHolder viewHolder) {
             int dragFlags = 0;
-            int swipeFlags = conversations.get(viewHolder.getLayoutPosition()).getMode() == Conversational.MODE_SINGLE ? RIGHT : 0;
+            Conversation conversation = conversations.get(viewHolder.getLayoutPosition());
+            int swipeFlags = (conversation.getMode() == Conversational.MODE_SINGLE || conversation.hasPermanentCounterpart()) ? RIGHT : 0;
             return makeMovementFlags(dragFlags, swipeFlags);
         }
     };
