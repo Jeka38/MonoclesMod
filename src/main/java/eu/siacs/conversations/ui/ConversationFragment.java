@@ -2722,15 +2722,19 @@ public class ConversationFragment extends XmppFragment
         else if (itemId == R.id.action_archive_chat) {
             activity.xmppConnectionService.archiveConversation(conversation);
         } else if (itemId == R.id.action_leave_group) {
-            final AlertDialog.Builder builder = new AlertDialog.Builder(activity);
-            builder.setTitle(activity.getString(R.string.action_end_conversation_muc));
-            builder.setMessage(activity.getString(R.string.leave_conference_warning));
-            builder.setNegativeButton(activity.getString(R.string.cancel), null);
-            builder.setPositiveButton(activity.getString(R.string.action_end_conversation_muc),
-                    (dialog, which) -> {
-                        activity.xmppConnectionService.archiveConversation(conversation);
-                    });
-            builder.create().show();
+            if (conversation.hasPermanentCounterpart()) {
+                activity.xmppConnectionService.archiveConversation(conversation);
+            } else {
+                final AlertDialog.Builder builder = new AlertDialog.Builder(activity);
+                builder.setTitle(activity.getString(R.string.action_end_conversation_muc));
+                builder.setMessage(activity.getString(R.string.leave_conference_warning));
+                builder.setNegativeButton(activity.getString(R.string.cancel), null);
+                builder.setPositiveButton(activity.getString(R.string.action_end_conversation_muc),
+                        (dialog, which) -> {
+                            activity.xmppConnectionService.archiveConversation(conversation);
+                        });
+                builder.create().show();
+            }
         } else if (itemId == R.id.action_invite) {
             startActivityForResult(ChooseContactActivity.create(activity, conversation), REQUEST_INVITE_TO_CONVERSATION);
         } else if (itemId == R.id.action_clear_history) {
