@@ -1583,7 +1583,7 @@ public class ConversationFragment extends XmppFragment
     }
 
     private boolean isPrivateMessage() {
-        return conversation != null && conversation.getMode() == Conversation.MODE_MULTI && conversation.getNextCounterpart() != null;
+        return conversation != null && conversation.getMode() == Conversation.MODE_MULTI && conversation.getNextCounterpart() != null && !conversation.hasPermanentCounterpart();
     }
 
     public void setupIme() {

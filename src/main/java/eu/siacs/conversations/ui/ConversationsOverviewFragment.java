@@ -368,7 +368,7 @@ public class ConversationsOverviewFragment extends XmppFragment {
         final MenuItem menuMarkAsRead = menu.findItem(R.id.action_mark_as_read);
 
         if (conversation != null) {
-            if (conversation.getMode() == Conversation.MODE_MULTI) {
+            if (conversation.getMode() == Conversation.MODE_MULTI && !conversation.hasPermanentCounterpart()) {
                 menuContactDetails.setVisible(false);
                 menuArchiveChat.setVisible(false);
                 menuLeaveGroup.setVisible(true);

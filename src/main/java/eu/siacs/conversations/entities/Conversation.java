@@ -822,7 +822,17 @@ public class Conversation extends AbstractEntity implements Blockable, Comparabl
                     thread.first = m;
                 }
             }
-            if (m.wasMergedIntoPrevious(xmppConnectionService) || (m.getSubject() != null && !m.isOOb() && (m.getRawBody() == null || m.getRawBody().isEmpty())) || (getLockThread() && !extraIds.contains(m.replyId()) && (mthread == null || !mthread.getContent().equals(getThread() == null ? "" : getThread().getContent())))) {
+            boolean remove = m.wasMergedIntoPrevious(xmppConnectionService)
+                    || (m.getSubject() != null && !m.isOOb() && (m.getRawBody() == null || m.getRawBody().isEmpty()))
+                    || (getLockThread() && !extraIds.contains(m.replyId()) && (mthread == null || !mthread.getContent().equals(getThread() == null ? "" : getThread().getContent())));
+            if (nextCounterpart != null) {
+                if (!nextCounterpart.equals(m.getCounterpart())) {
+                    remove = true;
+                }
+            } else if (mode == MODE_MULTI && m.isPrivateMessage()) {
+                remove = true;
+            }
+            if (remove) {
                 iterator.remove();
             } else if (getLockThread() && mthread != null) {
                 Element reply = m.getReply();
@@ -1564,7 +1574,11 @@ public class Conversation extends AbstractEntity implements Blockable, Comparabl
     }
 
     public void add(Message message) {
-        if (nextCounterpart != null && !nextCounterpart.equals(message.getCounterpart())) {
+        if (nextCounterpart != null) {
+            if (!nextCounterpart.equals(message.getCounterpart())) {
+                return;
+            }
+        } else if (mode == MODE_MULTI && message.isPrivateMessage()) {
             return;
         }
         synchronized (this.messages) {
@@ -1573,7 +1587,11 @@ public class Conversation extends AbstractEntity implements Blockable, Comparabl
     }
 
     public void prepend(int offset, Message message) {
-        if (nextCounterpart != null && !nextCounterpart.equals(message.getCounterpart())) {
+        if (nextCounterpart != null) {
+            if (!nextCounterpart.equals(message.getCounterpart())) {
+                return;
+            }
+        } else if (mode == MODE_MULTI && message.isPrivateMessage()) {
             return;
         }
         synchronized (this.messages) {
@@ -1582,15 +1600,21 @@ public class Conversation extends AbstractEntity implements Blockable, Comparabl
     }
 
     public void addAll(int index, List<Message> messages) {
-        if (nextCounterpart != null) {
-            ArrayList<Message> filtered = new ArrayList<>();
-            for (Message message : messages) {
+        ArrayList<Message> filtered = new ArrayList<>();
+        for (Message message : messages) {
+            if (nextCounterpart != null) {
                 if (nextCounterpart.equals(message.getCounterpart())) {
                     filtered.add(message);
                 }
+            } else if (mode == MODE_MULTI) {
+                if (!message.isPrivateMessage()) {
+                    filtered.add(message);
+                }
+            } else {
+                filtered.add(message);
             }
-            messages = filtered;
         }
+        messages = filtered;
         synchronized (this.messages) {
             this.messages.addAll(index, messages);
         }

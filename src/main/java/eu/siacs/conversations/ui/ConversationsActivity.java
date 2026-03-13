@@ -1162,7 +1162,7 @@ public class ConversationsActivity extends XmppActivity implements OnConversatio
                 abtitle.setText(conversation.getName());
                 abtitle.setSelected(true);
 
-                if (conversation.getMode() == Conversation.MODE_SINGLE) {
+                if (conversation.getMode() == Conversation.MODE_SINGLE || conversation.hasPermanentCounterpart()) {
                     if (!conversation.withSelf()) {
                         ChatState state = conversation.getIncomingChatState();
                         if (state == ChatState.COMPOSING) {
@@ -1171,7 +1171,7 @@ public class ConversationsActivity extends XmppActivity implements OnConversatio
                             absubtitle.setTypeface(null, Typeface.BOLD_ITALIC);
                             absubtitle.setSelected(true);
                         } else {
-                            if (showLastSeen && conversation.getContact().getLastseen() > 0 && conversation.getContact().getPresences().allOrNonSupport(Namespace.IDLE)) {
+                            if (showLastSeen && !conversation.hasPermanentCounterpart() && conversation.getContact().getLastseen() > 0 && conversation.getContact().getPresences().allOrNonSupport(Namespace.IDLE)) {
                                 absubtitle.setText(UIHelper.lastseen(getApplicationContext(), conversation.getContact().isActive(), conversation.getContact().getLastseen()));
                                 absubtitle.setVisibility(View.VISIBLE);
                             } else {
@@ -1229,8 +1229,15 @@ public class ConversationsActivity extends XmppActivity implements OnConversatio
 
 
     private void openConversationDetails(final Conversation conversation) {
-        if (conversation.getMode() == Conversational.MODE_MULTI) {
+        if (conversation.getMode() == Conversational.MODE_MULTI && !conversation.hasPermanentCounterpart()) {
             ConferenceDetailsActivity.open(this, conversation);
+        } else if (conversation.hasPermanentCounterpart()) {
+            final MucOptions.User user = conversation.getMucOptions().findUserByFullJid(conversation.getNextCounterpart());
+            if (user != null) {
+                switchToMucContactDetails(user);
+            } else {
+                switchToContactDetails(conversation.getAccount().getRoster().getContact(conversation.getNextCounterpart()));
+            }
         } else {
             final Contact contact = conversation.getContact();
             if (contact.isSelf()) {

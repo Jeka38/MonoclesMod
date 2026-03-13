@@ -58,7 +58,7 @@ public class SendButtonTool {
         final boolean conference = c.getMode() == Conversation.MODE_MULTI;
         if (c.getCorrectingMessage() != null && (empty || (text.equals(c.getCorrectingMessage().getBody()) && (subject.equals(c.getCorrectingMessage().getSubject())) && (c.getThread() == c.getCorrectingMessage().getThread() || (c.getThread() != null && c.getThread().equals(c.getCorrectingMessage().getThread())))))) {
             return SendButtonAction.CANCEL;
-        } else if (conference && !c.getAccount().httpUploadAvailable()) {
+        } else if (conference && !c.getAccount().httpUploadAvailable() && !c.hasPermanentCounterpart()) {
             if (empty && c.getNextCounterpart() != null) {
                 return SendButtonAction.CANCEL;
             } else {
@@ -67,7 +67,7 @@ public class SendButtonTool {
         } else {
             if (empty && (c.getThread() == null || subject.length() == 0)) {
                 final SharedPreferences preferences = PreferenceManager.getDefaultSharedPreferences(activity);
-                if (conference && c.getNextCounterpart() != null) {
+                if (conference && c.getNextCounterpart() != null && !c.hasPermanentCounterpart()) {
                     return SendButtonAction.CANCEL;
                 } else {
                     String setting = preferences.getString("quick_action", activity.getResources().getString(R.string.quick_action));
