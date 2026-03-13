@@ -8,6 +8,7 @@ import java.util.ArrayList;
 import java.util.List;
 
 import eu.siacs.conversations.Config;
+import eu.siacs.conversations.R;
 import eu.siacs.conversations.crypto.PgpEngine;
 import eu.siacs.conversations.crypto.axolotl.AxolotlService;
 import eu.siacs.conversations.entities.Account;
@@ -16,9 +17,11 @@ import eu.siacs.conversations.entities.Conversation;
 import eu.siacs.conversations.entities.Message;
 import eu.siacs.conversations.entities.MucOptions;
 import eu.siacs.conversations.entities.Presence;
+import eu.siacs.conversations.ui.SettingsActivity;
 import eu.siacs.conversations.generator.IqGenerator;
 import eu.siacs.conversations.generator.PresenceGenerator;
 import eu.siacs.conversations.services.XmppConnectionService;
+import eu.siacs.conversations.utils.UIHelper;
 import eu.siacs.conversations.utils.XmppUri;
 import eu.siacs.conversations.xml.Element;
 import eu.siacs.conversations.xml.Namespace;
@@ -35,19 +38,29 @@ public class PresenceParser extends AbstractParser implements
         super(service);
     }
 
+    private void reportRoleRankChange(Conversation conversation, MucOptions.User oldUser, MucOptions.User newUser) {
+        if (oldUser.getRole() != newUser.getRole()) {
+            conversation.add(Message.createStatusMessage(conversation, mXmppConnectionService.getString(R.string.muc_user_has_changed_role, UIHelper.getDisplayName(newUser), mXmppConnectionService.getString(newUser.getRole().getResId()))));
+        }
+        if (oldUser.getAffiliation() != newUser.getAffiliation()) {
+            conversation.add(Message.createStatusMessage(conversation, mXmppConnectionService.getString(R.string.muc_user_has_changed_affiliation, UIHelper.getDisplayName(newUser), mXmppConnectionService.getString(newUser.getAffiliation().getResId()))));
+        }
+    }
+
     public void parseConferencePresence(PresencePacket packet, Account account) {
         final Conversation conversation = packet.getFrom() == null ? null : mXmppConnectionService.find(account, packet.getFrom().asBareJid());
         if (conversation != null) {
             final MucOptions mucOptions = conversation.getMucOptions();
             boolean before = mucOptions.online();
             int count = mucOptions.getUserCount();
+            int messageCount = conversation.countMessages();
             final List<MucOptions.User> tileUserBefore = mucOptions.getUsers(5);
             processConferencePresence(packet, conversation);
             final List<MucOptions.User> tileUserAfter = mucOptions.getUsers(5);
             if (!tileUserAfter.equals(tileUserBefore)) {
                 mXmppConnectionService.getAvatarService().clear(mucOptions);
             }
-            if (before != mucOptions.online() || (mucOptions.online() && count != mucOptions.getUserCount())) {
+            if (before != mucOptions.online() || (mucOptions.online() && count != mucOptions.getUserCount()) || conversation.countMessages() != messageCount) {
                 mXmppConnectionService.updateConversationUi();
             } else if (mucOptions.online()) {
                 mXmppConnectionService.updateMucRosterUi();
@@ -60,6 +73,7 @@ public class PresenceParser extends AbstractParser implements
         final MucOptions mucOptions = conversation.getMucOptions();
         final Jid jid = conversation.getAccount().getJid();
         final Jid from = packet.getFrom();
+        final boolean hideStatusMessages = mXmppConnectionService.getBooleanPreference(SettingsActivity.HIDE_MUC_STATUS_MESSAGES, R.bool.hide_muc_status_messages);
         if (!from.isBareJid()) {
             final String type = packet.getAttribute("type");
             final Element x = packet.findChild("x", Namespace.MUC_USER);
@@ -77,6 +91,8 @@ public class PresenceParser extends AbstractParser implements
                     Element item = x.findChild("item");
                     if (item != null && !from.isBareJid()) {
                         mucOptions.setError(MucOptions.Error.NONE);
+                        final MucOptions.User oldUser = mucOptions.findUserByFullJid(from);
+                        final boolean wasOnline = mucOptions.online();
                         MucOptions.User user = parseItem(conversation, item, from, occupantId, nick == null ? null : nick.getContent(), hats);
                         if (codes.contains(MucOptions.STATUS_CODE_SELF_PRESENCE) || (codes.contains(MucOptions.STATUS_CODE_ROOM_CREATED) && jid.equals(InvalidJid.getNullForInvalid(item.getAttributeAsJid("jid"))))) {
                             if (mucOptions.setOnline()) {
@@ -85,11 +101,23 @@ public class PresenceParser extends AbstractParser implements
                             if (mucOptions.setSelf(user)) {
                                 Log.d(Config.LOGTAG, "role or affiliation changed");
                                 mXmppConnectionService.databaseBackend.updateConversation(conversation);
+                                if (wasOnline && oldUser != null) {
+                                    reportRoleRankChange(conversation, oldUser, user);
+                                }
                             }
                             mXmppConnectionService.persistSelfNick(user);
                             invokeRenameListener(mucOptions, true);
                         }
                         boolean isNew = mucOptions.updateUser(user);
+                        if (wasOnline && !mucOptions.isSelf(from)) {
+                            if (oldUser == null) {
+                                if (!hideStatusMessages) {
+                                    conversation.add(Message.createStatusMessage(conversation, mXmppConnectionService.getString(R.string.muc_user_has_joined, UIHelper.getDisplayName(user))));
+                                }
+                            } else {
+                                reportRoleRankChange(conversation, oldUser, user);
+                            }
+                        }
                         final AxolotlService axolotlService = conversation.getAccount().getAxolotlService();
                         Contact contact = user.getContact();
                         if (isNew
@@ -182,9 +210,13 @@ public class PresenceParser extends AbstractParser implements
                     if (item != null) {
                         mucOptions.updateUser(parseItem(conversation, item, from, occupantId, nick == null ? null : nick.getContent(), hats));
                     }
+                    final boolean wasOnline = mucOptions.online();
                     MucOptions.User user = mucOptions.deleteUser(from);
                     if (user != null) {
                         mXmppConnectionService.getAvatarService().clear(user);
+                        if (wasOnline && !fullJidMatches && !hideStatusMessages && !codes.contains(MucOptions.STATUS_CODE_CHANGED_NICK)) {
+                            conversation.add(Message.createStatusMessage(conversation, mXmppConnectionService.getString(R.string.muc_user_has_left, UIHelper.getDisplayName(user))));
+                        }
                     }
                 }
             } else if (type.equals("error")) {

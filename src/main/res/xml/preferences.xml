@@ -666,6 +666,11 @@
                 android:summary="@string/pref_show_dynamic_tags_summary"
                 android:title="@string/pref_show_dynamic_tags" />
             <SwitchPreference
+                android:defaultValue="@bool/hide_muc_status_messages"
+                android:key="hide_muc_status_messages"
+                android:summary="@string/pref_hide_muc_status_messages_summary"
+                android:title="@string/pref_hide_muc_status_messages" />
+            <SwitchPreference
                 android:defaultValue="@bool/jump_to_commands_tab"
                 android:key="jump_to_commands_tab"
                 android:summary="@string/pref_jump_to_commands_tab_summary"

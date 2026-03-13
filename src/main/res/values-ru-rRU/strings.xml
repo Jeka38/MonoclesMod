@@ -929,6 +929,12 @@
     <string name="pref_video_quality_summary">Изменять размер и сжимать видео</string>
     <string name="pref_warn_unencrypted_chat">Предупреждать, если чат не защищен</string>
     <string name="pref_warn_unencrypted_chat_summary">Использовать шифрование, если доступно.</string>
+    <string name="pref_hide_muc_status_messages">Скрывать сообщения о входе/выходе</string>
+    <string name="pref_hide_muc_status_messages_summary">Скрывать системные сообщения, когда участники входят или выходят из конференций</string>
+    <string name="muc_user_has_joined">%s присоединился к конференции</string>
+    <string name="muc_user_has_left">%s покинул конференцию</string>
+    <string name="muc_user_has_changed_role">%1$s теперь %2$s</string>
+    <string name="muc_user_has_changed_affiliation">%1$s теперь %2$s</string>
     <string name="preparing_file">Подготовка файла к передаче</string>
     <string name="preparing_image">Подготовка изображения к передаче</string>
     <string name="presence_away">Отошел</string>

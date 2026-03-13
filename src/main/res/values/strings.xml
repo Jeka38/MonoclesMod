@@ -78,6 +78,12 @@
     <string name="not_in_roster">The contact is not in your contact list. Would you like to add it?</string>
     <string name="add_contact">Add contact</string>
     <string name="send_failed">delivery failed</string>
+    <string name="pref_hide_muc_status_messages">Hide join/leave messages</string>
+    <string name="pref_hide_muc_status_messages_summary">Hide system messages when participants join or leave conferences</string>
+    <string name="muc_user_has_joined">%s has joined the conference</string>
+    <string name="muc_user_has_left">%s has left the conference</string>
+    <string name="muc_user_has_changed_role">%1$s is now %2$s</string>
+    <string name="muc_user_has_changed_affiliation">%1$s is now %2$s</string>
     <string name="preparing_image">Preparing image for transmission</string>
     <string name="action_clear_history">Clear history</string>
     <string name="clear_conversation_history">Clear Conversation History</string>
