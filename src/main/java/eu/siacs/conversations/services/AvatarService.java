@@ -312,12 +312,17 @@ public class AvatarService implements OnAdvancedStreamFeaturesLoaded {
         return get(conversation, size, false);
     }
 
+    private MucOptions getMucOptions(Conversation conversation) {
+        Conversation main = mXmppConnectionService.findFirstMuc(conversation.getJid());
+        return main != null ? main.getMucOptions() : conversation.getMucOptions();
+    }
+
     public Drawable get(Conversation conversation, int size, boolean cachedOnly) {
         if (conversation.getMode() == Conversation.MODE_SINGLE) {
             return get(conversation.getContact(), size, cachedOnly);
         } else if (conversation.hasPermanentCounterpart()) {
             final Jid counterpart = conversation.getNextCounterpart();
-            final MucOptions mucOptions = conversation.getMucOptions();
+            final MucOptions mucOptions = getMucOptions(conversation);
             final MucOptions.User user = mucOptions.findUserByFullJid(counterpart);
             if (user != null) {
                 return get(user, size, cachedOnly);
@@ -514,7 +519,7 @@ public class AvatarService implements OnAdvancedStreamFeaturesLoaded {
                 return get(c, size, cachedOnly);
             } else if (conversation instanceof Conversation && message.getConversation().getMode() == Conversation.MODE_MULTI) {
                 final Jid trueCounterpart = message.getTrueCounterpart();
-                final MucOptions mucOptions = ((Conversation) conversation).getMucOptions();
+                final MucOptions mucOptions = getMucOptions((Conversation) conversation);
                 MucOptions.User user;
                 if (trueCounterpart != null) {
                     user = mucOptions.findOrCreateUserByRealJid(trueCounterpart, message.getCounterpart());

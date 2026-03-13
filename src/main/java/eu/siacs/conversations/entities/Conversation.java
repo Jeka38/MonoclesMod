@@ -145,6 +145,7 @@ import eu.siacs.conversations.persistance.DatabaseBackend;
 import eu.siacs.conversations.services.AvatarService;
 import eu.siacs.conversations.ui.util.SoftKeyboardUtils;
 import eu.siacs.conversations.utils.JidHelper;
+import eu.siacs.conversations.xmpp.XmppConnection;
 import eu.siacs.conversations.utils.MessageUtils;
 import eu.siacs.conversations.utils.UIHelper;
 import eu.siacs.conversations.xmpp.Jid;
@@ -1008,7 +1009,17 @@ public class Conversation extends AbstractEntity implements Blockable, Comparabl
     CharSequence getName() {
         if (getMode() == MODE_MULTI) {
             if (nextCounterpart != null) {
-                String roomName = getMucOptions().getName();
+                String roomName = null;
+                XmppConnection connection = account.getXmppConnection();
+                if (connection != null) {
+                    Conversation main = connection.getXmppConnectionService().findFirstMuc(getJid());
+                    if (main != null) {
+                        roomName = main.getMucOptions().getName();
+                    }
+                }
+                if (roomName == null) {
+                    roomName = getMucOptions().getName();
+                }
                 if (roomName == null) {
                     roomName = getJid().getLocal();
                 }
@@ -1712,6 +1723,9 @@ public class Conversation extends AbstractEntity implements Blockable, Comparabl
 
     @Override
     public int getAvatarBackgroundColor() {
+        if (nextCounterpart != null) {
+            return UIHelper.getColorForName(nextCounterpart.asBareJid().toString());
+        }
         return UIHelper.getColorForName(getName().toString());
     }
 
