@@ -1818,29 +1818,7 @@ public class MessageAdapter extends ArrayAdapter<Message> {
                 viewHolder.commands_list.setVisibility(GONE);
                 viewHolder.commands_list.setOnItemClickListener(null);
             }
-            if (message.isPrivateMessage()) {
-                viewHolder.answer_button.setVisibility(View.VISIBLE);
-                Drawable icon = activity.getResources().getDrawable(R.drawable.ic_reply_circle_black_24dp);
-                Drawable drawable = DrawableCompat.wrap(icon);
-                DrawableCompat.setTint(drawable, StyledAttributes.getColor(getContext(), R.attr.colorAccent));
-                viewHolder.answer_button.setImageDrawable(drawable);
-                viewHolder.answer_button.setOnClickListener(v -> {
-                    try {
-                        if (activity instanceof ConversationsActivity) {
-                            ConversationFragment conversationFragment = ConversationFragment.get(activity);
-                            if (conversationFragment != null) {
-                                activity.invalidateOptionsMenu();
-                                conversationFragment.privateMessageWith(message.getCounterpart());
-                            }
-                        }
-                    } catch (Exception e) {
-                        viewHolder.answer_button.setVisibility(GONE);
-                        e.printStackTrace();
-                    }
-                });
-            } else {
-                viewHolder.answer_button.setVisibility(GONE);
-            }
+            viewHolder.answer_button.setVisibility(GONE);
             if (isInValidSession) {
                 setBubbleBackgroundColor(viewHolder.message_box, type, message.isPrivateMessage(), isInValidSession);
                 viewHolder.encryption.setVisibility(GONE);
