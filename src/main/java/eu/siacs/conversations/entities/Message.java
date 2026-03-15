@@ -711,6 +711,10 @@ public class Message extends AbstractEntity implements AvatarService.Avatarable 
     public String getBody(final boolean removeQuoteFallbacks) {
         if (body == null) return "";
 
+        if (isSimsFallback() && !getSims().isEmpty()) {
+            return "";
+        }
+
         List<String> fallbacksToRemove = new ArrayList<>();
         fallbacksToRemove.add("http://jabber.org/protocol/address");
         if (getOob() != null || isGeoUri()) fallbacksToRemove.add(Namespace.OOB);
@@ -1467,6 +1471,10 @@ public class Message extends AbstractEntity implements AvatarService.Avatarable 
             }
         }
         return WebUri;
+    }
+
+    private boolean isSimsFallback() {
+        return body != null && body.trim().startsWith("SIMS(") && body.trim().endsWith(")");
     }
 
     protected List<Element> getSims() {
