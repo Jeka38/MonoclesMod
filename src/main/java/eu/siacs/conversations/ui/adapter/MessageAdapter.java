@@ -1153,7 +1153,7 @@ public class MessageAdapter extends ArrayAdapter<Message> {
         viewHolder.richlinkview.setVisibility(GONE);
         viewHolder.transfer.setVisibility(GONE);
         if (mShowMapsInside) {
-            showImages(mShowMapsInside, 0, false, viewHolder);
+            showImages(mShowMapsInside, 0, false, false, viewHolder);
             final double target = activity.getResources().getDimension(R.dimen.image_preview_width);
             final int scaledW;
             final int scaledH;
@@ -1247,6 +1247,7 @@ public class MessageAdapter extends ArrayAdapter<Message> {
 
         final String mime = file.getMimeType();
         final boolean isGif = mime != null && mime.equals("image/gif");
+        final boolean isVideo = mime != null && mime.contains("video");
         final int mediaRuntime = message.getFileParams().runtime;
 
         // Устанавливаем максимальные размеры превью
@@ -1282,7 +1283,7 @@ public class MessageAdapter extends ArrayAdapter<Message> {
         viewHolder.image.setLayoutParams(layoutParams);
 
         if (isGif && mPlayGifInside) {
-            showImages(true, mediaRuntime, true, viewHolder);
+            showImages(true, mediaRuntime, true, isVideo, viewHolder);
             Log.d(Config.LOGTAG, "Gif Image file");
 
             Glide.with(activity)
@@ -1291,7 +1292,7 @@ public class MessageAdapter extends ArrayAdapter<Message> {
                     .centerInside() // Сохраняем пропорции без кадрирования
                     .into(viewHolder.image);
         } else {
-            showImages(true, mediaRuntime, false, viewHolder);
+            showImages(true, mediaRuntime, false, isVideo, viewHolder);
 
             Glide.with(activity)
                     .load(file)
@@ -1325,10 +1326,10 @@ public class MessageAdapter extends ArrayAdapter<Message> {
     }
 
     private void showImages(final boolean show, final ViewHolder viewHolder) {
-        showImages(show, 0, false, viewHolder);
+        showImages(show, 0, false, false, viewHolder);
     }
 
-    private void showImages(final boolean show, final int duration, final boolean isGif, final ViewHolder viewHolder) {
+    private void showImages(final boolean show, final int duration, final boolean isGif, final boolean isVideo, final ViewHolder viewHolder) {
         boolean hasDuration = duration > 0;
         if (show) {
             viewHolder.images.setVisibility(View.VISIBLE);
@@ -1339,10 +1340,16 @@ public class MessageAdapter extends ArrayAdapter<Message> {
             } else {
                 viewHolder.mediaduration.setVisibility(GONE);
             }
+            if (viewHolder.play_button != null) {
+                viewHolder.play_button.setVisibility(isVideo ? View.VISIBLE : GONE);
+            }
         } else {
             viewHolder.images.setVisibility(GONE);
             viewHolder.image.setVisibility(GONE);
             viewHolder.mediaduration.setVisibility(GONE);
+            if (viewHolder.play_button != null) {
+                viewHolder.play_button.setVisibility(GONE);
+            }
         }
     }
 
@@ -1459,6 +1466,7 @@ public class MessageAdapter extends ArrayAdapter<Message> {
                     viewHolder.retract_indicator = view.findViewById(R.id.retract_indicator);
                     viewHolder.images = view.findViewById(R.id.images);
                     viewHolder.mediaduration = view.findViewById(R.id.media_duration);
+                    viewHolder.play_button = view.findViewById(R.id.play_button);
                     viewHolder.image = view.findViewById(R.id.message_image);
                     viewHolder.richlinkview = view.findViewById(R.id.richLinkView);
                     if (activity.xmppConnectionService.getBooleanPreference("set_text_collapsable", R.bool.set_text_collapsable)) {
@@ -1491,6 +1499,7 @@ public class MessageAdapter extends ArrayAdapter<Message> {
                     viewHolder.retract_indicator = view.findViewById(R.id.retract_indicator);
                     viewHolder.images = view.findViewById(R.id.images);
                     viewHolder.mediaduration = view.findViewById(R.id.media_duration);
+                    viewHolder.play_button = view.findViewById(R.id.play_button);
                     viewHolder.image = view.findViewById(R.id.message_image);
                     viewHolder.richlinkview = view.findViewById(R.id.richLinkView);
                     if (activity.xmppConnectionService.getBooleanPreference("set_text_collapsable", R.bool.set_text_collapsable)) {
@@ -2007,12 +2016,13 @@ public class MessageAdapter extends ArrayAdapter<Message> {
         public ImageView edit_indicator;
         public ImageView retract_indicator;
         public RelativeLayout audioPlayer;
-        public LinearLayout images;
+        public RelativeLayout images;
         protected LinearLayout message_box;
         protected Button download_button;
         protected Button resend_button;
         protected ImageButton answer_button;
         protected ImageView image;
+        protected ImageView play_button;
         protected TextView mediaduration;
         protected RichLinkView richlinkview;
         protected ImageView indicator;
