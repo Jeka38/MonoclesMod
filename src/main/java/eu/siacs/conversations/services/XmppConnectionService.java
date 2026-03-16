@@ -3174,7 +3174,26 @@ public class XmppConnectionService extends Service {
         }
         for (final Conversation conversation : haystack) {
             if ((account == null || conversation.getAccount() == account)
-                    && (conversation.getJid().asBareJid().equals(jid.asBareJid()))) {
+                    && (conversation.getJid().asBareJid().equals(jid.asBareJid()))
+                    && !conversation.hasPermanentCounterpart()) {
+                return conversation;
+            }
+        }
+        return null;
+    }
+
+    public Conversation find(final Account account, final Jid jid, final Jid counterpart) {
+        return find(getConversations(), account, jid, counterpart);
+    }
+
+    public Conversation find(final Iterable<Conversation> haystack, final Account account, final Jid jid, final Jid counterpart) {
+        if (jid == null) {
+            return null;
+        }
+        for (final Conversation conversation : haystack) {
+            if ((account == null || conversation.getAccount() == account)
+                    && (conversation.getJid().asBareJid().equals(jid.asBareJid()))
+                    && (Objects.equal(conversation.getNextCounterpart(), counterpart))) {
                 return conversation;
             }
         }
@@ -3277,12 +3296,16 @@ public class XmppConnectionService extends Service {
     }
 
     public Conversation findOrCreateConversation(final Account account, final Jid jid, final boolean muc, final boolean joinAfterCreate, final MessageArchiveService.Query query, final boolean async, final String password) {
+        return findOrCreateConversation(account, jid, null, muc, joinAfterCreate, query, async, password);
+    }
+
+    public Conversation findOrCreateConversation(final Account account, final Jid jid, final Jid counterpart, final boolean muc, final boolean joinAfterCreate, final MessageArchiveService.Query query, final boolean async, final String password) {
         synchronized (this.conversations) {
-            Conversation conversation = find(account, jid);
+            Conversation conversation = find(account, jid, counterpart);
             if (conversation != null) {
                 return conversation;
             }
-            conversation = databaseBackend.findConversation(account, jid);
+            conversation = databaseBackend.findConversation(account, jid, counterpart);
             final boolean loadMessagesFromDb;
             if (conversation != null) {
                 conversation.setStatus(Conversation.STATUS_AVAILABLE);
@@ -3309,6 +3332,9 @@ public class XmppConnectionService extends Service {
                     conversation = new Conversation(conversationName, account, jid,
                             Conversation.MODE_MULTI);
                     if (password != null) conversation.getMucOptions().setPassword(password);
+                    if (counterpart != null) {
+                        conversation.setNextCounterpart(counterpart);
+                    }
                 } else {
                     conversation = new Conversation(conversationName, account, jid.asBareJid(),
                             Conversation.MODE_SINGLE);
@@ -3335,9 +3361,8 @@ public class XmppConnectionService extends Service {
                         }
                     }
                 }
-                if (joinAfterCreate) {
+                if (joinAfterCreate && !c.hasPermanentCounterpart()) {
                     joinMuc(c);
-
                 }
             };
             if (async) {
@@ -3409,22 +3434,24 @@ public class XmppConnectionService extends Service {
         synchronized (this.conversations) {
             getMessageArchiveService().kill(conversation);
             if (conversation.getMode() == Conversation.MODE_MULTI) {
-                if (conversation.getAccount().getStatus() == Account.State.ONLINE) {
-                    final Bookmark bookmark = conversation.getBookmark();
-                    if (maySynchronizeWithBookmarks && bookmark != null && synchronizeWithBookmarks()) {
-                        if (conversation.getMucOptions().getError() == MucOptions.Error.DESTROYED) {
-                            Account account = bookmark.getAccount();
-                            bookmark.setConversation(null);
-                            deleteBookmark(account, bookmark);
-                        } else if (bookmark.autojoin()) {
-                            bookmark.setAutojoin(false);
-                            createBookmark(bookmark.getAccount(), bookmark);
+                if (!conversation.hasPermanentCounterpart()) {
+                    if (conversation.getAccount().getStatus() == Account.State.ONLINE) {
+                        final Bookmark bookmark = conversation.getBookmark();
+                        if (maySynchronizeWithBookmarks && bookmark != null && synchronizeWithBookmarks()) {
+                            if (conversation.getMucOptions().getError() == MucOptions.Error.DESTROYED) {
+                                Account account = bookmark.getAccount();
+                                bookmark.setConversation(null);
+                                deleteBookmark(account, bookmark);
+                            } else if (bookmark.autojoin()) {
+                                bookmark.setAutojoin(false);
+                                createBookmark(bookmark.getAccount(), bookmark);
+                            }
                         }
                     }
+                    deregisterWithMuc(conversation);
+                    leaveMuc(conversation);
                 }
-                deregisterWithMuc(conversation);
-                leaveMuc(conversation);
-            } else {
+            } else if (conversation.getMode() == Conversation.MODE_SINGLE) {
                 if (conversation.getContact().getOption(Contact.Options.PENDING_SUBSCRIPTION_REQUEST)) {
                     stopPresenceUpdatesTo(conversation.getContact());
                 }
@@ -3936,7 +3963,7 @@ public class XmppConnectionService extends Service {
     private void connectMultiModeConversations(Account account) {
         List<Conversation> conversations = getConversations();
         for (Conversation conversation : conversations) {
-            if (conversation.getMode() == Conversation.MODE_MULTI && conversation.getAccount() == account) {
+            if (conversation.getMode() == Conversation.MODE_MULTI && conversation.getAccount() == account && !conversation.hasPermanentCounterpart()) {
                 joinMuc(conversation);
             }
         }
@@ -6069,7 +6096,9 @@ public class XmppConnectionService extends Service {
         for (Conversation conversation : getConversations()) {
             if ((conversation.getAccount().isEnabled() || accountJid != null)
                     && (accountJid == null || accountJid.equals(conversation.getAccount().getJid().asBareJid().toString()))
-                    && conversation.getJid().asBareJid().equals(jid.asBareJid()) && conversation.getMode() == Conversation.MODE_MULTI) {
+                    && conversation.getJid().asBareJid().equals(jid.asBareJid())
+                    && conversation.getMode() == Conversation.MODE_MULTI
+                    && !conversation.hasPermanentCounterpart()) {
                 return conversation;
             }
         }

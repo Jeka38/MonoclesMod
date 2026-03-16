@@ -799,7 +799,7 @@ public class MessageAdapter extends ArrayAdapter<Message> {
                                 finalWidth = Math.max(finalWidth, (int) (maxWidth * 0.5f));
                                 finalHeight = Math.max(finalHeight, (int) (maxWidth * 0.5f));
 
-                                LinearLayout.LayoutParams imageParams = new LinearLayout.LayoutParams(
+                                RelativeLayout.LayoutParams imageParams = new RelativeLayout.LayoutParams(
                                         finalWidth,
                                         finalHeight
                                 );
@@ -1153,7 +1153,7 @@ public class MessageAdapter extends ArrayAdapter<Message> {
         viewHolder.richlinkview.setVisibility(GONE);
         viewHolder.transfer.setVisibility(GONE);
         if (mShowMapsInside) {
-            showImages(mShowMapsInside, 0, false, viewHolder);
+            showImages(mShowMapsInside, 0, false, false, viewHolder);
             final double target = activity.getResources().getDimension(R.dimen.image_preview_width);
             final int scaledW;
             final int scaledH;
@@ -1247,6 +1247,7 @@ public class MessageAdapter extends ArrayAdapter<Message> {
 
         final String mime = file.getMimeType();
         final boolean isGif = mime != null && mime.equals("image/gif");
+        final boolean isVideo = mime != null && mime.contains("video");
         final int mediaRuntime = message.getFileParams().runtime;
 
         // Устанавливаем максимальные размеры превью
@@ -1279,10 +1280,12 @@ public class MessageAdapter extends ArrayAdapter<Message> {
         LinearLayout.LayoutParams layoutParams = new LinearLayout.LayoutParams(scaledW, scaledH);
         layoutParams.setMargins(0, (int) (metrics.density * 4), 0, (int) (metrics.density * 4));
         viewHolder.images.setLayoutParams(layoutParams);
-        viewHolder.image.setLayoutParams(layoutParams);
+
+        RelativeLayout.LayoutParams imageLayoutParams = new RelativeLayout.LayoutParams(scaledW, scaledH);
+        viewHolder.image.setLayoutParams(imageLayoutParams);
 
         if (isGif && mPlayGifInside) {
-            showImages(true, mediaRuntime, true, viewHolder);
+            showImages(true, mediaRuntime, true, isVideo, viewHolder);
             Log.d(Config.LOGTAG, "Gif Image file");
 
             Glide.with(activity)
@@ -1291,7 +1294,7 @@ public class MessageAdapter extends ArrayAdapter<Message> {
                     .centerInside() // Сохраняем пропорции без кадрирования
                     .into(viewHolder.image);
         } else {
-            showImages(true, mediaRuntime, false, viewHolder);
+            showImages(true, mediaRuntime, false, isVideo, viewHolder);
 
             Glide.with(activity)
                     .load(file)
@@ -1319,16 +1322,15 @@ public class MessageAdapter extends ArrayAdapter<Message> {
             scaledW = (int) target;
             scaledH = (int) (h / ((double) w / target));
         }
-        final LinearLayout.LayoutParams layoutParams = new LinearLayout.LayoutParams(scaledW, scaledH);
-        layoutParams.setMargins(0, (int) (metrics.density * 4), 0, (int) (metrics.density * 4));
+        final RelativeLayout.LayoutParams layoutParams = new RelativeLayout.LayoutParams(scaledW, scaledH);
         image.setLayoutParams(layoutParams);
     }
 
     private void showImages(final boolean show, final ViewHolder viewHolder) {
-        showImages(show, 0, false, viewHolder);
+        showImages(show, 0, false, false, viewHolder);
     }
 
-    private void showImages(final boolean show, final int duration, final boolean isGif, final ViewHolder viewHolder) {
+    private void showImages(final boolean show, final int duration, final boolean isGif, final boolean isVideo, final ViewHolder viewHolder) {
         boolean hasDuration = duration > 0;
         if (show) {
             viewHolder.images.setVisibility(View.VISIBLE);
@@ -1339,10 +1341,16 @@ public class MessageAdapter extends ArrayAdapter<Message> {
             } else {
                 viewHolder.mediaduration.setVisibility(GONE);
             }
+            if (viewHolder.play_button != null) {
+                viewHolder.play_button.setVisibility(isVideo ? View.VISIBLE : GONE);
+            }
         } else {
             viewHolder.images.setVisibility(GONE);
             viewHolder.image.setVisibility(GONE);
             viewHolder.mediaduration.setVisibility(GONE);
+            if (viewHolder.play_button != null) {
+                viewHolder.play_button.setVisibility(GONE);
+            }
         }
     }
 
@@ -1361,7 +1369,9 @@ public class MessageAdapter extends ArrayAdapter<Message> {
         } else {
             viewHolder.messageBody.setTextAppearance(getContext(), R.style.TextAppearance_Conversations_Body1);
         }
-        if (message.isPrivateMessage()) {
+        final Conversational conversation = message.getConversation();
+        final boolean isPersistentPm = conversation instanceof Conversation && ((Conversation) conversation).hasPermanentCounterpart();
+        if (message.isPrivateMessage() && !isPersistentPm) {
             final String privateMarker;
             if (message.getStatus() <= Message.STATUS_RECEIVED) {
                 privateMarker = activity.getString(R.string.private_message);
@@ -1457,6 +1467,7 @@ public class MessageAdapter extends ArrayAdapter<Message> {
                     viewHolder.retract_indicator = view.findViewById(R.id.retract_indicator);
                     viewHolder.images = view.findViewById(R.id.images);
                     viewHolder.mediaduration = view.findViewById(R.id.media_duration);
+                    viewHolder.play_button = view.findViewById(R.id.play_button);
                     viewHolder.image = view.findViewById(R.id.message_image);
                     viewHolder.richlinkview = view.findViewById(R.id.richLinkView);
                     if (activity.xmppConnectionService.getBooleanPreference("set_text_collapsable", R.bool.set_text_collapsable)) {
@@ -1489,6 +1500,7 @@ public class MessageAdapter extends ArrayAdapter<Message> {
                     viewHolder.retract_indicator = view.findViewById(R.id.retract_indicator);
                     viewHolder.images = view.findViewById(R.id.images);
                     viewHolder.mediaduration = view.findViewById(R.id.media_duration);
+                    viewHolder.play_button = view.findViewById(R.id.play_button);
                     viewHolder.image = view.findViewById(R.id.message_image);
                     viewHolder.richlinkview = view.findViewById(R.id.richLinkView);
                     if (activity.xmppConnectionService.getBooleanPreference("set_text_collapsable", R.bool.set_text_collapsable)) {
@@ -1721,7 +1733,7 @@ public class MessageAdapter extends ArrayAdapter<Message> {
         final Transferable transferable = message.getTransferable();
         final boolean unInitiatedButKnownSize = MessageUtils.unInitiatedButKnownSize(message);
 
-        final boolean muted = message.getStatus() == Message.STATUS_RECEIVED && conversation.getMode() == Conversation.MODE_MULTI && activity.xmppConnectionService.isMucUserMuted(new MucOptions.User(null, conversation.getJid(), message.getOccupantId(), null, null));
+        final boolean muted = message.getStatus() == Message.STATUS_RECEIVED && conversation.getMode() == Conversation.MODE_MULTI && !((Conversation) conversation).hasPermanentCounterpart() && activity.xmppConnectionService.isMucUserMuted(new MucOptions.User(null, conversation.getJid(), message.getOccupantId(), null, null));
         if (muted) {
             // Muted MUC participant
             displayInfoMessage(viewHolder, "Muted", darkBackground, message);
@@ -1816,29 +1828,7 @@ public class MessageAdapter extends ArrayAdapter<Message> {
                 viewHolder.commands_list.setVisibility(GONE);
                 viewHolder.commands_list.setOnItemClickListener(null);
             }
-            if (message.isPrivateMessage()) {
-                viewHolder.answer_button.setVisibility(View.VISIBLE);
-                Drawable icon = activity.getResources().getDrawable(R.drawable.ic_reply_circle_black_24dp);
-                Drawable drawable = DrawableCompat.wrap(icon);
-                DrawableCompat.setTint(drawable, StyledAttributes.getColor(getContext(), R.attr.colorAccent));
-                viewHolder.answer_button.setImageDrawable(drawable);
-                viewHolder.answer_button.setOnClickListener(v -> {
-                    try {
-                        if (activity instanceof ConversationsActivity) {
-                            ConversationFragment conversationFragment = ConversationFragment.get(activity);
-                            if (conversationFragment != null) {
-                                activity.invalidateOptionsMenu();
-                                conversationFragment.privateMessageWith(message.getCounterpart());
-                            }
-                        }
-                    } catch (Exception e) {
-                        viewHolder.answer_button.setVisibility(GONE);
-                        e.printStackTrace();
-                    }
-                });
-            } else {
-                viewHolder.answer_button.setVisibility(GONE);
-            }
+            viewHolder.answer_button.setVisibility(GONE);
             if (isInValidSession) {
                 setBubbleBackgroundColor(viewHolder.message_box, type, message.isPrivateMessage(), isInValidSession);
                 viewHolder.encryption.setVisibility(GONE);
@@ -2027,12 +2017,13 @@ public class MessageAdapter extends ArrayAdapter<Message> {
         public ImageView edit_indicator;
         public ImageView retract_indicator;
         public RelativeLayout audioPlayer;
-        public LinearLayout images;
+        public RelativeLayout images;
         protected LinearLayout message_box;
         protected Button download_button;
         protected Button resend_button;
         protected ImageButton answer_button;
         protected ImageView image;
+        protected ImageView play_button;
         protected TextView mediaduration;
         protected RichLinkView richlinkview;
         protected ImageView indicator;
@@ -2057,44 +2048,24 @@ public class MessageAdapter extends ArrayAdapter<Message> {
                                          final boolean isPrivateMessage, final boolean isInValidSession) {
         if (type == RECEIVED) {
             if (isInValidSession) {
-                if (isPrivateMessage) {
-                    viewHolder.setBackgroundResource(R.drawable.message_bubble_received_light_private);
-                    activity.setBubbleColor(viewHolder, StyledAttributes.getColor(activity, R.attr.color_bubble_light), StyledAttributes.getColor(activity, R.attr.colorAccent));
-                } else {
-                    viewHolder.setBackgroundResource(R.drawable.message_bubble_received_light);
-                    activity.setBubbleColor(viewHolder, StyledAttributes.getColor(activity, R.attr.color_bubble_light), -1);
-                }
+                viewHolder.setBackgroundResource(R.drawable.message_bubble_received_light);
+                activity.setBubbleColor(viewHolder, StyledAttributes.getColor(activity, R.attr.color_bubble_light), -1);
             } else {
-                if (isPrivateMessage) {
-                    viewHolder.setBackgroundResource(R.drawable.message_bubble_received_warning_private);
-                    activity.setBubbleColor(viewHolder, StyledAttributes.getColor(activity, R.attr.color_bubble_warning), StyledAttributes.getColor(activity, R.attr.colorAccent));
-                } else {
-                    viewHolder.setBackgroundResource(R.drawable.message_bubble_received_warning);
-                    activity.setBubbleColor(viewHolder, StyledAttributes.getColor(activity, R.attr.color_bubble_warning), -1);
-                }
+                viewHolder.setBackgroundResource(R.drawable.message_bubble_received_warning);
+                activity.setBubbleColor(viewHolder, StyledAttributes.getColor(activity, R.attr.color_bubble_warning), -1);
             }
         }
 
         if (type == SENT) {
-            if (isPrivateMessage) {
-                viewHolder.setBackgroundResource(R.drawable.message_bubble_sent_private);
-                activity.setBubbleColor(viewHolder, StyledAttributes.getColor(activity, R.attr.color_bubble_dark), StyledAttributes.getColor(activity, R.attr.colorAccent));
-            } else {
-                viewHolder.setBackgroundResource(R.drawable.message_bubble_sent);
-                activity.setBubbleColor(viewHolder, StyledAttributes.getColor(activity, R.attr.color_bubble_dark), -1);
-            }
+            viewHolder.setBackgroundResource(R.drawable.message_bubble_sent);
+            activity.setBubbleColor(viewHolder, StyledAttributes.getColor(activity, R.attr.color_bubble_dark), -1);
         }
     }
 
     public void setInputBubbleBackgroundColor(final View viewHolder,
                                               final boolean isPrivateMessage) {
-        if (isPrivateMessage) {
-            viewHolder.setBackgroundResource(R.drawable.input_bubble_sent_private);
-            activity.setBubbleColor(viewHolder, StyledAttributes.getColor(activity, R.attr.color_bubble_dark), StyledAttributes.getColor(activity, R.attr.colorAccent));
-        } else {
-            viewHolder.setBackgroundResource(R.drawable.input_bubble_light);
-            activity.setBubbleColor(viewHolder, StyledAttributes.getColor(activity, R.attr.color_bubble_dark), -1);
-        }
+        viewHolder.setBackgroundResource(R.drawable.input_bubble_light);
+        activity.setBubbleColor(viewHolder, StyledAttributes.getColor(activity, R.attr.color_bubble_dark), -1);
     }
 
     class ThumbnailTask extends AsyncTask<DownloadableFile, Void, Drawable[]> {

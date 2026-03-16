@@ -312,9 +312,23 @@ public class AvatarService implements OnAdvancedStreamFeaturesLoaded {
         return get(conversation, size, false);
     }
 
+    private MucOptions getMucOptions(Conversation conversation) {
+        Conversation main = mXmppConnectionService.findFirstMuc(conversation.getJid());
+        return main != null ? main.getMucOptions() : conversation.getMucOptions();
+    }
+
     public Drawable get(Conversation conversation, int size, boolean cachedOnly) {
         if (conversation.getMode() == Conversation.MODE_SINGLE) {
             return get(conversation.getContact(), size, cachedOnly);
+        } else if (conversation.hasPermanentCounterpart()) {
+            final Jid counterpart = conversation.getNextCounterpart();
+            final MucOptions mucOptions = getMucOptions(conversation);
+            final MucOptions.User user = mucOptions.findUserByFullJid(counterpart);
+            if (user != null) {
+                return get(user, size, cachedOnly);
+            } else {
+                return get(UIHelper.getDisplayedMucCounterpart(counterpart), counterpart.asBareJid().toString(), size, cachedOnly);
+            }
         } else {
             return get(conversation.getMucOptions(), size, cachedOnly);
         }
@@ -323,6 +337,19 @@ public class AvatarService implements OnAdvancedStreamFeaturesLoaded {
     public void clear(Conversation conversation) {
         if (conversation.getMode() == Conversation.MODE_SINGLE) {
             clear(conversation.getContact());
+        } else if (conversation.hasPermanentCounterpart()) {
+            final Jid counterpart = conversation.getNextCounterpart();
+            final MucOptions.User user = conversation.getMucOptions().findUserByFullJid(counterpart);
+            if (user != null) {
+                clear(user);
+            }
+            synchronized (this.sizes) {
+                for (final Integer size : sizes) {
+                    final String seed = counterpart.asBareJid().toString();
+                    final String name = UIHelper.getDisplayedMucCounterpart(counterpart);
+                    this.mXmppConnectionService.getDrawableCache().remove(key(name + "\0" + seed, size));
+                }
+            }
         } else {
             clear(conversation.getMucOptions());
             synchronized (this.conversationDependentKeys) {
@@ -492,7 +519,7 @@ public class AvatarService implements OnAdvancedStreamFeaturesLoaded {
                 return get(c, size, cachedOnly);
             } else if (conversation instanceof Conversation && message.getConversation().getMode() == Conversation.MODE_MULTI) {
                 final Jid trueCounterpart = message.getTrueCounterpart();
-                final MucOptions mucOptions = ((Conversation) conversation).getMucOptions();
+                final MucOptions mucOptions = getMucOptions((Conversation) conversation);
                 MucOptions.User user;
                 if (trueCounterpart != null) {
                     user = mucOptions.findOrCreateUserByRealJid(trueCounterpart, message.getCounterpart());

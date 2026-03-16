@@ -1583,7 +1583,7 @@ public class ConversationFragment extends XmppFragment
     }
 
     private boolean isPrivateMessage() {
-        return conversation != null && conversation.getMode() == Conversation.MODE_MULTI && conversation.getNextCounterpart() != null;
+        return conversation != null && conversation.getMode() == Conversation.MODE_MULTI && conversation.getNextCounterpart() != null && !conversation.hasPermanentCounterpart();
     }
 
     public void setupIme() {
@@ -1855,7 +1855,7 @@ public class ConversationFragment extends XmppFragment
             final MenuItem deleteCustomBg = menu.findItem(R.id.action_delete_custom_bg);
 
             if (conversation != null) {
-                if (conversation.getMode() == Conversation.MODE_MULTI || (activity.xmppConnectionService != null && !activity.xmppConnectionService.hasInternetConnection())) {
+                if ((conversation.getMode() == Conversation.MODE_MULTI && !conversation.hasPermanentCounterpart()) || (activity.xmppConnectionService != null && !activity.xmppConnectionService.hasInternetConnection())) {
                     menuInviteContact.setVisible(conversation.getMucOptions().canInvite());
                     menuArchiveChat.setVisible(false);
                     menuLeaveGroup.setVisible(true);
@@ -1888,7 +1888,7 @@ public class ConversationFragment extends XmppFragment
                 try {
                     Fragment secondaryFragment = activity.getFragmentManager().findFragmentById(R.id.secondary_fragment);
                     if (secondaryFragment instanceof ConversationFragment) {
-                        if (conversation.getMode() == Conversation.MODE_MULTI) {
+                        if (conversation.getMode() == Conversation.MODE_MULTI && !conversation.hasPermanentCounterpart()) {
                             menuGroupDetails.setTitle(conversation.getMucOptions().isPrivateAndNonAnonymous() ? R.string.action_group_details : R.string.channel_details);
                             menuGroupDetails.setVisible(true);
                             menuContactDetails.setVisible(false);
@@ -2722,15 +2722,19 @@ public class ConversationFragment extends XmppFragment
         else if (itemId == R.id.action_archive_chat) {
             activity.xmppConnectionService.archiveConversation(conversation);
         } else if (itemId == R.id.action_leave_group) {
-            final AlertDialog.Builder builder = new AlertDialog.Builder(activity);
-            builder.setTitle(activity.getString(R.string.action_end_conversation_muc));
-            builder.setMessage(activity.getString(R.string.leave_conference_warning));
-            builder.setNegativeButton(activity.getString(R.string.cancel), null);
-            builder.setPositiveButton(activity.getString(R.string.action_end_conversation_muc),
-                    (dialog, which) -> {
-                        activity.xmppConnectionService.archiveConversation(conversation);
-                    });
-            builder.create().show();
+            if (conversation.hasPermanentCounterpart()) {
+                activity.xmppConnectionService.archiveConversation(conversation);
+            } else {
+                final AlertDialog.Builder builder = new AlertDialog.Builder(activity);
+                builder.setTitle(activity.getString(R.string.action_end_conversation_muc));
+                builder.setMessage(activity.getString(R.string.leave_conference_warning));
+                builder.setNegativeButton(activity.getString(R.string.cancel), null);
+                builder.setPositiveButton(activity.getString(R.string.action_end_conversation_muc),
+                        (dialog, which) -> {
+                            activity.xmppConnectionService.archiveConversation(conversation);
+                        });
+                builder.create().show();
+            }
         } else if (itemId == R.id.action_invite) {
             startActivityForResult(ChooseContactActivity.create(activity, conversation), REQUEST_INVITE_TO_CONVERSATION);
         } else if (itemId == R.id.action_clear_history) {
@@ -4167,18 +4171,11 @@ public class ConversationFragment extends XmppFragment
                 ToastCompat.makeText(getActivity(), activity.getString(R.string.user_has_left_conference, counterpart.getResource()), ToastCompat.LENGTH_SHORT).show();
                 return;
             }
-            if (conversation.setOutgoingChatState(Config.DEFAULT_CHAT_STATE)) {
-                activity.xmppConnectionService.sendChatState(conversation);
-            }
-            this.binding.textinput.setText("");
-            this.conversation.setNextCounterpart(counterpart);
+            Conversation pmConversation = activity.xmppConnectionService.findOrCreateConversation(conversation.getAccount(), conversation.getJid().asBareJid(), counterpart, true, false, null, true, null);
+            activity.switchToConversation(pmConversation);
         } catch (Exception e) {
             e.printStackTrace();
             ToastCompat.makeText(getActivity(), activity.getString(R.string.user_has_left_conference, activity.getString(R.string.user)), ToastCompat.LENGTH_SHORT).show();
-        } finally {
-            updateChatMsgHint();
-            updateSendButton();
-            updateEditablity();
         }
     }
 
@@ -4858,7 +4855,8 @@ public class ConversationFragment extends XmppFragment
             showSnackbar(R.string.contact_asks_for_presence_subscription, R.string.allow, this.mAllowPresenceSubscription, this.mLongPressBlockListener);
         } else if (mode == Conversation.MODE_MULTI
                 && !conversation.getMucOptions().online()
-                && account.getStatus() == Account.State.ONLINE) {
+                && account.getStatus() == Account.State.ONLINE
+                && !conversation.hasPermanentCounterpart()) {
             MucOptions.Error error = conversation.getMucOptions().getError();
             if (Objects.requireNonNull(error) == MucOptions.Error.NICK_IN_USE) {
                 showSnackbar(R.string.nick_in_use, R.string.edit, clickToMuc);
