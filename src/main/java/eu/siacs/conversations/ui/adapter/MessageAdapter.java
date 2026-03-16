@@ -799,7 +799,7 @@ public class MessageAdapter extends ArrayAdapter<Message> {
                                 finalWidth = Math.max(finalWidth, (int) (maxWidth * 0.5f));
                                 finalHeight = Math.max(finalHeight, (int) (maxWidth * 0.5f));
 
-                                LinearLayout.LayoutParams imageParams = new LinearLayout.LayoutParams(
+                                RelativeLayout.LayoutParams imageParams = new RelativeLayout.LayoutParams(
                                         finalWidth,
                                         finalHeight
                                 );
@@ -1280,7 +1280,9 @@ public class MessageAdapter extends ArrayAdapter<Message> {
         LinearLayout.LayoutParams layoutParams = new LinearLayout.LayoutParams(scaledW, scaledH);
         layoutParams.setMargins(0, (int) (metrics.density * 4), 0, (int) (metrics.density * 4));
         viewHolder.images.setLayoutParams(layoutParams);
-        viewHolder.image.setLayoutParams(layoutParams);
+
+        RelativeLayout.LayoutParams imageLayoutParams = new RelativeLayout.LayoutParams(scaledW, scaledH);
+        viewHolder.image.setLayoutParams(imageLayoutParams);
 
         if (isGif && mPlayGifInside) {
             showImages(true, mediaRuntime, true, isVideo, viewHolder);
@@ -1320,8 +1322,7 @@ public class MessageAdapter extends ArrayAdapter<Message> {
             scaledW = (int) target;
             scaledH = (int) (h / ((double) w / target));
         }
-        final LinearLayout.LayoutParams layoutParams = new LinearLayout.LayoutParams(scaledW, scaledH);
-        layoutParams.setMargins(0, (int) (metrics.density * 4), 0, (int) (metrics.density * 4));
+        final RelativeLayout.LayoutParams layoutParams = new RelativeLayout.LayoutParams(scaledW, scaledH);
         image.setLayoutParams(layoutParams);
     }
 
