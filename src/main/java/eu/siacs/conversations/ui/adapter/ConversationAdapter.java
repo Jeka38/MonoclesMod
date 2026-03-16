@@ -108,6 +108,7 @@ public class ConversationAdapter
                 } else {
                     collapsedGroups.add(item.header);
                 }
+                updateItems();
                 notifyDataSetChanged();
             });
             return;
