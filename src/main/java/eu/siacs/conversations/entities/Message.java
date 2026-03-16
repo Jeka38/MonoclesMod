@@ -711,10 +711,6 @@ public class Message extends AbstractEntity implements AvatarService.Avatarable 
     public String getBody(final boolean removeQuoteFallbacks) {
         if (body == null) return "";
 
-        if (isSimsFallback() && !getSims().isEmpty()) {
-            return "";
-        }
-
         List<String> fallbacksToRemove = new ArrayList<>();
         fallbacksToRemove.add("http://jabber.org/protocol/address");
         if (getOob() != null || isGeoUri()) fallbacksToRemove.add(Namespace.OOB);
@@ -1144,6 +1140,9 @@ public class Message extends AbstractEntity implements AvatarService.Avatarable 
     }
 
     public SpannableStringBuilder getSpannableBody(GetThumbnailForCid thumbnailer, Drawable fallbackImg) {
+        if (isSimsFallback() && !getSims().isEmpty()) {
+            return new SpannableStringBuilder("");
+        }
         SpannableStringBuilder spannableBody;
         final Element html = getHtml();
         if (html == null || Build.VERSION.SDK_INT < 24) {

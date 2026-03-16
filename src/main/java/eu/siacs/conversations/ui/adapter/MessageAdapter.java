@@ -130,6 +130,7 @@ import eu.siacs.conversations.utils.CryptoHelper;
 import eu.siacs.conversations.utils.Emoticons;
 import eu.siacs.conversations.utils.GeoHelper;
 import eu.siacs.conversations.utils.MessageUtils;
+import eu.siacs.conversations.utils.MimeUtils;
 import eu.siacs.conversations.utils.RichPreview;
 import eu.siacs.conversations.utils.StylingHelper;
 import eu.siacs.conversations.utils.ThemeHelper;
@@ -475,6 +476,7 @@ public class MessageAdapter extends ArrayAdapter<Message> {
     private void displayInfoMessage(ViewHolder viewHolder, CharSequence text, boolean darkBackground, Message message) {
         viewHolder.download_button.setVisibility(GONE);
         viewHolder.audioPlayer.setVisibility(GONE);
+        if (viewHolder.video_play_button != null) viewHolder.video_play_button.setVisibility(GONE);
         showImages(false, viewHolder);
         viewHolder.richlinkview.setVisibility(GONE);
         viewHolder.transfer.setVisibility(GONE);
@@ -524,6 +526,7 @@ public class MessageAdapter extends ArrayAdapter<Message> {
     private void displayEmojiMessage(final ViewHolder viewHolder, final SpannableStringBuilder body, final boolean darkBackground) {
         viewHolder.download_button.setVisibility(GONE);
         viewHolder.audioPlayer.setVisibility(GONE);
+        if (viewHolder.video_play_button != null) viewHolder.video_play_button.setVisibility(GONE);
         showImages(false, viewHolder);
         viewHolder.richlinkview.setVisibility(GONE);
         viewHolder.transfer.setVisibility(GONE);
@@ -575,6 +578,7 @@ public class MessageAdapter extends ArrayAdapter<Message> {
             }
 
         });
+        if (viewHolder.video_play_button != null) viewHolder.video_play_button.setVisibility(GONE);
         showImages(false, viewHolder);
         viewHolder.richlinkview.setVisibility(GONE);
         viewHolder.transfer.setVisibility(GONE);
@@ -747,6 +751,11 @@ public class MessageAdapter extends ArrayAdapter<Message> {
                 Log.d("ChatDebug", "Image URL detected: " + imageUrl);
                 viewHolder.images.setVisibility(View.VISIBLE);
                 viewHolder.image.setVisibility(View.VISIBLE);
+                if (viewHolder.video_play_button != null) {
+                    final String extension = MimeUtils.extractRelevantExtension(imageUrl);
+                    final String mime = MimeUtils.guessMimeTypeFromExtension(extension);
+                    viewHolder.video_play_button.setVisibility(mime != null && mime.startsWith("video/") ? View.VISIBLE : GONE);
+                }
 
                 final float maxWidth = activity.getResources().getDimension(R.dimen.image_preview_width);
                 final float maxHeight = maxWidth * 0.5f;
@@ -937,6 +946,7 @@ public class MessageAdapter extends ArrayAdapter<Message> {
             }
         }
         viewHolder.audioPlayer.setVisibility(GONE);
+        if (viewHolder.video_play_button != null) viewHolder.video_play_button.setVisibility(GONE);
         showImages(false, viewHolder);
         viewHolder.richlinkview.setVisibility(GONE);
         viewHolder.transfer.setVisibility(GONE);
@@ -956,6 +966,7 @@ public class MessageAdapter extends ArrayAdapter<Message> {
         displayTextMessage(viewHolder, message, darkBackground, type);
         viewHolder.image.setVisibility(GONE);
         viewHolder.audioPlayer.setVisibility(GONE);
+        if (viewHolder.video_play_button != null) viewHolder.video_play_button.setVisibility(GONE);
         viewHolder.download_button.setVisibility(View.VISIBLE);
         viewHolder.download_button.setText(activity.getResources().getString(R.string.open) + " " + webxdc.getName());
         viewHolder.download_button.setOnClickListener(v -> {
@@ -1006,6 +1017,7 @@ public class MessageAdapter extends ArrayAdapter<Message> {
         displayTextMessage(viewHolder, message, darkBackground, type);
         viewHolder.download_button.setVisibility(View.VISIBLE);
         viewHolder.audioPlayer.setVisibility(GONE);
+        if (viewHolder.video_play_button != null) viewHolder.video_play_button.setVisibility(GONE);
         showImages(false, viewHolder);
         viewHolder.richlinkview.setVisibility(GONE);
         viewHolder.transfer.setVisibility(GONE);
@@ -1095,6 +1107,7 @@ public class MessageAdapter extends ArrayAdapter<Message> {
     private void displayRichLinkMessage(final ViewHolder viewHolder, final Message message, boolean darkBackground) {
         toggleWhisperInfo(viewHolder, message, true, darkBackground);
         viewHolder.audioPlayer.setVisibility(GONE);
+        if (viewHolder.video_play_button != null) viewHolder.video_play_button.setVisibility(GONE);
         showImages(false, viewHolder);
         viewHolder.download_button.setVisibility(GONE);
         viewHolder.transfer.setVisibility(GONE);
@@ -1148,6 +1161,7 @@ public class MessageAdapter extends ArrayAdapter<Message> {
     private void displayLocationMessage(ViewHolder viewHolder, final Message message, final boolean darkBackground, final int type) {
         displayTextMessage(viewHolder, message, darkBackground, type);
         viewHolder.audioPlayer.setVisibility(GONE);
+        if (viewHolder.video_play_button != null) viewHolder.video_play_button.setVisibility(GONE);
         final String url = GeoHelper.MapPreviewUri(message, activity);
         showImages(false, viewHolder);
         viewHolder.richlinkview.setVisibility(GONE);
@@ -1195,6 +1209,7 @@ public class MessageAdapter extends ArrayAdapter<Message> {
         final Resources res = activity.getResources();
         viewHolder.messageBody.setWidth((int) res.getDimension(R.dimen.audio_player_width));
         displayTextMessage(viewHolder, message, darkBackground, type);
+        if (viewHolder.video_play_button != null) viewHolder.video_play_button.setVisibility(GONE);
         showImages(false, viewHolder);
         viewHolder.richlinkview.setVisibility(GONE);
         viewHolder.transfer.setVisibility(GONE);
@@ -1247,7 +1262,12 @@ public class MessageAdapter extends ArrayAdapter<Message> {
 
         final String mime = file.getMimeType();
         final boolean isGif = mime != null && mime.equals("image/gif");
+        final boolean isVideo = mime != null && mime.startsWith("video/");
         final int mediaRuntime = message.getFileParams().runtime;
+
+        if (viewHolder.video_play_button != null) {
+            viewHolder.video_play_button.setVisibility(isVideo ? View.VISIBLE : GONE);
+        }
 
         // Устанавливаем максимальные размеры превью
         final float maxWidth = activity.getResources().getDimension(R.dimen.image_preview_width);
@@ -1459,6 +1479,7 @@ public class MessageAdapter extends ArrayAdapter<Message> {
                     viewHolder.retract_indicator = view.findViewById(R.id.retract_indicator);
                     viewHolder.images = view.findViewById(R.id.images);
                     viewHolder.mediaduration = view.findViewById(R.id.media_duration);
+                    viewHolder.video_play_button = view.findViewById(R.id.video_play_button);
                     viewHolder.image = view.findViewById(R.id.message_image);
                     viewHolder.richlinkview = view.findViewById(R.id.richLinkView);
                     if (activity.xmppConnectionService.getBooleanPreference("set_text_collapsable", R.bool.set_text_collapsable)) {
@@ -1491,6 +1512,7 @@ public class MessageAdapter extends ArrayAdapter<Message> {
                     viewHolder.retract_indicator = view.findViewById(R.id.retract_indicator);
                     viewHolder.images = view.findViewById(R.id.images);
                     viewHolder.mediaduration = view.findViewById(R.id.media_duration);
+                    viewHolder.video_play_button = view.findViewById(R.id.video_play_button);
                     viewHolder.image = view.findViewById(R.id.message_image);
                     viewHolder.richlinkview = view.findViewById(R.id.richLinkView);
                     if (activity.xmppConnectionService.getBooleanPreference("set_text_collapsable", R.bool.set_text_collapsable)) {
@@ -2007,12 +2029,13 @@ public class MessageAdapter extends ArrayAdapter<Message> {
         public ImageView edit_indicator;
         public ImageView retract_indicator;
         public RelativeLayout audioPlayer;
-        public LinearLayout images;
+        public ViewGroup images;
         protected LinearLayout message_box;
         protected Button download_button;
         protected Button resend_button;
         protected ImageButton answer_button;
         protected ImageView image;
+        protected ImageView video_play_button;
         protected TextView mediaduration;
         protected RichLinkView richlinkview;
         protected ImageView indicator;

@@ -62,30 +62,35 @@
         android:layout_width="wrap_content"
         android:layout_height="wrap_content" />
 
-    <LinearLayout
+    <FrameLayout
         android:id="@+id/images"
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
         android:layout_marginTop="8dp"
         android:layout_marginBottom="2dp"
-        android:visibility="gone"
-        android:orientation="horizontal">
+        android:visibility="gone">
 
         <com.google.android.material.imageview.ShapeableImageView
             android:id="@+id/message_image"
-            android:layout_width="0dp"
-            android:layout_height="match_parent"
-            android:layout_weight="1"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
             android:longClickable="true"
             app:shapeAppearance="@style/ShapeAppearanceOverlay.PhotoSquare" />
+
+        <ImageView
+            android:id="@+id/video_play_button"
+            android:layout_width="48dp"
+            android:layout_height="48dp"
+            android:layout_gravity="center"
+            android:src="@drawable/ic_play_circle_filled_white_48dp"
+            android:visibility="gone" />
 
         <TextView
             android:id="@+id/media_duration"
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"
-            android:layout_alignParentEnd="true"
-            android:layout_alignParentRight="true"
-            android:layout_margin="2dp"
+            android:layout_gravity="bottom|end"
+            android:layout_margin="4dp"
             android:paddingStart="4dp"
             android:paddingLeft="4dp"
             android:paddingTop="2dp"
@@ -94,7 +99,7 @@
             android:paddingBottom="2dp"
             android:textColor="@color/realwhite"
             android:textSize="12sp" />
-    </LinearLayout>
+    </FrameLayout>
 
     <Button
         android:id="@+id/download_button"
