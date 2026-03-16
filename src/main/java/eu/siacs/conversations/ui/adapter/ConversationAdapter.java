@@ -14,6 +14,7 @@ import android.util.Pair;
 import android.view.LayoutInflater;
 import android.view.View;
 import android.view.ViewGroup;
+import android.widget.TextView;
 
 import androidx.annotation.NonNull;
 import androidx.core.content.ContextCompat;
@@ -23,6 +24,7 @@ import androidx.recyclerview.widget.RecyclerView;
 import com.google.common.base.Optional;
 import com.google.common.base.Strings;
 
+import java.util.ArrayList;
 import java.util.List;
 
 import de.monocles.mod.Util;
@@ -45,12 +47,16 @@ import eu.siacs.conversations.xmpp.chatstate.ChatState;
 import eu.siacs.conversations.xmpp.jingle.OngoingRtpSession;
 
 public class ConversationAdapter
-        extends RecyclerView.Adapter<ConversationAdapter.ConversationViewHolder> {
+        extends RecyclerView.Adapter<RecyclerView.ViewHolder> {
+
+    private static final int TYPE_HEADER = 0;
+    private static final int TYPE_CONVERSATION = 1;
 
     private static final float INACTIVE_ALPHA = 0.4684f;
     private static final float ACTIVE_ALPHA = 1.0f;
     private XmppActivity activity;
-    private List<Conversation> conversations;
+    private List<Conversation> conversations = new ArrayList<>();
+    private List<ListItem> items = new ArrayList<>();
     private OnConversationClickListener listener;
     private boolean hasInternetConnection = false;
     private String readmarkervalue;
@@ -60,22 +66,39 @@ public class ConversationAdapter
         this.conversations = conversations;
         SharedPreferences sharedPref = PreferenceManager.getDefaultSharedPreferences(activity);
         this.readmarkervalue = sharedPref.getString("readmarker_style", "blue_readmarkers");
+        updateItems();
+    }
+
+    @Override
+    public int getItemViewType(int position) {
+        return items.get(position).type;
     }
 
     @NonNull
     @Override
-    public ConversationViewHolder onCreateViewHolder(@NonNull ViewGroup parent, int viewType) {
-        return new ConversationViewHolder(
-                DataBindingUtil.inflate(
-                        LayoutInflater.from(parent.getContext()),
-                        R.layout.conversation_list_row,
-                        parent,
-                        false));
+    public RecyclerView.ViewHolder onCreateViewHolder(@NonNull ViewGroup parent, int viewType) {
+        if (viewType == TYPE_HEADER) {
+            View view = LayoutInflater.from(parent.getContext()).inflate(R.layout.conversation_list_header, parent, false);
+            return new HeaderViewHolder(view);
+        } else {
+            return new ConversationViewHolder(
+                    DataBindingUtil.inflate(
+                            LayoutInflater.from(parent.getContext()),
+                            R.layout.conversation_list_row,
+                            parent,
+                            false));
+        }
     }
 
     @Override
-    public void onBindViewHolder(@NonNull ConversationViewHolder viewHolder, int position) {
-        Conversation conversation = conversations.get(position);
+    public void onBindViewHolder(@NonNull RecyclerView.ViewHolder holder, int position) {
+        ListItem item = items.get(position);
+        if (item.type == TYPE_HEADER) {
+            ((HeaderViewHolder) holder).textView.setText(item.header);
+            return;
+        }
+        ConversationViewHolder viewHolder = (ConversationViewHolder) holder;
+        Conversation conversation = item.conversation;
         if (conversation == null) {
             return;
         }
@@ -432,21 +455,62 @@ public class ConversationAdapter
 
     @Override
     public int getItemCount() {
-        return conversations.size();
+        return items.size();
     }
 
     public void setConversationClickListener(OnConversationClickListener listener) {
         this.listener = listener;
     }
 
-    public void insert(Conversation c, int position) {
-        conversations.add(position, c);
-        notifyDataSetChanged();
+    private void updateItems() {
+        items.clear();
+        List<Conversation> contacts = new ArrayList<>();
+        List<Conversation> conferences = new ArrayList<>();
+        List<Conversation> pms = new ArrayList<>();
+
+        for (Conversation conversation : conversations) {
+            if (conversation.getMode() == Conversation.MODE_MULTI) {
+                if (conversation.hasPermanentCounterpart()) {
+                    pms.add(conversation);
+                } else {
+                    conferences.add(conversation);
+                }
+            } else {
+                contacts.add(conversation);
+            }
+        }
+
+        if (!contacts.isEmpty()) {
+            items.add(new ListItem(activity.getString(R.string.contacts)));
+            for (Conversation c : contacts) {
+                items.add(new ListItem(c));
+            }
+        }
+        if (!conferences.isEmpty()) {
+            items.add(new ListItem(activity.getString(R.string.group_conferences)));
+            for (Conversation c : conferences) {
+                items.add(new ListItem(c));
+            }
+        }
+        if (!pms.isEmpty()) {
+            items.add(new ListItem(activity.getString(R.string.group_private_messages)));
+            for (Conversation c : pms) {
+                items.add(new ListItem(c));
+            }
+        }
     }
 
-    public void remove(Conversation conversation, int position) {
-        conversations.remove(conversation);
-        notifyItemRemoved(position);
+    public void setConversations(List<Conversation> conversations) {
+        this.conversations = conversations;
+        updateItems();
+        super.notifyDataSetChanged();
+    }
+
+    public Conversation getConversation(int position) {
+        if (position < 0 || position >= items.size()) {
+            return null;
+        }
+        return items.get(position).conversation;
     }
 
     public interface OnConversationClickListener {
@@ -460,6 +524,33 @@ public class ConversationAdapter
             super(binding.getRoot());
             this.binding = binding;
             binding.getRoot().setLongClickable(true);
+        }
+    }
+
+    static class HeaderViewHolder extends RecyclerView.ViewHolder {
+        private final TextView textView;
+
+        private HeaderViewHolder(View view) {
+            super(view);
+            this.textView = (TextView) view;
+        }
+    }
+
+    private static class ListItem {
+        final int type;
+        final String header;
+        final Conversation conversation;
+
+        ListItem(String header) {
+            this.type = TYPE_HEADER;
+            this.header = header;
+            this.conversation = null;
+        }
+
+        ListItem(Conversation conversation) {
+            this.type = TYPE_CONVERSATION;
+            this.header = null;
+            this.conversation = conversation;
         }
     }
 

@@ -55,6 +55,8 @@
     <string name="start_conversation">Start Conversation</string>
     <string name="invite_contact">Invite Contact</string>
     <string name="contacts">Contacts</string>
+    <string name="group_conferences">Conferences</string>
+    <string name="group_private_messages">Private messages</string>
     <string name="cancel">Cancel</string>
     <string name="set">Set</string>
     <string name="add">Add</string>
