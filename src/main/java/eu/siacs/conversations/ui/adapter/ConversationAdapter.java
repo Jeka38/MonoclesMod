@@ -14,6 +14,7 @@ import android.util.Pair;
 import android.view.LayoutInflater;
 import android.view.View;
 import android.view.ViewGroup;
+import android.widget.ImageView;
 import android.widget.TextView;
 
 import androidx.annotation.NonNull;
@@ -25,7 +26,9 @@ import com.google.common.base.Optional;
 import com.google.common.base.Strings;
 
 import java.util.ArrayList;
+import java.util.HashSet;
 import java.util.List;
+import java.util.Set;
 
 import de.monocles.mod.Util;
 import eu.siacs.conversations.R;
@@ -57,6 +60,7 @@ public class ConversationAdapter
     private XmppActivity activity;
     private List<Conversation> conversations = new ArrayList<>();
     private List<ListItem> items = new ArrayList<>();
+    private final Set<String> collapsedGroups = new HashSet<>();
     private OnConversationClickListener listener;
     private boolean hasInternetConnection = false;
     private String readmarkervalue;
@@ -94,7 +98,18 @@ public class ConversationAdapter
     public void onBindViewHolder(@NonNull RecyclerView.ViewHolder holder, int position) {
         ListItem item = items.get(position);
         if (item.type == TYPE_HEADER) {
-            ((HeaderViewHolder) holder).textView.setText(item.header);
+            HeaderViewHolder headerViewHolder = (HeaderViewHolder) holder;
+            headerViewHolder.textView.setText(item.header);
+            boolean collapsed = collapsedGroups.contains(item.header);
+            headerViewHolder.indicator.setImageResource(collapsed ? R.drawable.ic_expand_more_black_24dp : R.drawable.ic_expand_less_black_24dp);
+            headerViewHolder.itemView.setOnClickListener(v -> {
+                if (collapsed) {
+                    collapsedGroups.remove(item.header);
+                } else {
+                    collapsedGroups.add(item.header);
+                }
+                notifyDataSetChanged();
+            });
             return;
         }
         ConversationViewHolder viewHolder = (ConversationViewHolder) holder;
@@ -481,21 +496,30 @@ public class ConversationAdapter
         }
 
         if (!contacts.isEmpty()) {
-            items.add(new ListItem(activity.getString(R.string.contacts)));
-            for (Conversation c : contacts) {
-                items.add(new ListItem(c));
+            String header = activity.getString(R.string.contacts);
+            items.add(new ListItem(header));
+            if (!collapsedGroups.contains(header)) {
+                for (Conversation c : contacts) {
+                    items.add(new ListItem(c));
+                }
             }
         }
         if (!conferences.isEmpty()) {
-            items.add(new ListItem(activity.getString(R.string.group_conferences)));
-            for (Conversation c : conferences) {
-                items.add(new ListItem(c));
+            String header = activity.getString(R.string.group_conferences);
+            items.add(new ListItem(header));
+            if (!collapsedGroups.contains(header)) {
+                for (Conversation c : conferences) {
+                    items.add(new ListItem(c));
+                }
             }
         }
         if (!pms.isEmpty()) {
-            items.add(new ListItem(activity.getString(R.string.group_private_messages)));
-            for (Conversation c : pms) {
-                items.add(new ListItem(c));
+            String header = activity.getString(R.string.group_private_messages);
+            items.add(new ListItem(header));
+            if (!collapsedGroups.contains(header)) {
+                for (Conversation c : pms) {
+                    items.add(new ListItem(c));
+                }
             }
         }
     }
@@ -529,10 +553,12 @@ public class ConversationAdapter
 
     static class HeaderViewHolder extends RecyclerView.ViewHolder {
         private final TextView textView;
+        private final ImageView indicator;
 
         private HeaderViewHolder(View view) {
             super(view);
-            this.textView = (TextView) view;
+            this.textView = view.findViewById(R.id.header_text);
+            this.indicator = view.findViewById(R.id.header_indicator);
         }
     }
 
