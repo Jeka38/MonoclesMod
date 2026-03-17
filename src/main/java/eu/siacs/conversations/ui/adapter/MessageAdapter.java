@@ -166,6 +166,7 @@ public class MessageAdapter extends ArrayAdapter<Message> {
     private boolean mPlayGifInside = false;
     private boolean mShowLinksInside = false;
     private boolean mShowMapsInside = false;
+    private boolean mLargeFontForMucStatus = false;
     private final boolean mForceNames;
     private final Map<String, WebxdcUpdate> lastWebxdcUpdate = new HashMap<>();
     private String readmarkervalue;
@@ -479,7 +480,13 @@ public class MessageAdapter extends ArrayAdapter<Message> {
         viewHolder.richlinkview.setVisibility(GONE);
         viewHolder.transfer.setVisibility(GONE);
         viewHolder.messageBody.setVisibility(View.VISIBLE);
-        viewHolder.messageBody.setText(text);
+        if (activity.xmppConnectionService != null && mLargeFontForMucStatus && message.getType() == Message.TYPE_STATUS && message.getConversation().getMode() == Conversation.MODE_MULTI) {
+            SpannableStringBuilder builder = new SpannableStringBuilder(text);
+            builder.setSpan(new RelativeSizeSpan(1.5f), 0, builder.length(), Spannable.SPAN_EXCLUSIVE_EXCLUSIVE);
+            viewHolder.messageBody.setText(builder);
+        } else {
+            viewHolder.messageBody.setText(text);
+        }
         showProgress(viewHolder, message.getTransferable(), message);
         if (darkBackground) {
             viewHolder.messageBody.setTextAppearance(getContext(), R.style.TextAppearance_Conversations_Body1_Secondary_OnDark);
@@ -1982,6 +1989,7 @@ public class MessageAdapter extends ArrayAdapter<Message> {
         this.mPlayGifInside = p.getBoolean(PLAY_GIF_INSIDE, activity.getResources().getBoolean(R.bool.play_gif_inside));
         this.mShowLinksInside = p.getBoolean(SHOW_LINKS_INSIDE, activity.getResources().getBoolean(R.bool.show_links_inside));
         this.mShowMapsInside = p.getBoolean(SHOW_MAPS_INSIDE, activity.getResources().getBoolean(R.bool.show_maps_inside));
+        this.mLargeFontForMucStatus = p.getBoolean("large_font_for_muc_status", activity.getResources().getBoolean(R.bool.large_font_for_muc_status));
         SharedPreferences sharedPref = PreferenceManager.getDefaultSharedPreferences(activity);
         this.readmarkervalue = sharedPref.getString("readmarker_style", "blue_readmarkers");
     }

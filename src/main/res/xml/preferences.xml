@@ -152,6 +152,11 @@
         </PreferenceCategory>
         <PreferenceCategory android:title="@string/pref_expert_options_other">
         <SwitchPreference
+            android:defaultValue="@bool/large_font_for_muc_status"
+            android:key="large_font_for_muc_status"
+            android:summary="@string/large_font_for_muc_status_summary"
+            android:title="@string/large_font_for_muc_status" />
+        <SwitchPreference
             android:defaultValue="@bool/show_nav_bar"
             android:key="show_nav_bar"
             android:summary="@string/pref_show_navigation_bar_summary"

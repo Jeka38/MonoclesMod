@@ -70,6 +70,7 @@ public class ConversationAdapter
         this.conversations = conversations;
         SharedPreferences sharedPref = PreferenceManager.getDefaultSharedPreferences(activity);
         this.readmarkervalue = sharedPref.getString("readmarker_style", "blue_readmarkers");
+        this.collapsedGroups.addAll(sharedPref.getStringSet("collapsed_groups", new HashSet<>()));
         updateItems();
     }
 
@@ -108,6 +109,8 @@ public class ConversationAdapter
                 } else {
                     collapsedGroups.add(item.header);
                 }
+                SharedPreferences sharedPref = PreferenceManager.getDefaultSharedPreferences(activity);
+                sharedPref.edit().putStringSet("collapsed_groups", collapsedGroups).apply();
                 updateItems();
                 notifyDataSetChanged();
             });

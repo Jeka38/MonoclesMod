@@ -103,6 +103,7 @@
     <string name="default_push_account">none</string>
     <bool name="dialler_integration_incoming">true</bool>
     <string name="collapse_message_signs">230</string>
+    <bool name="large_font_for_muc_status">false</bool>
 
 
     <string-array name="domains">

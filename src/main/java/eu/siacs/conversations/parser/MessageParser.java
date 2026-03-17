@@ -670,8 +670,8 @@ public class MessageParser extends AbstractParser implements OnMessagePacketRece
 
         final Contact messageSender = account.getRoster().getContact(counterpart);
         final boolean isRosterContact = messageSender != null && messageSender.showInContactList();
-        final boolean conversationIsProbablyMuc = isTypeGroupChat || ((mucUserElement != null || account.getXmppConnection().getMucServersWithholdAccount().contains(counterpart.getDomain().toEscapedString())) && !isRosterContact);
-        final boolean isPrivateMucMessage = mucUserElement != null && !isTypeGroupChat && counterpart.isFullJid() && !isRosterContact;
+        final boolean isPrivateMucMessage = mucUserElement != null && !isTypeGroupChat && counterpart.isFullJid();
+        final boolean conversationIsProbablyMuc = isTypeGroupChat || (mucUserElement != null || account.getXmppConnection().getMucServersWithholdAccount().contains(counterpart.getDomain().toEscapedString()));
         final Element webxdc = packet.findChild("x", "urn:xmpp:webxdc:0");
         final Element thread = packet.findChild("thread");
         if (webxdc != null && thread != null) {

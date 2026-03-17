@@ -204,6 +204,8 @@
     <string name="contacts">Контакты</string>
     <string name="group_conferences">Конференции</string>
     <string name="group_private_messages">Личные сообщения</string>
+    <string name="large_font_for_muc_status">Большой шрифт для статусных сообщений</string>
+    <string name="large_font_for_muc_status_summary">Увеличить размер шрифта для сообщений о смене ролей и рангов в конференциях</string>
     <string name="contacts_and_n_more_have_read_up_to_this_point">%1$s и %2$d прочитали до этого момента</string>
     <string name="contacts_are_typing">%s набирают сообщение…</string>
     <string name="contacts_have_no_pgp_keys">monocles mod не может зашифровать Ваши сообщения, поскольку Ваши контакты не анонсировали свои открытые ключи.
