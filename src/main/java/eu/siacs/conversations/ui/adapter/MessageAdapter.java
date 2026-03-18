@@ -1601,7 +1601,7 @@ public class MessageAdapter extends ArrayAdapter<Message> {
                 viewHolder.load_more_messages.setVisibility(View.VISIBLE);
                 viewHolder.load_more_messages.setOnClickListener(v -> loadMoreMessages((Conversation) message.getConversation()));
             } else {
-                if (!mShowMucStatusMessages && conversation.getMode() == Conversation.MODE_MULTI) {
+                if (!mShowMucStatusMessages && conversation.getMode() == Conversation.MODE_MULTI && !((Conversation) conversation).hasPermanentCounterpart()) {
                     view.setVisibility(GONE);
                     view.setLayoutParams(new ListView.LayoutParams(0, 1));
                     return view;

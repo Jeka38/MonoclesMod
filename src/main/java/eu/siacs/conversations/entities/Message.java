@@ -348,10 +348,10 @@ public class Message extends AbstractEntity implements AvatarService.Avatarable 
     }
 
     public static Message createStatusMessage(Conversation conversation, String body) {
-        final Message message = new Message(conversation);
+        final Message message = new Message(conversation, body, ENCRYPTION_NONE, STATUS_RECEIVED);
         message.setType(Message.TYPE_STATUS);
-        message.setStatus(Message.STATUS_RECEIVED);
-        message.body = body;
+        message.timeSent = System.currentTimeMillis();
+        message.timeReceived = message.timeSent;
         return message;
     }
 

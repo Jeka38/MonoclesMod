@@ -62,6 +62,12 @@
     <string name="muc_role_changed">Role changed to %1$s</string>
     <string name="muc_affiliation_changed">Affiliation changed to %1$s</string>
     <string name="muc_role_and_affiliation_changed">Role and affiliation changed to %1$s and %2$s</string>
+    <string name="muc_occupant_role_changed">%1$s changed role to %2$s</string>
+    <string name="muc_occupant_affiliation_changed">%1$s changed affiliation to %2$s</string>
+    <string name="muc_occupant_role_and_affiliation_changed">%1$s changed role to %2$s and affiliation to %3$s</string>
+    <string name="muc_occupant_kicked">%1$s has been kicked</string>
+    <string name="muc_occupant_banned">%1$s has been banned</string>
+    <string name="muc_occupant_changed_nick">%1$s is now known as %2$s</string>
     <string name="large_font_for_muc_status">Large font for status messages</string>
     <string name="large_font_for_muc_status_summary">Increase font size for role and affiliation change messages in conferences</string>
     <string name="cancel">Cancel</string>
