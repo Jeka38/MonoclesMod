@@ -728,8 +728,6 @@ public class MessageAdapter extends ArrayAdapter<Message> {
         viewHolder.messageBody.setVisibility(View.GONE);
         viewHolder.images.setVisibility(View.GONE);
 
-        Log.d("ChatDebug", "Starting displayTextMessage for message: " + message.getBody());
-
         if (darkBackground) {
             viewHolder.messageBody.setTextAppearance(getContext(), R.style.TextAppearance_Conversations_Body1_OnDark);
         } else {
@@ -742,79 +740,53 @@ public class MessageAdapter extends ArrayAdapter<Message> {
         viewHolder.messageBody.setTypeface(null, Typeface.NORMAL);
 
         if (message.getBody() != null && !message.getBody().equals("")) {
-            Log.d("ChatDebug", "Processing message: " + message.getBody());
             viewHolder.messageBody.setTextIsSelectable(true);
             viewHolder.messageBody.setVisibility(View.VISIBLE);
 
             String trimmedBody = message.getBody().trim();
-            Log.d("ChatDebug", "Trimmed body: " + trimmedBody);
-
             String imageUrl = extractFirstImageUrl(trimmedBody);
-            Log.d("ChatDebug", "Extracted image URL: " + imageUrl);
 
             if (imageUrl != null && isDirectImageUrl(imageUrl)) {
-                Log.d("ChatDebug", "Image URL detected: " + imageUrl);
                 viewHolder.images.setVisibility(View.VISIBLE);
                 viewHolder.image.setVisibility(View.VISIBLE);
 
-                final float maxWidth = activity.getResources().getDimension(R.dimen.image_preview_width);
-                final float maxHeight = maxWidth * 0.5f;
+                final float target_size = activity.getResources().getDimension(R.dimen.image_preview_width);
 
-                LinearLayout.LayoutParams layoutParams = new LinearLayout.LayoutParams(
+                LinearLayout.LayoutParams placeholderParams = new LinearLayout.LayoutParams(
                         LinearLayout.LayoutParams.WRAP_CONTENT,
                         LinearLayout.LayoutParams.WRAP_CONTENT
                 );
-                layoutParams.setMargins(0, (int) (metrics.density * 4), 0, (int) (metrics.density * 4));
-                viewHolder.images.setLayoutParams(layoutParams);
+                placeholderParams.setMargins(0, (int) (metrics.density * 4), 0, (int) (metrics.density * 4));
+                viewHolder.images.setLayoutParams(placeholderParams);
 
                 Glide.with(activity)
                         .load(imageUrl)
-                        .override((int) maxWidth, (int) maxHeight)
-                        .fitCenter()
+                        .override((int) target_size)
+                        .centerInside()
                         .placeholder(R.drawable.ic_image_grey600_48dp)
                         .error(R.drawable.ic_error_white_24dp)
                         .listener(new RequestListener<Drawable>() {
                             @Override
                             public boolean onLoadFailed(@Nullable GlideException e, Object model, Target<Drawable> target, boolean isFirstResource) {
-                                Log.e("GlideDebug", "Failed to load image: " + imageUrl + ", error: " + (e != null ? e.getMessage() : "unknown"));
                                 viewHolder.images.setVisibility(View.GONE);
                                 return false;
                             }
 
                             @Override
                             public boolean onResourceReady(Drawable resource, Object model, Target<Drawable> target, DataSource dataSource, boolean isFirstResource) {
-                                Log.d("GlideDebug", "Image loaded successfully: " + imageUrl);
                                 viewHolder.images.setVisibility(View.VISIBLE);
                                 viewHolder.image.setVisibility(View.VISIBLE);
 
                                 int intrinsicWidth = resource.getIntrinsicWidth();
                                 int intrinsicHeight = resource.getIntrinsicHeight();
-                                float aspectRatio = (float) intrinsicWidth / intrinsicHeight;
 
-                                int finalWidth, finalHeight;
-                                if (intrinsicWidth > maxWidth || intrinsicHeight > maxHeight) {
-                                    if (aspectRatio > 1) {
-                                        finalWidth = (int) maxWidth;
-                                        finalHeight = (int) (maxWidth / aspectRatio);
-                                    } else {
-                                        finalHeight = (int) maxHeight;
-                                        finalWidth = (int) (maxHeight * aspectRatio);
-                                    }
-                                } else {
-                                    finalWidth = intrinsicWidth;
-                                    finalHeight = intrinsicHeight;
-                                }
+                                imagePreviewLayout(intrinsicWidth, intrinsicHeight, viewHolder.image);
 
-                                finalWidth = Math.max(finalWidth, (int) (maxWidth * 0.5f));
-                                finalHeight = Math.max(finalHeight, (int) (maxWidth * 0.5f));
+                                ViewGroup.LayoutParams params = viewHolder.image.getLayoutParams();
+                                LinearLayout.LayoutParams containerLayoutParams = new LinearLayout.LayoutParams(params.width, params.height);
+                                containerLayoutParams.setMargins(0, (int) (metrics.density * 4), 0, (int) (metrics.density * 4));
+                                viewHolder.images.setLayoutParams(containerLayoutParams);
 
-                                RelativeLayout.LayoutParams imageParams = new RelativeLayout.LayoutParams(
-                                        finalWidth,
-                                        finalHeight
-                                );
-                                viewHolder.image.setLayoutParams(imageParams);
-
-                                Log.d("ChatDebug", "Image dimensions - width: " + finalWidth + ", height: " + finalHeight);
                                 return false;
                             }
                         })
@@ -884,20 +856,15 @@ public class MessageAdapter extends ArrayAdapter<Message> {
 
     private boolean isDirectImageUrl(String url) {
         if (url == null) return false;
-        boolean matches = url.matches("(?i)^(http|https)://.*(\\.(jpg|jpeg|png|gif|webp|bmp|tiff|ico|webm|heif|heic|apng)(\\?.*)?$|\\?q=tbn:.*)");
-        Log.d("ChatDebug", "Checking URL: " + url + ", isDirectImageUrl: " + matches);
-        return matches;
+        return url.matches("(?i)^(http|https)://.*(\\.(jpg|jpeg|png|gif|webp|bmp|tiff|ico|webm|heif|heic|apng)(\\?.*)?$|\\?q=tbn:.*)");
     }
 
     private String extractFirstImageUrl(String text) {
         if (text == null) return null;
-        // Обновлённое регулярное выражение
         Pattern pattern = Pattern.compile("(?i)(http|https)://[^\\s]+?\\.(jpg|jpeg|png|gif|webp|bmp|tiff|ico|webm|heif|heic|apng)(?:\\?.*?)?(?=\\s|$)");
         Matcher matcher = pattern.matcher(text);
         if (matcher.find()) {
-            String url = matcher.group();
-            Log.d("ChatDebug", "Found potential image URL: " + url);
-            return url;
+            return matcher.group();
         }
         return null;
     }
@@ -939,6 +906,13 @@ public class MessageAdapter extends ArrayAdapter<Message> {
 
                 viewHolder.image.setVisibility(View.VISIBLE);
                 imagePreviewLayout(width, height, viewHolder.image);
+
+                ViewGroup.LayoutParams params_image = viewHolder.image.getLayoutParams();
+                LinearLayout.LayoutParams layoutParams = new LinearLayout.LayoutParams(params_image.width, params_image.height);
+                layoutParams.setMargins(0, (int) (metrics.density * 4), 0, (int) (metrics.density * 4));
+                viewHolder.images.setLayoutParams(layoutParams);
+                viewHolder.images.setVisibility(View.VISIBLE);
+
                 activity.loadBitmap(message, viewHolder.image);
                 viewHolder.image.setOnClickListener(v -> ConversationFragment.downloadFile(activity, message));
 
@@ -1007,6 +981,16 @@ public class MessageAdapter extends ArrayAdapter<Message> {
         } else {
             viewHolder.images.setVisibility(View.VISIBLE);
             viewHolder.image.setVisibility(View.VISIBLE);
+
+            int width = d.getIntrinsicWidth();
+            int height = d.getIntrinsicHeight();
+            imagePreviewLayout(width, height, viewHolder.image);
+
+            ViewGroup.LayoutParams params_image = viewHolder.image.getLayoutParams();
+            LinearLayout.LayoutParams layoutParams = new LinearLayout.LayoutParams(params_image.width, params_image.height);
+            layoutParams.setMargins(0, (int) (metrics.density * 4), 0, (int) (metrics.density * 4));
+            viewHolder.images.setLayoutParams(layoutParams);
+
             viewHolder.image.setImageDrawable(d);
         }
     }
@@ -1163,30 +1147,20 @@ public class MessageAdapter extends ArrayAdapter<Message> {
         viewHolder.transfer.setVisibility(GONE);
         if (mShowMapsInside) {
             showImages(mShowMapsInside, 0, false, false, viewHolder);
-            final double target = activity.getResources().getDimension(R.dimen.image_preview_width);
-            final int scaledW;
-            final int scaledH;
-            if (Math.max(500, 500) * metrics.density <= target) {
-                scaledW = (int) (500 * metrics.density);
-                scaledH = (int) (500 * metrics.density);
-            } else if (Math.max(500, 500) <= target) {
-                scaledW = 500;
-                scaledH = 500;
-            } else {
-                scaledW = (int) target;
-                scaledH = (int) (500 / ((double) 500 / target));
-            }
-            LinearLayout.LayoutParams layoutParams = new LinearLayout.LayoutParams(scaledW, scaledH);
+
+            imagePreviewLayout(500, 500, viewHolder.image);
+
+            ViewGroup.LayoutParams params = viewHolder.image.getLayoutParams();
+            LinearLayout.LayoutParams layoutParams = new LinearLayout.LayoutParams(params.width, params.height);
             layoutParams.setMargins(0, (int) (metrics.density * 4), 0, (int) (metrics.density * 4));
             viewHolder.images.setLayoutParams(layoutParams);
+
             viewHolder.image.setOnClickListener(v -> showLocation(message));
             Glide.with(activity)
                     .load(Uri.parse(url))
                     .placeholder(R.drawable.ic_map_marker_grey600_48dp)
                     .error(R.drawable.ic_map_marker_grey600_48dp)
                     .into(viewHolder.image);
-            viewHolder.image.setMaxWidth(500);
-            viewHolder.image.setAdjustViewBounds(true);
             viewHolder.download_button.setVisibility(GONE);
         } else {
             showImages(false, viewHolder);
@@ -1259,39 +1233,19 @@ public class MessageAdapter extends ArrayAdapter<Message> {
         final boolean isVideo = mime != null && mime.contains("video");
         final int mediaRuntime = message.getFileParams().runtime;
 
-        // Устанавливаем максимальные размеры превью
-        final float maxWidth = activity.getResources().getDimension(R.dimen.image_preview_width);
-        final float maxHeight = maxWidth * 1.5f; // Ограничение по высоте (настраиваемое)
-
         FileParams params = message.getFileParams();
-        int width = params.width > 0 ? params.width : 1920; // Значение по умолчанию, если ширина неизвестна
-        int height = params.height > 0 ? params.height : 1080; // Значение по умолчанию, если высота неизвестна
-        float aspectRatio = (float) width / height;
+        int width = params.width > 0 ? params.width : 1920;
+        int height = params.height > 0 ? params.height : 1080;
 
-        // Вычисляем размеры с учётом максимальной ширины и соотношения сторон
-        int scaledW, scaledH;
+        imagePreviewLayout(width, height, viewHolder.image);
 
-        if (width > height) {
-            scaledW = (int) maxWidth;
-            scaledH = (int) (maxWidth / aspectRatio);
-        } else {
-            scaledH = (int) maxHeight;
-            scaledW = (int) (maxHeight * aspectRatio);
-        }
+        ViewGroup.LayoutParams params_image = viewHolder.image.getLayoutParams();
+        int scaledW = params_image.width;
+        int scaledH = params_image.height;
 
-        // Уменьшаем размеры для GIF
-        if (isGif) {
-            scaledW *= 0.5;
-            scaledH *= 0.5;
-        }
-
-        // Устанавливаем размеры для контейнера и ImageView
         LinearLayout.LayoutParams layoutParams = new LinearLayout.LayoutParams(scaledW, scaledH);
         layoutParams.setMargins(0, (int) (metrics.density * 4), 0, (int) (metrics.density * 4));
         viewHolder.images.setLayoutParams(layoutParams);
-
-        RelativeLayout.LayoutParams imageLayoutParams = new RelativeLayout.LayoutParams(scaledW, scaledH);
-        viewHolder.image.setLayoutParams(imageLayoutParams);
 
         if (isGif && mPlayGifInside) {
             showImages(true, mediaRuntime, true, isVideo, viewHolder);
@@ -1318,21 +1272,22 @@ public class MessageAdapter extends ArrayAdapter<Message> {
         final float target = activity.getResources().getDimension(R.dimen.image_preview_width);
         final int scaledW;
         final int scaledH;
-        if (Math.max(h, w) * metrics.density <= target) {
-            scaledW = (int) (w * metrics.density);
-            scaledH = (int) (h * metrics.density);
-        } else if (Math.max(h, w) <= target) {
-            scaledW = w;
-            scaledH = h;
-        } else if (w <= h) {
-            scaledW = (int) (w / ((double) h / target));
+        if (w <= 0 || h <= 0) {
+            scaledW = (int) target;
             scaledH = (int) target;
         } else {
-            scaledW = (int) target;
-            scaledH = (int) (h / ((double) w / target));
+            float ratio = (float) w / h;
+            if (ratio >= 1.0f) {
+                scaledW = (int) target;
+                scaledH = (int) (target / ratio);
+            } else {
+                scaledH = (int) target;
+                scaledW = (int) (target * ratio);
+            }
         }
         final RelativeLayout.LayoutParams layoutParams = new RelativeLayout.LayoutParams(scaledW, scaledH);
         image.setLayoutParams(layoutParams);
+        image.setScaleType(ImageView.ScaleType.FIT_CENTER);
     }
 
     private void showImages(final boolean show, final ViewHolder viewHolder) {
