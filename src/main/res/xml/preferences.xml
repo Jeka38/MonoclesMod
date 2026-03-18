@@ -162,6 +162,11 @@
             android:summary="@string/large_font_for_muc_status_summary"
             android:title="@string/large_font_for_muc_status" />
         <SwitchPreference
+            android:defaultValue="@bool/show_join_leave"
+            android:key="show_join_leave"
+            android:summary="@string/show_join_leave_summary"
+            android:title="@string/show_join_leave" />
+        <SwitchPreference
             android:defaultValue="@bool/show_nav_bar"
             android:key="show_nav_bar"
             android:summary="@string/pref_show_navigation_bar_summary"

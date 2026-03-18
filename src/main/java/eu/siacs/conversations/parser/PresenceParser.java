@@ -140,6 +140,11 @@ public class PresenceParser extends AbstractParser implements
                             }
                         }
                         boolean isNew = mucOptions.updateUser(user);
+                        if (isNew && !isSelf && mucOptions.online()) {
+                            Message statusMessage = Message.createJoinedMessage(conversation, from.getResource());
+                            conversation.add(statusMessage);
+                            addedStatusMessage = true;
+                        }
                         final AxolotlService axolotlService = conversation.getAccount().getAxolotlService();
                         Contact contact = user.getContact();
                         if (isNew
@@ -228,7 +233,7 @@ public class PresenceParser extends AbstractParser implements
                         Log.d(Config.LOGTAG, "unknown error in conference: " + packet);
                     }
                 } else if (!from.isBareJid()) {
-                    Element item = x.findChild("item");
+                    Element item = x == null ? null : x.findChild("item");
                     if (item != null) {
                         MucOptions.User user = parseItem(conversation, item, from, occupantId, nick == null ? null : nick.getContent(), hats);
                         if (codes.contains(MucOptions.STATUS_CODE_CHANGED_NICK)) {
@@ -257,6 +262,9 @@ public class PresenceParser extends AbstractParser implements
                     }
                     MucOptions.User user = mucOptions.deleteUser(from);
                     if (user != null) {
+                        Message statusMessage = Message.createLeftMessage(conversation, from.getResource());
+                        conversation.add(statusMessage);
+                        addedStatusMessage = true;
                         mXmppConnectionService.getAvatarService().clear(user);
                     }
                 }

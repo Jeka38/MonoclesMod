@@ -355,6 +355,14 @@ public class Message extends AbstractEntity implements AvatarService.Avatarable 
         return message;
     }
 
+    public static Message createJoinedMessage(Conversation conversation, String nick) {
+        return createStatusMessage(conversation, "MUC_JOINED:" + nick);
+    }
+
+    public static Message createLeftMessage(Conversation conversation, String nick) {
+        return createStatusMessage(conversation, "MUC_LEFT:" + nick);
+    }
+
     public static Message createLoadMoreMessage(Conversation conversation) {
         final Message message = new Message(conversation);
         message.setType(Message.TYPE_STATUS);

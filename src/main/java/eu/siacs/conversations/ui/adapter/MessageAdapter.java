@@ -168,6 +168,7 @@ public class MessageAdapter extends ArrayAdapter<Message> {
     private boolean mShowMapsInside = false;
     private boolean mLargeFontForMucStatus = false;
     private boolean mShowMucStatusMessages = true;
+    private boolean mShowJoinLeave = false;
     private final boolean mForceNames;
     private final Map<String, WebxdcUpdate> lastWebxdcUpdate = new HashMap<>();
     private String readmarkervalue;
@@ -1595,38 +1596,43 @@ public class MessageAdapter extends ArrayAdapter<Message> {
             activity.setBubbleColor(viewHolder.message_box, (date_bubble_color), -1); //themed color
             return view;
         } else if (type == STATUS) {
-            if ("LOAD_MORE".equals(message.getBody())) {
+            final String bodyText = message.getBody();
+            if ("LOAD_MORE".equals(bodyText)) {
                 viewHolder.status_message.setVisibility(GONE);
                 viewHolder.contact_picture.setVisibility(GONE);
                 viewHolder.load_more_messages.setVisibility(View.VISIBLE);
                 viewHolder.load_more_messages.setOnClickListener(v -> loadMoreMessages((Conversation) message.getConversation()));
             } else {
-                if (!mShowMucStatusMessages && conversation.getMode() == Conversation.MODE_MULTI && !((Conversation) conversation).hasPermanentCounterpart()) {
-                    view.setVisibility(GONE);
-                    view.setLayoutParams(new ListView.LayoutParams(0, 1));
-                    return view;
+                final boolean isJoined = bodyText != null && bodyText.startsWith("MUC_JOINED:");
+                final boolean isLeft = bodyText != null && bodyText.startsWith("MUC_LEFT:");
+                final boolean isJoinLeave = isJoined || isLeft;
+                if (conversation.getMode() == Conversation.MODE_MULTI && !((Conversation) conversation).hasPermanentCounterpart()) {
+                    if (!mShowMucStatusMessages || (isJoinLeave && !mShowJoinLeave)) {
+                        view.setVisibility(GONE);
+                        view.setLayoutParams(new ListView.LayoutParams(0, 1));
+                        return view;
+                    }
                 }
                 view.setVisibility(View.VISIBLE);
                 view.setLayoutParams(new ListView.LayoutParams(ListView.LayoutParams.MATCH_PARENT, ListView.LayoutParams.WRAP_CONTENT));
                 viewHolder.status_message.setVisibility(View.VISIBLE);
                 viewHolder.load_more_messages.setVisibility(GONE);
-                viewHolder.status_message.setText(message.getBody());
-                boolean showAvatar;
-                if (conversation.getMode() == Conversation.MODE_SINGLE) {
-                    showAvatar = true;
-                    AvatarWorkerTask.loadAvatar(message, viewHolder.contact_picture, R.dimen.avatar_on_status_message);
-                } else if (message.getCounterpart() != null || message.getTrueCounterpart() != null || (message.getCounterparts() != null && message.getCounterparts().size() > 0)) {
-                    showAvatar = true;
-                    AvatarWorkerTask.loadAvatar(message, viewHolder.contact_picture, R.dimen.avatar_on_status_message);
+                final String displayBody;
+                if (isJoined) {
+                    displayBody = activity.getString(R.string.muc_occupant_joined, bodyText.substring(11));
+                } else if (isLeft) {
+                    displayBody = activity.getString(R.string.muc_occupant_left, bodyText.substring(9));
                 } else {
-                    showAvatar = false;
+                    displayBody = bodyText;
                 }
-                if (showAvatar) {
-                    viewHolder.contact_picture.setAlpha(0.5f);
-                    viewHolder.contact_picture.setVisibility(View.VISIBLE);
+                if (mLargeFontForMucStatus && conversation.getMode() == Conversation.MODE_MULTI) {
+                    SpannableStringBuilder builder = new SpannableStringBuilder(displayBody);
+                    builder.setSpan(new RelativeSizeSpan(1.5f), 0, builder.length(), Spannable.SPAN_EXCLUSIVE_EXCLUSIVE);
+                    viewHolder.status_message.setText(builder);
                 } else {
-                    viewHolder.contact_picture.setVisibility(GONE);
+                    viewHolder.status_message.setText(displayBody);
                 }
+                viewHolder.contact_picture.setVisibility(GONE);
             }
             return view;
         } else {
@@ -1999,6 +2005,7 @@ public class MessageAdapter extends ArrayAdapter<Message> {
         this.mShowMapsInside = p.getBoolean(SHOW_MAPS_INSIDE, activity.getResources().getBoolean(R.bool.show_maps_inside));
         this.mLargeFontForMucStatus = p.getBoolean("large_font_for_muc_status", activity.getResources().getBoolean(R.bool.large_font_for_muc_status));
         this.mShowMucStatusMessages = p.getBoolean("show_muc_status_messages", activity.getResources().getBoolean(R.bool.show_muc_status_messages));
+        this.mShowJoinLeave = p.getBoolean("show_join_leave", activity.getResources().getBoolean(R.bool.show_join_leave));
         SharedPreferences sharedPref = PreferenceManager.getDefaultSharedPreferences(activity);
         this.readmarkervalue = sharedPref.getString("readmarker_style", "blue_readmarkers");
     }
