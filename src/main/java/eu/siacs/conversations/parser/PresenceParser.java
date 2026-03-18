@@ -140,7 +140,7 @@ public class PresenceParser extends AbstractParser implements
                             }
                         }
                         boolean isNew = mucOptions.updateUser(user);
-                        if (isNew && !isSelf && mucOptions.online()) {
+                        if (isNew && !isSelf && mucOptions.online() && !codes.contains(MucOptions.STATUS_CODE_CHANGED_NICK)) {
                             Message statusMessage = Message.createJoinedMessage(conversation, from.getResource());
                             conversation.add(statusMessage);
                             addedStatusMessage = true;
@@ -261,7 +261,7 @@ public class PresenceParser extends AbstractParser implements
                         mucOptions.updateUser(user);
                     }
                     MucOptions.User user = mucOptions.deleteUser(from);
-                    if (user != null) {
+                    if (user != null && !codes.contains(MucOptions.STATUS_CODE_CHANGED_NICK)) {
                         Message statusMessage = Message.createLeftMessage(conversation, from.getResource());
                         conversation.add(statusMessage);
                         addedStatusMessage = true;
