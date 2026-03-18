@@ -204,6 +204,11 @@
     <string name="contacts">Контакты</string>
     <string name="group_conferences">Конференции</string>
     <string name="group_private_messages">Личные сообщения</string>
+    <string name="show_muc_status_messages">Показывать статусные сообщения в конференциях</string>
+    <string name="show_muc_status_messages_summary">Показывать сообщения о смене ролей и рангов в окне чата</string>
+    <string name="muc_role_changed">Роль изменена на %1$s</string>
+    <string name="muc_affiliation_changed">Принадлежность изменена на %1$s</string>
+    <string name="muc_role_and_affiliation_changed">Роль и принадлежность изменены на %1$s и %2$s</string>
     <string name="large_font_for_muc_status">Большой шрифт для статусных сообщений</string>
     <string name="large_font_for_muc_status_summary">Увеличить размер шрифта для сообщений о смене ролей и рангов в конференциях</string>
     <string name="contacts_and_n_more_have_read_up_to_this_point">%1$s и %2$d прочитали до этого момента</string>

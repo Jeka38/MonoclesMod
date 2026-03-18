@@ -57,6 +57,11 @@
     <string name="contacts">Contacts</string>
     <string name="group_conferences">Conferences</string>
     <string name="group_private_messages">Private messages</string>
+    <string name="show_muc_status_messages">Show status messages in conferences</string>
+    <string name="show_muc_status_messages_summary">Show messages about role and affiliation changes in the chat view</string>
+    <string name="muc_role_changed">Role changed to %1$s</string>
+    <string name="muc_affiliation_changed">Affiliation changed to %1$s</string>
+    <string name="muc_role_and_affiliation_changed">Role and affiliation changed to %1$s and %2$s</string>
     <string name="large_font_for_muc_status">Large font for status messages</string>
     <string name="large_font_for_muc_status_summary">Increase font size for role and affiliation change messages in conferences</string>
     <string name="cancel">Cancel</string>

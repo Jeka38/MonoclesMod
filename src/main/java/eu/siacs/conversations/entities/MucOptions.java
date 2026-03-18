@@ -72,20 +72,6 @@ public class MucOptions {
         final boolean roleChanged = this.conversation.setAttribute("role", user.role.toString());
         final boolean affiliationChanged = this.conversation.setAttribute("affiliation", user.affiliation.toString());
         this.conversation.setAttribute("mucNick", user.getNick());
-        if (roleChanged || affiliationChanged) {
-            String body = null;
-            if (roleChanged && affiliationChanged) {
-                body = "Role and affiliation changed to " + user.role + " and " + user.affiliation;
-            } else if (roleChanged) {
-                body = "Role changed to " + user.role;
-            } else if (affiliationChanged) {
-                body = "Affiliation changed to " + user.affiliation;
-            }
-            if (body != null) {
-                Message message = Message.createStatusMessage(conversation, body);
-                conversation.add(message);
-            }
-        }
         return roleChanged || affiliationChanged;
     }
 

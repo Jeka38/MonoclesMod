@@ -15,6 +15,7 @@ import eu.siacs.conversations.entities.Contact;
 import eu.siacs.conversations.entities.Conversation;
 import eu.siacs.conversations.entities.Message;
 import eu.siacs.conversations.entities.MucOptions;
+import eu.siacs.conversations.R;
 import eu.siacs.conversations.entities.Presence;
 import eu.siacs.conversations.generator.IqGenerator;
 import eu.siacs.conversations.generator.PresenceGenerator;
@@ -82,9 +83,30 @@ public class PresenceParser extends AbstractParser implements
                             if (mucOptions.setOnline()) {
                                 mXmppConnectionService.getAvatarService().clear(mucOptions);
                             }
+                            final String oldRole = conversation.getAttribute("role");
+                            final String oldAffiliation = conversation.getAttribute("affiliation");
                             if (mucOptions.setSelf(user)) {
                                 Log.d(Config.LOGTAG, "role or affiliation changed");
                                 mXmppConnectionService.databaseBackend.updateConversation(conversation);
+                                final String newRole = conversation.getAttribute("role");
+                                final String newAffiliation = conversation.getAttribute("affiliation");
+                                final boolean roleChanged = !com.google.common.base.Strings.nullToEmpty(oldRole).equals(newRole);
+                                final boolean affiliationChanged = !com.google.common.base.Strings.nullToEmpty(oldAffiliation).equals(newAffiliation);
+                                final String role = user.getRole() == MucOptions.Role.NONE ? null : mXmppConnectionService.getString(user.getRole().getResId());
+                                final String affiliation = user.getAffiliation() == MucOptions.Affiliation.NONE ? null : mXmppConnectionService.getString(user.getAffiliation().getResId());
+                                String body = null;
+                                if (roleChanged && affiliationChanged && role != null && affiliation != null) {
+                                    body = mXmppConnectionService.getString(R.string.muc_role_and_affiliation_changed, role, affiliation);
+                                } else if (roleChanged && role != null) {
+                                    body = mXmppConnectionService.getString(R.string.muc_role_changed, role);
+                                } else if (affiliationChanged && affiliation != null) {
+                                    body = mXmppConnectionService.getString(R.string.muc_affiliation_changed, affiliation);
+                                }
+                                if (body != null) {
+                                    Message statusMessage = Message.createStatusMessage(conversation, body);
+                                    conversation.add(statusMessage);
+                                    mXmppConnectionService.getNotificationService().push(statusMessage);
+                                }
                             }
                             mXmppConnectionService.persistSelfNick(user);
                             invokeRenameListener(mucOptions, true);

@@ -167,6 +167,7 @@ public class MessageAdapter extends ArrayAdapter<Message> {
     private boolean mShowLinksInside = false;
     private boolean mShowMapsInside = false;
     private boolean mLargeFontForMucStatus = false;
+    private boolean mShowMucStatusMessages = true;
     private final boolean mForceNames;
     private final Map<String, WebxdcUpdate> lastWebxdcUpdate = new HashMap<>();
     private String readmarkervalue;
@@ -1600,6 +1601,13 @@ public class MessageAdapter extends ArrayAdapter<Message> {
                 viewHolder.load_more_messages.setVisibility(View.VISIBLE);
                 viewHolder.load_more_messages.setOnClickListener(v -> loadMoreMessages((Conversation) message.getConversation()));
             } else {
+                if (!mShowMucStatusMessages && conversation.getMode() == Conversation.MODE_MULTI) {
+                    view.setVisibility(GONE);
+                    view.setLayoutParams(new ListView.LayoutParams(0, 1));
+                    return view;
+                }
+                view.setVisibility(View.VISIBLE);
+                view.setLayoutParams(new ListView.LayoutParams(ListView.LayoutParams.MATCH_PARENT, ListView.LayoutParams.WRAP_CONTENT));
                 viewHolder.status_message.setVisibility(View.VISIBLE);
                 viewHolder.load_more_messages.setVisibility(GONE);
                 viewHolder.status_message.setText(message.getBody());
@@ -1990,6 +1998,7 @@ public class MessageAdapter extends ArrayAdapter<Message> {
         this.mShowLinksInside = p.getBoolean(SHOW_LINKS_INSIDE, activity.getResources().getBoolean(R.bool.show_links_inside));
         this.mShowMapsInside = p.getBoolean(SHOW_MAPS_INSIDE, activity.getResources().getBoolean(R.bool.show_maps_inside));
         this.mLargeFontForMucStatus = p.getBoolean("large_font_for_muc_status", activity.getResources().getBoolean(R.bool.large_font_for_muc_status));
+        this.mShowMucStatusMessages = p.getBoolean("show_muc_status_messages", activity.getResources().getBoolean(R.bool.show_muc_status_messages));
         SharedPreferences sharedPref = PreferenceManager.getDefaultSharedPreferences(activity);
         this.readmarkervalue = sharedPref.getString("readmarker_style", "blue_readmarkers");
     }
