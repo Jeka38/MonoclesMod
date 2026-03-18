@@ -302,7 +302,7 @@ public class MucOptions {
             boolean fullJidIsSelf = isOnline && user.getFullJid() != null && user.getFullJid().equals(self.getFullJid());
             if (!fullJidIsSelf) {
                 this.users.add(user);
-                return !realJidFound && user.realJid != null && !isPendingNickChange;
+                return old == null && !realJidFound && !isPendingNickChange;
             }
         }
         return false;
