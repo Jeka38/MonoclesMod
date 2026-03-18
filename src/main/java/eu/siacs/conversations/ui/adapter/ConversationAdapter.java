@@ -14,6 +14,8 @@ import android.util.Pair;
 import android.view.LayoutInflater;
 import android.view.View;
 import android.view.ViewGroup;
+import android.widget.ImageView;
+import android.widget.TextView;
 
 import androidx.annotation.NonNull;
 import androidx.core.content.ContextCompat;
@@ -23,7 +25,10 @@ import androidx.recyclerview.widget.RecyclerView;
 import com.google.common.base.Optional;
 import com.google.common.base.Strings;
 
+import java.util.ArrayList;
+import java.util.HashSet;
 import java.util.List;
+import java.util.Set;
 
 import de.monocles.mod.Util;
 import eu.siacs.conversations.R;
@@ -45,12 +50,17 @@ import eu.siacs.conversations.xmpp.chatstate.ChatState;
 import eu.siacs.conversations.xmpp.jingle.OngoingRtpSession;
 
 public class ConversationAdapter
-        extends RecyclerView.Adapter<ConversationAdapter.ConversationViewHolder> {
+        extends RecyclerView.Adapter<RecyclerView.ViewHolder> {
+
+    private static final int TYPE_HEADER = 0;
+    private static final int TYPE_CONVERSATION = 1;
 
     private static final float INACTIVE_ALPHA = 0.4684f;
     private static final float ACTIVE_ALPHA = 1.0f;
     private XmppActivity activity;
-    private List<Conversation> conversations;
+    private List<Conversation> conversations = new ArrayList<>();
+    private List<ListItem> items = new ArrayList<>();
+    private final Set<String> collapsedGroups = new HashSet<>();
     private OnConversationClickListener listener;
     private boolean hasInternetConnection = false;
     private String readmarkervalue;
@@ -60,22 +70,54 @@ public class ConversationAdapter
         this.conversations = conversations;
         SharedPreferences sharedPref = PreferenceManager.getDefaultSharedPreferences(activity);
         this.readmarkervalue = sharedPref.getString("readmarker_style", "blue_readmarkers");
+        this.collapsedGroups.addAll(sharedPref.getStringSet("collapsed_groups", new HashSet<>()));
+        updateItems();
+    }
+
+    @Override
+    public int getItemViewType(int position) {
+        return items.get(position).type;
     }
 
     @NonNull
     @Override
-    public ConversationViewHolder onCreateViewHolder(@NonNull ViewGroup parent, int viewType) {
-        return new ConversationViewHolder(
-                DataBindingUtil.inflate(
-                        LayoutInflater.from(parent.getContext()),
-                        R.layout.conversation_list_row,
-                        parent,
-                        false));
+    public RecyclerView.ViewHolder onCreateViewHolder(@NonNull ViewGroup parent, int viewType) {
+        if (viewType == TYPE_HEADER) {
+            View view = LayoutInflater.from(parent.getContext()).inflate(R.layout.conversation_list_header, parent, false);
+            return new HeaderViewHolder(view);
+        } else {
+            return new ConversationViewHolder(
+                    DataBindingUtil.inflate(
+                            LayoutInflater.from(parent.getContext()),
+                            R.layout.conversation_list_row,
+                            parent,
+                            false));
+        }
     }
 
     @Override
-    public void onBindViewHolder(@NonNull ConversationViewHolder viewHolder, int position) {
-        Conversation conversation = conversations.get(position);
+    public void onBindViewHolder(@NonNull RecyclerView.ViewHolder holder, int position) {
+        ListItem item = items.get(position);
+        if (item.type == TYPE_HEADER) {
+            HeaderViewHolder headerViewHolder = (HeaderViewHolder) holder;
+            headerViewHolder.textView.setText(item.header);
+            boolean collapsed = collapsedGroups.contains(item.headerKey);
+            headerViewHolder.indicator.setImageResource(collapsed ? R.drawable.ic_expand_more_black_24dp : R.drawable.ic_expand_less_black_24dp);
+            headerViewHolder.itemView.setOnClickListener(v -> {
+                if (collapsed) {
+                    collapsedGroups.remove(item.headerKey);
+                } else {
+                    collapsedGroups.add(item.headerKey);
+                }
+                SharedPreferences sharedPref = PreferenceManager.getDefaultSharedPreferences(activity);
+                sharedPref.edit().putStringSet("collapsed_groups", collapsedGroups).apply();
+                updateItems();
+                notifyDataSetChanged();
+            });
+            return;
+        }
+        ConversationViewHolder viewHolder = (ConversationViewHolder) holder;
+        Conversation conversation = item.conversation;
         if (conversation == null) {
             return;
         }
@@ -102,7 +144,7 @@ public class ConversationAdapter
             viewHolder.binding.frame.setBackgroundColor(StyledAttributes.getColor(this.activity, R.attr.color_background_secondary));
         }
 
-        final Message message = conversation.getLatestMessage();
+        final Message message = getLatestVisibleMessage(conversation);
         final int failedCount = conversation.failedCount();
         final int unreadCount = conversation.unreadCount();
         final boolean isRead = conversation.isRead();
@@ -278,7 +320,7 @@ public class ConversationAdapter
                     viewHolder.binding.senderName.setTypeface(null, Typeface.BOLD);
                 }
             }
-            if (message.getStatus() == Message.STATUS_RECEIVED) {
+            if (message.getStatus() == Message.STATUS_RECEIVED && message.getType() != Message.TYPE_STATUS) {
                 if (conversation.getMode() == Conversation.MODE_MULTI) {
                     viewHolder.binding.senderName.setVisibility(View.VISIBLE);
                     viewHolder.binding.senderName.setText(
@@ -432,21 +474,74 @@ public class ConversationAdapter
 
     @Override
     public int getItemCount() {
-        return conversations.size();
+        return items.size();
     }
 
     public void setConversationClickListener(OnConversationClickListener listener) {
         this.listener = listener;
     }
 
-    public void insert(Conversation c, int position) {
-        conversations.add(position, c);
-        notifyDataSetChanged();
+    private void updateItems() {
+        items.clear();
+        List<Conversation> contacts = new ArrayList<>();
+        List<Conversation> conferences = new ArrayList<>();
+        List<Conversation> pms = new ArrayList<>();
+
+        for (Conversation conversation : conversations) {
+            if (conversation.getMode() == Conversation.MODE_MULTI) {
+                if (conversation.hasPermanentCounterpart()) {
+                    pms.add(conversation);
+                } else {
+                    conferences.add(conversation);
+                }
+            } else {
+                contacts.add(conversation);
+            }
+        }
+
+        if (!contacts.isEmpty()) {
+            String headerKey = "contacts";
+            String headerTitle = activity.getString(R.string.contacts);
+            items.add(new ListItem(headerTitle, headerKey));
+            if (!collapsedGroups.contains(headerKey)) {
+                for (Conversation c : contacts) {
+                    items.add(new ListItem(c));
+                }
+            }
+        }
+        if (!conferences.isEmpty()) {
+            String headerKey = "conferences";
+            String headerTitle = activity.getString(R.string.group_conferences);
+            items.add(new ListItem(headerTitle, headerKey));
+            if (!collapsedGroups.contains(headerKey)) {
+                for (Conversation c : conferences) {
+                    items.add(new ListItem(c));
+                }
+            }
+        }
+        if (!pms.isEmpty()) {
+            String headerKey = "pms";
+            String headerTitle = activity.getString(R.string.group_private_messages);
+            items.add(new ListItem(headerTitle, headerKey));
+            if (!collapsedGroups.contains(headerKey)) {
+                for (Conversation c : pms) {
+                    items.add(new ListItem(c));
+                }
+            }
+        }
     }
 
-    public void remove(Conversation conversation, int position) {
-        conversations.remove(conversation);
-        notifyItemRemoved(position);
+    public void setConversations(List<Conversation> conversations) {
+        this.conversations = conversations;
+        updateItems();
+        super.notifyDataSetChanged();
+    }
+
+    public Conversation getConversation(int position) {
+        if (position < 0 || position >= items.size()) {
+            return null;
+        }
+        return items.get(position).conversation;
     }
 
     public interface OnConversationClickListener {
@@ -463,11 +558,78 @@ public class ConversationAdapter
         }
     }
 
+    static class HeaderViewHolder extends RecyclerView.ViewHolder {
+        private final TextView textView;
+        private final ImageView indicator;
+
+        private HeaderViewHolder(View view) {
+            super(view);
+            this.textView = view.findViewById(R.id.header_text);
+            this.indicator = view.findViewById(R.id.header_indicator);
+        }
+    }
+
+    private static class ListItem {
+        final int type;
+        final String header;
+        final String headerKey;
+        final Conversation conversation;
+
+        ListItem(String header, String headerKey) {
+            this.type = TYPE_HEADER;
+            this.header = header;
+            this.headerKey = headerKey;
+            this.conversation = null;
+        }
+
+        ListItem(Conversation conversation) {
+            this.type = TYPE_CONVERSATION;
+            this.header = null;
+            this.headerKey = null;
+            this.conversation = conversation;
+        }
+    }
+
     private boolean ShowPresenceColoredNames() {
         return getPreferences().getBoolean("presence_colored_names", activity.getResources().getBoolean(R.bool.presence_colored_names));
     }
 
     protected SharedPreferences getPreferences() {
         return PreferenceManager.getDefaultSharedPreferences(activity.getApplicationContext());
+    }
+
+    private Message getLatestVisibleMessage(Conversation conversation) {
+        final List<Message> messages = new ArrayList<>();
+        conversation.populateWithMessages(messages, activity.xmppConnectionService);
+        for (int i = messages.size() - 1; i >= 0; --i) {
+            Message message = messages.get(i);
+            if (isVisible(message)) {
+                return message;
+            }
+        }
+        return conversation.getLatestMessage();
+    }
+
+    private boolean isVisible(Message message) {
+        if (message.getType() != Message.TYPE_STATUS) {
+            return true;
+        }
+        final Conversational conversation = message.getConversation();
+        if (conversation.getMode() != Conversation.MODE_MULTI || ((Conversation) conversation).hasPermanentCounterpart()) {
+            return true;
+        }
+        SharedPreferences p = getPreferences();
+        boolean showMucStatus = p.getBoolean("show_muc_status_messages", activity.getResources().getBoolean(R.bool.show_muc_status_messages));
+        boolean showJoinLeave = p.getBoolean("show_join_leave", activity.getResources().getBoolean(R.bool.show_join_leave));
+
+        if (!showMucStatus) {
+            return false;
+        }
+        final String bodyText = message.getBody();
+        final boolean isJoinLeave = bodyText != null && (bodyText.startsWith("MUC_JOINED:") || bodyText.startsWith("MUC_LEFT:"));
+        if (isJoinLeave && !showJoinLeave) {
+            return false;
+        }
+        return true;
     }
 }

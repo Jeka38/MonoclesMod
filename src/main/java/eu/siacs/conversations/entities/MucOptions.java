@@ -43,6 +43,7 @@ public class MucOptions {
     public static final String STATUS_CODE_SHUTDOWN = "332";
     public static final String STATUS_CODE_TECHNICAL_REASONS = "333";
     private final Set<User> users = new HashSet<>();
+    private final Set<String> pendingNickChanges = new HashSet<>();
     private final Conversation conversation;
     public OnRenameListener onRenameListener = null;
     private boolean mAutoPushConfiguration = true;
@@ -264,6 +265,10 @@ public class MucOptions {
     public boolean updateUser(User user) {
         User old;
         boolean realJidFound = false;
+        boolean isPendingNickChange;
+        synchronized (users) {
+            isPendingNickChange = pendingNickChanges.remove(user.getName());
+        }
         if (user.fullJid == null && user.realJid != null) {
             old = findUserByRealJid(user.realJid);
             realJidFound = old != null;
@@ -297,7 +302,7 @@ public class MucOptions {
             boolean fullJidIsSelf = isOnline && user.getFullJid() != null && user.getFullJid().equals(self.getFullJid());
             if (!fullJidIsSelf) {
                 this.users.add(user);
-                return !realJidFound && user.realJid != null;
+                return old == null && !realJidFound && !isPendingNickChange;
             }
         }
         return false;
@@ -559,9 +564,16 @@ public class MucOptions {
     public void setOffline() {
         synchronized (users) {
             this.users.clear();
+            this.pendingNickChanges.clear();
         }
         this.error = Error.NO_RESPONSE;
         this.isOnline = false;
+    }
+
+    public void setPendingNickChange(String nick) {
+        synchronized (users) {
+            this.pendingNickChanges.add(nick);
+        }
     }
 
     public User getSelf() {
@@ -896,6 +908,10 @@ public class MucOptions {
 
         public String getNick() {
             return nick == null ? getName() : nick;
+        }
+
+        public void setNick(String nick) {
+            this.nick = nick;
         }
 
         public Role getRole() {

@@ -128,6 +128,8 @@ public class SettingsActivity extends XmppActivity implements OnSharedPreference
     public static final String PERSISTENT_ROOM = "enable_persistent_rooms";
     public static final String MAX_RESEND_TIME = "max_resend_time";
     public static final String RESEND_DELAY = "resend_delay";
+    public static final String LARGE_FONT_FOR_MUC_STATUS = "large_font_for_muc_status";
+    public static final String SHOW_MUC_STATUS_MESSAGES = "show_muc_status_messages";
     public static final String STICKER_DIR = "Stickers";
 
     public static final int REQUEST_CREATE_BACKUP = 0xbf8701;

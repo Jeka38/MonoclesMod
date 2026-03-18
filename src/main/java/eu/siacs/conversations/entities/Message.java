@@ -348,11 +348,19 @@ public class Message extends AbstractEntity implements AvatarService.Avatarable 
     }
 
     public static Message createStatusMessage(Conversation conversation, String body) {
-        final Message message = new Message(conversation);
+        final Message message = new Message(conversation, body, ENCRYPTION_NONE, STATUS_RECEIVED);
         message.setType(Message.TYPE_STATUS);
-        message.setStatus(Message.STATUS_RECEIVED);
-        message.body = body;
+        message.timeSent = System.currentTimeMillis();
+        message.timeReceived = message.timeSent;
         return message;
+    }
+
+    public static Message createJoinedMessage(Conversation conversation, String nick) {
+        return createStatusMessage(conversation, "MUC_JOINED:" + nick);
+    }
+
+    public static Message createLeftMessage(Conversation conversation, String nick) {
+        return createStatusMessage(conversation, "MUC_LEFT:" + nick);
     }
 
     public static Message createLoadMoreMessage(Conversation conversation) {
@@ -714,6 +722,7 @@ public class Message extends AbstractEntity implements AvatarService.Avatarable 
         List<String> fallbacksToRemove = new ArrayList<>();
         fallbacksToRemove.add("http://jabber.org/protocol/address");
         if (getOob() != null || isGeoUri()) fallbacksToRemove.add(Namespace.OOB);
+        if (isFileOrImage()) fallbacksToRemove.add("urn:xmpp:sims:1");
         if (removeQuoteFallbacks) fallbacksToRemove.add("urn:xmpp:reply:0");
         Pair<StringBuilder, Boolean> result = bodyMinusFallbacks(fallbacksToRemove.toArray(new String[0]));
         StringBuilder body = result.first;
