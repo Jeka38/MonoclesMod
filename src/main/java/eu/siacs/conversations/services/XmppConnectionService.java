@@ -2295,6 +2295,10 @@ public class XmppConnectionService extends Service {
                                             Element fallback = new Element("fallback", "urn:xmpp:fallback:0").setAttribute("for", Namespace.OOB);
                                             fallback.addChild("body", "urn:xmpp:fallback:0");
                                             message.addPayload(fallback);
+
+                                            final var simsFallback = new Element("fallback", "urn:xmpp:fallback:0").setAttribute("for", "urn:xmpp:sims:1");
+                                            simsFallback.addChild("body", "urn:xmpp:fallback:0");
+                                            message.addPayload(simsFallback);
                                         } else if (message.getRawBody().indexOf(link.toString()) >= 0) {
                                             // Part of the real body, not just a fallback
                                             Element fallback = new Element("fallback", "urn:xmpp:fallback:0").setAttribute("for", Namespace.OOB);
@@ -2302,6 +2306,12 @@ public class XmppConnectionService extends Service {
                                                     .setAttribute("start", "0")
                                                     .setAttribute("end", "0");
                                             message.addPayload(fallback);
+
+                                            final var simsFallback = new Element("fallback", "urn:xmpp:fallback:0").setAttribute("for", "urn:xmpp:sims:1");
+                                            simsFallback.addChild("body", "urn:xmpp:fallback:0")
+                                                    .setAttribute("start", "0")
+                                                    .setAttribute("end", "0");
+                                            message.addPayload(simsFallback);
                                         }
 
                                         final int encryption = message.getEncryption();

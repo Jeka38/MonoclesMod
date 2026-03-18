@@ -155,43 +155,64 @@ public class MessageGenerator extends AbstractGenerator {
     }
 
     public MessagePacket generateChat(Message message) {
-        MessagePacket packet = preparePacket(message, false);
         if (message.hasFileOnRemoteHost()) {
             final Message.FileParams fileParams = message.getFileParams();
 
             if (message.getFallbacks(Namespace.OOB).isEmpty()) {
+                final String start, end;
                 if (message.getBody().equals("")) {
                     message.setBody(fileParams.url);
-                    final var fallback = new Element("fallback", "urn:xmpp:fallback:0").setAttribute("for", Namespace.OOB);
-                    fallback.addChild("body", "urn:xmpp:fallback:0");
-                    message.addPayload(fallback);
+                    start = end = null;
                 } else {
-                    long start = message.getRawBody().codePointCount(0, message.getRawBody().length());
+                    start = String.valueOf(message.getRawBody().codePointCount(0, message.getRawBody().length()));
                     message.appendBody(fileParams.url);
-                    final var fallback = new Element("fallback", "urn:xmpp:fallback:0").setAttribute("for", Namespace.OOB);
-                    fallback.addChild("body", "urn:xmpp:fallback:0")
-                            .setAttribute("start", String.valueOf(start))
-                            .setAttribute("end", String.valueOf(start + fileParams.url.length()));
-                    message.addPayload(fallback);
+                    end = String.valueOf(message.getRawBody().codePointCount(0, message.getRawBody().length()));
+                }
+                final Element oobFallback = new Element("fallback", "urn:xmpp:fallback:0").setAttribute("for", Namespace.OOB);
+                final Element oobBody = oobFallback.addChild("body", "urn:xmpp:fallback:0");
+                if (start != null) {
+                    oobBody.setAttribute("start", start).setAttribute("end", end);
+                }
+                message.addPayload(oobFallback);
+
+                if (message.isFileOrImage()) {
+                    final Element simsFallback = new Element("fallback", "urn:xmpp:fallback:0").setAttribute("for", "urn:xmpp:sims:1");
+                    final Element simsBody = simsFallback.addChild("body", "urn:xmpp:fallback:0");
+                    if (start != null) {
+                        simsBody.setAttribute("start", start).setAttribute("end", end);
+                    }
+                    message.addPayload(simsFallback);
                 }
             }
-            packet = preparePacket(message, false);
+            MessagePacket packet = preparePacket(message, false);
             packet.addChild("x", Namespace.OOB).addChild("url").setContent(fileParams.url);
+            if (message.getRawBody() != null) packet.setBody(message.getRawBody());
+            return packet;
         }
+        MessagePacket packet = preparePacket(message, false);
         if (message.getRawBody() != null) packet.setBody(message.getRawBody());
         return packet;
     }
 
     public MessagePacket generatePgpChat(Message message) {
-        MessagePacket packet = preparePacket(message, true);
         if (message.hasFileOnRemoteHost()) {
             Message.FileParams fileParams = message.getFileParams();
             final String url = fileParams.url;
-            packet.setBody(url);
+            message.setBody(url);
+            final var fallback = new Element("fallback", "urn:xmpp:fallback:0").setAttribute("for", Namespace.OOB);
+            fallback.addChild("body", "urn:xmpp:fallback:0");
+            message.addPayload(fallback);
+            if (message.isFileOrImage()) {
+                final var simsFallback = new Element("fallback", "urn:xmpp:fallback:0").setAttribute("for", "urn:xmpp:sims:1");
+                simsFallback.addChild("body", "urn:xmpp:fallback:0");
+                message.addPayload(simsFallback);
+            }
+            MessagePacket packet = preparePacket(message, true);
             packet.addChild("x", Namespace.OOB).addChild("url").setContent(url);
-            packet.addChild("fallback", "urn:xmpp:fallback:0").setAttribute("for", Namespace.OOB)
-                    .addChild("body", "urn:xmpp:fallback:0");
+            packet.setBody(message.getRawBody());
+            return packet;
         } else {
+            MessagePacket packet = preparePacket(message, true);
             if (Config.supportUnencrypted()) {
                 packet.setBody(PGP_FALLBACK_MESSAGE);
             }
@@ -202,8 +223,8 @@ public class MessageGenerator extends AbstractGenerator {
             }
             packet.addChild("encryption", "urn:xmpp:eme:0")
                     .setAttribute("namespace", "jabber:x:encrypted");
+            return packet;
         }
-        return packet;
     }
 
     public MessagePacket generateChatState(Conversation conversation) {
