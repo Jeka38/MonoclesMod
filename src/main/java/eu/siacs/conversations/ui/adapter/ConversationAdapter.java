@@ -101,13 +101,13 @@ public class ConversationAdapter
         if (item.type == TYPE_HEADER) {
             HeaderViewHolder headerViewHolder = (HeaderViewHolder) holder;
             headerViewHolder.textView.setText(item.header);
-            boolean collapsed = collapsedGroups.contains(item.header);
+            boolean collapsed = collapsedGroups.contains(item.headerKey);
             headerViewHolder.indicator.setImageResource(collapsed ? R.drawable.ic_expand_more_black_24dp : R.drawable.ic_expand_less_black_24dp);
             headerViewHolder.itemView.setOnClickListener(v -> {
                 if (collapsed) {
-                    collapsedGroups.remove(item.header);
+                    collapsedGroups.remove(item.headerKey);
                 } else {
-                    collapsedGroups.add(item.header);
+                    collapsedGroups.add(item.headerKey);
                 }
                 SharedPreferences sharedPref = PreferenceManager.getDefaultSharedPreferences(activity);
                 sharedPref.edit().putStringSet("collapsed_groups", collapsedGroups).apply();
@@ -144,7 +144,7 @@ public class ConversationAdapter
             viewHolder.binding.frame.setBackgroundColor(StyledAttributes.getColor(this.activity, R.attr.color_background_secondary));
         }
 
-        final Message message = conversation.getLatestMessage();
+        final Message message = getLatestVisibleMessage(conversation);
         final int failedCount = conversation.failedCount();
         final int unreadCount = conversation.unreadCount();
         final boolean isRead = conversation.isRead();
@@ -320,7 +320,7 @@ public class ConversationAdapter
                     viewHolder.binding.senderName.setTypeface(null, Typeface.BOLD);
                 }
             }
-            if (message.getStatus() == Message.STATUS_RECEIVED) {
+            if (message.getStatus() == Message.STATUS_RECEIVED && message.getType() != Message.TYPE_STATUS) {
                 if (conversation.getMode() == Conversation.MODE_MULTI) {
                     viewHolder.binding.senderName.setVisibility(View.VISIBLE);
                     viewHolder.binding.senderName.setText(
@@ -500,27 +500,30 @@ public class ConversationAdapter
         }
 
         if (!contacts.isEmpty()) {
-            String header = activity.getString(R.string.contacts);
-            items.add(new ListItem(header));
-            if (!collapsedGroups.contains(header)) {
+            String headerKey = "contacts";
+            String headerTitle = activity.getString(R.string.contacts);
+            items.add(new ListItem(headerTitle, headerKey));
+            if (!collapsedGroups.contains(headerKey)) {
                 for (Conversation c : contacts) {
                     items.add(new ListItem(c));
                 }
             }
         }
         if (!conferences.isEmpty()) {
-            String header = activity.getString(R.string.group_conferences);
-            items.add(new ListItem(header));
-            if (!collapsedGroups.contains(header)) {
+            String headerKey = "conferences";
+            String headerTitle = activity.getString(R.string.group_conferences);
+            items.add(new ListItem(headerTitle, headerKey));
+            if (!collapsedGroups.contains(headerKey)) {
                 for (Conversation c : conferences) {
                     items.add(new ListItem(c));
                 }
             }
         }
         if (!pms.isEmpty()) {
-            String header = activity.getString(R.string.group_private_messages);
-            items.add(new ListItem(header));
-            if (!collapsedGroups.contains(header)) {
+            String headerKey = "pms";
+            String headerTitle = activity.getString(R.string.group_private_messages);
+            items.add(new ListItem(headerTitle, headerKey));
+            if (!collapsedGroups.contains(headerKey)) {
                 for (Conversation c : pms) {
                     items.add(new ListItem(c));
                 }
@@ -569,17 +572,20 @@ public class ConversationAdapter
     private static class ListItem {
         final int type;
         final String header;
+        final String headerKey;
         final Conversation conversation;
 
-        ListItem(String header) {
+        ListItem(String header, String headerKey) {
             this.type = TYPE_HEADER;
             this.header = header;
+            this.headerKey = headerKey;
             this.conversation = null;
         }
 
         ListItem(Conversation conversation) {
             this.type = TYPE_CONVERSATION;
             this.header = null;
+            this.headerKey = null;
             this.conversation = conversation;
         }
     }
@@ -590,5 +596,40 @@ public class ConversationAdapter
 
     protected SharedPreferences getPreferences() {
         return PreferenceManager.getDefaultSharedPreferences(activity.getApplicationContext());
+    }
+
+    private Message getLatestVisibleMessage(Conversation conversation) {
+        final List<Message> messages = new ArrayList<>();
+        conversation.populateWithMessages(messages, activity.xmppConnectionService);
+        for (int i = messages.size() - 1; i >= 0; --i) {
+            Message message = messages.get(i);
+            if (isVisible(message)) {
+                return message;
+            }
+        }
+        return conversation.getLatestMessage();
+    }
+
+    private boolean isVisible(Message message) {
+        if (message.getType() != Message.TYPE_STATUS) {
+            return true;
+        }
+        final Conversational conversation = message.getConversation();
+        if (conversation.getMode() != Conversation.MODE_MULTI || ((Conversation) conversation).hasPermanentCounterpart()) {
+            return true;
+        }
+        SharedPreferences p = getPreferences();
+        boolean showMucStatus = p.getBoolean("show_muc_status_messages", activity.getResources().getBoolean(R.bool.show_muc_status_messages));
+        boolean showJoinLeave = p.getBoolean("show_join_leave", activity.getResources().getBoolean(R.bool.show_join_leave));
+
+        if (!showMucStatus) {
+            return false;
+        }
+        final String bodyText = message.getBody();
+        final boolean isJoinLeave = bodyText != null && (bodyText.startsWith("MUC_JOINED:") || bodyText.startsWith("MUC_LEFT:"));
+        if (isJoinLeave && !showJoinLeave) {
+            return false;
+        }
+        return true;
     }
 }
