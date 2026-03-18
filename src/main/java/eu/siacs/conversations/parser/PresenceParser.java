@@ -80,6 +80,10 @@ public class PresenceParser extends AbstractParser implements
                     if (item != null && !from.isBareJid()) {
                         mucOptions.setError(MucOptions.Error.NONE);
                         MucOptions.User user = parseItem(conversation, item, from, occupantId, nick == null ? null : nick.getContent(), hats);
+                        final String itemNick = item.getAttribute("nick");
+                        if (itemNick != null) {
+                            user.setNick(itemNick);
+                        }
                         final boolean isSelf = codes.contains(MucOptions.STATUS_CODE_SELF_PRESENCE) || (codes.contains(MucOptions.STATUS_CODE_ROOM_CREATED) && jid.equals(InvalidJid.getNullForInvalid(item.getAttributeAsJid("jid"))));
                         if (isSelf) {
                             if (mucOptions.setOnline()) {
@@ -236,6 +240,10 @@ public class PresenceParser extends AbstractParser implements
                     Element item = x == null ? null : x.findChild("item");
                     if (item != null) {
                         MucOptions.User user = parseItem(conversation, item, from, occupantId, nick == null ? null : nick.getContent(), hats);
+                        final String itemNick = item.getAttribute("nick");
+                        if (itemNick != null) {
+                            user.setNick(itemNick);
+                        }
                         if (codes.contains(MucOptions.STATUS_CODE_CHANGED_NICK)) {
                             String newNick = item.getAttribute("nick");
                             if (newNick != null) {
@@ -244,6 +252,7 @@ public class PresenceParser extends AbstractParser implements
                                 conversation.add(statusMessage);
                                 mXmppConnectionService.getNotificationService().push(statusMessage);
                                 addedStatusMessage = true;
+                                mucOptions.setPendingNickChange(newNick);
                             }
                         } else if (codes.contains(MucOptions.STATUS_CODE_KICKED)) {
                             String body = mXmppConnectionService.getString(R.string.muc_occupant_kicked, from.getResource());
