@@ -1823,7 +1823,7 @@ public class MessageAdapter extends ArrayAdapter<Message> {
                                     UIHelper.getFileDescriptionString(activity, message)),
                             darkBackground, type);
                 }
-            } else if (message.bodyIsOnlyEmojis() && message.getType() != Message.TYPE_PRIVATE) {
+            } else if (message.bodyIsOnlyEmojis() && (message.getType() != Message.TYPE_PRIVATE || (conversation instanceof Conversation && ((Conversation) conversation).hasPermanentCounterpart()))) {
                 displayEmojiMessage(viewHolder, getSpannableBody(message), darkBackground);
             } else {
                 displayTextMessage(viewHolder, message, darkBackground, type);
