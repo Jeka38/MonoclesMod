@@ -358,26 +358,28 @@ public class UIHelper {
                 return new Pair<>(context.getString(received ? R.string.incoming_call : R.string.outgoing_call), true);
             }
         } else if (message.getType() == Message.TYPE_STATUS) {
-            final String body = message.getBody();
-            if (body.startsWith("MUC_JOINED:")) {
-                return new Pair<>(body.substring(11), true);
-            } else if (body.startsWith("MUC_LEFT:")) {
-                return new Pair<>(body.substring(9), true);
-            } else if (body.startsWith("MUC_ROLE:")) {
-                return new Pair<>(body.substring(9), true);
-            } else if (body.startsWith("MUC_AFFILIATION:")) {
-                return new Pair<>(body.substring(16), true);
-            } else if (body.startsWith("MUC_ROLE_AFFILIATION:")) {
-                return new Pair<>(body.substring(21), true);
-            } else if (body.startsWith("MUC_NICK:")) {
-                return new Pair<>(body.substring(9), true);
-            } else if (body.startsWith("MUC_KICKED:")) {
-                return new Pair<>(body.substring(11), true);
-            } else if (body.startsWith("MUC_BANNED:")) {
-                return new Pair<>(body.substring(11), true);
+            final String bodyText = message.getBody();
+            final String displayBody;
+            if (bodyText != null && bodyText.startsWith("MUC_JOINED:")) {
+                displayBody = bodyText.substring(11);
+            } else if (bodyText != null && bodyText.startsWith("MUC_LEFT:")) {
+                displayBody = bodyText.substring(9);
+            } else if (bodyText != null && bodyText.startsWith("MUC_ROLE:")) {
+                displayBody = bodyText.substring(9);
+            } else if (bodyText != null && bodyText.startsWith("MUC_AFFILIATION:")) {
+                displayBody = bodyText.substring(16);
+            } else if (bodyText != null && bodyText.startsWith("MUC_ROLE_AFFILIATION:")) {
+                displayBody = bodyText.substring(21);
+            } else if (bodyText != null && bodyText.startsWith("MUC_NICK:")) {
+                displayBody = bodyText.substring(9);
+            } else if (bodyText != null && bodyText.startsWith("MUC_KICKED:")) {
+                displayBody = bodyText.substring(11);
+            } else if (bodyText != null && bodyText.startsWith("MUC_BANNED:")) {
+                displayBody = bodyText.substring(11);
             } else {
-                return new Pair<>(body, true);
+                displayBody = bodyText;
             }
+            return new Pair<>(displayBody, true);
         } else {
             final String body = MessageUtils.filterLtrRtl(message.getBody());
             if (message.hasDeletedBody()) {
