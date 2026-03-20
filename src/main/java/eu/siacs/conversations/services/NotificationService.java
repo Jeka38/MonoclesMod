@@ -541,6 +541,7 @@ public class NotificationService {
     public boolean notifyMessage(final Message message) {
         final Conversation conversation = (Conversation) message.getConversation();
         return message.getStatus() == Message.STATUS_RECEIVED
+                && message.getType() != Message.TYPE_STATUS
                 && !conversation.isMuted()
                 && (conversation.alwaysNotify() || (wasHighlightedOrPrivate(message) || (conversation.notifyReplies() && wasReplyToMe(message))))
                 && (!conversation.isWithStranger() || notificationsFromStrangers())
@@ -1025,7 +1026,9 @@ public class NotificationService {
     }
 
     private void pushNow(final Message message) {
-        mXmppConnectionService.updateUnreadCountBadge();
+        if (message.getType() != Message.TYPE_STATUS) {
+            mXmppConnectionService.updateUnreadCountBadge();
+        }
         if (!notifyMessage(message)) {
             if (this.mIsInForeground && this.mOpenConversation == message.getConversation()) {
                 mXmppConnectionService.vibrate();

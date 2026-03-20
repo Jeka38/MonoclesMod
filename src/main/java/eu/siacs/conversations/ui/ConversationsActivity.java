@@ -213,6 +213,9 @@ public class ConversationsActivity extends XmppActivity implements OnConversatio
         newCapsJids.clear();
 
         // Показ значка для непрочитанных сообщений в нижней навигации
+        if (xmppConnectionService == null) {
+            return;
+        }
         int unreadCount = xmppConnectionService.unreadCount();
         BottomNavigationView bottomnav = findViewById(R.id.bottom_navigation);
         var bottomBadge = bottomnav.getOrCreateBadge(R.id.chats);
@@ -255,9 +258,7 @@ public class ConversationsActivity extends XmppActivity implements OnConversatio
             editor.putLong(PREF_FIRST_START, FirstStartTime);
             editor.commit();
             // restart if storage not accessable
-            if (FileBackend.getDiskSize() > 0) {
-                return;
-            } else {
+            if (FileBackend.getDiskSize() <= 0) {
                 Intent restartintent = getBaseContext().getPackageManager().getLaunchIntentForPackage(getBaseContext().getPackageName());
                 restartintent.addFlags(Intent.FLAG_ACTIVITY_CLEAR_TOP);
                 restartintent.addFlags(Intent.FLAG_ACTIVITY_NEW_TASK);

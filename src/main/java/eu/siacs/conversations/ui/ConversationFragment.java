@@ -1209,7 +1209,9 @@ public class ConversationFragment extends XmppFragment
             if (lastMessageUuid == null) {
                 lastMessageUuid = conversation.getLatestMessage().getUuid();
             }
-            if (conversation.getReceivedMessagesCountSinceUuid(lastMessageUuid) > 0) {
+            final int count = conversation.getReceivedMessagesCountSinceUuid(lastMessageUuid);
+            if (count > 0) {
+                binding.unreadCountCustomView.setUnreadCount(count);
                 binding.unreadCountCustomView.setVisibility(View.VISIBLE);
             }
         }
@@ -4965,9 +4967,10 @@ public class ConversationFragment extends XmppFragment
             if (this.conversation != null) {
                 conversation.populateWithMessages(this.messageList, activity == null ? null : activity.xmppConnectionService);
                 updateStatusMessages();
-                if (conversation.unreadCount() > 0) {
+                final int unreadCount = lastMessageUuid != null ? conversation.getReceivedMessagesCountSinceUuid(lastMessageUuid) : conversation.unreadCount();
+                if (unreadCount > 0) {
                     binding.unreadCountCustomView.setVisibility(View.VISIBLE);
-                    binding.unreadCountCustomView.setUnreadCount(conversation.unreadCount());
+                    binding.unreadCountCustomView.setUnreadCount(unreadCount);
                 }
                 this.messageListAdapter.notifyDataSetChanged();
                 updateChatMsgHint();

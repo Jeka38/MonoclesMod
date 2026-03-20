@@ -5783,12 +5783,10 @@ public class XmppConnectionService extends Service {
                 }
             };
             mDatabaseWriterExecutor.execute(runnable);
-            updateConversationUi();
-            updateUnreadCountBadge();
-            return readMessages;
-        } else {
-            return readMessages;
         }
+        updateConversationUi();
+        updateUnreadCountBadge();
+        return readMessages;
     }
 
     public synchronized void updateUnreadCountBadge() {

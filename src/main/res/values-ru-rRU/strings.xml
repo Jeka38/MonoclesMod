@@ -77,7 +77,7 @@
     <string name="add_phone_book_text">Хотите добавить %s в Вашу адресную книгу\?</string>
     <string name="add_to_contact_list">Добавить в контакты</string>
     <string name="add_to_favorites">Закрепить</string>
-    <string name="admin">Администратор</string>
+    <string name="admin">администратор</string>
     <string name="admins_can_edit_subject">Админы могут изменять эту тему.</string>
     <string name="advanced_mode">Расширенный режим</string>
     <string name="all_media_files">медиа-файлы</string>
@@ -209,9 +209,9 @@
     <string name="muc_role_changed">Роль изменена на %1$s</string>
     <string name="muc_affiliation_changed">Принадлежность изменена на %1$s</string>
     <string name="muc_role_and_affiliation_changed">Роль и принадлежность изменены на %1$s и %2$s</string>
-    <string name="muc_occupant_role_changed">%1$s изменил роль на %2$s</string>
-    <string name="muc_occupant_affiliation_changed">%1$s изменил принадлежность на %2$s</string>
-    <string name="muc_occupant_role_and_affiliation_changed">%1$s изменил роль на %2$s и принадлежность на %3$s</string>
+    <string name="muc_occupant_role_changed">%1$s теперь %2$s</string>
+    <string name="muc_occupant_affiliation_changed">%1$s теперь %2$s</string>
+    <string name="muc_occupant_role_and_affiliation_changed">%1$s теперь %2$s и %3$s</string>
     <string name="muc_occupant_kicked">%1$s выгнан</string>
     <string name="muc_occupant_banned">%1$s заблокирован</string>
     <string name="muc_occupant_changed_nick">%1$s теперь известен как %2$s</string>
@@ -556,7 +556,7 @@
     <string name="media_browser">Обзор медиа</string>
     <string name="media_usage">Использование памяти медиа-файлами</string>
     <string name="medium">Средний</string>
-    <string name="member">Участник</string>
+    <string name="member">участник и зарегистрированный пользователь</string>
     <string name="memory_warning">Ваш мессенджер использует %1$s (%2$s) внутренней памяти.
 \n
 \nВы можете включить автоматическое удаление вложений или удалить медиа-файлы вручную.</string>
@@ -586,7 +586,7 @@
     <string name="missing_internet_permission">Нет разрешения на доступ в Интернет</string>
     <string name="missing_public_keys">Потеряны анонсы публичного ключа</string>
     <string name="moderated">Сделать конференцию модерируемой</string>
-    <string name="moderator">Модератор</string>
+    <string name="moderator">модератор</string>
     <string name="modified_conference_options">Настройки конференции изменены!</string>
     <string name="monospace">моноширинный</string>
     <string name="move_data">Перенести данные</string>
@@ -715,11 +715,11 @@
     <string name="outgoing_call">Исходящий звонок</string>
     <string name="outgoing_call_duration" formatted="false">%s · исходящий звонок · %s</string>
     <string name="outgoing_call_time">%s ·исходящий звонок</string>
-    <string name="owner">Владелец</string>
+    <string name="owner">владелец</string>
     <string name="owners_can_edit_subject">Владельцы могут изменять эту тему.</string>
     <string name="owners_can_invite_others">Владельцы могут приглашать других.</string>
     <string name="p1_s3_filetransfer">Обмен файла HTTP для S3</string>
-    <string name="participant">Участник</string>
+    <string name="participant">участник</string>
     <string name="participants">Участники</string>
     <plurals name="participants">
         <item quantity="one">%d участник</item>
@@ -1238,7 +1238,7 @@
     <string name="view_contact_details">Просмотреть детали контакта</string>
     <string name="view_conversation">Просмотр беседы</string>
     <string name="view_media">Просмотреть медиа</string>
-    <string name="visitor">Посетитель</string>
+    <string name="visitor">посетитель</string>
     <string name="waiting">ожидание…</string>
     <string name="waiting_for_transfer">Ожидание передачи</string>
     <string name="web_address">веб-адрес</string>
