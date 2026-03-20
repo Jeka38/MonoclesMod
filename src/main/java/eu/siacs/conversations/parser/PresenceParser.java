@@ -6,6 +6,7 @@ import org.openintents.openpgp.util.OpenPgpUtils;
 
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Locale;
 
 import eu.siacs.conversations.Config;
 import eu.siacs.conversations.crypto.PgpEngine;
@@ -98,8 +99,8 @@ public class PresenceParser extends AbstractParser implements
                                 final String newAffiliation = conversation.getAttribute("affiliation");
                                 final boolean roleChanged = !com.google.common.base.Strings.nullToEmpty(oldRole).equals(newRole);
                                 final boolean affiliationChanged = !com.google.common.base.Strings.nullToEmpty(oldAffiliation).equals(newAffiliation);
-                                final String roleString = user.getRole() == MucOptions.Role.NONE ? null : mXmppConnectionService.getString(user.getRole().getResId());
-                                final String affiliationString = user.getAffiliation() == MucOptions.Affiliation.NONE ? null : mXmppConnectionService.getString(user.getAffiliation().getResId());
+                                final String roleString = user.getRole() == MucOptions.Role.NONE ? null : mXmppConnectionService.getString(user.getRole().getResId()).toLowerCase(Locale.getDefault());
+                                final String affiliationString = user.getAffiliation() == MucOptions.Affiliation.NONE ? null : mXmppConnectionService.getString(user.getAffiliation().getResId()).toLowerCase(Locale.getDefault());
                                 String body = null;
                                 if (roleChanged && affiliationChanged && roleString != null && affiliationString != null) {
                                     body = mXmppConnectionService.getString(R.string.muc_role_and_affiliation_changed, roleString, affiliationString);
@@ -109,7 +110,15 @@ public class PresenceParser extends AbstractParser implements
                                     body = mXmppConnectionService.getString(R.string.muc_affiliation_changed, affiliationString);
                                 }
                                 if (body != null) {
-                                    Message statusMessage = Message.createStatusMessage(conversation, body);
+                                    String prefix = "";
+                                    if (roleChanged && affiliationChanged) {
+                                        prefix = "MUC_ROLE_AFFILIATION:";
+                                    } else if (roleChanged) {
+                                        prefix = "MUC_ROLE:";
+                                    } else if (affiliationChanged) {
+                                        prefix = "MUC_AFFILIATION:";
+                                    }
+                                    Message statusMessage = Message.createStatusMessage(conversation, prefix + body);
                                     conversation.add(statusMessage);
                                     mXmppConnectionService.getNotificationService().push(statusMessage);
                                     addedStatusMessage = true;
@@ -123,19 +132,23 @@ public class PresenceParser extends AbstractParser implements
                                 final boolean roleChanged = oldUser.getRole() != user.getRole();
                                 final boolean affiliationChanged = oldUser.getAffiliation() != user.getAffiliation();
                                 if (roleChanged || affiliationChanged) {
-                                    final String roleString = user.getRole() == MucOptions.Role.NONE ? null : mXmppConnectionService.getString(user.getRole().getResId());
-                                    final String affiliationString = user.getAffiliation() == MucOptions.Affiliation.NONE ? null : mXmppConnectionService.getString(user.getAffiliation().getResId());
+                                    final String roleString = user.getRole() == MucOptions.Role.NONE ? null : mXmppConnectionService.getString(user.getRole().getResId()).toLowerCase(Locale.getDefault());
+                                    final String affiliationString = user.getAffiliation() == MucOptions.Affiliation.NONE ? null : mXmppConnectionService.getString(user.getAffiliation().getResId()).toLowerCase(Locale.getDefault());
                                     String body = null;
                                     String name = user.getName();
+                                    String prefix = "";
                                     if (roleChanged && affiliationChanged && roleString != null && affiliationString != null) {
                                         body = mXmppConnectionService.getString(R.string.muc_occupant_role_and_affiliation_changed, name, roleString, affiliationString);
+                                        prefix = "MUC_ROLE_AFFILIATION:";
                                     } else if (roleChanged && roleString != null) {
                                         body = mXmppConnectionService.getString(R.string.muc_occupant_role_changed, name, roleString);
+                                        prefix = "MUC_ROLE:";
                                     } else if (affiliationChanged && affiliationString != null) {
                                         body = mXmppConnectionService.getString(R.string.muc_occupant_affiliation_changed, name, affiliationString);
+                                        prefix = "MUC_AFFILIATION:";
                                     }
                                     if (body != null) {
-                                        Message statusMessage = Message.createStatusMessage(conversation, body);
+                                        Message statusMessage = Message.createStatusMessage(conversation, prefix + body);
                                         conversation.add(statusMessage);
                                         mXmppConnectionService.getNotificationService().push(statusMessage);
                                         addedStatusMessage = true;
@@ -249,7 +262,7 @@ public class PresenceParser extends AbstractParser implements
                             String newNick = item.getAttribute("nick");
                             if (newNick != null) {
                                 String body = mXmppConnectionService.getString(R.string.muc_occupant_changed_nick, from.getResource(), newNick);
-                                Message statusMessage = Message.createStatusMessage(conversation, body);
+                                Message statusMessage = Message.createStatusMessage(conversation, "MUC_NICK:" + body);
                                 conversation.add(statusMessage);
                                 mXmppConnectionService.getNotificationService().push(statusMessage);
                                 addedStatusMessage = true;
@@ -257,13 +270,13 @@ public class PresenceParser extends AbstractParser implements
                             }
                         } else if (codes.contains(MucOptions.STATUS_CODE_KICKED)) {
                             String body = mXmppConnectionService.getString(R.string.muc_occupant_kicked, from.getResource());
-                            Message statusMessage = Message.createStatusMessage(conversation, body);
+                            Message statusMessage = Message.createStatusMessage(conversation, "MUC_KICKED:" + body);
                             conversation.add(statusMessage);
                             mXmppConnectionService.getNotificationService().push(statusMessage);
                             addedStatusMessage = true;
                         } else if (codes.contains(MucOptions.STATUS_CODE_BANNED)) {
                             String body = mXmppConnectionService.getString(R.string.muc_occupant_banned, from.getResource());
-                            Message statusMessage = Message.createStatusMessage(conversation, body);
+                            Message statusMessage = Message.createStatusMessage(conversation, "MUC_BANNED:" + body);
                             conversation.add(statusMessage);
                             mXmppConnectionService.getNotificationService().push(statusMessage);
                             addedStatusMessage = true;

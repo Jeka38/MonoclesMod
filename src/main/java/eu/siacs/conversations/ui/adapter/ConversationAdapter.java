@@ -620,8 +620,14 @@ public class ConversationAdapter
         }
 
         final String bodyText = message.getBody();
-        final boolean isJoinLeave = bodyText != null && (bodyText.startsWith("MUC_JOINED:") || bodyText.startsWith("MUC_LEFT:"));
-        if (isJoinLeave) {
+        if (bodyText != null && (bodyText.startsWith("MUC_JOINED:")
+                || bodyText.startsWith("MUC_LEFT:")
+                || bodyText.startsWith("MUC_ROLE:")
+                || bodyText.startsWith("MUC_AFFILIATION:")
+                || bodyText.startsWith("MUC_ROLE_AFFILIATION:")
+                || bodyText.startsWith("MUC_NICK:")
+                || bodyText.startsWith("MUC_KICKED:")
+                || bodyText.startsWith("MUC_BANNED:"))) {
             return false;
         }
 

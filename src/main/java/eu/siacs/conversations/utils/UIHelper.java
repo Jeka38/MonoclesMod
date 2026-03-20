@@ -363,6 +363,18 @@ public class UIHelper {
                 return new Pair<>(body.substring(11), true);
             } else if (body.startsWith("MUC_LEFT:")) {
                 return new Pair<>(body.substring(9), true);
+            } else if (body.startsWith("MUC_ROLE:")) {
+                return new Pair<>(body.substring(9), true);
+            } else if (body.startsWith("MUC_AFFILIATION:")) {
+                return new Pair<>(body.substring(16), true);
+            } else if (body.startsWith("MUC_ROLE_AFFILIATION:")) {
+                return new Pair<>(body.substring(21), true);
+            } else if (body.startsWith("MUC_NICK:")) {
+                return new Pair<>(body.substring(9), true);
+            } else if (body.startsWith("MUC_KICKED:")) {
+                return new Pair<>(body.substring(11), true);
+            } else if (body.startsWith("MUC_BANNED:")) {
+                return new Pair<>(body.substring(11), true);
             } else {
                 return new Pair<>(body, true);
             }
