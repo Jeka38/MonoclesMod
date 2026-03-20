@@ -357,6 +357,15 @@ public class UIHelper {
             } else {
                 return new Pair<>(context.getString(received ? R.string.incoming_call : R.string.outgoing_call), true);
             }
+        } else if (message.getType() == Message.TYPE_STATUS) {
+            final String body = message.getBody();
+            if (body.startsWith("MUC_JOINED:")) {
+                return new Pair<>(body.substring(11), true);
+            } else if (body.startsWith("MUC_LEFT:")) {
+                return new Pair<>(body.substring(9), true);
+            } else {
+                return new Pair<>(body, true);
+            }
         } else {
             final String body = MessageUtils.filterLtrRtl(message.getBody());
             if (message.hasDeletedBody()) {
