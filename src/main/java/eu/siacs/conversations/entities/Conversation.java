@@ -982,7 +982,19 @@ public class Conversation extends AbstractEntity implements Blockable, Comparabl
     }
 
     public boolean isRead() {
-        return (this.messages.isEmpty()) || this.messages.get(this.messages.size() - 1).isRead();
+        if (this.messages.isEmpty()) {
+            return true;
+        }
+        synchronized (this.messages) {
+            for (int i = this.messages.size() - 1; i >= 0; --i) {
+                final Message message = messages.get(i);
+                if (message.getType() == Message.TYPE_STATUS) {
+                    continue;
+                }
+                return message.isRead();
+            }
+        }
+        return true;
     }
 
     public List<Message> markRead(final String upToUuid) {
