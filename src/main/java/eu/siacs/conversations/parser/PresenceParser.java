@@ -145,7 +145,8 @@ public class PresenceParser extends AbstractParser implements
                         }
                         boolean isNew = mucOptions.updateUser(user);
                         if (isNew && !isSelf && mucOptions.online() && !codes.contains(MucOptions.STATUS_CODE_CHANGED_NICK)) {
-                            Message statusMessage = Message.createJoinedMessage(conversation, from.getResource());
+                            String body = mXmppConnectionService.getString(R.string.muc_occupant_joined, from.getResource());
+                            Message statusMessage = Message.createStatusMessage(conversation, "MUC_JOINED:" + body);
                             conversation.add(statusMessage);
                             addedStatusMessage = true;
                         }
@@ -271,7 +272,8 @@ public class PresenceParser extends AbstractParser implements
                     }
                     MucOptions.User user = mucOptions.deleteUser(from);
                     if (user != null && !codes.contains(MucOptions.STATUS_CODE_CHANGED_NICK)) {
-                        Message statusMessage = Message.createLeftMessage(conversation, from.getResource());
+                        String body = mXmppConnectionService.getString(R.string.muc_occupant_left, from.getResource());
+                        Message statusMessage = Message.createStatusMessage(conversation, "MUC_LEFT:" + body);
                         conversation.add(statusMessage);
                         addedStatusMessage = true;
                         mXmppConnectionService.getAvatarService().clear(user);

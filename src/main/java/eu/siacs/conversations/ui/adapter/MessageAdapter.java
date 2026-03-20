@@ -1562,7 +1562,13 @@ public class MessageAdapter extends ArrayAdapter<Message> {
                 final boolean isLeft = bodyText != null && bodyText.startsWith("MUC_LEFT:");
                 final boolean isJoinLeave = isJoined || isLeft;
                 if (conversation.getMode() == Conversation.MODE_MULTI && !((Conversation) conversation).hasPermanentCounterpart()) {
-                    if (!mShowMucStatusMessages || (isJoinLeave && !mShowJoinLeave)) {
+                    final boolean hide;
+                    if (isJoinLeave) {
+                        hide = !mShowJoinLeave;
+                    } else {
+                        hide = !mShowMucStatusMessages;
+                    }
+                    if (hide) {
                         view.setVisibility(GONE);
                         view.setLayoutParams(new ListView.LayoutParams(0, 1));
                         return view;
@@ -1574,9 +1580,9 @@ public class MessageAdapter extends ArrayAdapter<Message> {
                 viewHolder.load_more_messages.setVisibility(GONE);
                 final String displayBody;
                 if (isJoined) {
-                    displayBody = activity.getString(R.string.muc_occupant_joined, bodyText.substring(11));
+                    displayBody = bodyText.substring(11);
                 } else if (isLeft) {
-                    displayBody = activity.getString(R.string.muc_occupant_left, bodyText.substring(9));
+                    displayBody = bodyText.substring(9);
                 } else {
                     displayBody = bodyText;
                 }
