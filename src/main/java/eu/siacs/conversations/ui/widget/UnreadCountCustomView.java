@@ -15,6 +15,7 @@ import eu.siacs.conversations.ui.util.StyledAttributes;
 public class UnreadCountCustomView extends View {
 
     private int unreadCount;
+    private boolean showText = true;
     private Paint paint, textPaint;
     private int backgroundColor = 0xff0091ea;
 
@@ -62,8 +63,9 @@ public class UnreadCountCustomView extends View {
         float textOffset = canvas.getWidth() / 6.0f;
         textPaint.setTextSize(0.95f * radius);
         canvas.drawCircle(midx, midy, radius * 0.94f, paint);
-        canvas.drawText(unreadCount > 999 ? "\u221E" : String.valueOf(unreadCount), midx, midy + textOffset, textPaint);
-
+        if (showText) {
+            canvas.drawText(unreadCount > 999 ? "\u221E" : String.valueOf(unreadCount), midx, midy + textOffset, textPaint);
+        }
     }
 
     public void setUnreadCount(int unreadCount) {
@@ -73,5 +75,10 @@ public class UnreadCountCustomView extends View {
 
     public void setBackgroundColor(int backgroundColor) {
         this.backgroundColor = backgroundColor;
+    }
+
+    public void setShowText(boolean showText) {
+        this.showText = showText;
+        invalidate();
     }
 }

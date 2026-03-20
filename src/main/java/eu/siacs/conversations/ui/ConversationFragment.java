@@ -1975,6 +1975,7 @@ public class ConversationFragment extends XmppFragment
         messageListAdapter.setOnInlineImageLongClicked(this);
         messageListAdapter.setConversationFragment(this);
         binding.messagesView.setAdapter(messageListAdapter);
+        binding.unreadCountCustomView.setShowText(false);
 
         binding.textinput.addTextChangedListener(
                 new StylingHelper.MessageEditorStyler(binding.textinput, messageListAdapter));
