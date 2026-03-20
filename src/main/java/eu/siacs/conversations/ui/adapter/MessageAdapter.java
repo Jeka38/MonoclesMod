@@ -1583,6 +1583,18 @@ public class MessageAdapter extends ArrayAdapter<Message> {
                     displayBody = bodyText.substring(11);
                 } else if (isLeft) {
                     displayBody = bodyText.substring(9);
+                } else if (bodyText.startsWith("MUC_ROLE:")) {
+                    displayBody = bodyText.substring(9);
+                } else if (bodyText.startsWith("MUC_AFFILIATION:")) {
+                    displayBody = bodyText.substring(16);
+                } else if (bodyText.startsWith("MUC_ROLE_AFFILIATION:")) {
+                    displayBody = bodyText.substring(21);
+                } else if (bodyText.startsWith("MUC_NICK:")) {
+                    displayBody = bodyText.substring(9);
+                } else if (bodyText.startsWith("MUC_KICKED:")) {
+                    displayBody = bodyText.substring(11);
+                } else if (bodyText.startsWith("MUC_BANNED:")) {
+                    displayBody = bodyText.substring(11);
                 } else {
                     displayBody = bodyText;
                 }
