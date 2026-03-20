@@ -1668,18 +1668,16 @@ public class Conversation extends AbstractEntity implements Blockable, Comparabl
     public int unreadCount() {
         synchronized (this.messages) {
             int count = 0;
-            for(final Message message : Lists.reverse(this.messages)) {
+            for (final Message message : this.messages) {
                 if (message.getType() == Message.TYPE_STATUS) {
                     continue;
                 }
-                if (message.getSubject() != null && !message.isOOb() && (message.getRawBody() == null || message.getRawBody().isEmpty())) continue;
-                if (message.isRead()) {
-                    if (message.getType() == Message.TYPE_RTP_SESSION) {
-                        continue;
-                    }
-                    return count;
+                if (message.getSubject() != null && !message.isOOb() && (message.getRawBody() == null || message.getRawBody().isEmpty())) {
+                    continue;
                 }
-                ++count;
+                if (!message.isRead()) {
+                    ++count;
+                }
             }
             return count;
         }
