@@ -87,7 +87,8 @@ public class PresenceParser extends AbstractParser implements
                         }
                         final boolean isSelf = codes.contains(MucOptions.STATUS_CODE_SELF_PRESENCE) || (codes.contains(MucOptions.STATUS_CODE_ROOM_CREATED) && jid.equals(InvalidJid.getNullForInvalid(item.getAttributeAsJid("jid"))));
                         if (isSelf) {
-                            if (mucOptions.setOnline()) {
+                            final boolean justWentOnline = mucOptions.setOnline();
+                            if (justWentOnline) {
                                 mXmppConnectionService.getAvatarService().clear(mucOptions);
                             }
                             final String oldRole = conversation.getAttribute("role");
@@ -109,7 +110,7 @@ public class PresenceParser extends AbstractParser implements
                                 } else if (affiliationChanged && affiliationString != null) {
                                     body = mXmppConnectionService.getString(R.string.muc_affiliation_changed, affiliationString);
                                 }
-                                if (body != null) {
+                                if (body != null && !justWentOnline) {
                                     String prefix = "";
                                     if (roleChanged && affiliationChanged) {
                                         prefix = "MUC_ROLE_AFFILIATION:";
