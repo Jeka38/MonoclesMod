@@ -225,6 +225,6 @@ public class ShareWithActivity extends XmppActivity implements XmppConnectionSer
     public void refreshUiReal() {
         //TODO inject desired order to not resort on refresh
         xmppConnectionService.populateWithOrderedConversations(mConversations, this.share != null && this.share.uris.size() == 0, false);
-        mAdapter.notifyDataSetChanged();
+        mAdapter.setConversations(mConversations);
     }
 }
