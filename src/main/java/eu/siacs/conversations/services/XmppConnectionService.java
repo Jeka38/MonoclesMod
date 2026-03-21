@@ -3084,16 +3084,7 @@ public class XmppConnectionService extends Service {
             }
         }
         list.clear();
-        if (includeNoFileUpload) {
-            list.addAll(getConversations());
-        } else {
-            for (Conversation conversation : getConversations()) {
-                if (conversation.getMode() == Conversation.MODE_SINGLE
-                        || (conversation.getAccount().httpUploadAvailable() && conversation.getMucOptions().participating())) {
-                    list.add(conversation);
-                }
-            }
-        }
+        list.addAll(getConversations());
         try {
             if (orderedUuids != null) {
                 Collections.sort(list, (a, b) -> {

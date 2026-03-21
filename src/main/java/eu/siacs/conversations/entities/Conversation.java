@@ -309,6 +309,7 @@ public class Conversation extends AbstractEntity implements Blockable, Comparabl
         synchronized (this.messages) {
             for (int i = messages.size() - 1; i >= 0; --i) {
                 final Message message = messages.get(i);
+                if (message.getSubject() != null && !message.isOOb() && (message.getRawBody() == null || message.getRawBody().isEmpty())) continue;
                 if (message.isRead()) {
                     return first;
                 } else {
@@ -323,6 +324,7 @@ public class Conversation extends AbstractEntity implements Blockable, Comparabl
         final boolean multi = mode == Conversation.MODE_MULTI;
         synchronized (this.messages) {
             for(final Message message : Lists.reverse(this.messages)) {
+                if (message.getSubject() != null && !message.isOOb() && (message.getRawBody() == null || message.getRawBody().isEmpty())) continue;
                 if (message.getStatus() == Message.STATUS_RECEIVED) {
                     final String serverMsgId = message.getServerMsgId();
                     if (serverMsgId != null && multi) {
@@ -821,6 +823,7 @@ public class Conversation extends AbstractEntity implements Blockable, Comparabl
                 }
             }
             boolean remove = m.wasMergedIntoPrevious(xmppConnectionService)
+                    || (m.getSubject() != null && !m.isOOb() && (m.getRawBody() == null || m.getRawBody().isEmpty()))
                     || (getLockThread() && !extraIds.contains(m.replyId()) && (mthread == null || !mthread.getContent().equals(getThread() == null ? "" : getThread().getContent())));
             if (nextCounterpart != null) {
                 if (!nextCounterpart.equals(m.getCounterpart())) {
@@ -1665,13 +1668,18 @@ public class Conversation extends AbstractEntity implements Blockable, Comparabl
     public int unreadCount() {
         synchronized (this.messages) {
             int count = 0;
-            for (final Message message : this.messages) {
+            for (int i = this.messages.size() - 1; i >= 0; --i) {
+                final Message message = messages.get(i);
                 if (message.getType() == Message.TYPE_STATUS) {
                     continue;
                 }
-                if (!message.isRead()) {
-                    ++count;
+                if (message.getSubject() != null && !message.isOOb() && (message.getRawBody() == null || message.getRawBody().isEmpty())) {
+                    continue;
                 }
+                if (message.isRead()) {
+                    break;
+                }
+                ++count;
             }
             return count;
         }
@@ -1699,6 +1707,7 @@ public class Conversation extends AbstractEntity implements Blockable, Comparabl
                 if (message.getType() == Message.TYPE_STATUS) {
                     continue;
                 }
+                if (message.getSubject() != null && !message.isOOb() && (message.getRawBody() == null || message.getRawBody().isEmpty())) continue;
                 if (message.getStatus() == Message.STATUS_RECEIVED) {
                     ++count;
                 }
@@ -1749,12 +1758,15 @@ public class Conversation extends AbstractEntity implements Blockable, Comparabl
                 if (message.getType() == Message.TYPE_STATUS) {
                     continue;
                 }
+                if (message.getSubject() != null && !message.isOOb() && (message.getRawBody() == null || message.getRawBody().isEmpty())) {
+                    continue;
+                }
                 if (!message.isRead()) {
                     ++count;
                 }
             }
         }
-        return unreadCount();
+        return count;
     }
 
     @Override
