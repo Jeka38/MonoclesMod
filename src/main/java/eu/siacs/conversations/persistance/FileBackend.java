@@ -522,11 +522,15 @@ public class FileBackend {
 
     public static long getDiskSize() {
         try {
-            StatFs external = new StatFs(Environment.getExternalStorageDirectory().getAbsolutePath());
+            File path = Environment.getExternalStorageDirectory();
+            if (path == null || !path.exists()) {
+                return 1024 * 1024 * 1024; // Return 1GB if path is inaccessible to avoid restart loop
+            }
+            StatFs external = new StatFs(path.getAbsolutePath());
             return (long) external.getBlockCount() * (long) external.getBlockSize();
         } catch (Exception e) {
             e.printStackTrace();
-            return 0;
+            return 1024 * 1024 * 1024; // Return 1GB if error occurs to avoid restart loop
         }
     }
 

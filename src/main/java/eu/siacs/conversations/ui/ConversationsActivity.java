@@ -218,6 +218,10 @@ public class ConversationsActivity extends XmppActivity implements OnConversatio
         }
         int unreadCount = xmppConnectionService.unreadCount();
         BottomNavigationView bottomnav = findViewById(R.id.bottom_navigation);
+        if (bottomnav == null) {
+            Log.w(Config.LOGTAG, "ConversationsActivity.refreshUiReal(): bottom_navigation not found");
+            return;
+        }
         var bottomBadge = bottomnav.getOrCreateBadge(R.id.chats);
         bottomBadge.setNumber(unreadCount);
         bottomBadge.setVisible(unreadCount > 0);
@@ -226,7 +230,9 @@ public class ConversationsActivity extends XmppActivity implements OnConversatio
 
     @Override
     protected void onBackendConnected() {
+        Log.d(Config.LOGTAG, "ConversationsActivity.onBackendConnected()");
         if (performRedirectIfNecessary(true)) {
+            Log.d(Config.LOGTAG, "ConversationsActivity.onBackendConnected(): redirected");
             return;
         }
         Log.d(Config.LOGTAG, "ConversationsActivity onBackendConnected(): setIsInForeground = true");
@@ -742,8 +748,9 @@ public class ConversationsActivity extends XmppActivity implements OnConversatio
         UpdateHelper.showPopup(this);
 
 
-        BottomNavigationView bottomNavigationView = findViewById(R.id.bottom_navigation);
-        bottomNavigationView.setOnItemSelectedListener(item -> {
+        bottomNavigationView = findViewById(R.id.bottom_navigation);
+        if (bottomNavigationView != null) {
+            bottomNavigationView.setOnItemSelectedListener(item -> {
 
             switch (item.getItemId()) {
                 case R.id.chats -> {
@@ -767,7 +774,8 @@ public class ConversationsActivity extends XmppActivity implements OnConversatio
                 default ->
                         throw new IllegalStateException("Unexpected value: " + item.getItemId());
             }
-        });
+            });
+        }
     }
 
     @Override
@@ -831,21 +839,29 @@ public class ConversationsActivity extends XmppActivity implements OnConversatio
 
 
     public boolean navigationBarVisible() {
-        return findViewById(R.id.bottom_navigation).getVisibility() == View.VISIBLE;
+        View bottomNav = findViewById(R.id.bottom_navigation);
+        return bottomNav != null && bottomNav.getVisibility() == View.VISIBLE;
     }
 
     public boolean showNavigationBar() {
+        View bottomNav = findViewById(R.id.bottom_navigation);
+        if (bottomNav == null) {
+            return false;
+        }
         if (!getBooleanPreference("show_nav_bar", R.bool.show_nav_bar)) {
-            findViewById(R.id.bottom_navigation).setVisibility(View.GONE);
+            bottomNav.setVisibility(View.GONE);
             return false;
         }
 
-        findViewById(R.id.bottom_navigation).setVisibility(View.VISIBLE);
+        bottomNav.setVisibility(View.VISIBLE);
         return true;
     }
 
     public void hideNavigationBar() {
-        findViewById(R.id.bottom_navigation).setVisibility(View.GONE);
+        View bottomNav = findViewById(R.id.bottom_navigation);
+        if (bottomNav != null) {
+            bottomNav.setVisibility(View.GONE);
+        }
     }
 
     private void displayToast(final String msg) {
