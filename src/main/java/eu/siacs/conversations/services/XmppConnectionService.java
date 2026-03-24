@@ -102,6 +102,7 @@ import androidx.core.content.ContextCompat;
 import androidx.annotation.NonNull;
 import com.google.common.base.Objects;
 import com.google.common.base.Strings;
+import com.google.common.collect.ComparisonChain;
 import com.google.common.collect.Collections2;
 import com.google.common.collect.Iterables;
 import com.google.common.collect.Multimap;
@@ -3096,7 +3097,16 @@ public class XmppConnectionService extends Service {
                     return indexA - indexB;
                 });
             } else {
-                Collections.sort(list);
+                if (getPreferences().getBoolean("stable_conversation_order", getResources().getBoolean(R.bool.stable_conversation_order))) {
+                    Collections.sort(list, (a, b) -> ComparisonChain.start()
+                            .compareFalseFirst(b.getBooleanAttribute(Conversation.ATTRIBUTE_PINNED_ON_TOP, false), a.getBooleanAttribute(Conversation.ATTRIBUTE_PINNED_ON_TOP, false))
+                            .compareFalseFirst(b.getAccount().isEnabled(), a.getAccount().isEnabled())
+                            .compare(a.getName().toString(), b.getName().toString(), String.CASE_INSENSITIVE_ORDER)
+                            .compare(a.getUuid(), b.getUuid())
+                            .result());
+                } else {
+                    Collections.sort(list);
+                }
             }
         } catch (IllegalArgumentException e) {
             //ignore

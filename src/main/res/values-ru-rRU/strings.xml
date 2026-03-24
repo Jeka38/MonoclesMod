@@ -221,6 +221,8 @@
     <string name="large_font_for_muc_status_summary">Увеличить размер шрифта для сообщений о смене ролей и рангов в конференциях</string>
     <string name="show_join_leave">Показывать вход/выход участников</string>
     <string name="show_join_leave_summary">Показывать статусные сообщения, когда участники присоединяются к конференции или покидают её</string>
+    <string name="stable_conversation_order">Стабильный порядок чатов</string>
+    <string name="stable_conversation_order_summary">Не менять положение чатов при получении новых сообщений (сортировка по алфавиту)</string>
     <string name="contacts_and_n_more_have_read_up_to_this_point">%1$s и %2$d прочитали до этого момента</string>
     <string name="contacts_are_typing">%s набирают сообщение…</string>
     <string name="contacts_have_no_pgp_keys">monocles mod не может зашифровать Ваши сообщения, поскольку Ваши контакты не анонсировали свои открытые ключи.
