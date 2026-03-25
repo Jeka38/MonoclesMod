@@ -114,6 +114,7 @@ import eu.siacs.conversations.services.MessageArchiveService;
 import eu.siacs.conversations.services.NotificationService;
 import eu.siacs.conversations.ui.ConversationFragment;
 import eu.siacs.conversations.ui.ConversationsActivity;
+import eu.siacs.conversations.ui.SearchActivity;
 import eu.siacs.conversations.ui.XmppActivity;
 import eu.siacs.conversations.ui.text.DividerSpan;
 import eu.siacs.conversations.ui.text.QuoteSpan;
@@ -548,7 +549,7 @@ public class MessageAdapter extends ArrayAdapter<Message> {
         viewHolder.messageBody.setText(body);
     }
 
-    private void displayXmppMessage(final ViewHolder viewHolder, final String body) {
+    private void displayXmppMessage(final ViewHolder viewHolder, final Message message, final String body) {
         String contact = body.toLowerCase();
         contact = contact.split(":")[1];
         boolean group;
@@ -574,15 +575,18 @@ public class MessageAdapter extends ArrayAdapter<Message> {
             viewHolder.download_button.setCompoundDrawablesWithIntrinsicBounds(drawable, null, null, null);
         }
         viewHolder.download_button.setOnClickListener(v -> {
-            try {
-                Intent intent = new Intent(Intent.ACTION_VIEW);
-                intent.setData(Uri.parse(body));
-                activity.startActivity(intent);
-                activity.overridePendingTransition(R.animator.fade_in, R.animator.fade_out);
-            } catch (Exception e) {
-                ToastCompat.makeText(activity, R.string.no_application_found_to_view_contact, ToastCompat.LENGTH_LONG).show();
+            if (activity instanceof SearchActivity) {
+                activity.switchToConversation(message);
+            } else {
+                try {
+                    Intent intent = new Intent(Intent.ACTION_VIEW);
+                    intent.setData(Uri.parse(body));
+                    activity.startActivity(intent);
+                    activity.overridePendingTransition(R.animator.fade_in, R.animator.fade_out);
+                } catch (Exception e) {
+                    ToastCompat.makeText(activity, R.string.no_application_found_to_view_contact, ToastCompat.LENGTH_LONG).show();
+                }
             }
-
         });
         showImages(false, viewHolder);
         viewHolder.richlinkview.setVisibility(GONE);
@@ -793,15 +797,19 @@ public class MessageAdapter extends ArrayAdapter<Message> {
                         .into(viewHolder.image);
 
                 viewHolder.image.setOnClickListener(v -> {
-                    Uri uri = Uri.parse(imageUrl);
-                    Intent intent = new Intent(Intent.ACTION_VIEW);
-                    intent.setDataAndType(uri, "image/*");
-                    intent.addFlags(Intent.FLAG_GRANT_READ_URI_PERMISSION);
-                    if (intent.resolveActivity(activity.getPackageManager()) != null) {
-                        activity.startActivity(intent);
-                        activity.overridePendingTransition(R.animator.fade_in, R.animator.fade_out);
+                    if (activity instanceof SearchActivity) {
+                        activity.switchToConversation(message);
                     } else {
-                        ToastCompat.makeText(activity, R.string.error_message, ToastCompat.LENGTH_LONG).show();
+                        Uri uri = Uri.parse(imageUrl);
+                        Intent intent = new Intent(Intent.ACTION_VIEW);
+                        intent.setDataAndType(uri, "image/*");
+                        intent.addFlags(Intent.FLAG_GRANT_READ_URI_PERMISSION);
+                        if (intent.resolveActivity(activity.getPackageManager()) != null) {
+                            activity.startActivity(intent);
+                            activity.overridePendingTransition(R.animator.fade_in, R.animator.fade_out);
+                        } else {
+                            ToastCompat.makeText(activity, R.string.error_message, ToastCompat.LENGTH_LONG).show();
+                        }
                     }
                 });
             }
@@ -917,7 +925,13 @@ public class MessageAdapter extends ArrayAdapter<Message> {
                 viewHolder.images.setVisibility(View.VISIBLE);
 
                 activity.loadBitmap(message, viewHolder.image);
-                viewHolder.image.setOnClickListener(v -> ConversationFragment.downloadFile(activity, message));
+                viewHolder.image.setOnClickListener(v -> {
+                    if (activity instanceof SearchActivity) {
+                        activity.switchToConversation(message);
+                    } else {
+                        ConversationFragment.downloadFile(activity, message);
+                    }
+                });
 
                 break;
             }
@@ -932,7 +946,13 @@ public class MessageAdapter extends ArrayAdapter<Message> {
         final Drawable drawable = DrawableCompat.wrap(icon);
         DrawableCompat.setTint(drawable, StyledAttributes.getColor(getContext(), R.attr.colorAccent));
         viewHolder.download_button.setCompoundDrawablesWithIntrinsicBounds(drawable, null, null, null);
-        viewHolder.download_button.setOnClickListener(v -> ConversationFragment.downloadFile(activity, message));
+        viewHolder.download_button.setOnClickListener(v -> {
+            if (activity instanceof SearchActivity) {
+                activity.switchToConversation(message);
+            } else {
+                ConversationFragment.downloadFile(activity, message);
+            }
+        });
     }
 
 
@@ -945,9 +965,13 @@ public class MessageAdapter extends ArrayAdapter<Message> {
         viewHolder.download_button.setVisibility(View.VISIBLE);
         viewHolder.download_button.setText(activity.getResources().getString(R.string.open) + " " + webxdc.getName());
         viewHolder.download_button.setOnClickListener(v -> {
-            Conversation conversation = (Conversation) message.getConversation();
-            if (!conversation.switchToSession("webxdc\0" + message.getUuid())) {
-                conversation.startWebxdc(webxdc);
+            if (activity instanceof SearchActivity) {
+                activity.switchToConversation(message);
+            } else {
+                Conversation conversation = (Conversation) message.getConversation();
+                if (!conversation.switchToSession("webxdc\0" + message.getUuid())) {
+                    conversation.startWebxdc(webxdc);
+                }
             }
         });
 
@@ -1126,6 +1150,10 @@ public class MessageAdapter extends ArrayAdapter<Message> {
                 weburl = "http://" + removeTrailingBracket(link);
             }
             Log.d(Config.LOGTAG, "Weburi for preview: " + weburl);
+            if (activity instanceof SearchActivity) {
+                viewHolder.richlinkview.setDefaultClickListener(false);
+                viewHolder.richlinkview.setClickListener((v, meta) -> activity.switchToConversation(message));
+            }
             viewHolder.richlinkview.setLink(weburl, message.getUuid(), dataSaverDisabled, activity.xmppConnectionService, color, new RichPreview.ViewListener() {
 
                 @Override
@@ -1158,7 +1186,13 @@ public class MessageAdapter extends ArrayAdapter<Message> {
             layoutParams.setMargins(0, (int) (metrics.density * 4), 0, (int) (metrics.density * 4));
             viewHolder.images.setLayoutParams(layoutParams);
 
-            viewHolder.image.setOnClickListener(v -> showLocation(message));
+            viewHolder.image.setOnClickListener(v -> {
+                if (activity instanceof SearchActivity) {
+                    activity.switchToConversation(message);
+                } else {
+                    showLocation(message);
+                }
+            });
             Glide.with(activity)
                     .load(Uri.parse(url))
                     .placeholder(R.drawable.ic_map_marker_grey600_48dp)
@@ -1173,7 +1207,13 @@ public class MessageAdapter extends ArrayAdapter<Message> {
             final Drawable drawable = DrawableCompat.wrap(icon);
             DrawableCompat.setTint(drawable, StyledAttributes.getColor(getContext(), R.attr.colorAccent));
             viewHolder.download_button.setCompoundDrawablesWithIntrinsicBounds(drawable, null, null, null);
-            viewHolder.download_button.setOnClickListener(v -> showLocation(message));
+            viewHolder.download_button.setOnClickListener(v -> {
+                if (activity instanceof SearchActivity) {
+                    activity.switchToConversation(message);
+                } else {
+                    showLocation(message);
+                }
+            });
         }
     }
 
@@ -1621,28 +1661,17 @@ public class MessageAdapter extends ArrayAdapter<Message> {
             AvatarWorkerTask.loadAvatar(message, viewHolder.contact_picture, R.dimen.avatar);
         }
 
-        resetClickListener(viewHolder.message_box, viewHolder.messageBody);
-        if (activity != null && activity.xmppConnectionService != null && activity.xmppConnectionService.getBooleanPreference("show_thread_feature", R.bool.show_thread_feature)) {
-            viewHolder.message_box.setOnClickListener(v -> {
-                if (MessageAdapter.this.mOnMessageBoxClickedListener != null) {
-                    MessageAdapter.this.mOnMessageBoxClickedListener
-                            .onContactPictureClicked(message);
-                }
-            });
-            viewHolder.messageBody.setOnClickListener(v -> {
-                if (MessageAdapter.this.mOnMessageBoxClickedListener != null) {
-                    MessageAdapter.this.mOnMessageBoxClickedListener
-                            .onContactPictureClicked(message);
-                }
-            });
-        }
-
-        viewHolder.messageBody.setOnClickListener(v -> {
-            if (MessageAdapter.this.mOnMessageBoxClickedListener != null) {
-                MessageAdapter.this.mOnMessageBoxClickedListener
-                        .onContactPictureClicked(message);
+        resetClickListener(viewHolder.message_box, viewHolder.messageBody, viewHolder.username, viewHolder.audioPlayer);
+        if (this.mOnMessageBoxClickedListener != null) {
+            viewHolder.message_box.setOnClickListener(v -> this.mOnMessageBoxClickedListener.onContactPictureClicked(message));
+            viewHolder.messageBody.setOnClickListener(v -> this.mOnMessageBoxClickedListener.onContactPictureClicked(message));
+            if (viewHolder.username != null) {
+                viewHolder.username.setOnClickListener(v -> this.mOnMessageBoxClickedListener.onContactPictureClicked(message));
             }
-        });
+            if (viewHolder.audioPlayer != null) {
+                viewHolder.audioPlayer.setOnClickListener(v -> this.mOnMessageBoxClickedListener.onContactPictureClicked(message));
+            }
+        }
 
 
         viewHolder.contact_picture.setOnClickListener(v -> {
@@ -1788,7 +1817,7 @@ public class MessageAdapter extends ArrayAdapter<Message> {
             if (message.isGeoUri()) {
                 displayLocationMessage(viewHolder, message, darkBackground, type);
             } else if (message.isXmppUri()) {
-                displayXmppMessage(viewHolder, message.getBody().trim());
+                displayXmppMessage(viewHolder, message, message.getBody().trim());
             } else if (message.treatAsDownloadable()) {
                 try {
                     final URI uri = message.getOob();
@@ -1956,6 +1985,10 @@ public class MessageAdapter extends ArrayAdapter<Message> {
     }
 
     public void openDownloadable(Message message) {
+        if (activity instanceof SearchActivity) {
+            activity.switchToConversation(message);
+            return;
+        }
         if (Compatibility.runsThirtyThree() && ContextCompat.checkSelfPermission(activity, Manifest.permission.READ_MEDIA_IMAGES) != PackageManager.PERMISSION_GRANTED && ContextCompat.checkSelfPermission(activity, Manifest.permission.READ_MEDIA_AUDIO) != PackageManager.PERMISSION_GRANTED && ContextCompat.checkSelfPermission(activity, Manifest.permission.READ_MEDIA_VIDEO) != PackageManager.PERMISSION_GRANTED) {
             ConversationFragment.registerPendingMessage(activity, message);
             ActivityCompat.requestPermissions(activity, new String[]{Manifest.permission.READ_MEDIA_IMAGES, Manifest.permission.READ_MEDIA_AUDIO, Manifest.permission.READ_MEDIA_VIDEO}, ConversationsActivity.REQUEST_OPEN_MESSAGE);

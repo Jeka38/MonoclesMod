@@ -214,6 +214,11 @@ public class SearchActivity extends XmppActivity implements TextWatcher, OnSearc
     }
 
     @Override
+    public void switchToConversation(Message message) {
+        switchToConversation(wrap(message.getConversation()), null, false, null, false, false, null, null, message.getUuid());
+    }
+
+    @Override
     protected void refreshUiReal() {
 
     }
