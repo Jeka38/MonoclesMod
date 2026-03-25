@@ -620,23 +620,26 @@ public class ConversationAdapter
         }
 
         final String bodyText = message.getBody();
-        if (bodyText != null && (bodyText.startsWith("MUC_JOINED:")
-                || bodyText.startsWith("MUC_LEFT:")
-                || bodyText.startsWith("MUC_ROLE:")
+        final boolean isJoined = bodyText != null && bodyText.startsWith("MUC_JOINED:");
+        final boolean isLeft = bodyText != null && bodyText.startsWith("MUC_LEFT:");
+        final boolean isJoinLeave = isJoined || isLeft;
+
+        SharedPreferences p = getPreferences();
+        if (isJoinLeave) {
+            return p.getBoolean("show_join_leave", activity.getResources().getBoolean(R.bool.show_join_leave));
+        }
+
+        final boolean isMucStatus = bodyText != null && (bodyText.startsWith("MUC_ROLE:")
                 || bodyText.startsWith("MUC_AFFILIATION:")
                 || bodyText.startsWith("MUC_ROLE_AFFILIATION:")
                 || bodyText.startsWith("MUC_NICK:")
                 || bodyText.startsWith("MUC_KICKED:")
-                || bodyText.startsWith("MUC_BANNED:"))) {
-            return false;
+                || bodyText.startsWith("MUC_BANNED:"));
+
+        if (isMucStatus) {
+            return p.getBoolean("show_muc_status_messages", activity.getResources().getBoolean(R.bool.show_muc_status_messages));
         }
 
-        SharedPreferences p = getPreferences();
-        boolean showMucStatus = p.getBoolean("show_muc_status_messages", activity.getResources().getBoolean(R.bool.show_muc_status_messages));
-
-        if (!showMucStatus) {
-            return false;
-        }
         return true;
     }
 }

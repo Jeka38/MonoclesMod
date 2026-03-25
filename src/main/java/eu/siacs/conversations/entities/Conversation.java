@@ -312,9 +312,8 @@ public class Conversation extends AbstractEntity implements Blockable, Comparabl
                 if (message.getSubject() != null && !message.isOOb() && (message.getRawBody() == null || message.getRawBody().isEmpty())) continue;
                 if (message.isRead()) {
                     return first;
-                } else {
-                    first = message;
                 }
+                first = message;
             }
         }
         return first;
@@ -513,6 +512,28 @@ public class Conversation extends AbstractEntity implements Blockable, Comparabl
     public void clearMessages() {
         synchronized (this.messages) {
             this.messages.clear();
+        }
+    }
+
+    public void clearStatusMessages() {
+        synchronized (this.messages) {
+            for (ListIterator<Message> iterator = this.messages.listIterator(); iterator.hasNext(); ) {
+                Message message = iterator.next();
+                if (message.getType() == Message.TYPE_STATUS) {
+                    final String body = message.getBody();
+                    if (body != null && (body.startsWith("MUC_JOINED:")
+                            || body.startsWith("MUC_LEFT:")
+                            || body.startsWith("MUC_ROLE:")
+                            || body.startsWith("MUC_AFFILIATION:")
+                            || body.startsWith("MUC_ROLE_AFFILIATION:")
+                            || body.startsWith("MUC_NICK:")
+                            || body.startsWith("MUC_KICKED:")
+                            || body.startsWith("MUC_BANNED:"))) {
+                        iterator.remove();
+                    }
+                }
+            }
+            untieMessages();
         }
     }
 
@@ -988,7 +1009,7 @@ public class Conversation extends AbstractEntity implements Blockable, Comparabl
         synchronized (this.messages) {
             for (int i = this.messages.size() - 1; i >= 0; --i) {
                 final Message message = messages.get(i);
-                if (message.getType() == Message.TYPE_STATUS) {
+                if (message.getType() == Message.TYPE_STATUS && message.isRead()) {
                     continue;
                 }
                 return message.isRead();

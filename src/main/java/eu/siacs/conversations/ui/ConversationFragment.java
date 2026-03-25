@@ -3806,8 +3806,8 @@ public class ConversationFragment extends XmppFragment
     }
     private void fireReadEvent() {
         if (activity != null && this.conversation != null) {
-            String uuid = getLastVisibleMessageUuid();
-            if (uuid != null) {
+            String uuid = scrolledToBottom() ? null : getLastVisibleMessageUuid();
+            if (uuid != null || scrolledToBottom()) {
                 activity.onConversationRead(this.conversation, uuid);
             }
         }
@@ -4482,11 +4482,11 @@ public class ConversationFragment extends XmppFragment
         this.conversation.messagesLoaded.set(true);
         Log.d(Config.LOGTAG, "scrolledToBottomAndNoPending=" + Boolean.toString(scrolledToBottomAndNoPending));
 
-        if (hasExtras || scrolledToBottomAndNoPending) {
-            resetUnreadMessagesCount();
+        if (hasExtras || scrolledToBottomAndNoPending || !conversation.isRead()) {
             synchronized (this.messageList) {
                 Log.d(Config.LOGTAG, "jump to first unread message");
                 final Message first = conversation.getFirstUnreadMessage();
+                resetUnreadMessagesCount();
                 final int bottom = Math.max(0, this.messageList.size() - 1);
                 final int pos;
                 final boolean jumpToBottom;

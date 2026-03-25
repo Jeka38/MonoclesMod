@@ -1560,13 +1560,19 @@ public class MessageAdapter extends ArrayAdapter<Message> {
             } else {
                 final boolean isJoined = bodyText != null && bodyText.startsWith("MUC_JOINED:");
                 final boolean isLeft = bodyText != null && bodyText.startsWith("MUC_LEFT:");
+                final boolean isRole = bodyText != null && bodyText.startsWith("MUC_ROLE:");
+                final boolean isAffiliation = bodyText != null && bodyText.startsWith("MUC_AFFILIATION:");
+                final boolean isRoleAffiliation = bodyText != null && bodyText.startsWith("MUC_ROLE_AFFILIATION:");
                 final boolean isJoinLeave = isJoined || isLeft;
+                final boolean isMucStatus = isRole || isAffiliation || isRoleAffiliation;
                 if (conversation.getMode() == Conversation.MODE_MULTI && !((Conversation) conversation).hasPermanentCounterpart()) {
                     final boolean hide;
                     if (isJoinLeave) {
                         hide = !mShowJoinLeave;
-                    } else {
+                    } else if (isMucStatus) {
                         hide = !mShowMucStatusMessages;
+                    } else {
+                        hide = false;
                     }
                     if (hide) {
                         view.setVisibility(GONE);
