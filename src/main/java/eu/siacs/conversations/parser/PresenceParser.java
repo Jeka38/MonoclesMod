@@ -111,7 +111,7 @@ public class PresenceParser extends AbstractParser implements
                                 } else if (affiliationChanged && affiliationString != null) {
                                     body = mXmppConnectionService.getString(R.string.muc_affiliation_changed, affiliationString);
                                 }
-                                if (body != null && !justWentOnline) {
+                                if (body != null) {
                                     String prefix = "";
                                     if (roleChanged && affiliationChanged) {
                                         prefix = "MUC_ROLE_AFFILIATION:";
@@ -133,6 +133,9 @@ public class PresenceParser extends AbstractParser implements
                             invokeRenameListener(mucOptions, true);
                         } else if (mucOptions.online()) {
                             MucOptions.User oldUser = mucOptions.findUserByFullJid(from);
+                            if (oldUser == null && user.getRealJid() != null) {
+                                oldUser = mucOptions.findUserByRealJid(user.getRealJid());
+                            }
                             if (oldUser != null) {
                                 final boolean roleChanged = oldUser.getRole() != user.getRole();
                                 final boolean affiliationChanged = oldUser.getAffiliation() != user.getAffiliation();
