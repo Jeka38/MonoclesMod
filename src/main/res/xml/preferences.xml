@@ -167,11 +167,6 @@
             android:summary="@string/show_join_leave_summary"
             android:title="@string/show_join_leave" />
         <SwitchPreference
-            android:defaultValue="@bool/stable_conversation_order"
-            android:key="stable_conversation_order"
-            android:summary="@string/stable_conversation_order_summary"
-            android:title="@string/stable_conversation_order" />
-        <SwitchPreference
             android:defaultValue="@bool/show_nav_bar"
             android:key="show_nav_bar"
             android:summary="@string/pref_show_navigation_bar_summary"

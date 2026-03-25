@@ -74,8 +74,6 @@
     <string name="large_font_for_muc_status_summary">Increase font size for role and affiliation change messages in conferences</string>
     <string name="show_join_leave">Show join/leave messages</string>
     <string name="show_join_leave_summary">Show status messages when occupants join or leave the conference</string>
-    <string name="stable_conversation_order">Stable conversation order</string>
-    <string name="stable_conversation_order_summary">Keep chats in the same position within their group even when new messages arrive (alphabetical order)</string>
     <string name="cancel">Cancel</string>
     <string name="set">Set</string>
     <string name="add">Add</string>

@@ -106,7 +106,6 @@
     <bool name="large_font_for_muc_status">false</bool>
     <bool name="show_muc_status_messages">true</bool>
     <bool name="show_join_leave">false</bool>
-    <bool name="stable_conversation_order">true</bool>
 
 
     <string-array name="domains">

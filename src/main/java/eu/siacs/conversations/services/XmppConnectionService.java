@@ -3097,16 +3097,12 @@ public class XmppConnectionService extends Service {
                     return indexA - indexB;
                 });
             } else {
-                if (getPreferences().getBoolean("stable_conversation_order", getResources().getBoolean(R.bool.stable_conversation_order))) {
-                    Collections.sort(list, (a, b) -> ComparisonChain.start()
-                            .compareFalseFirst(b.getBooleanAttribute(Conversation.ATTRIBUTE_PINNED_ON_TOP, false), a.getBooleanAttribute(Conversation.ATTRIBUTE_PINNED_ON_TOP, false))
-                            .compareFalseFirst(b.getAccount().isEnabled(), a.getAccount().isEnabled())
-                            .compare(a.getName().toString(), b.getName().toString(), String.CASE_INSENSITIVE_ORDER)
-                            .compare(a.getUuid(), b.getUuid())
-                            .result());
-                } else {
-                    Collections.sort(list);
-                }
+                Collections.sort(list, (a, b) -> ComparisonChain.start()
+                        .compareFalseFirst(b.getBooleanAttribute(Conversation.ATTRIBUTE_PINNED_ON_TOP, false), a.getBooleanAttribute(Conversation.ATTRIBUTE_PINNED_ON_TOP, false))
+                        .compareFalseFirst(b.getAccount().isEnabled(), a.getAccount().isEnabled())
+                        .compare(a.getName().toString(), b.getName().toString(), String.CASE_INSENSITIVE_ORDER)
+                        .compare(a.getUuid(), b.getUuid())
+                        .result());
             }
         } catch (IllegalArgumentException e) {
             //ignore
