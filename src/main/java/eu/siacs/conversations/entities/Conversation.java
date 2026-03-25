@@ -312,9 +312,8 @@ public class Conversation extends AbstractEntity implements Blockable, Comparabl
                 if (message.getSubject() != null && !message.isOOb() && (message.getRawBody() == null || message.getRawBody().isEmpty())) continue;
                 if (message.isRead()) {
                     return first;
-                } else {
-                    first = message;
                 }
+                first = message;
             }
         }
         return first;
@@ -1010,7 +1009,7 @@ public class Conversation extends AbstractEntity implements Blockable, Comparabl
         synchronized (this.messages) {
             for (int i = this.messages.size() - 1; i >= 0; --i) {
                 final Message message = messages.get(i);
-                if (message.getType() == Message.TYPE_STATUS) {
+                if (message.getType() == Message.TYPE_STATUS && message.isRead()) {
                     continue;
                 }
                 return message.isRead();
@@ -1692,7 +1691,7 @@ public class Conversation extends AbstractEntity implements Blockable, Comparabl
             int count = 0;
             for (int i = this.messages.size() - 1; i >= 0; --i) {
                 final Message message = messages.get(i);
-                if (message.getType() == Message.TYPE_STATUS) {
+                if (message.getType() == Message.TYPE_STATUS && message.isRead()) {
                     continue;
                 }
                 if (message.getSubject() != null && !message.isOOb() && (message.getRawBody() == null || message.getRawBody().isEmpty())) {
@@ -1777,7 +1776,7 @@ public class Conversation extends AbstractEntity implements Blockable, Comparabl
                 if (uuid.equals(message.getUuid())) {
                     return count;
                 }
-                if (message.getType() == Message.TYPE_STATUS) {
+                if (message.getType() == Message.TYPE_STATUS && message.isRead()) {
                     continue;
                 }
                 if (message.getSubject() != null && !message.isOOb() && (message.getRawBody() == null || message.getRawBody().isEmpty())) {

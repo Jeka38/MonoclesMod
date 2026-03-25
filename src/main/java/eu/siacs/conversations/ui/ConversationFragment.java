@@ -4483,10 +4483,10 @@ public class ConversationFragment extends XmppFragment
         Log.d(Config.LOGTAG, "scrolledToBottomAndNoPending=" + Boolean.toString(scrolledToBottomAndNoPending));
 
         if (hasExtras || scrolledToBottomAndNoPending || !conversation.isRead()) {
-            resetUnreadMessagesCount();
             synchronized (this.messageList) {
                 Log.d(Config.LOGTAG, "jump to first unread message");
                 final Message first = conversation.getFirstUnreadMessage();
+                resetUnreadMessagesCount();
                 final int bottom = Math.max(0, this.messageList.size() - 1);
                 final int pos;
                 final boolean jumpToBottom;

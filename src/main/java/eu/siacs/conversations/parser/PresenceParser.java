@@ -121,6 +121,9 @@ public class PresenceParser extends AbstractParser implements
                                         prefix = "MUC_AFFILIATION:";
                                     }
                                     Message statusMessage = Message.createStatusMessage(conversation, prefix + body);
+                                    if (mXmppConnectionService.getBooleanPreference("show_muc_status_messages", R.bool.show_muc_status_messages)) {
+                                        statusMessage.markUnread();
+                                    }
                                     conversation.add(statusMessage);
                                     mXmppConnectionService.getNotificationService().push(statusMessage);
                                     addedStatusMessage = true;
@@ -151,6 +154,9 @@ public class PresenceParser extends AbstractParser implements
                                     }
                                     if (body != null) {
                                         Message statusMessage = Message.createStatusMessage(conversation, prefix + body);
+                                        if (mXmppConnectionService.getBooleanPreference("show_muc_status_messages", R.bool.show_muc_status_messages)) {
+                                            statusMessage.markUnread();
+                                        }
                                         conversation.add(statusMessage);
                                         mXmppConnectionService.getNotificationService().push(statusMessage);
                                         addedStatusMessage = true;
@@ -162,6 +168,9 @@ public class PresenceParser extends AbstractParser implements
                         if (isNew && !isSelf && mucOptions.online() && !codes.contains(MucOptions.STATUS_CODE_CHANGED_NICK)) {
                             String body = mXmppConnectionService.getString(R.string.muc_occupant_joined, from.getResource());
                             Message statusMessage = Message.createStatusMessage(conversation, "MUC_JOINED:" + body);
+                            if (mXmppConnectionService.getBooleanPreference("show_join_leave", R.bool.show_join_leave)) {
+                                statusMessage.markUnread();
+                            }
                             conversation.add(statusMessage);
                             addedStatusMessage = true;
                         }
@@ -266,6 +275,7 @@ public class PresenceParser extends AbstractParser implements
                             if (newNick != null) {
                                 String body = mXmppConnectionService.getString(R.string.muc_occupant_changed_nick, from.getResource(), newNick);
                                 Message statusMessage = Message.createStatusMessage(conversation, "MUC_NICK:" + body);
+                                statusMessage.markUnread();
                                 conversation.add(statusMessage);
                                 mXmppConnectionService.getNotificationService().push(statusMessage);
                                 addedStatusMessage = true;
@@ -274,12 +284,14 @@ public class PresenceParser extends AbstractParser implements
                         } else if (codes.contains(MucOptions.STATUS_CODE_KICKED)) {
                             String body = mXmppConnectionService.getString(R.string.muc_occupant_kicked, from.getResource());
                             Message statusMessage = Message.createStatusMessage(conversation, "MUC_KICKED:" + body);
+                            statusMessage.markUnread();
                             conversation.add(statusMessage);
                             mXmppConnectionService.getNotificationService().push(statusMessage);
                             addedStatusMessage = true;
                         } else if (codes.contains(MucOptions.STATUS_CODE_BANNED)) {
                             String body = mXmppConnectionService.getString(R.string.muc_occupant_banned, from.getResource());
                             Message statusMessage = Message.createStatusMessage(conversation, "MUC_BANNED:" + body);
+                            statusMessage.markUnread();
                             conversation.add(statusMessage);
                             mXmppConnectionService.getNotificationService().push(statusMessage);
                             addedStatusMessage = true;
@@ -291,6 +303,9 @@ public class PresenceParser extends AbstractParser implements
                     if (user != null && !isSelf && !codes.contains(MucOptions.STATUS_CODE_CHANGED_NICK)) {
                         String body = mXmppConnectionService.getString(R.string.muc_occupant_left, from.getResource());
                         Message statusMessage = Message.createStatusMessage(conversation, "MUC_LEFT:" + body);
+                        if (mXmppConnectionService.getBooleanPreference("show_join_leave", R.bool.show_join_leave)) {
+                            statusMessage.markUnread();
+                        }
                         conversation.add(statusMessage);
                         addedStatusMessage = true;
                         mXmppConnectionService.getAvatarService().clear(user);
