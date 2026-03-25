@@ -89,6 +89,7 @@ public class PresenceParser extends AbstractParser implements
                         if (isSelf) {
                             final boolean justWentOnline = mucOptions.setOnline();
                             if (justWentOnline) {
+                                conversation.clearStatusMessages();
                                 mXmppConnectionService.getAvatarService().clear(mucOptions);
                             }
                             final String oldRole = conversation.getAttribute("role");
@@ -252,6 +253,7 @@ public class PresenceParser extends AbstractParser implements
                         Log.d(Config.LOGTAG, "unknown error in conference: " + packet);
                     }
                 } else if (!from.isBareJid()) {
+                    final boolean fullJidMatchesOther = from.equals(mucOptions.getSelf().getFullJid());
                     Element item = x == null ? null : x.findChild("item");
                     if (item != null) {
                         MucOptions.User user = parseItem(conversation, item, from, occupantId, nick == null ? null : nick.getContent(), hats);
@@ -285,7 +287,8 @@ public class PresenceParser extends AbstractParser implements
                         mucOptions.updateUser(user);
                     }
                     MucOptions.User user = mucOptions.deleteUser(from);
-                    if (user != null && !codes.contains(MucOptions.STATUS_CODE_CHANGED_NICK)) {
+                    final boolean isSelf = codes.contains(MucOptions.STATUS_CODE_SELF_PRESENCE) || fullJidMatchesOther;
+                    if (user != null && !isSelf && !codes.contains(MucOptions.STATUS_CODE_CHANGED_NICK)) {
                         String body = mXmppConnectionService.getString(R.string.muc_occupant_left, from.getResource());
                         Message statusMessage = Message.createStatusMessage(conversation, "MUC_LEFT:" + body);
                         conversation.add(statusMessage);

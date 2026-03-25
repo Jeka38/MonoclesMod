@@ -516,6 +516,28 @@ public class Conversation extends AbstractEntity implements Blockable, Comparabl
         }
     }
 
+    public void clearStatusMessages() {
+        synchronized (this.messages) {
+            for (ListIterator<Message> iterator = this.messages.listIterator(); iterator.hasNext(); ) {
+                Message message = iterator.next();
+                if (message.getType() == Message.TYPE_STATUS) {
+                    final String body = message.getBody();
+                    if (body != null && (body.startsWith("MUC_JOINED:")
+                            || body.startsWith("MUC_LEFT:")
+                            || body.startsWith("MUC_ROLE:")
+                            || body.startsWith("MUC_AFFILIATION:")
+                            || body.startsWith("MUC_ROLE_AFFILIATION:")
+                            || body.startsWith("MUC_NICK:")
+                            || body.startsWith("MUC_KICKED:")
+                            || body.startsWith("MUC_BANNED:"))) {
+                        iterator.remove();
+                    }
+                }
+            }
+            untieMessages();
+        }
+    }
+
     public boolean setIncomingChatState(ChatState state) {
         if (this.mIncomingChatState == state) {
             return false;
