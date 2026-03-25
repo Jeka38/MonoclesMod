@@ -225,6 +225,8 @@ public class SearchActivity extends XmppActivity implements TextWatcher, OnSearc
         this.uuid = Strings.emptyToNull(intent.getStringExtra(EXTRA_CONVERSATION_UUID));
         final String term = intent.getStringExtra(EXTRA_SEARCH_TERM);
         if (term != null) {
+            this.messages.clear();
+            this.messageListAdapter.notifyDataSetChanged();
             final List<String> searchTerm = FtsUtils.parse(term);
             if (xmppConnectionService != null) {
                 if (currentSearch.watch(searchTerm)) {
@@ -233,6 +235,8 @@ public class SearchActivity extends XmppActivity implements TextWatcher, OnSearc
             } else {
                 pendingSearch.push(searchTerm);
             }
+            pendingSearchTerm.push(term);
+            invalidateOptionsMenu();
         }
     }
 
@@ -288,9 +292,26 @@ public class SearchActivity extends XmppActivity implements TextWatcher, OnSearc
         runOnUiThread(() -> {
             this.messages.clear();
             messageListAdapter.setHighlightedTerm(term);
-            if (term.size() > 0 && term.get(0).startsWith("#")) {
+            final List<String> hashtags = new ArrayList<>();
+            for (String part : term) {
+                if (part.startsWith("#")) {
+                    hashtags.add(part.toLowerCase(Locale.getDefault()));
+                }
+            }
+            if (hashtags.size() > 0) {
                 for (Message message : messages) {
-                    if (message.getBody() != null && message.getBody().toLowerCase(Locale.getDefault()).contains(term.get(0).toLowerCase(Locale.getDefault()))) {
+                    if (message.getBody() == null) {
+                        continue;
+                    }
+                    final String body = message.getBody().toLowerCase(Locale.getDefault());
+                    boolean match = true;
+                    for (String hashtag : hashtags) {
+                        if (!body.contains(hashtag)) {
+                            match = false;
+                            break;
+                        }
+                    }
+                    if (match) {
                         this.messages.add(message);
                     }
                 }
