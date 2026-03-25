@@ -283,7 +283,7 @@ public class MucOptions {
             }
         } else if (user.realJid != null) {
             old = findUserByRealJid(user.realJid);
-            realJidFound = old != null;
+            realJidFound = old != null && old.fullJid != null;
             synchronized (users) {
                 if (old != null && (old.fullJid == null || old.role == Role.NONE)) {
                     users.remove(old);
