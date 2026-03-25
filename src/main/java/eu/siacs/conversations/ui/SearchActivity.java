@@ -93,7 +93,7 @@ public class SearchActivity extends XmppActivity implements TextWatcher, OnSearc
     public void onCreate(final Bundle bundle) {
         final Intent intent = getIntent();
         this.uuid = intent == null ? null : Strings.emptyToNull(intent.getStringExtra(EXTRA_CONVERSATION_UUID));
-        final String searchTerm = bundle == null ? null : bundle.getString(EXTRA_SEARCH_TERM);
+        final String searchTerm = bundle != null ? bundle.getString(EXTRA_SEARCH_TERM) : (intent != null ? intent.getStringExtra(EXTRA_SEARCH_TERM) : null);
         if (searchTerm != null) {
             pendingSearchTerm.push(searchTerm);
         }
@@ -115,12 +115,12 @@ public class SearchActivity extends XmppActivity implements TextWatcher, OnSearc
         final EditText searchField = searchActionMenuItem.getActionView().findViewById(R.id.search_field);
         final String term = pendingSearchTerm.pop();
         if (term != null) {
+            searchField.setText("");
             searchField.append(term);
             final List<String> searchTerm = FtsUtils.parse(term);
+            currentSearch.watch(searchTerm);
             if (xmppConnectionService != null) {
-                if (currentSearch.watch(searchTerm)) {
-                    xmppConnectionService.search(searchTerm, uuid, this);
-                }
+                xmppConnectionService.search(searchTerm, uuid, this);
             } else {
                 pendingSearch.push(searchTerm);
             }
@@ -227,14 +227,6 @@ public class SearchActivity extends XmppActivity implements TextWatcher, OnSearc
         if (term != null) {
             this.messages.clear();
             this.messageListAdapter.notifyDataSetChanged();
-            final List<String> searchTerm = FtsUtils.parse(term);
-            if (xmppConnectionService != null) {
-                if (currentSearch.watch(searchTerm)) {
-                    xmppConnectionService.search(searchTerm, uuid, this);
-                }
-            } else {
-                pendingSearch.push(searchTerm);
-            }
             pendingSearchTerm.push(term);
             invalidateOptionsMenu();
         }
