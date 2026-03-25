@@ -841,7 +841,10 @@ public class MessageAdapter extends ArrayAdapter<Message> {
                 body.setSpan(new StyleSpan(Typeface.BOLD_ITALIC), 0, body.length(), Spannable.SPAN_EXCLUSIVE_EXCLUSIVE);
             }
 
-            MyLinkify.addLinks(body, message.getConversation().getAccount(), message.getConversation().getJid());
+            MyLinkify.addLinks(body, message.getConversation());
+            if (highlightedTerm != null) {
+                StylingHelper.highlight(activity, body, highlightedTerm, darkBackground);
+            }
             viewHolder.messageBody.setText(body);
             viewHolder.messageBody.setAutoLinkMask(0);
             viewHolder.messageBody.setMovementMethod(BetterLinkMovementMethod.getInstance());
@@ -1351,7 +1354,10 @@ public class MessageAdapter extends ArrayAdapter<Message> {
             }
             body.setSpan(new ForegroundColorSpan(ThemeHelper.getMessageTextColorPrivate(activity)), 0, privateMarker.length(), Spannable.SPAN_EXCLUSIVE_EXCLUSIVE);
             body.setSpan(new StyleSpan(Typeface.BOLD), 0, privateMarker.length(), Spannable.SPAN_EXCLUSIVE_EXCLUSIVE);
-            MyLinkify.addLinks(body, false);
+            MyLinkify.addLinks(body, false, message.getConversation());
+            if (highlightedTerm != null) {
+                StylingHelper.highlight(activity, body, highlightedTerm, darkBackground);
+            }
             viewHolder.messageBody.setText(body);
             viewHolder.messageBody.setAutoLinkMask(0);
             viewHolder.messageBody.setTextIsSelectable(true);
@@ -1360,7 +1366,10 @@ public class MessageAdapter extends ArrayAdapter<Message> {
             if (includeBody) {
                 viewHolder.messageBody.setVisibility(View.VISIBLE);
                 body = new SpannableStringBuilder(messageBody);
-                MyLinkify.addLinks(body, false);
+                MyLinkify.addLinks(body, false, message.getConversation());
+                if (highlightedTerm != null) {
+                    StylingHelper.highlight(activity, body, highlightedTerm, darkBackground);
+                }
                 viewHolder.messageBody.setText(body);
                 viewHolder.messageBody.setAutoLinkMask(0);
                 viewHolder.messageBody.setTextIsSelectable(true);

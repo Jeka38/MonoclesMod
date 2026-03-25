@@ -37,6 +37,7 @@ import android.os.Bundle;
 import android.text.Editable;
 import android.text.InputType;
 import android.text.TextWatcher;
+import java.util.Locale;
 import android.util.Log;
 import android.view.ContextMenu;
 import android.view.Menu;
@@ -77,7 +78,7 @@ import eu.siacs.conversations.utils.UIHelper;
 
 public class SearchActivity extends XmppActivity implements TextWatcher, OnSearchResultsAvailable, MessageAdapter.OnContactPictureClicked {
 
-    private static final String EXTRA_SEARCH_TERM = "search-term";
+    public static final String EXTRA_SEARCH_TERM = "search-term";
     public static final String EXTRA_CONVERSATION_UUID = "uuid";
     private ActivitySearchBinding binding;
     private MessageAdapter messageListAdapter;
@@ -102,6 +103,7 @@ public class SearchActivity extends XmppActivity implements TextWatcher, OnSearc
         configureActionBar(getSupportActionBar());
 		this.messageListAdapter = new MessageAdapter(this, this.messages, uuid == null);
         this.messageListAdapter.setOnContactPictureClicked(this);
+        this.messageListAdapter.setOnMessageBoxClicked(this::switchToConversation);
         this.binding.searchResults.setAdapter(messageListAdapter);
         registerForContextMenu(this.binding.searchResults);
     }
@@ -161,12 +163,12 @@ public class SearchActivity extends XmppActivity implements TextWatcher, OnSearc
     @Override
     public boolean onContextItemSelected(MenuItem item) {
         final Message message = selectedMessageReference.get();
-        final boolean multi = message.getConversation().getMode() == Conversational.MODE_MULTI;
-        final String user = multi ? UIHelper.getDisplayedMucCounterpart(message.getCounterpart()) : null;
+        final boolean multi = message != null && message.getConversation().getMode() == Conversational.MODE_MULTI;
+        final String user = (message != null && multi) ? UIHelper.getDisplayedMucCounterpart(message.getCounterpart()) : null;
         if (message != null) {
             switch (item.getItemId()) {
                 case R.id.open_conversation:
-                    switchToConversation(wrap(message.getConversation()));
+                    switchToConversation(message);
                     break;
                 case R.id.share_with:
                     ShareUtil.share(this, message, user);
@@ -214,6 +216,24 @@ public class SearchActivity extends XmppActivity implements TextWatcher, OnSearc
     @Override
     protected void refreshUiReal() {
 
+    }
+
+    @Override
+    protected void onNewIntent(Intent intent) {
+        super.onNewIntent(intent);
+        setIntent(intent);
+        this.uuid = Strings.emptyToNull(intent.getStringExtra(EXTRA_CONVERSATION_UUID));
+        final String term = intent.getStringExtra(EXTRA_SEARCH_TERM);
+        if (term != null) {
+            final List<String> searchTerm = FtsUtils.parse(term);
+            if (xmppConnectionService != null) {
+                if (currentSearch.watch(searchTerm)) {
+                    xmppConnectionService.search(searchTerm, uuid, this);
+                }
+            } else {
+                pendingSearch.push(searchTerm);
+            }
+        }
     }
 
     @Override
@@ -268,10 +288,18 @@ public class SearchActivity extends XmppActivity implements TextWatcher, OnSearc
         runOnUiThread(() -> {
             this.messages.clear();
             messageListAdapter.setHighlightedTerm(term);
-            DateSeparator.addAll(messages);
-            this.messages.addAll(messages);
+            if (term.size() > 0 && term.get(0).startsWith("#")) {
+                for (Message message : messages) {
+                    if (message.getBody() != null && message.getBody().toLowerCase(Locale.getDefault()).contains(term.get(0).toLowerCase(Locale.getDefault()))) {
+                        this.messages.add(message);
+                    }
+                }
+            } else {
+                this.messages.addAll(messages);
+            }
+            DateSeparator.addAll(this.messages);
             messageListAdapter.notifyDataSetChanged();
-            changeBackground(true, messages.size() > 0);
+            changeBackground(true, this.messages.size() > 0);
             ListViewUtils.scrollToBottom(this.binding.searchResults);
         });
     }

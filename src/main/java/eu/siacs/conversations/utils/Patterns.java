@@ -469,6 +469,8 @@ public class Patterns {
                     + "(\\([0-9]+\\)[\\- \\.]*)?"   // (<digits>)<sdd>*
                     + "([0-9][0-9\\- \\.]+[0-9])"); // <digit><digit|sdd>+<digit>
 
+    public static final Pattern HASHTAG = Pattern.compile("#([\\p{L}\\p{N}_]+)");
+
     /**
      * Convenience method to take all of the non-null matching groups in a
      * regex Matcher and return them as a concatenated string.

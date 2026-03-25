@@ -1243,17 +1243,24 @@ public class DatabaseBackend extends SQLiteOpenHelper {
     public Cursor getMessageSearchCursor(final List<String> term, final String uuid) {
         final SQLiteDatabase db = this.getReadableDatabase();
         final StringBuilder SQL = new StringBuilder();
-        final String[] selectionArgs;
+        final List<String> selectionArgs = new ArrayList<>();
         SQL.append("SELECT " + Message.TABLENAME + ".*," + Conversation.TABLENAME + "." + Conversation.CONTACTJID + "," + Conversation.TABLENAME + "." + Conversation.ACCOUNT + "," + Conversation.TABLENAME + "." + Conversation.MODE + " FROM " + Message.TABLENAME + " JOIN " + Conversation.TABLENAME + " ON " + Message.TABLENAME + "." + Message.CONVERSATION + "=" + Conversation.TABLENAME + "." + Conversation.UUID + " JOIN messages_index ON messages_index.rowid=messages.rowid WHERE " + Message.ENCRYPTION + " NOT IN(" + Message.ENCRYPTION_AXOLOTL_NOT_FOR_THIS_DEVICE + "," + Message.ENCRYPTION_PGP + "," + Message.ENCRYPTION_DECRYPTION_FAILED + "," + Message.ENCRYPTION_AXOLOTL_FAILED + ") AND " + Message.TYPE + " IN(" + Message.TYPE_TEXT + "," + Message.TYPE_PRIVATE + ") AND messages_index.body MATCH ?");
-        if (uuid == null) {
-            selectionArgs = new String[]{FtsUtils.toMatchString(term)};
-        } else {
-            selectionArgs = new String[]{FtsUtils.toMatchString(term), uuid};
+        selectionArgs.add(FtsUtils.toMatchString(term));
+
+        for (String part : term) {
+            if (part.startsWith("#")) {
+                SQL.append(" AND " + Message.TABLENAME + "." + Message.BODY + " LIKE ?");
+                selectionArgs.add("%" + part + "%");
+            }
+        }
+
+        if (uuid != null) {
             SQL.append(" AND " + Conversation.TABLENAME + '.' + Conversation.UUID + "=?");
+            selectionArgs.add(uuid);
         }
         SQL.append(" ORDER BY " + Message.TIME_SENT + " DESC limit " + Config.MAX_SEARCH_RESULTS);
         Log.d(Config.LOGTAG, "search term: " + FtsUtils.toMatchString(term));
-        return db.rawQuery(SQL.toString(), selectionArgs);
+        return db.rawQuery(SQL.toString(), selectionArgs.toArray(new String[0]));
     }
 
     public Iterable<Message> getMessagesIterable(final Conversation conversation) {

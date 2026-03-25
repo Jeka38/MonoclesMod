@@ -30,13 +30,17 @@
 package eu.siacs.conversations.ui.util;
 
 import android.content.Context;
+import android.content.Intent;
 import android.content.SharedPreferences;
 import android.net.Uri;
 import android.preference.PreferenceManager;
+import android.view.View;
 import android.text.Editable;
+import android.text.Spannable;
 import android.text.SpannableString;
 import android.text.SpannableStringBuilder;
 import android.text.TextUtils;
+import android.text.style.ClickableSpan;
 import android.text.style.URLSpan;
 import android.text.util.Linkify;
 import android.util.Base64;
@@ -61,8 +65,10 @@ import java.util.regex.Pattern;
 import eu.siacs.conversations.Config;
 import eu.siacs.conversations.R;
 import eu.siacs.conversations.entities.Account;
+import eu.siacs.conversations.entities.Conversational;
 import eu.siacs.conversations.entities.ListItem;
 import eu.siacs.conversations.entities.Roster;
+import eu.siacs.conversations.ui.SearchActivity;
 import eu.siacs.conversations.ui.SettingsActivity;
 import eu.siacs.conversations.utils.GeoHelper;
 import eu.siacs.conversations.utils.Patterns;
@@ -387,16 +393,25 @@ public class MyLinkify {
     }
 
     public static void addLinks(Editable body, boolean includeGeo) {
+        addLinks(body, includeGeo, (String) null);
+    }
+
+    public static void addLinks(Editable body, boolean includeGeo, Conversational conversation) {
+        addLinks(body, includeGeo, conversation == null ? null : conversation.getUuid());
+    }
+
+    public static void addLinks(Editable body, boolean includeGeo, String conversationUuid) {
         Linkify.addLinks(body, Patterns.XMPP_PATTERN, "xmpp", XMPPURI_MATCH_FILTER, null);
         Linkify.addLinks(body, Patterns.AUTOLINK_WEB_URL, "http", WEBURL_MATCH_FILTER, WEBURL_TRANSFORM_FILTER);
         Linkify.addLinks(body, Patterns.PHONE, "tel:", Linkify.sPhoneNumberMatchFilter, Linkify.sPhoneNumberTransformFilter);
         if (includeGeo) {
             Linkify.addLinks(body, GeoHelper.GEO_URI, "geo");
         }
+        addHashtags(body, conversationUuid);
     }
 
     public static void addLinks(Editable body, Account account, Jid context) {
-        addLinks(body, true);
+        addLinks(body, true, (String) null);
         Roster roster = account.getRoster();
         for (final URLSpan urlspan : body.getSpans(0, body.length() - 1, URLSpan.class)) {
             Uri uri = Uri.parse(urlspan.getURL());
@@ -426,6 +441,38 @@ public class MyLinkify {
                     );
                 } catch (final IllegalArgumentException | IndexOutOfBoundsException e) { /* bad JID or span gone */ }
             }
+        }
+    }
+
+    private static void addHashtags(Editable body, String conversationUuid) {
+        Matcher matcher = Patterns.HASHTAG.matcher(body);
+        while (matcher.find()) {
+            body.setSpan(new HashtagSpan(matcher.group(), conversationUuid), matcher.start(), matcher.end(), Spannable.SPAN_EXCLUSIVE_EXCLUSIVE);
+        }
+    }
+
+    public static void addLinks(Editable body, Conversational conversation) {
+        addLinks(body, true, conversation);
+    }
+
+    private static class HashtagSpan extends ClickableSpan {
+
+        private final String tag;
+        private final String conversationUuid;
+
+        private HashtagSpan(String tag, String conversationUuid) {
+            this.tag = tag;
+            this.conversationUuid = conversationUuid;
+        }
+
+        @Override
+        public void onClick(View widget) {
+            Intent intent = new Intent(widget.getContext(), SearchActivity.class);
+            intent.putExtra(SearchActivity.EXTRA_SEARCH_TERM, tag);
+            if (conversationUuid != null) {
+                intent.putExtra(SearchActivity.EXTRA_CONVERSATION_UUID, conversationUuid);
+            }
+            widget.getContext().startActivity(intent);
         }
     }
 

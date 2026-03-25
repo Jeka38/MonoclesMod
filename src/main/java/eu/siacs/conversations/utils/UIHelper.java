@@ -401,7 +401,7 @@ public class UIHelper {
                 if (textColor != 0 && processMarkup) {
                     StylingHelper.format(styledBody, 0, styledBody.length() - 1, textColor, false);
                 }
-                MyLinkify.addLinks(styledBody, message.getConversation().getAccount(), message.getConversation().getJid());
+                MyLinkify.addLinks(styledBody, message.getConversation());
 
                 for (final android.text.style.QuoteSpan quote : Lists.reverse(Lists.newArrayList(styledBody.getSpans(0, styledBody.length(), android.text.style.QuoteSpan.class)))) {
                     int start = styledBody.getSpanStart(quote);

@@ -3878,12 +3878,52 @@ public class ConversationFragment extends XmppFragment
 
     public void jumpTo(final Message message) {
         if (message.getUuid() == null) return;
+        jumpTo(message.getUuid());
+    }
+
+    public void jumpTo(final String uuid) {
         for (int i = 0; i < messageList.size(); i++) {
             final var m = messageList.get(i);
             if (m == null) continue;
-            if (message.getUuid().equals(m.getUuid())) {
+            if (uuid.equals(m.getUuid())) {
                 binding.messagesView.setSelection(i);
                 return;
+            }
+        }
+        if (conversation != null && conversation.messagesLoaded.compareAndSet(true, false)) {
+            final long timestamp = conversation.loadMoreTimestamp();
+            if (timestamp > 0) {
+                activity.xmppConnectionService.loadMoreMessages(conversation, timestamp, new XmppConnectionService.OnMoreMessagesLoaded() {
+                    @Override
+                    public void onMoreMessagesLoaded(int count, Conversation conversation) {
+                        if (ConversationFragment.this.conversation != conversation) {
+                            conversation.messagesLoaded.set(true);
+                            return;
+                        }
+                        activity.runOnUiThread(() -> {
+                            synchronized (messageList) {
+                                conversation.populateWithMessages(messageList, activity == null ? null : activity.xmppConnectionService);
+                                try {
+                                    updateStatusMessages();
+                                } catch (IllegalStateException e) {
+                                    Log.d(Config.LOGTAG, "caught illegal state exception while updating status messages");
+                                }
+                                messageListAdapter.notifyDataSetChanged();
+                                conversation.messagesLoaded.set(true);
+                                if (count > 0) {
+                                    jumpTo(uuid);
+                                }
+                            }
+                        });
+                    }
+
+                    @Override
+                    public void informUser(int r) {
+                        conversation.messagesLoaded.set(true);
+                    }
+                });
+            } else {
+                conversation.messagesLoaded.set(true);
             }
         }
     }
@@ -4654,12 +4694,19 @@ public class ConversationFragment extends XmppFragment
         final boolean doNotAppend =
                 extras.getBoolean(ConversationsActivity.EXTRA_DO_NOT_APPEND, false);
         final String type = extras.getString(ConversationsActivity.EXTRA_TYPE);
+        final String messageUuid = extras.getString(ConversationsActivity.EXTRA_MESSAGE_UUID);
+        if (messageUuid != null && activity != null && activity.getIntent() != null) {
+            activity.getIntent().removeExtra(ConversationsActivity.EXTRA_MESSAGE_UUID);
+        }
 
         final String thread = extras.getString(ConversationsActivity.EXTRA_THREAD);
         if (thread != null) {
             conversation.setLockThread(true);
             backPressedLeaveSingleThread.setEnabled(true);
             refresh();
+        }
+        if (messageUuid != null) {
+            binding.messagesView.post(() -> jumpTo(messageUuid));
         }
 
         final List<Uri> uris = extractUris(extras);

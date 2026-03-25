@@ -104,10 +104,10 @@ public class StylingHelper {
         format(editable, end, editable.length() - 1, textColor, composing);
     }
 
-    public static void highlight(final Context context, final Editable editable, List<String> needles, boolean dark) {
+    public static void highlight(final Context context, final Spannable spannable, List<String> needles, boolean dark) {
         for (String needle : needles) {
             if (!FtsUtils.isKeyword(needle)) {
-                highlight(context, editable, needle, dark);
+                highlight(context, spannable, needle, dark);
             }
         }
     }
@@ -115,6 +115,10 @@ public class StylingHelper {
     public static List<String> filterHighlightedWords(List<String> terms) {
         List<String> words = new ArrayList<>();
         for (String term : terms) {
+            if (term.startsWith("#")) {
+                words.add(term);
+                continue;
+            }
             if (!FtsUtils.isKeyword(term)) {
                 StringBuilder builder = new StringBuilder();
                 for (int codepoint, i = 0; i < term.length(); i += Character.charCount(codepoint)) {
@@ -134,14 +138,14 @@ public class StylingHelper {
         return words;
     }
 
-    private static void highlight(final Context context, final Editable editable, String needle, boolean dark) {
+    private static void highlight(final Context context, final Spannable spannable, String needle, boolean dark) {
         final int length = needle.length();
-        String string = editable.toString();
+        String string = spannable.toString();
         int start = indexOfIgnoreCase(string, needle, 0);
         while (start != -1) {
             int end = start + length;
-            editable.setSpan(new BackgroundColorSpan(ContextCompat.getColor(context, dark ? R.color.accent_monocles : R.color.middlemonocles)), start, end, SpannableString.SPAN_EXCLUSIVE_EXCLUSIVE);
-            editable.setSpan(new ForegroundColorSpan(ContextCompat.getColor(context, dark ? R.color.black87 : R.color.white)), start, end, SpannableString.SPAN_EXCLUSIVE_EXCLUSIVE);
+            spannable.setSpan(new BackgroundColorSpan(ContextCompat.getColor(context, dark ? R.color.accent_monocles : R.color.middlemonocles)), start, end, SpannableString.SPAN_EXCLUSIVE_EXCLUSIVE);
+            spannable.setSpan(new ForegroundColorSpan(ContextCompat.getColor(context, dark ? R.color.black87 : R.color.white)), start, end, SpannableString.SPAN_EXCLUSIVE_EXCLUSIVE);
             start = indexOfIgnoreCase(string, needle, start + length);
         }
 
