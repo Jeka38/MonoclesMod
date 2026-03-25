@@ -1691,7 +1691,7 @@ public class Conversation extends AbstractEntity implements Blockable, Comparabl
             int count = 0;
             for (int i = this.messages.size() - 1; i >= 0; --i) {
                 final Message message = messages.get(i);
-                if (message.getType() == Message.TYPE_STATUS && message.isRead()) {
+                if (message.getType() == Message.TYPE_STATUS) {
                     continue;
                 }
                 if (message.getSubject() != null && !message.isOOb() && (message.getRawBody() == null || message.getRawBody().isEmpty())) {
@@ -1776,7 +1776,7 @@ public class Conversation extends AbstractEntity implements Blockable, Comparabl
                 if (uuid.equals(message.getUuid())) {
                     return count;
                 }
-                if (message.getType() == Message.TYPE_STATUS && message.isRead()) {
+                if (message.getType() == Message.TYPE_STATUS) {
                     continue;
                 }
                 if (message.getSubject() != null && !message.isOOb() && (message.getRawBody() == null || message.getRawBody().isEmpty())) {

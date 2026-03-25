@@ -3806,8 +3806,8 @@ public class ConversationFragment extends XmppFragment
     }
     private void fireReadEvent() {
         if (activity != null && this.conversation != null) {
-            String uuid = getLastVisibleMessageUuid();
-            if (uuid != null) {
+            String uuid = scrolledToBottom() ? null : getLastVisibleMessageUuid();
+            if (uuid != null || scrolledToBottom()) {
                 activity.onConversationRead(this.conversation, uuid);
             }
         }
