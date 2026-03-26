@@ -82,6 +82,11 @@
         android:visible="false"
         app:showAsAction="never" />
     <item
+        android:id="@+id/action_xml_console"
+        android:title="@string/xml_console"
+        android:visible="false"
+        app:showAsAction="never" />
+    <item
         android:id="@+id/action_settings"
         android:orderInCategory="100"
         android:title="@string/action_settings"

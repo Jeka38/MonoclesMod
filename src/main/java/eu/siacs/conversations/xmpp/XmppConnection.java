@@ -107,6 +107,7 @@ import eu.siacs.conversations.xmpp.forms.Data;
 import eu.siacs.conversations.xmpp.jingle.OnJinglePacketReceived;
 import eu.siacs.conversations.xmpp.jingle.stanzas.JinglePacket;
 import eu.siacs.conversations.xmpp.stanzas.AbstractAcknowledgeableStanza;
+import eu.siacs.conversations.entities.StanzaHistory;
 import eu.siacs.conversations.xmpp.stanzas.AbstractStanza;
 import eu.siacs.conversations.xmpp.stanzas.IqPacket;
 import eu.siacs.conversations.xmpp.stanzas.MessagePacket;
@@ -643,6 +644,8 @@ public class XmppConnection implements Runnable {
             tagWriter.forceClose();
         }
         tagWriter = new TagWriter();
+        tagWriter.setAccount(account);
+        tagWriter.setXmppConnectionService(mXmppConnectionService);
         tagWriter.setOutputStream(socket.getOutputStream());
         tagReader.setInputStream(socket.getInputStream());
         tagWriter.beginDocument();
@@ -757,7 +760,11 @@ public class XmppConnection implements Runnable {
                 final Element resumed = tagReader.readElement(nextTag);
                 processResumed(resumed);
             } else if (nextTag.isStart("r", Namespace.STREAM_MANAGEMENT)) {
-                tagReader.readElement(nextTag);
+                final Element r = tagReader.readElement(nextTag);
+                if (account.isXmlConsoleEnabled()) {
+                    account.getStanzaHistory().add(StanzaHistory.Stanza.Direction.RECEIVED, r.toString());
+                    mXmppConnectionService.updateConversationUi();
+                }
                 if (Config.EXTENDED_SM_LOGGING) {
                     Log.d(
                             Config.LOGTAG,
@@ -768,6 +775,11 @@ public class XmppConnection implements Runnable {
                 final AckPacket ack = new AckPacket(this.stanzasReceived);
                 tagWriter.writeStanzaAsync(ack);
             } else if (nextTag.isStart("a", Namespace.STREAM_MANAGEMENT)) {
+                final Element aElement = tagReader.readElement(nextTag);
+                if (account.isXmlConsoleEnabled()) {
+                    account.getStanzaHistory().add(StanzaHistory.Stanza.Direction.RECEIVED, aElement.toString());
+                    mXmppConnectionService.updateConversationUi();
+                }
                 boolean accountUiNeedsRefresh = false;
                 synchronized (NotificationService.CATCHUP_LOCK) {
                     if (mWaitingForSmCatchup.compareAndSet(true, false)) {
@@ -1348,6 +1360,10 @@ public class XmppConnection implements Runnable {
         lastPacketReceived = SystemClock.elapsedRealtime();
         if (Config.BACKGROUND_STANZA_LOGGING && mXmppConnectionService.checkListeners()) {
             Log.d(Config.LOGTAG, "[background stanza] " + element);
+        }
+        if (account.isXmlConsoleEnabled()) {
+            account.getStanzaHistory().add(StanzaHistory.Stanza.Direction.RECEIVED, element.toString());
+            mXmppConnectionService.updateConversationUi();
         }
         if (element instanceof IqPacket
                 && (((IqPacket) element).getType() == IqPacket.TYPE.SET)

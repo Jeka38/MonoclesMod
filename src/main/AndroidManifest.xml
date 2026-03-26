@@ -601,6 +601,12 @@
             android:grantUriPermissions="true" />
 
         <activity
+            android:name=".ui.XmlConsoleActivity"
+            android:label="@string/xml_console"
+            android:exported="false"
+            android:launchMode="singleTop"
+            android:parentActivityName=".ui.EditAccountActivity" />
+        <activity
             android:name=".ui.RtpSessionActivity"
             android:autoRemoveFromRecents="true"
             android:launchMode="singleInstance"

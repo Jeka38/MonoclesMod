@@ -517,6 +517,14 @@ android:fontFamily="notosansregular"
                             android:layout_below="@id/jid_password_box"
                             android:layout_marginTop="8dp"
                             android:text="@string/register_account" />
+
+                        <com.google.android.material.materialswitch.MaterialSwitch
+                            android:id="@+id/xml_console"
+                            android:layout_width="wrap_content"
+                            android:layout_height="wrap_content"
+                            android:layout_below="@id/account_register_new"
+                            android:layout_marginTop="8dp"
+                            android:text="@string/xml_console" />
                     </RelativeLayout>
                 </androidx.cardview.widget.CardView>
 

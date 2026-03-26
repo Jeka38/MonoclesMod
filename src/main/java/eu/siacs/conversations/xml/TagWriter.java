@@ -10,10 +10,15 @@ import java.util.concurrent.LinkedBlockingQueue;
 import java.util.concurrent.TimeUnit;
 
 import eu.siacs.conversations.Config;
+import eu.siacs.conversations.entities.Account;
+import eu.siacs.conversations.entities.StanzaHistory;
+import eu.siacs.conversations.services.XmppConnectionService;
 import eu.siacs.conversations.xmpp.stanzas.AbstractStanza;
 
 public class TagWriter {
 
+    private XmppConnectionService xmppConnectionService;
+    private Account account;
     private OutputStreamWriter outputStream;
     private boolean finished = false;
     private LinkedBlockingQueue<AbstractStanza> writeQueue = new LinkedBlockingQueue<AbstractStanza>();
@@ -29,6 +34,12 @@ public class TagWriter {
                 }
                 try {
                     AbstractStanza output = writeQueue.take();
+                    if (account != null && account.isXmlConsoleEnabled()) {
+                        account.getStanzaHistory().add(StanzaHistory.Stanza.Direction.SENT, output.toString());
+                        if (xmppConnectionService != null) {
+                            xmppConnectionService.updateConversationUi();
+                        }
+                    }
                     outputStream.write(output.toString());
                     if (writeQueue.size() == 0) {
                         outputStream.flush();
@@ -44,6 +55,14 @@ public class TagWriter {
     public TagWriter() {
     }
 
+    public void setAccount(Account account) {
+        this.account = account;
+    }
+
+    public void setXmppConnectionService(XmppConnectionService xmppConnectionService) {
+        this.xmppConnectionService = xmppConnectionService;
+    }
+
     public synchronized void setOutputStream(OutputStream out) throws IOException {
         if (out == null) {
             throw new IOException();
@@ -54,6 +73,12 @@ public class TagWriter {
     public void beginDocument() throws IOException {
         if (outputStream == null) {
             throw new IOException("output stream was null");
+        }
+        if (account != null && account.isXmlConsoleEnabled()) {
+            account.getStanzaHistory().add(StanzaHistory.Stanza.Direction.SENT, "<?xml version='1.0'?>");
+            if (xmppConnectionService != null) {
+                xmppConnectionService.updateConversationUi();
+            }
         }
         outputStream.write("<?xml version='1.0'?>");
     }
@@ -66,6 +91,12 @@ public class TagWriter {
         if (outputStream == null) {
             throw new IOException("output stream was null");
         }
+        if (account != null && account.isXmlConsoleEnabled()) {
+            account.getStanzaHistory().add(StanzaHistory.Stanza.Direction.SENT, tag.toString());
+            if (xmppConnectionService != null) {
+                xmppConnectionService.updateConversationUi();
+            }
+        }
         outputStream.write(tag.toString());
         if (flush) {
             outputStream.flush();
@@ -76,6 +107,12 @@ public class TagWriter {
     public synchronized void writeElement(Element element) throws IOException {
         if (outputStream == null) {
             throw new IOException("output stream was null");
+        }
+        if (account != null && account.isXmlConsoleEnabled()) {
+            account.getStanzaHistory().add(StanzaHistory.Stanza.Direction.SENT, element.toString());
+            if (xmppConnectionService != null) {
+                xmppConnectionService.updateConversationUi();
+            }
         }
         outputStream.write(element.toString());
         outputStream.flush();

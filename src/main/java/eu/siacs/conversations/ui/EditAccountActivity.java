@@ -319,6 +319,7 @@ public class EditAccountActivity extends OmemoActivity implements OnAccountUpdat
                 mAccount.setProxyHostname(proxyHostname);
                 mAccount.setProxyPort(proxyPort);
                 mAccount.setXmppProxy(xmppProxy);
+                mAccount.setXmlConsoleEnabled(binding.xmlConsole.isChecked());
                 if (XmppConnection.errorMessage != null) {
                     binding.accountJidLayout.setError(XmppConnection.errorMessage);
                 } else {
@@ -343,6 +344,7 @@ public class EditAccountActivity extends OmemoActivity implements OnAccountUpdat
                 mAccount.setProxyHostname(proxyHostname);
                 mAccount.setProxyPort(proxyPort);
                 mAccount.setXmppProxy(xmppProxy);
+                mAccount.setXmlConsoleEnabled(binding.xmlConsole.isChecked());
                 mAccount.setOption(Account.OPTION_REGISTER, registerNewAccount);
                 xmppConnectionService.createAccount(mAccount);
             }
@@ -709,7 +711,8 @@ public class EditAccountActivity extends OmemoActivity implements OnAccountUpdat
                 !String.valueOf(this.mAccount.getPort()).equals(this.binding.port.getText().toString()) ||
                 !Strings.nullToEmpty(this.mAccount.getProxyHostname()).equals(this.binding.proxyHostname.getText().toString()) ||
                 !String.valueOf(this.mAccount.getProxyPort()).equals(this.binding.proxyPort.getText().toString()) ||
-                !Strings.nullToEmpty(mAccount.getXmppProxy() == null ? null : mAccount.getXmppProxy().toString()).equals(this.binding.xmppProxy.getText().toString());
+                !Strings.nullToEmpty(mAccount.getXmppProxy() == null ? null : mAccount.getXmppProxy().toString()).equals(this.binding.xmppProxy.getText().toString()) ||
+                this.mAccount.isXmlConsoleEnabled() != this.binding.xmlConsole.isChecked();
     }
 
     protected boolean jidEdited() {
@@ -743,6 +746,9 @@ public class EditAccountActivity extends OmemoActivity implements OnAccountUpdat
         configureActionBar(getSupportActionBar());
         this.binding.accountJid.addTextChangedListener(this.mTextWatcher);
         this.binding.accountJid.setOnFocusChangeListener(this.mEditTextFocusListener);
+        this.binding.xmlConsole.setOnCheckedChangeListener((buttonView, isChecked) -> {
+            updateSaveButton();
+        });
         this.binding.accountPassword.addTextChangedListener(this.mTextWatcher);
         this.binding.avater.setOnClickListener(this.mAvatarClickListener);
         this.binding.hostname.addTextChangedListener(mTextWatcher);
@@ -830,7 +836,9 @@ public class EditAccountActivity extends OmemoActivity implements OnAccountUpdat
         final MenuItem shareQRCode = menu.findItem(R.id.action_show_qr_code);
         final MenuItem announcePGP = menu.findItem(R.id.mgmt_account_announce_pgp);
         final MenuItem forgotPassword = menu.findItem(R.id.mgmt_account_password_forgotten);
+        final MenuItem xmlConsole = menu.findItem(R.id.action_xml_console);
         renewCertificate.setVisible(mAccount != null && mAccount.getPrivateKeyAlias() != null);
+        xmlConsole.setVisible(mAccount != null && mAccount.isXmlConsoleEnabled());
 
         if (Config.X509_VERIFICATION) {
             addAccountWithCert.setShowAsAction(MenuItem.SHOW_AS_ACTION_ALWAYS);
@@ -1128,6 +1136,11 @@ public class EditAccountActivity extends OmemoActivity implements OnAccountUpdat
             case R.id.action_show_password:
                 showPassword();
                 break;
+            case R.id.action_xml_console:
+                final Intent xmlConsoleIntent = new Intent(this, XmlConsoleActivity.class);
+                xmlConsoleIntent.putExtra("account", mAccount.getJid().asBareJid().toString());
+                startActivity(xmlConsoleIntent);
+                break;
             case R.id.mgmt_account_announce_pgp:
                 publishOpenPGPPublicKey(mAccount);
                 return true;
@@ -1383,6 +1396,7 @@ public class EditAccountActivity extends OmemoActivity implements OnAccountUpdat
             this.binding.proxyHostname.setText(Strings.nullToEmpty(this.mAccount.getProxyHostname()));
             this.binding.proxyPort.setText(String.valueOf(this.mAccount.getProxyPort()));
             this.binding.xmppProxy.setText(mAccount.getXmppProxy() == null ? "" : mAccount.getXmppProxy().toString());
+            this.binding.xmlConsole.setChecked(mAccount.isXmlConsoleEnabled());
             this.binding.namePort.setVisibility(mShowOptions ? View.VISIBLE : View.GONE);
             this.binding.proxyNamePort.setVisibility(mShowOptions ? View.VISIBLE : View.GONE);
             this.binding.xmppProxyLayout.setVisibility(mShowOptions ? View.VISIBLE : View.GONE);

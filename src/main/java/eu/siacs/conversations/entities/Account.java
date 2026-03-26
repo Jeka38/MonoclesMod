@@ -89,9 +89,11 @@ public class Account extends AbstractEntity implements AvatarService.Avatarable 
     public static final String KEY_PROXY_HOSTNAME = "proxy_hostname";
     public static final String KEY_PROXY_PORT = "proxy_port";
     public static final String KEY_XMPP_PROXY = "xmpp_proxy";
+    public static final String KEY_XML_CONSOLE = "xml_console";
 
 
     protected final JSONObject keys;
+    private final StanzaHistory stanzaHistory = new StanzaHistory();
     private final Roster roster = new Roster(this);
     private final Collection<Jid> blocklist = new CopyOnWriteArraySet<>();
     public final Set<Conversation> pendingConferenceJoins = new HashSet<>();
@@ -383,6 +385,18 @@ public class Account extends AbstractEntity implements AvatarService.Avatarable 
         setKey(KEY_XMPP_PROXY, jid == null ? null : jid.toString());
     }
 
+    public boolean isXmlConsoleEnabled() {
+        return getKeyAsBoolean(KEY_XML_CONSOLE, false);
+    }
+
+    public void setXmlConsoleEnabled(boolean enabled) {
+        setKey(KEY_XML_CONSOLE, Boolean.toString(enabled));
+    }
+
+    public StanzaHistory getStanzaHistory() {
+        return stanzaHistory;
+    }
+
     public boolean isOnion() {
         final String server = getServer();
         return server != null && server.endsWith(".onion");
@@ -556,6 +570,11 @@ public class Account extends AbstractEntity implements AvatarService.Avatarable 
         } catch (NumberFormatException e) {
             return defaultValue;
         }
+    }
+
+    public boolean getKeyAsBoolean(final String name, boolean defaultValue) {
+        String key = getKey(name);
+        return key == null ? defaultValue : Boolean.parseBoolean(key);
     }
 
     public boolean setKey(final String keyName, final String keyValue) {

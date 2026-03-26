@@ -18,6 +18,7 @@
     <string name="account_settings_proxy_hostname">Хост SOCKS5 прокси</string>
     <string name="account_settings_proxy_port">Порт SOCKS5 прокси</string>
     <string name="xmpp_proxy">XMPP Прокси (Proxy65)</string>
+    <string name="xml_console">XML консоль</string>
     <string name="account_status_bind_failure">Неудачная связка</string>
     <string name="account_status_connecting">Подключение…</string>
     <string name="account_status_disabled">Временно отключено</string>
