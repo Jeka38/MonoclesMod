@@ -1629,4 +1629,5 @@
     <string name="pref_xml_console_button_summary">Открыть окно XML-консоли для просмотра необработанного потока</string>
     <string name="action_clear_console">Очистить</string>
     <string name="action_copy_console">Копировать</string>
+    <string name="action_filter_large_files">Только файлы >100Мб</string>
 </resources>

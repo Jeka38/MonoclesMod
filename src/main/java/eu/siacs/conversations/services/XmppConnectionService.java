@@ -417,6 +417,8 @@ public class XmppConnectionService extends Service {
     private final Set<OnXmlConsoleUpdate> mOnXmlConsoleUpdateListeners = Collections.newSetFromMap(new WeakHashMap<OnXmlConsoleUpdate, Boolean>());
 
     private final List<String> mXmlBuffer = new ArrayList<>();
+    private final Set<String> mTrackedLargeFileIqIds = Collections.synchronizedSet(new HashSet<>());
+    private boolean mFilterLargeFiles = false;
 
     private final Object LISTENER_LOCK = new Object();
     public final Set<String> FILENAMES_TO_IGNORE_DELETION = new HashSet<>();
@@ -5627,15 +5629,99 @@ public class XmppConnectionService extends Service {
         return getBooleanPreference(SettingsActivity.XML_CONSOLE, R.bool.xml_console);
     }
 
-    public void logXml(String stanza) {
+    public void setFilterLargeFiles(boolean filter) {
+        this.mFilterLargeFiles = filter;
+    }
+
+    public boolean isFilterLargeFiles() {
+        return this.mFilterLargeFiles;
+    }
+
+    public void logXml(Object object, String prefix) {
+        final String stanza = object.toString();
+        if (isXmlConsoleEnabled()) {
+            if (mFilterLargeFiles) {
+                if (shouldLogStanza(object)) {
+                    doLogXml(prefix + stanza);
+                }
+            } else {
+                doLogXml(prefix + stanza);
+            }
+        }
+    }
+
+    private boolean shouldLogStanza(Object object) {
+        if (object instanceof Element element) {
+            final String name = element.getName();
+            if ("iq".equals(name)) {
+                final String id = element.getAttribute("id");
+                // Check if it's a request for a large file (HTTP Upload Slot or Jingle)
+                if (isLargeFileRequest(element)) {
+                    if (id != null) mTrackedLargeFileIqIds.add(id);
+                    return true;
+                }
+                // Check if it's a response to a tracked request
+                if (id != null && mTrackedLargeFileIqIds.contains(id)) {
+                    if ("result".equals(element.getAttribute("type")) || "error".equals(element.getAttribute("type"))) {
+                        mTrackedLargeFileIqIds.remove(id);
+                    }
+                    return true;
+                }
+            } else if ("message".equals(name)) {
+                return isLargeFileMessage(element);
+            }
+        }
+        return false;
+    }
+
+    private boolean isLargeFileRequest(Element element) {
+        // HTTP Upload slot request
+        Element slot = element.findChild("request", Namespace.HTTP_UPLOAD);
+        if (slot == null) slot = element.findChild("request", Namespace.HTTP_UPLOAD_LEGACY);
+        if (slot != null) {
+            try {
+                long size = Long.parseLong(slot.getAttribute("size"));
+                return size > 100 * 1024 * 1024;
+            } catch (Exception e) {
+                return false;
+            }
+        }
+        // Jingle file transfer
+        Element jingle = element.findChild("jingle", Namespace.JINGLE);
+        if (jingle != null) {
+            Element content = jingle.findChild("content");
+            Element description = content == null ? null : content.findChild("description", "urn:xmpp:jingle:apps:file-transfer:5");
+            Element offer = description == null ? null : description.findChild("offer");
+            Element file = offer == null ? null : offer.findChild("file");
+            Element sizeElement = file == null ? null : file.findChild("size");
+            if (sizeElement != null) {
+                try {
+                    long size = Long.parseLong(sizeElement.getContent());
+                    return size > 100 * 1024 * 1024;
+                } catch (Exception e) {
+                    return false;
+                }
+            }
+        }
+        return false;
+    }
+
+    private boolean isLargeFileMessage(Element element) {
+        // Check for OOB or SIMS with large file URL? Harder to know size without tracking.
+        // But we might see the URL and remember it.
+        return false;
+    }
+
+    private void doLogXml(String stanzaWithPrefix) {
+        Log.d(Config.LOGTAG, stanzaWithPrefix);
         synchronized (mXmlBuffer) {
-            mXmlBuffer.add(stanza);
+            mXmlBuffer.add(stanzaWithPrefix);
             if (mXmlBuffer.size() > 500) {
                 mXmlBuffer.remove(0);
             }
         }
         for (OnXmlConsoleUpdate listener : threadSafeList(mOnXmlConsoleUpdateListeners)) {
-            listener.onXmlConsoleUpdate(stanza);
+            listener.onXmlConsoleUpdate(stanzaWithPrefix);
         }
     }
 

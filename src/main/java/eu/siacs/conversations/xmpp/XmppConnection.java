@@ -1278,19 +1278,11 @@ public class XmppConnection implements Runnable {
     }
 
     private void logIncoming(Object object) {
-        if (mXmppConnectionService.isXmlConsoleEnabled()) {
-            final String xml = "<< " + object.toString();
-            Log.d(Config.LOGTAG, xml);
-            mXmppConnectionService.logXml(xml);
-        }
+        mXmppConnectionService.logXml(object, "<< ");
     }
 
     private void logOutgoing(Object object) {
-        if (mXmppConnectionService.isXmlConsoleEnabled()) {
-            final String xml = ">> " + object.toString();
-            Log.d(Config.LOGTAG, xml);
-            mXmppConnectionService.logXml(xml);
-        }
+        mXmppConnectionService.logXml(object, ">> ");
     }
 
     private @NonNull Element processPacket(final Tag currentTag, final int packetType)

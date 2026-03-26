@@ -1519,4 +1519,5 @@
     <string name="pref_xml_console_button_summary">Open the XML console window to view the raw stream</string>
     <string name="action_clear_console">Clear</string>
     <string name="action_copy_console">Copy</string>
+    <string name="action_filter_large_files">Only >100MB files</string>
 </resources>

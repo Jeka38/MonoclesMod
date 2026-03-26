@@ -40,6 +40,15 @@ public class XmlConsoleActivity extends XmppActivity implements XmppConnectionSe
     }
 
     @Override
+    public boolean onPrepareOptionsMenu(Menu menu) {
+        MenuItem filterItem = menu.findItem(R.id.action_filter_large_files);
+        if (filterItem != null && xmppConnectionService != null) {
+            filterItem.setChecked(xmppConnectionService.isFilterLargeFiles());
+        }
+        return super.onPrepareOptionsMenu(menu);
+    }
+
+    @Override
     public boolean onOptionsItemSelected(MenuItem item) {
         if (item.getItemId() == R.id.action_clear) {
             if (xmppConnectionService != null) {
@@ -48,6 +57,13 @@ public class XmlConsoleActivity extends XmppActivity implements XmppConnectionSe
             return true;
         } else if (item.getItemId() == R.id.action_copy) {
             copyToClipboard();
+            return true;
+        } else if (item.getItemId() == R.id.action_filter_large_files) {
+            if (xmppConnectionService != null) {
+                boolean newState = !xmppConnectionService.isFilterLargeFiles();
+                xmppConnectionService.setFilterLargeFiles(newState);
+                item.setChecked(newState);
+            }
             return true;
         }
         return super.onOptionsItemSelected(item);
