@@ -15,6 +15,8 @@
     <string name="account_settings_hostname">Имя хоста</string>
     <string name="account_settings_jabber_id">Аккаунт</string>
     <string name="account_settings_port">Порт</string>
+    <string name="account_settings_proxy_hostname">Хост прокси</string>
+    <string name="account_settings_proxy_port">Порт прокси</string>
     <string name="account_status_bind_failure">Неудачная связка</string>
     <string name="account_status_connecting">Подключение…</string>
     <string name="account_status_disabled">Временно отключено</string>
@@ -23,6 +25,7 @@
     <string name="account_status_incompatible_server">Несовместимый сервер</string>
     <string name="account_status_no_internet">Нет подключения</string>
     <string name="account_status_not_found">Сервер не найден</string>
+    <string name="account_status_proxy_unavailable">Прокси недоступен</string>
     <string name="account_status_offline">Не в сети</string>
     <string name="account_status_online">В сети</string>
     <string name="account_status_policy_violation">Нарушение правил</string>

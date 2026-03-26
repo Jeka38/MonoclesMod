@@ -498,6 +498,12 @@
     <string name="hostname_or_onion">Hostname or .onion address</string>
     <string name="not_a_valid_port">This is not a valid port number</string>
     <string name="not_valid_hostname">This is not a valid hostname</string>
+    <string name="proxy_settings">Proxy settings</string>
+    <string name="account_settings_proxy_hostname">Proxy hostname</string>
+    <string name="account_settings_proxy_port">Proxy port</string>
+    <string name="proxy_port_example">1080</string>
+    <string name="not_valid_proxy_hostname">This is not a valid proxy hostname</string>
+    <string name="not_a_valid_proxy_port">This is not a valid proxy port number</string>
     <string name="connected_accounts">%1$d of %2$d accounts connected</string>
     <plurals name="x_messages">
         <item quantity="one">%d message</item>
@@ -1408,6 +1414,7 @@
     <string name="pref_enforce_dane_summary">Only connect an account when successfully verified DANE</string>
     <string name="pref_enforce_dane">Enforce DANE</string>
     <string name="dane_failed">DANE failed</string>
+    <string name="account_status_proxy_unavailable">Proxy unavailable</string>
     <string name="magic_create_text">We will guide you through the process of creating an account with a random password, which you can use or change to your own password on the next page. \nThen you will be able to communicate with users of this and other providers by giving them your full XMPP-address.</string>
     <string name="use_monocles">I prefer monocles</string>
     <string name="describe_issue">Please describe your issue in detail. Thanks.</string>

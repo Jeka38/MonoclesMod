@@ -86,6 +86,8 @@ public class Account extends AbstractEntity implements AvatarService.Avatarable 
     private static final String KEY_PGP_ID = "pgp_id";
     private static final String KEY_PINNED_MECHANISM = "pinned_mechanism";
     public static final String KEY_PRE_AUTH_REGISTRATION_TOKEN = "pre_auth_registration";
+    public static final String KEY_PROXY_HOSTNAME = "proxy_hostname";
+    public static final String KEY_PROXY_PORT = "proxy_port";
 
 
     protected final JSONObject keys;
@@ -346,6 +348,26 @@ public class Account extends AbstractEntity implements AvatarService.Avatarable 
 
     public void setHostname(String hostname) {
         this.hostname = hostname;
+    }
+
+    public String getProxyHostname() {
+        return Strings.nullToEmpty(getKey(KEY_PROXY_HOSTNAME));
+    }
+
+    public void setProxyHostname(String hostname) {
+        setKey(KEY_PROXY_HOSTNAME, hostname);
+    }
+
+    public int getProxyPort() {
+        return getKeyAsInt(KEY_PROXY_PORT, 1080);
+    }
+
+    public String getProxyPortAsString() {
+        return String.valueOf(getProxyPort());
+    }
+
+    public void setProxyPort(int port) {
+        setKey(KEY_PROXY_PORT, String.valueOf(port));
     }
 
     public boolean isOnion() {
@@ -895,7 +917,8 @@ public class Account extends AbstractEntity implements AvatarService.Avatarable 
         POLICY_VIOLATION,
         PAYMENT_REQUIRED,
         MISSING_INTERNET_PERMISSION(false),
-        DANE_FAILED (true);
+        DANE_FAILED (true),
+        PROXY_NOT_AVAILABLE;
 
         private final boolean isError;
         private final boolean attemptReconnect;
@@ -989,6 +1012,8 @@ public class Account extends AbstractEntity implements AvatarService.Avatarable 
                     return R.string.missing_internet_permission;
                 case DANE_FAILED:
                     return R.string.dane_failed;
+                case PROXY_NOT_AVAILABLE:
+                    return R.string.account_status_proxy_unavailable;
                 default:
                     return R.string.account_status_unknown;
             }

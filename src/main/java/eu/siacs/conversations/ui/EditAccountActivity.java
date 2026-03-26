@@ -259,6 +259,26 @@ public class EditAccountActivity extends OmemoActivity implements OnAccountUpdat
                 hostname = null;
             }
 
+            final String proxyHostname = CharMatcher.whitespace().removeFrom(binding.proxyHostname.getText());
+            final String proxyPortStr = CharMatcher.whitespace().removeFrom(binding.proxyPort.getText());
+            int proxyPort = 1080;
+            if (!proxyHostname.isEmpty()) {
+                try {
+                    proxyPort = Integer.parseInt(proxyPortStr);
+                    if (proxyPort < 0 || proxyPort > 65535) {
+                        binding.proxyPortLayout.setError(getString(R.string.not_a_valid_proxy_port));
+                        removeErrorsOnAllBut(binding.proxyPortLayout);
+                        binding.proxyPort.requestFocus();
+                        return;
+                    }
+                } catch (NumberFormatException e) {
+                    binding.proxyPortLayout.setError(getString(R.string.not_a_valid_proxy_port));
+                    removeErrorsOnAllBut(binding.proxyPortLayout);
+                    binding.proxyPort.requestFocus();
+                    return;
+                }
+            }
+
             if (jid.getLocal() == null) {
                 if (mUsernameMode) {
                     binding.accountJidLayout.setError(getString(R.string.invalid_username));
@@ -281,6 +301,8 @@ public class EditAccountActivity extends OmemoActivity implements OnAccountUpdat
                 mAccount.setJid(jid);
                 mAccount.setPort(numericPort);
                 mAccount.setHostname(hostname);
+                mAccount.setProxyHostname(proxyHostname);
+                mAccount.setProxyPort(proxyPort);
                 if (XmppConnection.errorMessage != null) {
                     binding.accountJidLayout.setError(XmppConnection.errorMessage);
                 } else {
@@ -302,6 +324,8 @@ public class EditAccountActivity extends OmemoActivity implements OnAccountUpdat
                 mAccount = new Account(jid.asBareJid(), password);
                 mAccount.setPort(numericPort);
                 mAccount.setHostname(hostname);
+                mAccount.setProxyHostname(proxyHostname);
+                mAccount.setProxyPort(proxyPort);
                 mAccount.setOption(Account.OPTION_REGISTER, registerNewAccount);
                 xmppConnectionService.createAccount(mAccount);
             }
@@ -467,6 +491,12 @@ public class EditAccountActivity extends OmemoActivity implements OnAccountUpdat
                 }
                 if (view.getId() == R.id.port) {
                     resId = R.string.port_example;
+                }
+                if (view.getId() == R.id.proxy_hostname) {
+                    resId = R.string.hostname_example;
+                }
+                if (view.getId() == R.id.proxy_port) {
+                    resId = R.string.proxy_port_example;
                 }
                 final int res = resId;
                 new Handler().postDelayed(() -> et.setHint(res), 500);
@@ -659,7 +689,9 @@ public class EditAccountActivity extends OmemoActivity implements OnAccountUpdat
                 !this.mAccount.getPassword().equals(binding.accountPassword.getText().toString()) ||
                 !this.mAccount.getHostname().equals(this.binding.hostname.getText().toString()) ||
                 this.mAccount.getColor(isDarkTheme()) != (previewColor == null ? 0 : previewColor.getColor()) ||
-                !String.valueOf(this.mAccount.getPort()).equals(this.binding.port.getText().toString());
+                !String.valueOf(this.mAccount.getPort()).equals(this.binding.port.getText().toString()) ||
+                !Strings.nullToEmpty(this.mAccount.getProxyHostname()).equals(this.binding.proxyHostname.getText().toString()) ||
+                !String.valueOf(this.mAccount.getProxyPort()).equals(this.binding.proxyPort.getText().toString());
     }
 
     protected boolean jidEdited() {
@@ -697,6 +729,10 @@ public class EditAccountActivity extends OmemoActivity implements OnAccountUpdat
         this.binding.avater.setOnClickListener(this.mAvatarClickListener);
         this.binding.hostname.addTextChangedListener(mTextWatcher);
         this.binding.hostname.setOnFocusChangeListener(mEditTextFocusListener);
+        this.binding.proxyHostname.addTextChangedListener(mTextWatcher);
+        this.binding.proxyHostname.setOnFocusChangeListener(mEditTextFocusListener);
+        this.binding.proxyPort.addTextChangedListener(mTextWatcher);
+        this.binding.proxyPort.setOnFocusChangeListener(mEditTextFocusListener);
         this.binding.clearDevices.setOnClickListener(v -> showWipePepDialog());
         this.binding.port.setText(String.valueOf(Resolver.DEFAULT_PORT_XMPP));
         this.binding.port.setOnFocusChangeListener(mEditTextFocusListener);
@@ -893,6 +929,7 @@ public class EditAccountActivity extends OmemoActivity implements OnAccountUpdat
         mUseI2P = QuickConversationsService.isConversations() && preferences.getBoolean("use_i2p", getResources().getBoolean(R.bool.use_i2p));
         this.mShowOptions = mUseTor || mUseI2P || (preferences.getBoolean("show_connection_options", getResources().getBoolean(R.bool.show_connection_options)));
         this.binding.namePort.setVisibility(mShowOptions ? View.VISIBLE : View.GONE);
+        this.binding.proxyNamePort.setVisibility(mShowOptions ? View.VISIBLE : View.GONE);
         if (mForceRegister != null) {
             this.binding.accountRegisterNew.setVisibility(View.GONE);
         }
@@ -1322,7 +1359,10 @@ public class EditAccountActivity extends OmemoActivity implements OnAccountUpdat
             }
             this.binding.port.setText("");
             this.binding.port.getEditableText().append(String.valueOf(this.mAccount.getPort()));
+            this.binding.proxyHostname.setText(Strings.nullToEmpty(this.mAccount.getProxyHostname()));
+            this.binding.proxyPort.setText(String.valueOf(this.mAccount.getProxyPort()));
             this.binding.namePort.setVisibility(mShowOptions ? View.VISIBLE : View.GONE);
+            this.binding.proxyNamePort.setVisibility(mShowOptions ? View.VISIBLE : View.GONE);
 
         }
 
@@ -1616,6 +1656,14 @@ public class EditAccountActivity extends OmemoActivity implements OnAccountUpdat
         if (this.binding.portLayout != exception) {
             this.binding.portLayout.setErrorEnabled(false);
             this.binding.portLayout.setError(null);
+        }
+        if (this.binding.proxyHostnameLayout != exception) {
+            this.binding.proxyHostnameLayout.setErrorEnabled(false);
+            this.binding.proxyHostnameLayout.setError(null);
+        }
+        if (this.binding.proxyPortLayout != exception) {
+            this.binding.proxyPortLayout.setErrorEnabled(false);
+            this.binding.proxyPortLayout.setError(null);
         }
     }
 
