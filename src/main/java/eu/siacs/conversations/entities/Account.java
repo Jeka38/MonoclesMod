@@ -88,6 +88,7 @@ public class Account extends AbstractEntity implements AvatarService.Avatarable 
     public static final String KEY_PRE_AUTH_REGISTRATION_TOKEN = "pre_auth_registration";
     public static final String KEY_PROXY_HOSTNAME = "proxy_hostname";
     public static final String KEY_PROXY_PORT = "proxy_port";
+    public static final String KEY_XMPP_PROXY = "xmpp_proxy";
 
 
     protected final JSONObject keys;
@@ -362,12 +363,24 @@ public class Account extends AbstractEntity implements AvatarService.Avatarable 
         return getKeyAsInt(KEY_PROXY_PORT, 1080);
     }
 
-    public String getProxyPortAsString() {
-        return String.valueOf(getProxyPort());
-    }
-
     public void setProxyPort(int port) {
         setKey(KEY_PROXY_PORT, String.valueOf(port));
+    }
+
+    public Jid getXmppProxy() {
+        String proxy = getKey(KEY_XMPP_PROXY);
+        if (Strings.isNullOrEmpty(proxy)) {
+            return null;
+        }
+        try {
+            return Jid.of(proxy);
+        } catch (final IllegalArgumentException e) {
+            return null;
+        }
+    }
+
+    public void setXmppProxy(Jid jid) {
+        setKey(KEY_XMPP_PROXY, jid == null ? null : jid.toString());
     }
 
     public boolean isOnion() {

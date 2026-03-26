@@ -1907,9 +1907,9 @@ public class XmppConnection implements Runnable {
                                 final String url = data.getValue("url");
                                 final String fallbackUrl = data.getValue("captcha-fallback-url");
                                 if (url != null) {
-                                    is = HttpConnectionManager.open(url, useTor, useI2P);
+                                    is = HttpConnectionManager.open(account, url, useTor, useI2P);
                                 } else if (fallbackUrl != null) {
-                                    is = HttpConnectionManager.open(fallbackUrl, useTor, useI2P);
+                                    is = HttpConnectionManager.open(account, fallbackUrl, useTor, useI2P);
                                 } else {
                                     is = null;
                                 }

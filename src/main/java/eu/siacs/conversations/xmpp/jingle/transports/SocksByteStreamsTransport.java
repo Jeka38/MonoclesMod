@@ -30,6 +30,7 @@ import eu.siacs.conversations.xml.Namespace;
 import eu.siacs.conversations.xmpp.Jid;
 import eu.siacs.conversations.xmpp.XmppConnection;
 import eu.siacs.conversations.xmpp.jingle.AbstractJingleConnection;
+import eu.siacs.conversations.entities.Account;
 import eu.siacs.conversations.xmpp.jingle.DirectConnectionUtils;
 import eu.siacs.conversations.xmpp.jingle.stanzas.SocksByteStreamsTransportInfo;
 import eu.siacs.conversations.xmpp.stanzas.IqPacket;
@@ -68,6 +69,7 @@ public class SocksByteStreamsTransport implements Transport {
 
     private final boolean initiator;
     private final boolean useTor;
+    private final Account account;
 
     private final String streamId;
 
@@ -94,6 +96,7 @@ public class SocksByteStreamsTransport implements Transport {
             final Collection<Candidate> theirCandidates) {
         this.xmppConnection = xmppConnection;
         this.id = id;
+        this.account = id.account;
         this.initiator = initiator;
         this.useTor = useTor;
         this.streamId = streamId;
@@ -147,7 +150,7 @@ public class SocksByteStreamsTransport implements Transport {
         // TODO this needs to go into a variable so we can cancel it
         final var connectionFinder =
                 new ConnectionFinder(
-                        theirCandidates, theirDestination, selectedByThemCandidate, useTor);
+                        theirCandidates, theirDestination, selectedByThemCandidate, useTor, account);
         new Thread(connectionFinder).start();
         Futures.addCallback(
                 connectionFinder.connectionFuture,
@@ -284,7 +287,7 @@ public class SocksByteStreamsTransport implements Transport {
                 proxy -> {
                     final var connectionFinder =
                             new ConnectionFinder(
-                                    ImmutableList.of(proxy), ourDestination, null, useTor);
+                                    ImmutableList.of(proxy), ourDestination, null, useTor, account);
                     new Thread(connectionFinder).start();
                     return Futures.transform(
                             connectionFinder.connectionFuture,
@@ -309,7 +312,8 @@ public class SocksByteStreamsTransport implements Transport {
             return Futures.immediateFailedFuture(
                     new IllegalStateException("Proxy look up is disabled"));
         }
-        final Jid streamer = xmppConnection.findDiscoItemByFeature(Namespace.BYTE_STREAMS);
+        final Jid manualProxy = account.getXmppProxy();
+        final Jid streamer = manualProxy != null ? manualProxy : xmppConnection.findDiscoItemByFeature(Namespace.BYTE_STREAMS);
         if (streamer == null) {
             return Futures.immediateFailedFuture(
                     new IllegalStateException("No proxy/streamer found"));
@@ -709,16 +713,19 @@ public class SocksByteStreamsTransport implements Transport {
 
         private final ListenableFuture<Connection> selectedByThemCandidate;
         private final boolean useTor;
+        private final Account account;
 
         private ConnectionFinder(
                 final ImmutableList<Candidate> candidates,
                 final String destination,
                 final ListenableFuture<Connection> selectedByThemCandidate,
-                final boolean useTor) {
+                final boolean useTor,
+                final Account account) {
             this.candidates = candidates;
             this.destination = destination;
             this.selectedByThemCandidate = selectedByThemCandidate;
             this.useTor = useTor;
+            this.account = account;
         }
 
         @Override
@@ -755,7 +762,12 @@ public class SocksByteStreamsTransport implements Transport {
         private Connection connect(final Candidate candidate) throws IOException {
             final var timeout = 3000;
             final Socket socket;
-            if (useTor) {
+            final String proxyHostname = account.getProxyHostname();
+            final int proxyPort = account.getProxyPort();
+            if (!proxyHostname.isEmpty()) {
+                Log.d(Config.LOGTAG, "using manual proxy to connect to candidate " + candidate.host);
+                socket = SocksSocketFactory.createSocket(new InetSocketAddress(proxyHostname, proxyPort), candidate.host, candidate.port);
+            } else if (useTor) {
                 Log.d(Config.LOGTAG, "using Tor to connect to candidate " + candidate.host);
                 socket = SocksSocketFactory.createSocketOverTor(candidate.host, candidate.port);
             } else {

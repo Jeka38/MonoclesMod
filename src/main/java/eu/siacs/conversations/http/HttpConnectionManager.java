@@ -137,7 +137,7 @@ public class HttpConnectionManager extends AbstractConnectionManager {
         final String slotHostname = url.host();
         final boolean onionSlot = slotHostname.endsWith(".onion");
         final boolean I2PSlot = slotHostname.endsWith(".i2p");
-        final OkHttpClient.Builder builder = newBuilder(mXmppConnectionService.useTorToConnect() || account.isOnion() || onionSlot , mXmppConnectionService.useI2PToConnect() || account.isI2P() || I2PSlot);
+        final OkHttpClient.Builder builder = newBuilder(account, mXmppConnectionService.useTorToConnect() || account.isOnion() || onionSlot, mXmppConnectionService.useI2PToConnect() || account.isI2P() || I2PSlot);
         builder.readTimeout(readTimeout, TimeUnit.SECONDS);
         setupTrustManager(builder, interactive);
         return builder.build();
@@ -160,21 +160,35 @@ public class HttpConnectionManager extends AbstractConnectionManager {
     }
 
     public static OkHttpClient.Builder newBuilder(final boolean tor, final boolean i2p) {
+        return newBuilder(null, tor, i2p);
+    }
+
+    public static OkHttpClient.Builder newBuilder(final Account account, final boolean tor, final boolean i2p) {
         final OkHttpClient.Builder builder = OK_HTTP_CLIENT.newBuilder();
         builder.writeTimeout(30, TimeUnit.SECONDS);
         builder.readTimeout(30, TimeUnit.SECONDS);
-        if (tor || i2p) {
-            builder.proxy(HttpConnectionManager.getProxy(i2p)).build();
+        if (account != null && !account.getProxyHostname().isEmpty()) {
+            builder.proxy(new Proxy(Proxy.Type.SOCKS, new InetSocketAddress(account.getProxyHostname(), account.getProxyPort())));
+        } else if (tor || i2p) {
+            builder.proxy(HttpConnectionManager.getProxy(i2p));
         }
         return builder;
     }
 
     public static InputStream open(final String url, final boolean tor, final boolean i2p) throws IOException {
-        return open(HttpUrl.get(url), tor, i2p);
+        return open(null, HttpUrl.get(url), tor, i2p);
+    }
+
+    public static InputStream open(final Account account, final String url, final boolean tor, final boolean i2p) throws IOException {
+        return open(account, HttpUrl.get(url), tor, i2p);
     }
 
     public static InputStream open(final HttpUrl httpUrl, final boolean tor, final boolean i2p) throws IOException {
-        final OkHttpClient client = newBuilder(tor, i2p).build();
+        return open(null, httpUrl, tor, i2p);
+    }
+
+    public static InputStream open(final Account account, final HttpUrl httpUrl, final boolean tor, final boolean i2p) throws IOException {
+        final OkHttpClient client = newBuilder(account, tor, i2p).build();
         final Request request = new Request.Builder().get().url(httpUrl).build();
         final ResponseBody body = client.newCall(request).execute().body();
         if (body == null) {
