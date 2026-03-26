@@ -428,11 +428,6 @@ public class IqParser extends AbstractParser implements OnIqPacketReceived {
             mXmppConnectionService.updateBlocklistUi(OnUpdateBlocklist.Status.UNBLOCKED);
             final IqPacket response = packet.generateResponse(IqPacket.TYPE.RESULT);
             mXmppConnectionService.sendIqPacket(account, response, null);
-        } else if (packet.hasChild("open", "http://jabber.org/protocol/ibb")
-                || packet.hasChild("data", "http://jabber.org/protocol/ibb")
-                || packet.hasChild("close", "http://jabber.org/protocol/ibb")) {
-            mXmppConnectionService.getJingleConnectionManager()
-                    .deliverIbbPacket(account, packet);
         } else if (packet.hasChild("query", "http://jabber.org/protocol/disco#info")) {
             final IqPacket response = mXmppConnectionService.getIqGenerator().discoResponse(account, packet);
             mXmppConnectionService.sendIqPacket(account, response, null);

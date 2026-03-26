@@ -37,7 +37,6 @@ import eu.siacs.conversations.xmpp.jingle.stanzas.JinglePacket;
 import eu.siacs.conversations.xmpp.jingle.stanzas.Propose;
 import eu.siacs.conversations.xmpp.jingle.stanzas.Reason;
 import eu.siacs.conversations.xmpp.jingle.stanzas.RtpDescription;
-import eu.siacs.conversations.xmpp.jingle.transports.InbandBytestreamsTransport;
 import eu.siacs.conversations.xmpp.jingle.transports.Transport;
 import eu.siacs.conversations.xmpp.stanzas.IqPacket;
 import eu.siacs.conversations.xmpp.stanzas.MessagePacket;
@@ -822,60 +821,6 @@ public class JingleConnectionManager extends AbstractConnectionManager {
         return false;
     }
 
-    public void deliverIbbPacket(final Account account, final IqPacket packet) {
-        final String sid;
-        final Element payload;
-        final InbandBytestreamsTransport.PacketType packetType;
-        if (packet.hasChild("open", Namespace.IBB)) {
-            packetType = InbandBytestreamsTransport.PacketType.OPEN;
-            payload = packet.findChild("open", Namespace.IBB);
-            sid = payload.getAttribute("sid");
-        } else if (packet.hasChild("data", Namespace.IBB)) {
-            packetType = InbandBytestreamsTransport.PacketType.DATA;
-            payload = packet.findChild("data", Namespace.IBB);
-            sid = payload.getAttribute("sid");
-        } else if (packet.hasChild("close", Namespace.IBB)) {
-            packetType = InbandBytestreamsTransport.PacketType.CLOSE;
-            payload = packet.findChild("close", Namespace.IBB);
-            sid = payload.getAttribute("sid");
-        } else {
-            packetType = null;
-            payload = null;
-            sid = null;
-        }
-        if (sid == null) {
-            Log.d(
-                    Config.LOGTAG,
-                    account.getJid().asBareJid() + ": unable to deliver ibb packet. missing sid");
-            account.getXmppConnection()
-                    .sendIqPacket(packet.generateResponse(IqPacket.TYPE.ERROR), null);
-            return;
-        }
-        for (final AbstractJingleConnection connection : this.connections.values()) {
-            if (connection instanceof JingleFileTransferConnection fileTransfer) {
-                final Transport transport = fileTransfer.getTransport();
-                if (transport instanceof InbandBytestreamsTransport inBandTransport) {
-                    if (sid.equals(inBandTransport.getStreamId())) {
-                        if (inBandTransport.deliverPacket(packetType, packet.getFrom(), payload)) {
-                            account.getXmppConnection()
-                                    .sendIqPacket(
-                                            packet.generateResponse(IqPacket.TYPE.RESULT), null);
-                        } else {
-                            account.getXmppConnection()
-                                    .sendIqPacket(
-                                            packet.generateResponse(IqPacket.TYPE.ERROR), null);
-                        }
-                        return;
-                    }
-                }
-            }
-        }
-        Log.d(
-                Config.LOGTAG,
-                account.getJid().asBareJid() + ": unable to deliver ibb packet with sid=" + sid);
-        account.getXmppConnection()
-                .sendIqPacket(packet.generateResponse(IqPacket.TYPE.ERROR), null);
-    }
 
     public void notifyRebound(final Account account) {
         for (final AbstractJingleConnection connection : this.connections.values()) {

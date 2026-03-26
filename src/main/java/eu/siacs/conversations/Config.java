@@ -150,7 +150,7 @@ public final class Config {
     public static final int ExportLogs_Hour = 4; //Time - hours: valid values from 0 to 23
     public static final int ExportLogs_Minute = 0; //Time - minutes: valid values from 0 to 59
 
-    public static final boolean DISABLE_PROXY_LOOKUP = false; //disables STUN/TURN and Proxy65 look up (useful to debug IBB fallback)
+    public static final boolean DISABLE_PROXY_LOOKUP = false; //disables STUN/TURN and Proxy65 look up
     public static final boolean USE_DIRECT_JINGLE_CANDIDATES = true;
     public static final boolean USE_JINGLE_MESSAGE_INIT = true;
 
