@@ -5620,6 +5620,10 @@ public class XmppConnectionService extends Service {
         return getBooleanPreference("showtextformatting", R.bool.showtextformatting);
     }
 
+    public boolean isXmlConsoleEnabled() {
+        return getBooleanPreference(SettingsActivity.XML_CONSOLE, R.bool.xml_console);
+    }
+
     public int unreadCount() {
         int count = 0;
         for (Conversation conversation : getConversations()) {

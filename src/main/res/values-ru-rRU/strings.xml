@@ -938,6 +938,8 @@
     <string name="pref_use_tor_summary">Направлять все соединения через сеть Tor.</string>
     <string name="pref_use_unicolored_chatbg">Использование однотонного фона</string>
     <string name="pref_use_unicolored_chatbg_summary">Использовать однотонный фон в чатах.</string>
+    <string name="pref_xml_console">XML-консоль</string>
+    <string name="pref_xml_console_summary">Отправлять необработанные XMPP-станзы в системный журнал (logcat)</string>
     <string name="pref_validate_hostname">Проверять имя хоста через DNSSEC</string>
     <string name="pref_validate_hostname_summary">Сертификаты сервера, содержащие проверенное имя хоста, считаются проверенными</string>
     <string name="pref_vibrate">Вибрация</string>

@@ -131,6 +131,7 @@ public class SettingsActivity extends XmppActivity implements OnSharedPreference
     public static final String LARGE_FONT_FOR_MUC_STATUS = "large_font_for_muc_status";
     public static final String SHOW_MUC_STATUS_MESSAGES = "show_muc_status_messages";
     public static final String STICKER_DIR = "Stickers";
+    public static final String XML_CONSOLE = "xml_console";
 
     public static final int REQUEST_CREATE_BACKUP = 0xbf8701;
     public static final int REQUEST_DOWNLOAD_STICKERS = 0xbf8702;

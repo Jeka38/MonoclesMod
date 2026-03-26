@@ -731,6 +731,7 @@ public class XmppConnection implements Runnable {
                                     + this.stanzasReceived);
                 }
                 final AckPacket ack = new AckPacket(this.stanzasReceived);
+                logOutgoing(ack);
                 tagWriter.writeStanzaAsync(ack);
             } else if (nextTag.isStart("a", Namespace.STREAM_MANAGEMENT)) {
                 boolean accountUiNeedsRefresh = false;
@@ -800,6 +801,7 @@ public class XmppConnection implements Runnable {
     }
 
     private void processChallenge(final Element challenge) throws IOException {
+        logIncoming(challenge);
         final SaslMechanism.Version version;
         try {
             version = SaslMechanism.Version.of(challenge);
@@ -825,11 +827,13 @@ public class XmppConnection implements Runnable {
             Log.e(Config.LOGTAG, e.toString());
             throw new StateChangingException(Account.State.UNAUTHORIZED);
         }
+        logOutgoing(response);
         tagWriter.writeElement(response);
     }
 
     private boolean processSuccess(final Element success)
             throws IOException, XmlPullParserException {
+        logIncoming(success);
         final SaslMechanism.Version version;
         try {
             version = SaslMechanism.Version.of(success);
@@ -1053,6 +1057,7 @@ public class XmppConnection implements Runnable {
 
 
     private void processFailure(final Element failure) throws IOException {
+        logIncoming(failure);
         final SaslMechanism.Version version;
         try {
             version = SaslMechanism.Version.of(failure);
@@ -1107,6 +1112,7 @@ public class XmppConnection implements Runnable {
     }
 
     private void processEnabled(final Element enabled) {
+        logIncoming(enabled);
         final String id;
         if (enabled.getAttributeAsBoolean("resume")) {
             id = enabled.getAttribute("id");
@@ -1133,13 +1139,17 @@ public class XmppConnection implements Runnable {
         this.stanzasReceived = 0;
         this.inSmacksSession = true;
         final RequestPacket r = new RequestPacket();
+        logOutgoing(r);
         tagWriter.writeStanzaAsync(r);
     }
 
     private void processResumed(final Element resumed) throws StateChangingException {
+        logIncoming(resumed);
         this.inSmacksSession = true;
         this.isBound = true;
-        this.tagWriter.writeStanzaAsync(new RequestPacket());
+        final RequestPacket r = new RequestPacket();
+        logOutgoing(r);
+        this.tagWriter.writeStanzaAsync(r);
         lastPacketReceived = SystemClock.elapsedRealtime();
         final Optional<Integer> h = resumed.getOptionalIntAttribute("h");
         final int serverCount;
@@ -1203,6 +1213,7 @@ public class XmppConnection implements Runnable {
     }
 
     private void processFailed(final Element failed, final boolean sendBindRequest) {
+        logIncoming(failed);
         final Optional<Integer> serverCount = failed.getOptionalIntAttribute("h");
         if (serverCount.isPresent()) {
             Log.d(
@@ -1266,6 +1277,18 @@ public class XmppConnection implements Runnable {
         return acknowledgedMessages;
     }
 
+    private void logIncoming(Object object) {
+        if (mXmppConnectionService.isXmlConsoleEnabled()) {
+            Log.d(Config.LOGTAG, "<< " + object.toString());
+        }
+    }
+
+    private void logOutgoing(Object object) {
+        if (mXmppConnectionService.isXmlConsoleEnabled()) {
+            Log.d(Config.LOGTAG, ">> " + object.toString());
+        }
+    }
+
     private @NonNull Element processPacket(final Tag currentTag, final int packetType)
             throws IOException {
         final Element element;
@@ -1311,6 +1334,7 @@ public class XmppConnection implements Runnable {
                             + "). Not in smacks session.");
         }
         lastPacketReceived = SystemClock.elapsedRealtime();
+        logIncoming(element);
         if (Config.BACKGROUND_STANZA_LOGGING && mXmppConnectionService.checkListeners()) {
             Log.d(Config.LOGTAG, "[background stanza] " + element);
         }
@@ -1442,11 +1466,13 @@ public class XmppConnection implements Runnable {
     private void sendStartTLS() throws IOException {
         final Tag startTLS = Tag.empty("starttls");
         startTLS.setAttribute("xmlns", Namespace.TLS);
+        logOutgoing(startTLS);
         tagWriter.writeTag(startTLS);
     }
 
     private void switchOverToTls() throws XmlPullParserException, IOException {
-        tagReader.readTag();
+        Tag proceed = tagReader.readTag();
+        logIncoming(proceed);
         final Socket socket = this.socket;
         final SSLSocket sslSocket = upgradeSocketToTls(socket);
         this.socket = sslSocket;
@@ -1519,6 +1545,7 @@ public class XmppConnection implements Runnable {
 
     private void processStreamFeatures(final Tag currentTag) throws IOException {
         this.streamFeatures = tagReader.readElement(currentTag);
+        logIncoming(this.streamFeatures);
         final boolean isSecure = isSecure();
         final boolean needsBinding = !isBound && !account.isOptionSet(Account.OPTION_REGISTER);
         if (this.quickStartInProgress) {
@@ -1591,6 +1618,7 @@ public class XmppConnection implements Runnable {
             final ResumePacket resume = new ResumePacket(this.streamId.id, stanzasReceived);
             this.mSmCatchupMessageCounter.set(0);
             this.mWaitingForSmCatchup.set(true);
+            logOutgoing(resume);
             this.tagWriter.writeStanzaAsync(resume);
         } else if (needsBinding) {
             if (this.streamFeatures.hasChild("bind", Namespace.BIND)
@@ -1704,6 +1732,7 @@ public class XmppConnection implements Runnable {
 
         synchronized (this.mStanzaQueue) {
             this.stanzasSentBeforeAuthentication = this.stanzasSent;
+            logOutgoing(authenticate);
             tagWriter.writeElement(authenticate);
         }
     }
@@ -2130,6 +2159,7 @@ public class XmppConnection implements Runnable {
         if (streamManagement) {
             synchronized (this.mStanzaQueue) {
                 final EnablePacket enable = new EnablePacket();
+                logOutgoing(enable);
                 tagWriter.writeStanzaAsync(enable);
                 stanzasSent = 0;
                 mStanzaQueue.clear();
@@ -2444,6 +2474,7 @@ public class XmppConnection implements Runnable {
     private void sendEnableCarbons() {
         final IqPacket iq = new IqPacket(IqPacket.TYPE.SET);
         iq.addChild("enable", Namespace.CARBONS);
+        logOutgoing(iq);
         this.sendIqPacket(
                 iq,
                 (account, packet) -> {
@@ -2467,6 +2498,7 @@ public class XmppConnection implements Runnable {
         if (streamError == null) {
             return;
         }
+        logIncoming(streamError);
         if (streamError.hasChild("conflict")) {
             account.setResource(createNewResource());
             Log.d(
@@ -2544,6 +2576,7 @@ public class XmppConnection implements Runnable {
             sendStartStream(true, false);
             synchronized (this.mStanzaQueue) {
                 this.stanzasSentBeforeAuthentication = this.stanzasSent;
+                logOutgoing(authenticate);
                 tagWriter.writeElement(authenticate);
             }
             Log.d(
@@ -2568,6 +2601,7 @@ public class XmppConnection implements Runnable {
         stream.setAttribute("xml:lang", LocalizedContent.STREAM_LANGUAGE);
         stream.setAttribute("xmlns", Namespace.JABBER_CLIENT);
         stream.setAttribute("xmlns:stream", Namespace.STREAMS);
+        logOutgoing(stream);
         tagWriter.writeTag(stream, flush);
     }
 
@@ -2640,6 +2674,7 @@ public class XmppConnection implements Runnable {
         }
         synchronized (this.mStanzaQueue) {
             if (force || isBound) {
+                logOutgoing(packet);
                 tagWriter.writeStanzaAsync(packet);
             } else {
                 Log.d(
@@ -2669,7 +2704,9 @@ public class XmppConnection implements Runnable {
                                         + ": requesting ack for message stanza #"
                                         + stanzasSent);
                     }
-                    tagWriter.writeStanzaAsync(new RequestPacket());
+                    final RequestPacket r = new RequestPacket();
+                    logOutgoing(r);
+                    tagWriter.writeStanzaAsync(r);
                 }
             }
         }
@@ -2807,7 +2844,9 @@ public class XmppConnection implements Runnable {
 
     public boolean r() {
         if (getFeatures().sm()) {
-            this.tagWriter.writeStanzaAsync(new RequestPacket());
+            final RequestPacket r = new RequestPacket();
+            logOutgoing(r);
+            this.tagWriter.writeStanzaAsync(r);
             return true;
         } else {
             return false;

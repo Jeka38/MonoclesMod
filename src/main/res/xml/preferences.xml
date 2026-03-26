@@ -775,6 +775,11 @@
                 android:key="enable_persistent_rooms"
                 android:summary="@string/pref_enable_persistent_rooms_summary"
                 android:title="@string/pref_enable_persistent_rooms_title" />
+            <SwitchPreference
+                android:defaultValue="false"
+                android:key="xml_console"
+                android:summary="@string/pref_xml_console_summary"
+                android:title="@string/pref_xml_console" />
         </PreferenceCategory>
     </PreferenceScreen>
     <!--About-->

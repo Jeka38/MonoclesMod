@@ -17,4 +17,5 @@
     <bool name="internal_meda_viewer">true</bool>
     <bool name="show_nav_bar">true</bool>
     <bool name="message_autocomplete">true</bool>
+    <bool name="xml_console">false</bool>
 </resources>
