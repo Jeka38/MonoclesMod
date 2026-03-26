@@ -3197,14 +3197,18 @@ public class XmppConnectionService extends Service {
         if (jid == null) {
             return null;
         }
+        Conversation fallback = null;
         for (final Conversation conversation : haystack) {
             if ((account == null || conversation.getAccount() == account)
-                    && (conversation.getJid().asBareJid().equals(jid.asBareJid()))
-                    && (Objects.equal(conversation.getNextCounterpart(), counterpart))) {
-                return conversation;
+                    && (conversation.getJid().asBareJid().equals(jid.asBareJid()))) {
+                if (Objects.equal(conversation.getNextCounterpart(), counterpart)) {
+                    return conversation;
+                } else if (counterpart == null && conversation.getMode() == Conversational.MODE_SINGLE) {
+                    fallback = conversation;
+                }
             }
         }
-        return null;
+        return fallback;
     }
 
     public boolean isConversationsListEmpty(final Conversation ignore) {
