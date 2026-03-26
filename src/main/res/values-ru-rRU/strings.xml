@@ -1626,5 +1626,7 @@
     <string name="send_encrypted">Отправить зашифрованное</string>
     <string name="choose_webxdc">Выберите WebXDC</string>
     <string name="title_activity_xml_console">XML-консоль</string>
+    <string name="pref_xml_console_button_summary">Открыть окно XML-консоли для просмотра необработанного потока</string>
     <string name="action_clear_console">Очистить</string>
+    <string name="action_copy_console">Копировать</string>
 </resources>

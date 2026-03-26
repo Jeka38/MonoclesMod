@@ -46,8 +46,24 @@ public class XmlConsoleActivity extends XmppActivity implements XmppConnectionSe
                 xmppConnectionService.clearXmlBuffer();
             }
             return true;
+        } else if (item.getItemId() == R.id.action_copy) {
+            copyToClipboard();
+            return true;
         }
         return super.onOptionsItemSelected(item);
+    }
+
+    private void copyToClipboard() {
+        StringBuilder builder = new StringBuilder();
+        synchronized (this.stanzas) {
+            for (String stanza : this.stanzas) {
+                builder.append(stanza);
+                builder.append('\n');
+            }
+        }
+        if (copyTextToClipboard(builder.toString(), R.string.title_activity_xml_console)) {
+            replaceToast(getString(R.string.message_copied_to_clipboard), false);
+        }
     }
 
     @Override
@@ -57,6 +73,14 @@ public class XmlConsoleActivity extends XmppActivity implements XmppConnectionSe
         stanzas.addAll(xmppConnectionService.getXmlBuffer());
         adapter.notifyDataSetChanged();
         scrollToBottom();
+    }
+
+    @Override
+    public void onResume() {
+        super.onResume();
+        if (xmppConnectionServiceBound) {
+            xmppConnectionService.setOnXmlConsoleUpdateListener(this);
+        }
     }
 
     @Override
