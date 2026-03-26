@@ -414,6 +414,9 @@ public class XmppConnectionService extends Service {
     private final Set<OnMucRosterUpdate> mOnMucRosterUpdate = Collections.newSetFromMap(new WeakHashMap<OnMucRosterUpdate, Boolean>());
     private final Set<OnKeyStatusUpdated> mOnKeyStatusUpdated = Collections.newSetFromMap(new WeakHashMap<OnKeyStatusUpdated, Boolean>());
     private final Set<OnJingleRtpConnectionUpdate> onJingleRtpConnectionUpdate = Collections.newSetFromMap(new WeakHashMap<OnJingleRtpConnectionUpdate, Boolean>());
+    private final Set<OnXmlConsoleUpdate> mOnXmlConsoleUpdateListeners = Collections.newSetFromMap(new WeakHashMap<OnXmlConsoleUpdate, Boolean>());
+
+    private final List<String> mXmlBuffer = new ArrayList<>();
 
     private final Object LISTENER_LOCK = new Object();
     public final Set<String> FILENAMES_TO_IGNORE_DELETION = new HashSet<>();
@@ -5624,6 +5627,45 @@ public class XmppConnectionService extends Service {
         return getBooleanPreference(SettingsActivity.XML_CONSOLE, R.bool.xml_console);
     }
 
+    public void logXml(String stanza) {
+        synchronized (mXmlBuffer) {
+            mXmlBuffer.add(stanza);
+            if (mXmlBuffer.size() > 500) {
+                mXmlBuffer.remove(0);
+            }
+        }
+        for (OnXmlConsoleUpdate listener : threadSafeList(mOnXmlConsoleUpdateListeners)) {
+            listener.onXmlConsoleUpdate(stanza);
+        }
+    }
+
+    public List<String> getXmlBuffer() {
+        synchronized (mXmlBuffer) {
+            return new ArrayList<>(mXmlBuffer);
+        }
+    }
+
+    public void clearXmlBuffer() {
+        synchronized (mXmlBuffer) {
+            mXmlBuffer.clear();
+        }
+        for (OnXmlConsoleUpdate listener : threadSafeList(mOnXmlConsoleUpdateListeners)) {
+            listener.onXmlConsoleClear();
+        }
+    }
+
+    public void setOnXmlConsoleUpdateListener(OnXmlConsoleUpdate listener) {
+        synchronized (LISTENER_LOCK) {
+            mOnXmlConsoleUpdateListeners.add(listener);
+        }
+    }
+
+    public void removeOnXmlConsoleUpdateListener(OnXmlConsoleUpdate listener) {
+        synchronized (LISTENER_LOCK) {
+            mOnXmlConsoleUpdateListeners.remove(listener);
+        }
+    }
+
     public int unreadCount() {
         int count = 0;
         for (Conversation conversation : getConversations()) {
@@ -6747,6 +6789,11 @@ public class XmppConnectionService extends Service {
 
     public interface OnShowErrorToast {
         void onShowErrorToast(int resId);
+    }
+
+    public interface OnXmlConsoleUpdate {
+        void onXmlConsoleUpdate(String stanza);
+        void onXmlConsoleClear();
     }
 
     public class XmppConnectionBinder extends Binder {

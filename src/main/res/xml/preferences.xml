@@ -780,6 +780,14 @@
                 android:key="xml_console"
                 android:summary="@string/pref_xml_console_summary"
                 android:title="@string/pref_xml_console" />
+            <Preference
+                android:summary="@string/pref_xml_console_summary"
+                android:title="@string/title_activity_xml_console">
+                <intent
+                    android:action="android.intent.action.VIEW"
+                    android:targetClass="eu.siacs.conversations.ui.XmlConsoleActivity"
+                    android:targetPackage="de.monocles.mod" />
+            </Preference>
         </PreferenceCategory>
     </PreferenceScreen>
     <!--About-->

@@ -394,6 +394,15 @@
             </intent-filter>
         </activity>
         <activity
+            android:name=".ui.XmlConsoleActivity"
+            android:label="@string/title_activity_xml_console"
+            android:exported="false"
+            android:parentActivityName=".ui.SettingsActivity">
+            <meta-data
+                android:name="android.support.PARENT_ACTIVITY"
+                android:value=".ui.SettingsActivity" />
+        </activity>
+        <activity
             android:name=".ui.ChooseContactActivity"
             android:exported="false"
             android:label="@string/title_activity_choose_contact" />

@@ -1515,4 +1515,6 @@
     <string name="schedule_message_title">Schedule message</string>
     <string name="pref_message_autocomplete">Mention autocomplete</string>
     <string name="pref_message_autocomplete_summary">Use \"@\" in a chat room to autocomplete and list users</string>
+    <string name="title_activity_xml_console">XML console</string>
+    <string name="action_clear_console">Clear</string>
 </resources>
