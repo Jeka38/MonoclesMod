@@ -180,7 +180,7 @@ public class Attachment implements Parcelable {
     }
 
     public boolean renderThumbnail() {
-        return type == Type.IMAGE || (type == Type.FILE && mime != null && renderFileThumbnail(mime));
+        return type == Type.IMAGE || ((type == Type.FILE || type == Type.FILE_PROXY65) && mime != null && renderFileThumbnail(mime));
     }
 
     private static boolean renderFileThumbnail(final String mime) {

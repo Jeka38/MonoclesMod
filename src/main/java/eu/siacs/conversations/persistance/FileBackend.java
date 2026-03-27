@@ -537,7 +537,7 @@ public class FileBackend {
             return true; //exception to be compatible with HTTP Upload < v0.2
         }
         for (Attachment attachment : attachments) {
-            if (attachment.getType() != Attachment.Type.FILE) {
+            if (attachment.getType() != Attachment.Type.FILE && attachment.getType() != Attachment.Type.FILE_PROXY65) {
                 continue;
             }
             String mime = attachment.getMime();

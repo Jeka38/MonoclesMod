@@ -83,6 +83,8 @@ public class MediaAdapter extends RecyclerView.Adapter<MediaAdapter.MediaViewHol
             attr = R.attr.media_preview_location;
         } else if (attachment.getType() == Attachment.Type.RECORDING) {
             attr = R.attr.media_preview_recording;
+        } else if (attachment.getType() == Attachment.Type.FILE_PROXY65) {
+            attr = R.attr.media_preview_document;
         } else {
             final String mime = attachment.getMime();
             Log.d(Config.LOGTAG, "mime=" + mime);
