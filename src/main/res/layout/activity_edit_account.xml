@@ -113,6 +113,24 @@ android:fontFamily="notosansregular"
                             </LinearLayout>
 
                             <com.google.android.material.textfield.TextInputLayout
+                                android:id="@+id/xmpp_proxy_layout"
+                                style="@style/Widget.Conversations.TextInputLayout.OutlinedBox"
+                                android:layout_width="match_parent"
+                                android:layout_height="wrap_content"
+                                android:hint="@string/account_settings_xmpp_proxy"
+                                app:errorTextAppearance="@style/TextAppearance.Conversations.Design.Error"
+                                app:hintTextAppearance="@style/TextAppearance.Conversations.Design.Hint">
+
+                                <eu.siacs.conversations.ui.widget.TextInputEditText
+                                    android:id="@+id/xmpp_proxy"
+                                    style="@style/Widget.Material3.TextInputEditText.FilledBox"
+                                    android:fontFamily="notosansregular"
+                                    android:layout_width="match_parent"
+                                    android:layout_height="wrap_content"
+                                    android:inputType="textEmailAddress" />
+                            </com.google.android.material.textfield.TextInputLayout>
+
+                            <com.google.android.material.textfield.TextInputLayout
                                 android:id="@+id/account_jid_layout"
                                 style="@style/Widget.Conversations.TextInputLayout.OutlinedBox"
                                 android:layout_width="match_parent"

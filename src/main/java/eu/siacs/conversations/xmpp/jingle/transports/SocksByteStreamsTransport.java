@@ -309,7 +309,13 @@ public class SocksByteStreamsTransport implements Transport {
             return Futures.immediateFailedFuture(
                     new IllegalStateException("Proxy look up is disabled"));
         }
-        final Jid streamer = xmppConnection.findDiscoItemByFeature(Namespace.BYTE_STREAMS);
+        final String xmppProxy = id.account.getXmppProxy();
+        final Jid streamer;
+        if (Strings.isNullOrEmpty(xmppProxy)) {
+            streamer = xmppConnection.findDiscoItemByFeature(Namespace.BYTE_STREAMS);
+        } else {
+            streamer = Jid.ofEscaped(xmppProxy);
+        }
         if (streamer == null) {
             return Futures.immediateFailedFuture(
                     new IllegalStateException("No proxy/streamer found"));
@@ -346,7 +352,9 @@ public class SocksByteStreamsTransport implements Transport {
                                         host,
                                         streamer,
                                         port,
-                                        655360 + (initiator ? 0 : 15),
+                                        Strings.isNullOrEmpty(xmppProxy)
+                                                ? 655360 + (initiator ? 0 : 15)
+                                                : 9345280 + (initiator ? 0 : 15),
                                         CandidateType.PROXY));
 
                     } else if (response.getType() == IqPacket.TYPE.TIMEOUT) {

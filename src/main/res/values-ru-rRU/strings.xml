@@ -14,6 +14,7 @@
     <string name="account_settings_example_jabber_id">username@monocles.eu</string>
     <string name="account_settings_hostname">Имя хоста</string>
     <string name="account_settings_jabber_id">Аккаунт</string>
+    <string name="account_settings_xmpp_proxy">Proxy65 JID</string>
     <string name="account_settings_port">Порт</string>
     <string name="account_status_bind_failure">Неудачная связка</string>
     <string name="account_status_connecting">Подключение…</string>
