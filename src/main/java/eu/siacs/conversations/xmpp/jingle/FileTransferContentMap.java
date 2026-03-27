@@ -11,7 +11,6 @@ import eu.siacs.conversations.xmpp.jingle.stanzas.FileTransferDescription;
 import eu.siacs.conversations.xmpp.jingle.stanzas.GenericDescription;
 import eu.siacs.conversations.xmpp.jingle.stanzas.GenericTransportInfo;
 import eu.siacs.conversations.xmpp.jingle.stanzas.Group;
-import eu.siacs.conversations.xmpp.jingle.stanzas.IbbTransportInfo;
 import eu.siacs.conversations.xmpp.jingle.stanzas.IceUdpTransportInfo;
 import eu.siacs.conversations.xmpp.jingle.stanzas.JinglePacket;
 import eu.siacs.conversations.xmpp.jingle.stanzas.RtpDescription;
@@ -30,7 +29,6 @@ public class FileTransferContentMap
     private static final List<Class<? extends GenericTransportInfo>> SUPPORTED_TRANSPORTS =
             Arrays.asList(
                     SocksByteStreamsTransportInfo.class,
-                    IbbTransportInfo.class,
                     WebRTCDataChannelTransportInfo.class);
 
     protected FileTransferContentMap(

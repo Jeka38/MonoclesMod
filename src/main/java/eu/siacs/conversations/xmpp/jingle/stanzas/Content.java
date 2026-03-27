@@ -90,9 +90,7 @@ public class Content extends Element {
     public GenericTransportInfo getTransport() {
         final Element transport = this.findChild("transport");
         final String namespace = transport == null ? null : transport.getNamespace();
-        if (Namespace.JINGLE_TRANSPORTS_IBB.equals(namespace)) {
-            return IbbTransportInfo.upgrade(transport);
-        } else if (Namespace.JINGLE_TRANSPORTS_S5B.equals(namespace)) {
+        if (Namespace.JINGLE_TRANSPORTS_S5B.equals(namespace)) {
             return SocksByteStreamsTransportInfo.upgrade(transport);
         } else if (Namespace.JINGLE_TRANSPORT_ICE_UDP.equals(namespace)) {
             return IceUdpTransportInfo.upgrade(transport);

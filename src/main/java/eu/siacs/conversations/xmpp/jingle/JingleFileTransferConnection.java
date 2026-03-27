@@ -29,13 +29,11 @@ import eu.siacs.conversations.xmpp.Jid;
 import eu.siacs.conversations.xmpp.XmppConnection;
 import eu.siacs.conversations.xmpp.jingle.stanzas.FileTransferDescription;
 import eu.siacs.conversations.xmpp.jingle.stanzas.GenericTransportInfo;
-import eu.siacs.conversations.xmpp.jingle.stanzas.IbbTransportInfo;
 import eu.siacs.conversations.xmpp.jingle.stanzas.IceUdpTransportInfo;
 import eu.siacs.conversations.xmpp.jingle.stanzas.JinglePacket;
 import eu.siacs.conversations.xmpp.jingle.stanzas.Reason;
 import eu.siacs.conversations.xmpp.jingle.stanzas.SocksByteStreamsTransportInfo;
 import eu.siacs.conversations.xmpp.jingle.stanzas.WebRTCDataChannelTransportInfo;
-import eu.siacs.conversations.xmpp.jingle.transports.InbandBytestreamsTransport;
 import eu.siacs.conversations.xmpp.jingle.transports.SocksByteStreamsTransport;
 import eu.siacs.conversations.xmpp.jingle.transports.Transport;
 import eu.siacs.conversations.xmpp.jingle.transports.WebRTCDataChannelTransport;
@@ -298,13 +296,6 @@ public class JingleFileTransferConnection extends AbstractJingleConnection
             socksBytestreamsTransport.setTheirCandidates(
                     socksBytestreamsTransportInfo.getCandidates());
             return true;
-        } else if (transport instanceof InbandBytestreamsTransport inbandBytestreamsTransport
-                && transportInfo instanceof IbbTransportInfo ibbTransportInfo) {
-            final var peerBlockSize = ibbTransportInfo.getBlockSize();
-            if (peerBlockSize != null) {
-                inbandBytestreamsTransport.setPeerBlockSize(peerBlockSize);
-            }
-            return true;
         } else {
             return false;
         }
@@ -480,22 +471,7 @@ public class JingleFileTransferConnection extends AbstractJingleConnection
     private Transport setupTransport(final GenericTransportInfo transportInfo) {
         final XmppConnection xmppConnection = id.account.getXmppConnection();
         final boolean useTor = id.account.isOnion() || xmppConnectionService.useTorToConnect();
-        if (transportInfo instanceof IbbTransportInfo ibbTransportInfo) {
-            if (id.account.forceProxy65()) {
-                throw new IllegalStateException("Forced Proxy65, but peer offered IBB");
-            }
-            final String streamId = ibbTransportInfo.getTransportId();
-            final Long blockSize = ibbTransportInfo.getBlockSize();
-            if (streamId == null || blockSize == null) {
-                throw new IllegalStateException("ibb transport is missing sid and/or block-size");
-            }
-            return new InbandBytestreamsTransport(
-                    xmppConnection,
-                    id.with,
-                    isInitiator(),
-                    streamId,
-                    Ints.saturatedCast(blockSize));
-        } else if (transportInfo
+        if (transportInfo
                 instanceof SocksByteStreamsTransportInfo socksBytestreamsTransportInfo) {
             final String streamId = socksBytestreamsTransportInfo.getTransportId();
             final String destination = socksBytestreamsTransportInfo.getDestinationAddress();
@@ -535,12 +511,7 @@ public class JingleFileTransferConnection extends AbstractJingleConnection
         if (remoteHasFeature(Namespace.JINGLE_TRANSPORTS_S5B)) {
             return new SocksByteStreamsTransport(xmppConnection, id, isInitiator(), useTor);
         }
-        return setupLastResortTransport();
-    }
-
-    private Transport setupLastResortTransport() {
-        final XmppConnection xmppConnection = id.account.getXmppConnection();
-        return new InbandBytestreamsTransport(xmppConnection, id.with, isInitiator());
+        throw new IllegalArgumentException("Do not know how to create transport");
     }
 
     private void failureToAcceptSession(final Throwable throwable) {
@@ -1003,12 +974,6 @@ public class JingleFileTransferConnection extends AbstractJingleConnection
             return;
         }
         Log.d(Config.LOGTAG, "onTransportSetupFailed");
-        final var isTransportInBand = transport instanceof InbandBytestreamsTransport;
-        if (isTransportInBand) {
-            terminateTransport();
-            sendSessionTerminate(Reason.CONNECTIVITY_ERROR, "Failed to setup IBB transport");
-            return;
-        }
         // terminate the current transport
         transport.terminate();
         if (isInitiator()) {
@@ -1017,8 +982,8 @@ public class JingleFileTransferConnection extends AbstractJingleConnection
                 sendSessionTerminate(Reason.FAILED_TRANSPORT, "Failed to setup Proxy65 transport");
                 return;
             }
-            this.transport = setupLastResortTransport();
-            this.transport.setTransportCallback(this);
+            terminateTransport();
+            sendSessionTerminate(Reason.CONNECTIVITY_ERROR, "Failed to setup transport");
             final var transportInfoFuture = this.transport.asTransportInfo();
             Futures.addCallback(
                     transportInfoFuture,

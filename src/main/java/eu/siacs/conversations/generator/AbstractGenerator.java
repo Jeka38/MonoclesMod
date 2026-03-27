@@ -28,7 +28,6 @@ public abstract class AbstractGenerator {
             Namespace.JINGLE,
             Namespace.JINGLE_APPS_FILE_TRANSFER,
             Namespace.JINGLE_TRANSPORTS_S5B,
-            Namespace.JINGLE_TRANSPORTS_IBB,
             Namespace.JINGLE_ENCRYPTED_TRANSPORT,
             Namespace.JINGLE_ENCRYPTED_TRANSPORT_OMEMO,
             "http://jabber.org/protocol/muc",

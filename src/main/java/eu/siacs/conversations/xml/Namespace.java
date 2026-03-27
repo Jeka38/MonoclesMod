@@ -46,7 +46,6 @@ public final class Namespace {
     public static final String JINGLE_ENCRYPTED_TRANSPORT = "urn:xmpp:jingle:jet:0";
     public static final String JINGLE_ENCRYPTED_TRANSPORT_OMEMO = "urn:xmpp:jingle:jet-omemo:0";
     public static final String JINGLE_TRANSPORTS_S5B = "urn:xmpp:jingle:transports:s5b:1";
-    public static final String JINGLE_TRANSPORTS_IBB = "urn:xmpp:jingle:transports:ibb:1";
     public static final String JINGLE_TRANSPORT_ICE_UDP = "urn:xmpp:jingle:transports:ice-udp:1";
     public static final String JINGLE_TRANSPORT_WEBRTC_DATA_CHANNEL = "urn:xmpp:jingle:transports:webrtc-datachannel:1";
     public static final String JINGLE_TRANSPORT = "urn:xmpp:jingle:transports:dtls-sctp:1";
@@ -60,7 +59,6 @@ public final class Namespace {
     public static final String JINGLE_RTP_HEADER_EXTENSIONS = "urn:xmpp:jingle:apps:rtp:rtp-hdrext:0";
     public static final String JINGLE_RTP_FEEDBACK_NEGOTIATION = "urn:xmpp:jingle:apps:rtp:rtcp-fb:0";
     public static final String JINGLE_RTP_SOURCE_SPECIFIC_MEDIA_ATTRIBUTES = "urn:xmpp:jingle:apps:rtp:ssma:0";
-    public static final String IBB = "http://jabber.org/protocol/ibb";
     public static final String PING = "urn:xmpp:ping";
     public static final String PUSH = "urn:xmpp:push:0";
     public static final String COMMANDS = "http://jabber.org/protocol/commands";
