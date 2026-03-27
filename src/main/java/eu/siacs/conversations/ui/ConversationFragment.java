@@ -3524,6 +3524,7 @@ public class ConversationFragment extends XmppFragment
             if (attachmentChoice == ATTACHMENT_CHOICE_RECORD_VIDEO
                     || attachmentChoice == ATTACHMENT_CHOICE_TAKE_PHOTO
                     || attachmentChoice == ATTACHMENT_CHOICE_CHOOSE_FILE
+                    || attachmentChoice == ATTACHMENT_CHOICE_CHOOSE_FILE_PROXY65
                     || attachmentChoice == ATTACHMENT_CHOICE_CHOOSE_IMAGE
                     || attachmentChoice == ATTACHMENT_CHOICE_CHOOSE_VIDEO){
                 ToastCompat.makeText(context, R.string.no_application_found, ToastCompat.LENGTH_LONG).show();
