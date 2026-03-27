@@ -146,6 +146,7 @@ public class Message extends AbstractEntity implements AvatarService.Avatarable 
     protected boolean file_deleted = false;
     protected boolean carbon = false;
     private boolean oob = false;
+    private boolean forceProxy65 = false;
     protected List<Element> payloads = new ArrayList<>();
     protected List<Edit> edits = new ArrayList<>();
     protected String relativeFilePath;
@@ -924,6 +925,14 @@ public class Message extends AbstractEntity implements AvatarService.Avatarable 
 
     public void setCarbon(boolean carbon) {
         this.carbon = carbon;
+    }
+
+    public boolean isForceProxy65() {
+        return forceProxy65;
+    }
+
+    public void setForceProxy65(boolean forceProxy65) {
+        this.forceProxy65 = forceProxy65;
     }
 
     public void putEdited(String edited, String serverMsgId, String body, long timeSent) {

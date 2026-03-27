@@ -831,6 +831,39 @@ public class XmppConnectionService extends Service {
         }
     }
 
+    public void attachFileToConversationViaJingle(final Conversation conversation, final Uri uri, final String type, final String subject, final UiCallback<Message> callback) {
+        final Message message;
+        if (conversation.getReplyTo() == null) {
+            message = new Message(conversation, "", conversation.getNextEncryption());
+        } else {
+            message = conversation.getReplyTo().reply();
+            message.setEncryption(conversation.getNextEncryption());
+        }
+
+        if (conversation.getCaption() != null) {
+            message.appendBody(conversation.getCaption().getBody() + " ");
+            message.setEncryption(conversation.getNextEncryption());
+        }
+        if (conversation.getNextEncryption() == Message.ENCRYPTION_PGP) {
+            message.setEncryption(Message.ENCRYPTION_DECRYPTED);
+        }
+        if (subject != null && !subject.isEmpty()) message.setSubject(subject);
+        message.setThread(conversation.getThread());
+        if (!Message.configurePrivateFileMessage(message)) {
+            message.setCounterpart(conversation.getNextCounterpart());
+            message.setType(Message.TYPE_FILE);
+        }
+        message.setForceProxy65(true);
+        Log.d(Config.LOGTAG, "attachFile via Jingle (Proxy65): type=" + message.getType());
+        Log.d(Config.LOGTAG, "counterpart=" + message.getCounterpart());
+        final AttachFileToConversationRunnable runnable = new AttachFileToConversationRunnable(this, uri, type, message, conversation, callback, getMaxHttpUploadSize(conversation));
+        if (runnable.isVideoMessage()) {
+            VIDEO_COMPRESSION_EXECUTOR.execute(runnable);
+        } else {
+            FILE_ATTACHMENT_EXECUTOR.execute(runnable);
+        }
+    }
+
     public long getMaxHttpUploadSize(Conversation conversation) {
         final XmppConnection connection = conversation.getAccount().getXmppConnection();
         return connection == null ? -1 : connection.getFeatures().getMaxHttpUploadSize();
@@ -2211,6 +2244,11 @@ public class XmppConnectionService extends Service {
 
     private void sendFileMessage(final Message message, final boolean delay) {
         Log.d(Config.LOGTAG, "send file message");
+        if (message.isForceProxy65()) {
+            Log.d(Config.LOGTAG, "force sending file via Jingle (Proxy65/S5B)");
+            mJingleConnectionManager.startJingleFileTransfer(message, true);
+            return;
+        }
         final Account account = message.getConversation().getAccount();
         if (account.httpUploadAvailable(fileBackend.getFile(message, false).getSize())
                 || message.getConversation().getMode() == Conversation.MODE_MULTI) {

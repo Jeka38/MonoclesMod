@@ -608,6 +608,10 @@ public class JingleConnectionManager extends AbstractConnectionManager {
     }
 
     public void startJingleFileTransfer(final Message message) {
+        startJingleFileTransfer(message, false);
+    }
+
+    public void startJingleFileTransfer(final Message message, final boolean forceProxy65) {
         Preconditions.checkArgument(
                 message.isFileOrImage(), "Message is not of type file or image");
         final Transferable old = message.getTransferable();
@@ -615,7 +619,7 @@ public class JingleConnectionManager extends AbstractConnectionManager {
             old.cancel();
         }
         final JingleFileTransferConnection connection =
-                new JingleFileTransferConnection(this, message);
+                new JingleFileTransferConnection(this, message, forceProxy65);
         this.connections.put(connection.getId(), connection);
         connection.sendSessionInitialize();
     }

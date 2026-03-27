@@ -294,6 +294,7 @@ public class ConversationFragment extends XmppFragment
     public static final int ATTACHMENT_CHOICE_LOCATION = 0x0305;
     public static final int ATTACHMENT_CHOICE_CHOOSE_VIDEO = 0x0306;
     public static final int ATTACHMENT_CHOICE_RECORD_VIDEO = 0x0307;
+    public static final int ATTACHMENT_CHOICE_CHOOSE_FILE_PROXY65 = 0x0308;
     public static final int ATTACHMENT_CHOICE_INVALID = 0x0399;
 
     public static final String RECENTLY_USED_QUICK_ACTION = "recently_used_quick_action";
@@ -314,6 +315,7 @@ public class ConversationFragment extends XmppFragment
     private final PendingItem<ScrollState> pendingScrollState = new PendingItem<>();
     private final PendingItem<String> pendingLastMessageUuid = new PendingItem<>();
     private final PendingItem<Message> pendingMessage = new PendingItem<>();
+    private boolean pendingForceProxy65 = false;
     public Uri mPendingEditorContent = null;
     public FragmentConversationBinding binding;
     protected MessageAdapter messageListAdapter;
@@ -1182,7 +1184,7 @@ public class ConversationFragment extends XmppFragment
         ConversationMenuConfigurator.configureQuickShareAttachmentMenu(conversation, menu, hideVoiceAndTakePicture);
         popup.setOnMenuItemClickListener(attachmentItem -> {
             int itemId = attachmentItem.getItemId();
-            if (itemId == R.id.attach_choose_picture || itemId == R.id.attach_choose_video || itemId == R.id.attach_take_picture || itemId == R.id.attach_record_video || itemId == R.id.attach_choose_file || itemId == R.id.attach_record_voice || itemId == R.id.attach_subject || itemId == R.id.attach_webxdc || itemId == R.id.attach_location) {
+            if (itemId == R.id.attach_choose_picture || itemId == R.id.attach_choose_video || itemId == R.id.attach_take_picture || itemId == R.id.attach_record_video || itemId == R.id.attach_choose_file || itemId == R.id.attach_choose_file_proxy65 || itemId == R.id.attach_record_voice || itemId == R.id.attach_subject || itemId == R.id.attach_webxdc || itemId == R.id.attach_location) {
                 handleAttachmentSelection(attachmentItem);
             }
             return false;
@@ -1295,6 +1297,53 @@ public class ConversationFragment extends XmppFragment
             @Override
             public void showToast() {
 
+            }
+        });
+    }
+
+    private void attachFileToConversationViaJingle(Conversation conversation, Uri uri, String type) {
+        if (conversation == null) {
+            return;
+        }
+        final String subject = binding.textinputSubject.getText().toString();
+        final Toast prepareFileToast = ToastCompat.makeText(getActivity(), getText(R.string.preparing_file), ToastCompat.LENGTH_SHORT);
+        activity.delegateUriPermissionsToService(uri);
+        activity.xmppConnectionService.attachFileToConversationViaJingle(conversation, uri, type, subject, new UiInformableCallback<Message>() {
+            @Override
+            public void inform(final String text) {
+                hidePrepareFileToast(prepareFileToast);
+                runOnUiThread(() -> activity.replaceToast(text));
+            }
+
+            @Override
+            public void success(Message message) {
+                runOnUiThread(() -> {
+                    activity.hideToast();
+                    messageSent();
+                });
+                hidePrepareFileToast(prepareFileToast);
+            }
+
+            @Override
+            public void error(final int errorCode, Message message) {
+                hidePrepareFileToast(prepareFileToast);
+                runOnUiThread(() -> activity.replaceToast(getString(errorCode)));
+            }
+
+            @Override
+            public void userInputRequired(PendingIntent pi, Message message) {
+                hidePrepareFileToast(prepareFileToast);
+            }
+
+            @Override
+            public void progress(int progress) {
+                hidePrepareFileToast(prepareFileToast);
+                updateSnackBar(conversation);
+            }
+
+            @Override
+            public void showToast() {
+                prepareFileToast.show();
             }
         });
     }
@@ -1646,10 +1695,13 @@ public class ConversationFragment extends XmppFragment
             } else {
                 Log.d(Config.LOGTAG, "lost take photo uri. unable to to attach");
             }
-        } else if (requestCode == ATTACHMENT_CHOICE_CHOOSE_FILE || requestCode == ATTACHMENT_CHOICE_RECORD_VIDEO || requestCode == ATTACHMENT_CHOICE_CHOOSE_VIDEO || requestCode == ATTACHMENT_CHOICE_RECORD_VOICE) {
+        } else if (requestCode == ATTACHMENT_CHOICE_CHOOSE_FILE || requestCode == ATTACHMENT_CHOICE_CHOOSE_FILE_PROXY65 || requestCode == ATTACHMENT_CHOICE_RECORD_VIDEO || requestCode == ATTACHMENT_CHOICE_CHOOSE_VIDEO || requestCode == ATTACHMENT_CHOICE_RECORD_VOICE) {
             final Attachment.Type type = requestCode == ATTACHMENT_CHOICE_RECORD_VOICE ? Attachment.Type.RECORDING : Attachment.Type.FILE;
             final List<Attachment> fileUris = Attachment.extractAttachments(getActivity(), data, type);
             mediaPreviewAdapter.addMediaPreviews(fileUris);
+            if (requestCode == ATTACHMENT_CHOICE_CHOOSE_FILE_PROXY65) {
+                pendingForceProxy65 = true;
+            }
             toggleInputMethod();
         } else if (requestCode == ATTACHMENT_CHOICE_LOCATION) {
             final double latitude = data.getDoubleExtra("latitude", 0);
@@ -1723,11 +1775,15 @@ public class ConversationFragment extends XmppFragment
                     } else {
                         attachFileToConversation(conversation, attachment.getUri(), attachment.getMime());
                     }
+                } else if (pendingForceProxy65) {
+                    Log.d(Config.LOGTAG, "ConversationsActivity.commitAttachments() - attaching file via Proxy65 (Jingle S5B)");
+                    attachFileToConversationViaJingle(conversation, attachment.getUri(), attachment.getMime());
                 } else {
                     Log.d(Config.LOGTAG, "ConversationsActivity.commitAttachments() - attaching file to conversations. CHOOSE_FILE/RECORD_VOICE/RECORD_VIDEO");
                     attachFileToConversation(conversation, attachment.getUri(), attachment.getMime());
                 }
             }
+            pendingForceProxy65 = false;
             mediaPreviewAdapter.notifyDataSetChanged();
             toggleInputMethod();
         };
@@ -3011,6 +3067,8 @@ public class ConversationFragment extends XmppFragment
             attachFile(ATTACHMENT_CHOICE_RECORD_VIDEO);
         } else if (itemId == R.id.attach_choose_file) {
             attachFile(ATTACHMENT_CHOICE_CHOOSE_FILE);
+        } else if (itemId == R.id.attach_choose_file_proxy65) {
+            attachFile(ATTACHMENT_CHOICE_CHOOSE_FILE_PROXY65);
         } else if (itemId == R.id.attach_record_voice) {
             attachFile(ATTACHMENT_CHOICE_RECORD_VOICE);
         } else if (itemId == R.id.attach_webxdc) {
@@ -3105,7 +3163,7 @@ public class ConversationFragment extends XmppFragment
             if (!hasPermissions(attachmentChoice, Manifest.permission.ACCESS_FINE_LOCATION, Manifest.permission.ACCESS_COARSE_LOCATION)) {
                 return;
             }
-        } else if ((attachmentChoice == ATTACHMENT_CHOICE_CHOOSE_FILE || attachmentChoice == ATTACHMENT_CHOICE_CHOOSE_IMAGE || attachmentChoice == ATTACHMENT_CHOICE_CHOOSE_VIDEO) && !Compatibility.runsThirtyThree()) {
+        } else if ((attachmentChoice == ATTACHMENT_CHOICE_CHOOSE_FILE || attachmentChoice == ATTACHMENT_CHOICE_CHOOSE_FILE_PROXY65 || attachmentChoice == ATTACHMENT_CHOICE_CHOOSE_IMAGE || attachmentChoice == ATTACHMENT_CHOICE_CHOOSE_VIDEO) && !Compatibility.runsThirtyThree()) {
             if (!hasPermissions(attachmentChoice, Manifest.permission.WRITE_EXTERNAL_STORAGE, Manifest.permission.READ_EXTERNAL_STORAGE) && !Compatibility.runsThirtyThree()) {
                 return;
             } else if (Compatibility.runsThirtyThree() && !hasPermissions(attachmentChoice,
@@ -3470,7 +3528,7 @@ public class ConversationFragment extends XmppFragment
             intent.putExtra(MediaStore.EXTRA_OUTPUT, photoUri);
             intent.setFlags(Intent.FLAG_GRANT_WRITE_URI_PERMISSION & Intent.FLAG_GRANT_READ_URI_PERMISSION);
             intent.setAction(MediaStore.ACTION_IMAGE_CAPTURE);
-        } else if (attachmentChoice == ATTACHMENT_CHOICE_CHOOSE_FILE) {
+        } else if (attachmentChoice == ATTACHMENT_CHOICE_CHOOSE_FILE || attachmentChoice == ATTACHMENT_CHOICE_CHOOSE_FILE_PROXY65) {
             chooser = true;
             intent.setType("*/*");
             intent.putExtra(Intent.EXTRA_ALLOW_MULTIPLE, true);
@@ -3502,6 +3560,7 @@ public class ConversationFragment extends XmppFragment
             if (attachmentChoice == ATTACHMENT_CHOICE_RECORD_VIDEO
                     || attachmentChoice == ATTACHMENT_CHOICE_TAKE_PHOTO
                     || attachmentChoice == ATTACHMENT_CHOICE_CHOOSE_FILE
+                    || attachmentChoice == ATTACHMENT_CHOICE_CHOOSE_FILE_PROXY65
                     || attachmentChoice == ATTACHMENT_CHOICE_CHOOSE_IMAGE
                     || attachmentChoice == ATTACHMENT_CHOICE_CHOOSE_VIDEO){
                 ToastCompat.makeText(context, R.string.no_application_found, ToastCompat.LENGTH_LONG).show();

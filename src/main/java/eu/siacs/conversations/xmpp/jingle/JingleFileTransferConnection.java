@@ -82,9 +82,15 @@ public class JingleFileTransferConnection extends AbstractJingleConnection
 
     private final Queue<IceCandidate> pendingIncomingIceCandidates = new LinkedList<>();
     private boolean acceptedAutomatically = false;
+    private final boolean forceProxy65;
 
     public JingleFileTransferConnection(
             final JingleConnectionManager jingleConnectionManager, final Message message) {
+        this(jingleConnectionManager, message, false);
+    }
+
+    public JingleFileTransferConnection(
+            final JingleConnectionManager jingleConnectionManager, final Message message, final boolean forceProxy65) {
         super(
                 jingleConnectionManager,
                 AbstractJingleConnection.Id.of(message),
@@ -93,6 +99,7 @@ public class JingleFileTransferConnection extends AbstractJingleConnection
                 message.isFileOrImage(),
                 "only file or images messages can be transported via jingle");
         this.message = message;
+        this.forceProxy65 = forceProxy65;
         this.message.setTransferable(this);
         xmppConnectionService.markMessage(message, Message.STATUS_WAITING);
     }
@@ -102,6 +109,7 @@ public class JingleFileTransferConnection extends AbstractJingleConnection
             final Id id,
             final Jid initiator) {
         super(jingleConnectionManager, id, initiator);
+        this.forceProxy65 = false;
         final Conversation conversation =
                 this.xmppConnectionService.findOrCreateConversation(
                         id.account, id.with.asBareJid(), false, false);
@@ -515,6 +523,13 @@ public class JingleFileTransferConnection extends AbstractJingleConnection
     private Transport setupTransport() {
         final XmppConnection xmppConnection = id.account.getXmppConnection();
         final boolean useTor = id.account.isOnion() || xmppConnectionService.useTorToConnect();
+        if (forceProxy65) {
+            Log.d(Config.LOGTAG, id.account.getJid().asBareJid() + ": forcing SOCKS5 Bytestreams (Proxy65) transport");
+            if (remoteHasFeature(Namespace.JINGLE_TRANSPORTS_S5B)) {
+                return new SocksByteStreamsTransport(xmppConnection, id, isInitiator(), useTor);
+            }
+            Log.d(Config.LOGTAG, id.account.getJid().asBareJid() + ": remote does not support S5B, falling back to default transport selection");
+        }
         if (!useTor && remoteHasFeature(Namespace.JINGLE_TRANSPORT_WEBRTC_DATA_CHANNEL)) {
             return new WebRTCDataChannelTransport(
                     xmppConnectionService.getApplicationContext(),

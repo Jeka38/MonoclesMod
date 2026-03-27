@@ -7,6 +7,11 @@
         android:title="@string/choose_file" />
 
     <item
+        android:id="@+id/attach_choose_file_proxy65"
+        android:icon="?attr/choose_file"
+        android:title="@string/send_file_via_proxy65" />
+
+    <item
         android:id="@+id/attach_choose_picture"
         android:icon="?attr/outline_photo"
         android:title="@string/attach_choose_picture" />
