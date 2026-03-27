@@ -336,7 +336,33 @@ public class XmppConnection implements Runnable {
             final boolean useTor = mXmppConnectionService.useTorToConnect() || account.isOnion();
             final boolean useI2P = mXmppConnectionService.useI2PToConnect() || account.isI2P();
             final boolean extended = mXmppConnectionService.showExtendedConnectionOptions();
-            if (Config.XMPP_IP != null && Config.XMPP_Ports != null) {
+            final String proxyHostname = account.getProxyHostname();
+            if (!Strings.isNullOrEmpty(proxyHostname)) {
+                String destination;
+                if (account.getHostname().isEmpty()) {
+                    destination = account.getServer();
+                } else {
+                    destination = account.getHostname();
+                    this.verifiedHostname = destination;
+                }
+                final int port = account.getPort();
+                final int proxyPort = account.getProxyPort();
+                final boolean directTls = Resolver.useDirectTls(port);
+                Log.d(Config.LOGTAG, account.getJid().asBareJid() + ": connect to " + destination + " via Proxy " + proxyHostname + ":" + proxyPort);
+                localSocket = SocksSocketFactory.createSocket(proxyHostname, proxyPort, destination, port);
+                if (directTls) {
+                    localSocket = upgradeSocketToTls(localSocket);
+                    features.encryptionEnabled = true;
+                }
+                try {
+                    startXmpp(localSocket);
+                } catch (final InterruptedException e) {
+                    Log.d(Config.LOGTAG, account.getJid().asBareJid() + ": thread was interrupted before beginning stream");
+                    return;
+                } catch (final Exception e) {
+                    throw new IOException("Could not start stream", e);
+                }
+            } else if (Config.XMPP_IP != null && Config.XMPP_Ports != null) {
                 Integer[] XMPP_Port = Config.XMPP_Ports;
                 Integer Port = XMPP_Port[new Random().nextInt(XMPP_Port.length)];
                 localSocket = new Socket();

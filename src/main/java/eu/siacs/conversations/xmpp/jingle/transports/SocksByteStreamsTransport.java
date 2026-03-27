@@ -170,7 +170,7 @@ public class SocksByteStreamsTransport implements Transport {
         // TODO this needs to go into a variable so we can cancel it
         final var connectionFinder =
                 new ConnectionFinder(
-                        theirCandidates, theirDestination, selectedByThemCandidate, useTor);
+                        id.account, theirCandidates, theirDestination, selectedByThemCandidate, useTor);
         new Thread(connectionFinder).start();
         Futures.addCallback(
                 connectionFinder.connectionFuture,
@@ -307,7 +307,7 @@ public class SocksByteStreamsTransport implements Transport {
                 proxy -> {
                     final var connectionFinder =
                             new ConnectionFinder(
-                                    ImmutableList.of(proxy), ourDestination, null, useTor);
+                                    id.account, ImmutableList.of(proxy), ourDestination, null, useTor);
                     new Thread(connectionFinder).start();
                     return Futures.transform(
                             connectionFinder.connectionFuture,
@@ -730,6 +730,7 @@ public class SocksByteStreamsTransport implements Transport {
 
         private final SettableFuture<Connection> connectionFuture = SettableFuture.create();
 
+        private final eu.siacs.conversations.entities.Account account;
         private final ImmutableList<Candidate> candidates;
         private final String destination;
 
@@ -737,10 +738,12 @@ public class SocksByteStreamsTransport implements Transport {
         private final boolean useTor;
 
         private ConnectionFinder(
+                final eu.siacs.conversations.entities.Account account,
                 final ImmutableList<Candidate> candidates,
                 final String destination,
                 final ListenableFuture<Connection> selectedByThemCandidate,
                 final boolean useTor) {
+            this.account = account;
             this.candidates = candidates;
             this.destination = destination;
             this.selectedByThemCandidate = selectedByThemCandidate;
@@ -781,7 +784,11 @@ public class SocksByteStreamsTransport implements Transport {
         private Connection connect(final Candidate candidate) throws IOException {
             final var timeout = 3000;
             final Socket socket;
-            if (useTor) {
+            final String proxyHostname = account.getProxyHostname();
+            if (!proxyHostname.isEmpty()) {
+                Log.d(Config.LOGTAG, "using account proxy to connect to candidate " + candidate.host);
+                socket = SocksSocketFactory.createSocket(proxyHostname, account.getProxyPort(), candidate.host, candidate.port);
+            } else if (useTor) {
                 Log.d(Config.LOGTAG, "using Tor to connect to candidate " + candidate.host);
                 socket = SocksSocketFactory.createSocketOverTor(candidate.host, candidate.port);
             } else {

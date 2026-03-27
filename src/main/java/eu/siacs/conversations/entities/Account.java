@@ -86,6 +86,8 @@ public class Account extends AbstractEntity implements AvatarService.Avatarable 
     private static final String KEY_PGP_ID = "pgp_id";
     private static final String KEY_PINNED_MECHANISM = "pinned_mechanism";
     public static final String KEY_PRE_AUTH_REGISTRATION_TOKEN = "pre_auth_registration";
+    public static final String KEY_PROXY_HOSTNAME = "proxy_hostname";
+    public static final String KEY_PROXY_PORT = "proxy_port";
 
 
     protected final JSONObject keys;
@@ -346,6 +348,22 @@ public class Account extends AbstractEntity implements AvatarService.Avatarable 
 
     public void setHostname(String hostname) {
         this.hostname = hostname;
+    }
+
+    public String getProxyHostname() {
+        return Strings.nullToEmpty(getKey(KEY_PROXY_HOSTNAME));
+    }
+
+    public void setProxyHostname(String proxyHostname) {
+        setKey(KEY_PROXY_HOSTNAME, proxyHostname);
+    }
+
+    public int getProxyPort() {
+        return getKeyAsInt(KEY_PROXY_PORT, 1080);
+    }
+
+    public void setProxyPort(int proxyPort) {
+        setKey(KEY_PROXY_PORT, String.valueOf(proxyPort));
     }
 
     public boolean isOnion() {
