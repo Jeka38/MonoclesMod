@@ -72,6 +72,7 @@ public class JingleFileTransferConnection extends AbstractJingleConnection
         implements Transport.Callback, Transferable {
 
     private final Message message;
+    private final boolean forceProxy65;
 
     private FileTransferContentMap initiatorFileTransferContentMap;
     private FileTransferContentMap responderFileTransferContentMap;
@@ -85,6 +86,11 @@ public class JingleFileTransferConnection extends AbstractJingleConnection
 
     public JingleFileTransferConnection(
             final JingleConnectionManager jingleConnectionManager, final Message message) {
+        this(jingleConnectionManager, message, false);
+    }
+
+    public JingleFileTransferConnection(
+            final JingleConnectionManager jingleConnectionManager, final Message message, boolean forceProxy65) {
         super(
                 jingleConnectionManager,
                 AbstractJingleConnection.Id.of(message),
@@ -93,6 +99,7 @@ public class JingleFileTransferConnection extends AbstractJingleConnection
                 message.isFileOrImage(),
                 "only file or images messages can be transported via jingle");
         this.message = message;
+        this.forceProxy65 = forceProxy65;
         this.message.setTransferable(this);
         xmppConnectionService.markMessage(message, Message.STATUS_WAITING);
     }
@@ -106,6 +113,7 @@ public class JingleFileTransferConnection extends AbstractJingleConnection
                 this.xmppConnectionService.findOrCreateConversation(
                         id.account, id.with.asBareJid(), false, false);
         this.message = new Message(conversation, "", Message.ENCRYPTION_NONE);
+        this.forceProxy65 = false;
         this.message.setStatus(Message.STATUS_RECEIVED);
         this.message.setErrorMessage(null);
         this.message.setTransferable(this);
@@ -162,12 +170,7 @@ public class JingleFileTransferConnection extends AbstractJingleConnection
     }
 
     private void sendSessionInitialize(final XmppAxolotlMessage xmppAxolotlMessage) {
-        final Transport transport = setupTransport();
-        if (transport == null) {
-            Log.e(Config.LOGTAG, "Could not setup transport for session initialize");
-            return;
-        }
-        this.transport = transport;
+        this.transport = setupTransport();
         this.transport.setTransportCallback(this);
         final File file = xmppConnectionService.getFileBackend().getFile(message);
         final var fileDescription =
@@ -427,12 +430,8 @@ public class JingleFileTransferConnection extends AbstractJingleConnection
         final Transport transport;
         try {
             transport = setupTransport(contentMap.requireOnlyTransportInfo());
-        } catch (final Exception e) {
-            sendSessionTerminate(Reason.ofThrowable(e), e.getMessage());
-            return;
-        }
-        if (transport == null) {
-            sendSessionTerminate(Reason.FAILED_TRANSPORT, "Could not setup transport");
+        } catch (final RuntimeException e) {
+            sendSessionTerminate(Reason.of(e), e.getMessage());
             return;
         }
         transitionOrThrow(State.SESSION_ACCEPTED);
@@ -489,11 +488,10 @@ public class JingleFileTransferConnection extends AbstractJingleConnection
     private Transport setupTransport(final GenericTransportInfo transportInfo) {
         final XmppConnection xmppConnection = id.account.getXmppConnection();
         final boolean useTor = id.account.isOnion() || xmppConnectionService.useTorToConnect();
+        if (forceProxy65 && !(transportInfo instanceof SocksByteStreamsTransportInfo)) {
+            throw new IllegalArgumentException("Force Proxy65 is enabled, but peer offered " + transportInfo.getClass().getSimpleName());
+        }
         if (transportInfo instanceof IbbTransportInfo ibbTransportInfo) {
-            if (id.account.isForceProxy65()) {
-                Log.d(Config.LOGTAG, "IBB not allowed in Force Proxy65 mode");
-                return null;
-            }
             final String streamId = ibbTransportInfo.getTransportId();
             final Long blockSize = ibbTransportInfo.getBlockSize();
             if (streamId == null || blockSize == null) {
@@ -508,14 +506,13 @@ public class JingleFileTransferConnection extends AbstractJingleConnection
         } else if (transportInfo
                 instanceof SocksByteStreamsTransportInfo socksBytestreamsTransportInfo) {
             final String streamId = socksBytestreamsTransportInfo.getTransportId();
+            final String destination = socksBytestreamsTransportInfo.getDestinationAddress();
             final List<SocksByteStreamsTransport.Candidate> candidates =
                     socksBytestreamsTransportInfo.getCandidates();
             Log.d(Config.LOGTAG, "received socks candidates " + candidates);
             return new SocksByteStreamsTransport(
                     xmppConnection, id, isInitiator(), useTor, streamId, candidates);
-        } else if (!useTor
-                && !id.account.isForceProxy65()
-                && transportInfo instanceof WebRTCDataChannelTransportInfo) {
+        } else if (!useTor && transportInfo instanceof WebRTCDataChannelTransportInfo) {
             return new WebRTCDataChannelTransport(
                     xmppConnectionService.getApplicationContext(),
                     xmppConnection,
@@ -529,10 +526,7 @@ public class JingleFileTransferConnection extends AbstractJingleConnection
     private Transport setupTransport() {
         final XmppConnection xmppConnection = id.account.getXmppConnection();
         final boolean useTor = id.account.isOnion() || xmppConnectionService.useTorToConnect();
-        if (id.account.isForceProxy65()) {
-            return new SocksByteStreamsTransport(xmppConnection, id, isInitiator(), useTor);
-        }
-        if (!useTor && remoteHasFeature(Namespace.JINGLE_TRANSPORT_WEBRTC_DATA_CHANNEL)) {
+        if (!forceProxy65 && !useTor && remoteHasFeature(Namespace.JINGLE_TRANSPORT_WEBRTC_DATA_CHANNEL)) {
             return new WebRTCDataChannelTransport(
                     xmppConnectionService.getApplicationContext(),
                     xmppConnection,
@@ -540,16 +534,15 @@ public class JingleFileTransferConnection extends AbstractJingleConnection
                     isInitiator());
         }
         if (remoteHasFeature(Namespace.JINGLE_TRANSPORTS_S5B)) {
-            return new SocksByteStreamsTransport(xmppConnection, id, isInitiator(), useTor);
+            return new SocksByteStreamsTransport(xmppConnection, id, isInitiator(), useTor, forceProxy65);
+        }
+        if (forceProxy65) {
+            throw new IllegalStateException("Force Proxy65 is enabled, but peer does not support S5B");
         }
         return setupLastResortTransport();
     }
 
     private Transport setupLastResortTransport() {
-        if (id.account.isForceProxy65()) {
-            Log.d(Config.LOGTAG, "Forced Proxy65 not available and fallback disabled");
-            return null;
-        }
         final XmppConnection xmppConnection = id.account.getXmppConnection();
         return new InbandBytestreamsTransport(xmppConnection, id.with, isInitiator());
     }
@@ -780,12 +773,8 @@ public class JingleFileTransferConnection extends AbstractJingleConnection
         final Transport transport;
         try {
             transport = setupTransport(transportInfo);
-        } catch (final Exception e) {
-            sendSessionTerminate(Reason.ofThrowable(e), e.getMessage());
-            return;
-        }
-        if (transport == null) {
-            sendSessionTerminate(Reason.FAILED_TRANSPORT, "Could not setup transport");
+        } catch (final RuntimeException e) {
+            sendSessionTerminate(Reason.of(e), e.getMessage());
             return;
         }
         this.transport = transport;
@@ -1026,12 +1015,6 @@ public class JingleFileTransferConnection extends AbstractJingleConnection
         }
         // terminate the current transport
         transport.terminate();
-
-        if (id.account.isForceProxy65()) {
-            sendSessionTerminate(Reason.CONNECTIVITY_ERROR, "Failed to setup Proxy65 transport");
-            return;
-        }
-
         if (isInitiator()) {
             this.transport = setupLastResortTransport();
             this.transport.setTransportCallback(this);

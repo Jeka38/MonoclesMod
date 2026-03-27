@@ -103,7 +103,7 @@ public class Attachment implements Parcelable {
     }
 
     public enum Type {
-        FILE, IMAGE, LOCATION, RECORDING
+        FILE, IMAGE, LOCATION, RECORDING, FILE_PROXY65
     }
 
     private final Uri uri;

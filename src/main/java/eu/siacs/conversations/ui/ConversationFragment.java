@@ -294,6 +294,7 @@ public class ConversationFragment extends XmppFragment
     public static final int ATTACHMENT_CHOICE_LOCATION = 0x0305;
     public static final int ATTACHMENT_CHOICE_CHOOSE_VIDEO = 0x0306;
     public static final int ATTACHMENT_CHOICE_RECORD_VIDEO = 0x0307;
+    public static final int ATTACHMENT_CHOICE_CHOOSE_FILE_PROXY65 = 0x0308;
     public static final int ATTACHMENT_CHOICE_INVALID = 0x0399;
 
     public static final String RECENTLY_USED_QUICK_ACTION = "recently_used_quick_action";
@@ -1182,7 +1183,7 @@ public class ConversationFragment extends XmppFragment
         ConversationMenuConfigurator.configureQuickShareAttachmentMenu(conversation, menu, hideVoiceAndTakePicture);
         popup.setOnMenuItemClickListener(attachmentItem -> {
             int itemId = attachmentItem.getItemId();
-            if (itemId == R.id.attach_choose_picture || itemId == R.id.attach_choose_video || itemId == R.id.attach_take_picture || itemId == R.id.attach_record_video || itemId == R.id.attach_choose_file || itemId == R.id.attach_record_voice || itemId == R.id.attach_subject || itemId == R.id.attach_webxdc || itemId == R.id.attach_location) {
+            if (itemId == R.id.attach_choose_picture || itemId == R.id.attach_choose_video || itemId == R.id.attach_take_picture || itemId == R.id.attach_record_video || itemId == R.id.attach_choose_file || itemId == R.id.attach_choose_file_proxy65 || itemId == R.id.attach_record_voice || itemId == R.id.attach_subject || itemId == R.id.attach_webxdc || itemId == R.id.attach_location) {
                 handleAttachmentSelection(attachmentItem);
             }
             return false;
@@ -1308,6 +1309,10 @@ public class ConversationFragment extends XmppFragment
     }
 
     private void attachFileToConversation(Conversation conversation, Uri uri, String type) {
+        attachFileToConversation(conversation, uri, type, false);
+    }
+
+    private void attachFileToConversation(Conversation conversation, Uri uri, String type, boolean forceProxy65) {
         if (conversation == null) {
             return;
         }
@@ -1315,7 +1320,7 @@ public class ConversationFragment extends XmppFragment
         final String subject = binding.textinputSubject.getText().toString();
         final Toast prepareFileToast = ToastCompat.makeText(getActivity(), getText(R.string.preparing_file), ToastCompat.LENGTH_SHORT);
         activity.delegateUriPermissionsToService(uri);
-        activity.xmppConnectionService.attachFileToConversation(conversation, uri, type, subject, new UiInformableCallback<Message>() {
+        activity.xmppConnectionService.attachFileToConversation(conversation, uri, type, subject, forceProxy65, new UiInformableCallback<Message>() {
             @Override
             public void inform(final String text) {
                 hidePrepareFileToast(prepareFileToast);
@@ -1654,8 +1659,15 @@ public class ConversationFragment extends XmppFragment
             } else {
                 Log.d(Config.LOGTAG, "lost take photo uri. unable to to attach");
             }
-        } else if (requestCode == ATTACHMENT_CHOICE_CHOOSE_FILE || requestCode == ATTACHMENT_CHOICE_RECORD_VIDEO || requestCode == ATTACHMENT_CHOICE_CHOOSE_VIDEO || requestCode == ATTACHMENT_CHOICE_RECORD_VOICE) {
-            final Attachment.Type type = requestCode == ATTACHMENT_CHOICE_RECORD_VOICE ? Attachment.Type.RECORDING : Attachment.Type.FILE;
+        } else if (requestCode == ATTACHMENT_CHOICE_CHOOSE_FILE || requestCode == ATTACHMENT_CHOICE_CHOOSE_FILE_PROXY65 || requestCode == ATTACHMENT_CHOICE_RECORD_VIDEO || requestCode == ATTACHMENT_CHOICE_CHOOSE_VIDEO || requestCode == ATTACHMENT_CHOICE_RECORD_VOICE) {
+            final Attachment.Type type;
+            if (requestCode == ATTACHMENT_CHOICE_RECORD_VOICE) {
+                type = Attachment.Type.RECORDING;
+            } else if (requestCode == ATTACHMENT_CHOICE_CHOOSE_FILE_PROXY65) {
+                type = Attachment.Type.FILE_PROXY65;
+            } else {
+                type = Attachment.Type.FILE;
+            }
             final List<Attachment> fileUris = Attachment.extractAttachments(getActivity(), data, type);
             mediaPreviewAdapter.addMediaPreviews(fileUris);
             toggleInputMethod();
@@ -1699,6 +1711,7 @@ public class ConversationFragment extends XmppFragment
         final PresenceSelector.OnPresenceSelected callback = () -> {
             for (Iterator<Attachment> i = attachments.iterator(); i.hasNext(); i.remove()) {
                 final Attachment attachment = i.next();
+                final boolean forceProxy65 = attachment.getType() == Attachment.Type.FILE_PROXY65;
                 if (attachment.getType() == Attachment.Type.LOCATION) {
                     attachLocationToConversation(conversation, attachment.getUri());
                 } else if (attachment.getType() == Attachment.Type.IMAGE) {
@@ -1733,7 +1746,7 @@ public class ConversationFragment extends XmppFragment
                     }
                 } else {
                     Log.d(Config.LOGTAG, "ConversationsActivity.commitAttachments() - attaching file to conversations. CHOOSE_FILE/RECORD_VOICE/RECORD_VIDEO");
-                    attachFileToConversation(conversation, attachment.getUri(), attachment.getMime());
+                    attachFileToConversation(conversation, attachment.getUri(), attachment.getMime(), forceProxy65);
                 }
             }
             mediaPreviewAdapter.notifyDataSetChanged();
@@ -3019,6 +3032,8 @@ public class ConversationFragment extends XmppFragment
             attachFile(ATTACHMENT_CHOICE_RECORD_VIDEO);
         } else if (itemId == R.id.attach_choose_file) {
             attachFile(ATTACHMENT_CHOICE_CHOOSE_FILE);
+        } else if (itemId == R.id.attach_choose_file_proxy65) {
+            attachFile(ATTACHMENT_CHOICE_CHOOSE_FILE_PROXY65);
         } else if (itemId == R.id.attach_record_voice) {
             attachFile(ATTACHMENT_CHOICE_RECORD_VOICE);
         } else if (itemId == R.id.attach_webxdc) {
@@ -3478,7 +3493,7 @@ public class ConversationFragment extends XmppFragment
             intent.putExtra(MediaStore.EXTRA_OUTPUT, photoUri);
             intent.setFlags(Intent.FLAG_GRANT_WRITE_URI_PERMISSION & Intent.FLAG_GRANT_READ_URI_PERMISSION);
             intent.setAction(MediaStore.ACTION_IMAGE_CAPTURE);
-        } else if (attachmentChoice == ATTACHMENT_CHOICE_CHOOSE_FILE) {
+        } else if (attachmentChoice == ATTACHMENT_CHOICE_CHOOSE_FILE || attachmentChoice == ATTACHMENT_CHOICE_CHOOSE_FILE_PROXY65) {
             chooser = true;
             intent.setType("*/*");
             intent.putExtra(Intent.EXTRA_ALLOW_MULTIPLE, true);

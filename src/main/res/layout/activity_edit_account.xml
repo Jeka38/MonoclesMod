@@ -113,7 +113,25 @@ android:fontFamily="notosansregular"
                             </LinearLayout>
 
                             <com.google.android.material.textfield.TextInputLayout
-                                android:id="@+id/account_jid_layout"
+                                android:id="@+id/xmppProxyLayout"
+                                style="@style/Widget.Conversations.TextInputLayout.OutlinedBox"
+                                android:layout_width="match_parent"
+                                android:layout_height="wrap_content"
+                                android:hint="@string/xmpp_proxy_jid"
+                                app:errorTextAppearance="@style/TextAppearance.Conversations.Design.Error"
+                                app:hintTextAppearance="@style/TextAppearance.Conversations.Design.Hint">
+
+                                <eu.siacs.conversations.ui.widget.TextInputEditText
+                                    android:id="@+id/xmppProxy"
+                                    style="@style/Widget.Material3.TextInputEditText.FilledBox"
+                                    android:fontFamily="notosansregular"
+                                    android:layout_width="match_parent"
+                                    android:layout_height="wrap_content"
+                                    android:inputType="textWebEmailAddress" />
+                            </com.google.android.material.textfield.TextInputLayout>
+
+                            <com.google.android.material.textfield.TextInputLayout
+                                android:id="@+id/accountJid_layout"
                                 style="@style/Widget.Conversations.TextInputLayout.OutlinedBox"
                                 android:layout_width="match_parent"
                                 android:layout_height="wrap_content"
@@ -122,7 +140,7 @@ android:fontFamily="notosansregular"
                                 app:hintTextAppearance="@style/TextAppearance.Conversations.Design.Hint">
 
                                 <AutoCompleteTextView
-                                    android:id="@+id/account_jid"
+                                    android:id="@+id/accountJid"
                                     style="@style/Widget.Material3.TextInputEditText.FilledBox"
 android:fontFamily="notosansregular"
                                     android:layout_width="match_parent"
@@ -134,34 +152,7 @@ android:fontFamily="notosansregular"
                             </com.google.android.material.textfield.TextInputLayout>
 
                             <com.google.android.material.textfield.TextInputLayout
-                                android:id="@+id/account_proxy_jid_layout"
-                                style="@style/Widget.Conversations.TextInputLayout.OutlinedBox"
-                                android:layout_width="match_parent"
-                                android:layout_height="wrap_content"
-                                android:hint="@string/account_settings_proxy_jid"
-                                app:errorTextAppearance="@style/TextAppearance.Conversations.Design.Error"
-                                app:hintTextAppearance="@style/TextAppearance.Conversations.Design.Hint">
-
-                                <eu.siacs.conversations.ui.widget.TextInputEditText
-                                    android:id="@+id/account_proxy_jid"
-                                    style="@style/Widget.Material3.TextInputEditText.FilledBox"
-                                    android:fontFamily="notosansregular"
-                                    android:layout_width="match_parent"
-                                    android:layout_height="wrap_content"
-                                    android:inputType="textEmailAddress"
-                                    android:textColor="?attr/edit_text_color" />
-                            </com.google.android.material.textfield.TextInputLayout>
-
-                            <com.google.android.material.materialswitch.MaterialSwitch
-                                android:id="@+id/account_force_proxy65"
-                                style="@style/Widget.monocles.Switch"
-                                android:layout_width="match_parent"
-                                android:layout_height="wrap_content"
-                                android:layout_marginTop="8dp"
-                                android:text="@string/account_settings_force_proxy65" />
-
-                            <com.google.android.material.textfield.TextInputLayout
-                                android:id="@+id/account_password_layout"
+                                android:id="@+id/accountPassword_layout"
                                 style="@style/Widget.Conversations.TextInputLayout.OutlinedBox"
                                 android:layout_width="match_parent"
                                 android:layout_height="wrap_content"
@@ -172,7 +163,7 @@ android:fontFamily="notosansregular"
                                 app:passwordToggleTint="?android:textColorSecondary">
 
                                 <eu.siacs.conversations.ui.widget.TextInputEditText
-                                    android:id="@+id/account_password"
+                                    android:id="@+id/accountPassword"
                                     style="@style/Widget.Material3.TextInputEditText.FilledBox"
                                     android:fontFamily="notosansregular"
                                     android:layout_width="match_parent"
@@ -459,13 +450,22 @@ android:fontFamily="notosansregular"
                         </RelativeLayout>
 
                         <com.google.android.material.materialswitch.MaterialSwitch
-                            android:id="@+id/account_register_new"
+                            android:id="@+id/accountRegisterNew"
                             style="@style/Widget.monocles.Switch"
                             android:layout_width="wrap_content"
                             android:layout_height="wrap_content"
                             android:layout_below="@id/jid_password_box"
                             android:layout_marginTop="8dp"
                             android:text="@string/register_account" />
+
+                        <com.google.android.material.materialswitch.MaterialSwitch
+                            android:id="@+id/prioritizeProxy65"
+                            style="@style/Widget.monocles.Switch"
+                            android:layout_width="wrap_content"
+                            android:layout_height="wrap_content"
+                            android:layout_below="@id/accountRegisterNew"
+                            android:layout_marginTop="8dp"
+                            android:text="@string/prioritize_proxy65" />
                     </RelativeLayout>
                 </androidx.cardview.widget.CardView>
 

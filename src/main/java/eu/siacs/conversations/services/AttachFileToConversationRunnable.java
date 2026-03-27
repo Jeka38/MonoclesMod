@@ -49,10 +49,15 @@ public class AttachFileToConversationRunnable implements Runnable, TranscoderLis
     private final long maxUploadSize;
     private final boolean isVideoMessage;
     private final long originalFileSize;
+    private final boolean forceProxy65;
     private int currentProgress = -1;
     public static String[] isCompressingVideo = new String[]{null,"0"};
 
     public AttachFileToConversationRunnable(XmppConnectionService xmppConnectionService, Uri uri, String type, Message message, Conversation conversation, UiCallback<Message> callback, long maxUploadSize) {
+        this(xmppConnectionService, uri, type, message, conversation, callback, maxUploadSize, false);
+    }
+
+    public AttachFileToConversationRunnable(XmppConnectionService xmppConnectionService, Uri uri, String type, Message message, Conversation conversation, UiCallback<Message> callback, long maxUploadSize, boolean forceProxy65) {
         this.uri = uri;
         this.type = type;
         this.mXmppConnectionService = xmppConnectionService;
@@ -60,6 +65,7 @@ public class AttachFileToConversationRunnable implements Runnable, TranscoderLis
         this.conversation = conversation;
         this.callback = callback;
         this.maxUploadSize = maxUploadSize;
+        this.forceProxy65 = forceProxy65;
         mimeType = MimeUtils.guessMimeTypeFromUriAndMime(mXmppConnectionService, uri, type);
         this.originalFileSize = FileBackend.getFileSize(mXmppConnectionService, uri);
         this.isVideoMessage = !getFileBackend().useFileAsIs(uri)
@@ -89,7 +95,7 @@ public class AttachFileToConversationRunnable implements Runnable, TranscoderLis
             if (message.getEncryption() == Message.ENCRYPTION_DECRYPTED) {
                 mXmppConnectionService.getPgpEngine().encrypt(message, callback);
             } else {
-                mXmppConnectionService.sendMessage(message);
+                mXmppConnectionService.sendMessage(message, forceProxy65);
                 callback.success(message);
             }
         } else {
@@ -104,7 +110,7 @@ public class AttachFileToConversationRunnable implements Runnable, TranscoderLis
                         callback.error(R.string.unable_to_connect_to_keychain, null);
                     }
                 } else {
-                    mXmppConnectionService.sendMessage(message);
+                    mXmppConnectionService.sendMessage(message, forceProxy65);
                     callback.success(message);
                 }
             } catch (FileBackend.FileCopyException e) {
@@ -243,7 +249,7 @@ public class AttachFileToConversationRunnable implements Runnable, TranscoderLis
         if (message.getEncryption() == Message.ENCRYPTION_DECRYPTED) {
             mXmppConnectionService.getPgpEngine().encrypt(message, callback);
         } else {
-            mXmppConnectionService.sendMessage(message);
+            mXmppConnectionService.sendMessage(message, forceProxy65);
             callback.success(message);
         }
     }

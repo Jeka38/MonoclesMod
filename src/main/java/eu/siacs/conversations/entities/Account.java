@@ -87,7 +87,7 @@ public class Account extends AbstractEntity implements AvatarService.Avatarable 
     private static final String KEY_PINNED_MECHANISM = "pinned_mechanism";
     public static final String KEY_PRE_AUTH_REGISTRATION_TOKEN = "pre_auth_registration";
     public static final String KEY_XMPP_PROXY = "xmpp_proxy";
-    public static final String KEY_FORCE_PROXY65 = "force_proxy65";
+    public static final String KEY_PRIORITIZE_PROXY65 = "prioritize_proxy65";
 
 
     protected final JSONObject keys;
@@ -226,11 +226,11 @@ public class Account extends AbstractEntity implements AvatarService.Avatarable 
     }
 
     public boolean httpUploadAvailable(long size) {
-        return !isForceProxy65() && xmppConnection != null && xmppConnection.getFeatures().httpUpload(size);
+        return xmppConnection != null && xmppConnection.getFeatures().httpUpload(size);
     }
 
     public boolean httpUploadAvailable() {
-        return !isForceProxy65() && (isOptionSet(OPTION_HTTP_UPLOAD_AVAILABLE) || httpUploadAvailable(0));
+        return isOptionSet(OPTION_HTTP_UPLOAD_AVAILABLE) || httpUploadAvailable(0);
     }
 
     public String getDisplayName() {
@@ -544,20 +544,25 @@ public class Account extends AbstractEntity implements AvatarService.Avatarable 
         return getKey("private_key_alias");
     }
 
-    public void setXmppProxy(final String proxy) {
-        setKey(KEY_XMPP_PROXY, proxy);
+    public Jid getXmppProxy() {
+        String jid = getKey(KEY_XMPP_PROXY);
+        try {
+            return jid == null ? null : Jid.of(jid);
+        } catch (IllegalArgumentException e) {
+            return null;
+        }
     }
 
-    public String getXmppProxy() {
-        return getKey(KEY_XMPP_PROXY);
+    public void setXmppProxy(Jid jid) {
+        setKey(KEY_XMPP_PROXY, jid == null ? null : jid.toString());
     }
 
-    public void setForceProxy65(final boolean force) {
-        setKey(KEY_FORCE_PROXY65, Boolean.toString(force));
+    public boolean prioritizeProxy65() {
+        return Boolean.parseBoolean(getKey(KEY_PRIORITIZE_PROXY65));
     }
 
-    public boolean isForceProxy65() {
-        return Boolean.parseBoolean(getKey(KEY_FORCE_PROXY65));
+    public void setPrioritizeProxy65(boolean prioritize) {
+        setKey(KEY_PRIORITIZE_PROXY65, String.valueOf(prioritize));
     }
 
     @Override

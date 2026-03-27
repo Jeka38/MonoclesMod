@@ -800,6 +800,10 @@ public class XmppConnectionService extends Service {
     }
 
     public void attachFileToConversation(final Conversation conversation, final Uri uri, final String type, final String subject, final UiCallback<Message> callback) {
+        attachFileToConversation(conversation, uri, type, subject, false, callback);
+    }
+
+    public void attachFileToConversation(final Conversation conversation, final Uri uri, final String type, final String subject, final boolean forceProxy65, final UiCallback<Message> callback) {
         final Message message;
         if (conversation.getReplyTo() == null) {
             message = new Message(conversation, "", conversation.getNextEncryption());
@@ -823,7 +827,7 @@ public class XmppConnectionService extends Service {
         }
         Log.d(Config.LOGTAG, "attachFile: type=" + message.getType());
         Log.d(Config.LOGTAG, "counterpart=" + message.getCounterpart());
-        final AttachFileToConversationRunnable runnable = new AttachFileToConversationRunnable(this, uri, type, message, conversation, callback, getMaxHttpUploadSize(conversation));
+        final AttachFileToConversationRunnable runnable = new AttachFileToConversationRunnable(this, uri, type, message, conversation, callback, getMaxHttpUploadSize(conversation), forceProxy65);
         if (runnable.isVideoMessage()) {
             VIDEO_COMPRESSION_EXECUTOR.execute(runnable);
         } else {
@@ -844,7 +848,7 @@ public class XmppConnectionService extends Service {
                 || (mimeType != null && mimeType.endsWith("/gif"))
                 || getFileBackend().unusualBounds(uri) || "data".equals(uri.getScheme())) {
             Log.d(Config.LOGTAG, conversation.getAccount().getJid().asBareJid() + ": not compressing picture. sending as file");
-            attachFileToConversation(conversation, uri, mimeType, subject, callback);
+            attachFileToConversation(conversation, uri, mimeType, subject, false, callback);
             return;
         } else {
             // there will be a delay so the caller can be informed to show an info to the user
@@ -879,7 +883,7 @@ public class XmppConnectionService extends Service {
                 getFileBackend().copyImageToPrivateStorage(message, uri);
             } catch (FileBackend.ImageCompressionException e) {
                 Log.d(Config.LOGTAG, "unable to compress image. fall back to file transfer", e);
-                attachFileToConversation(conversation, uri, mimeType, subject, callback);
+                attachFileToConversation(conversation, uri, mimeType, subject, false, callback);
                 return;
             } catch (final FileBackend.FileCopyException e) {
                 callback.error(e.getResId(), message);
@@ -2209,22 +2213,29 @@ public class XmppConnectionService extends Service {
         }
     }
 
-    private void sendFileMessage(final Message message, final boolean delay) {
+    private void sendFileMessage(final Message message, final boolean delay, final boolean forceProxy65) {
         Log.d(Config.LOGTAG, "send file message");
         final Account account = message.getConversation().getAccount();
-        if (account.httpUploadAvailable(fileBackend.getFile(message, false).getSize())
-                || message.getConversation().getMode() == Conversation.MODE_MULTI) {
+        final boolean prioritizeProxy65 = account.prioritizeProxy65();
+        final long fileSize = fileBackend.getFile(message, false).getSize();
+        if (message.getConversation().getMode() == Conversation.MODE_MULTI) {
             mHttpConnectionManager.createNewUploadConnection(message, delay);
+        } else if (forceProxy65 || prioritizeProxy65 || !account.httpUploadAvailable(fileSize)) {
+            mJingleConnectionManager.startJingleFileTransfer(message, forceProxy65);
         } else {
-            mJingleConnectionManager.startJingleFileTransfer(message);
+            mHttpConnectionManager.createNewUploadConnection(message, delay);
         }
     }
 
     public void sendMessage(final Message message) {
-        sendMessage(message, false, false, false);
+        sendMessage(message, false, false, false, false);
     }
 
-    private void sendMessage(final Message message, final boolean resend, final boolean previewedLinks, final boolean delay) {
+    public void sendMessage(final Message message, final boolean forceProxy65) {
+        sendMessage(message, false, false, false, forceProxy65);
+    }
+
+    private void sendMessage(final Message message, final boolean resend, final boolean previewedLinks, final boolean delay, final boolean forceProxy65) {
         if (resend) {
             message.setTime(System.currentTimeMillis());
         }
@@ -2319,7 +2330,7 @@ public class XmppConnectionService extends Service {
                                         getHttpConnectionManager().createNewDownloadConnection(message, false, (file) -> {
                                             message.setEncryption(encryption);
                                             synchronized (message.getConversation()) {
-                                                if (message.getStatus() == Message.STATUS_WAITING) sendMessage(message, true, true, false);
+                                                if (message.getStatus() == Message.STATUS_WAITING) sendMessage(message, true, true, false, forceProxy65);
                                             }
                                         });
                                         return;
@@ -2370,7 +2381,7 @@ public class XmppConnectionService extends Service {
                             }
                         }
                         synchronized (message.getConversation()) {
-                            if (message.getStatus() == Message.STATUS_WAITING) sendMessage(message, true, true, false);
+                            if (message.getStatus() == Message.STATUS_WAITING) sendMessage(message, true, true, false, forceProxy65);
                         }
                     });
                 }
@@ -2384,7 +2395,7 @@ public class XmppConnectionService extends Service {
                         if (account.httpUploadAvailable(fileBackend.getFile(message, false).getSize())
                                 || conversation.getMode() == Conversation.MODE_MULTI
                                 || message.fixCounterpart()) {
-                            this.sendFileMessage(message, delay);
+                            this.sendFileMessage(message, delay, forceProxy65);
                         } else {
                             break;
                         }
@@ -2398,7 +2409,7 @@ public class XmppConnectionService extends Service {
                         if (account.httpUploadAvailable(fileBackend.getFile(message, false).getSize())
                                 || conversation.getMode() == Conversation.MODE_MULTI
                                 || message.fixCounterpart()) {
-                            this.sendFileMessage(message, delay);
+                            this.sendFileMessage(message, delay, forceProxy65);
                         } else {
                             break;
                         }
@@ -2415,7 +2426,7 @@ public class XmppConnectionService extends Service {
                             break;
                         }
                         if (message.needsUploading()) {
-                            mJingleConnectionManager.startJingleFileTransfer(message);
+                            mJingleConnectionManager.startJingleFileTransfer(message, false);
                         } else {
                             packet = mMessageGenerator.generateOtrChat(message);
                         }
@@ -2436,7 +2447,7 @@ public class XmppConnectionService extends Service {
                         if (account.httpUploadAvailable(fileBackend.getFile(message, false).getSize())
                                 || conversation.getMode() == Conversation.MODE_MULTI
                                 || message.fixCounterpart()) {
-                            this.sendFileMessage(message, delay);
+                            this.sendFileMessage(message, delay, forceProxy65);
                         } else {
                             break;
                         }
@@ -2591,7 +2602,7 @@ public class XmppConnectionService extends Service {
     }
 
     public void resendMessage(final Message message, final boolean delay) {
-        sendMessage(message, true, false, delay);
+        sendMessage(message, true, false, delay, false);
     }
 
     public void requestEasyOnboardingInvite(final Account account, final EasyOnboardingInvite.OnInviteRequested callback) {
@@ -4847,7 +4858,7 @@ public class XmppConnectionService extends Service {
                     return;
                 }
                 if (message.needsUploading()) {
-                    mJingleConnectionManager.startJingleFileTransfer(message);
+                    mJingleConnectionManager.startJingleFileTransfer(message, false);
                 } else {
                     MessagePacket outPacket = mMessageGenerator.generateOtrChat(message);
                     if (outPacket != null) {

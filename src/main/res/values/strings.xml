@@ -495,9 +495,9 @@
     <string name="changelog">Changes</string>
     <string name="account_settings_hostname">Hostname</string>
     <string name="account_settings_port">Port</string>
-    <string name="account_settings_proxy_jid">Proxy JID</string>
-    <string name="account_settings_proxy_jid_hint">proxy.example.com</string>
-    <string name="account_settings_force_proxy65">Force Proxy65</string>
+    <string name="xmpp_proxy_jid">XMPP Proxy JID (Proxy65)</string>
+    <string name="xmpp_proxy_jid_hint">proxy.example.com</string>
+    <string name="prioritize_proxy65">Prioritize Proxy65</string>
     <string name="hostname_or_onion">Hostname or .onion address</string>
     <string name="not_a_valid_port">This is not a valid port number</string>
     <string name="not_valid_hostname">This is not a valid hostname</string>
@@ -1514,6 +1514,7 @@
 
     <string name="schedule_message">Send later</string>
     <string name="schedule_message_title">Schedule message</string>
+    <string name="attach_choose_file_proxy65">Send via Proxy65</string>
     <string name="pref_message_autocomplete">Mention autocomplete</string>
     <string name="pref_message_autocomplete_summary">Use \"@\" in a chat room to autocomplete and list users</string>
 </resources>
