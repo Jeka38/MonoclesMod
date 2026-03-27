@@ -1471,6 +1471,7 @@ public class DatabaseBackend extends SQLiteOpenHelper {
         try(final Cursor cursor = db.query(Conversation.TABLENAME, null,
                 Conversation.ACCOUNT + "=? AND (" + Conversation.CONTACTJID
                         + " like ? OR " + Conversation.CONTACTJID + "=?)", selectionArgs, null, null, null)) {
+            Conversation fallback = null;
             while (cursor.moveToNext()) {
                 final Conversation conversation = Conversation.fromCursor(cursor);
                 if (conversation.getJid() instanceof InvalidJid) {
@@ -1478,9 +1479,11 @@ public class DatabaseBackend extends SQLiteOpenHelper {
                 }
                 if (Objects.equal(conversation.getNextCounterpart(), nextCounterpart)) {
                     return conversation;
+                } else if (nextCounterpart == null && conversation.getMode() == Conversation.MODE_SINGLE) {
+                    fallback = conversation;
                 }
             }
-            return null;
+            return fallback;
         }
     }
 
