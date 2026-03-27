@@ -165,6 +165,7 @@ public class Message extends AbstractEntity implements AvatarService.Avatarable 
     protected Message mInReplyTo = null;
     private String retractId = null;
     protected int resendCount = 0;
+    private boolean forceProxy65 = false;
 
     private Boolean isGeoUri = null;
     private Boolean isXmppUri = null;
@@ -1932,6 +1933,14 @@ public class Message extends AbstractEntity implements AvatarService.Avatarable 
     }
     public int increaseResendCount(){
         return ++resendCount;
+    }
+
+    public void setForceProxy65(boolean forceProxy65) {
+        this.forceProxy65 = forceProxy65;
+    }
+
+    public boolean isForceProxy65() {
+        return forceProxy65;
     }
 
     public static class PlainTextSpan {}

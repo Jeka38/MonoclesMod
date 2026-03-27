@@ -49,15 +49,18 @@ public class AttachFileToConversationRunnable implements Runnable, TranscoderLis
     private final long maxUploadSize;
     private final boolean isVideoMessage;
     private final long originalFileSize;
+    private final boolean forceProxy65;
     private int currentProgress = -1;
     public static String[] isCompressingVideo = new String[]{null,"0"};
 
-    public AttachFileToConversationRunnable(XmppConnectionService xmppConnectionService, Uri uri, String type, Message message, Conversation conversation, UiCallback<Message> callback, long maxUploadSize) {
+    public AttachFileToConversationRunnable(XmppConnectionService xmppConnectionService, Uri uri, String type, Message message, Conversation conversation, boolean forceProxy65, UiCallback<Message> callback, long maxUploadSize) {
         this.uri = uri;
         this.type = type;
         this.mXmppConnectionService = xmppConnectionService;
         this.message = message;
+        this.message.setForceProxy65(forceProxy65);
         this.conversation = conversation;
+        this.forceProxy65 = forceProxy65;
         this.callback = callback;
         this.maxUploadSize = maxUploadSize;
         mimeType = MimeUtils.guessMimeTypeFromUriAndMime(mXmppConnectionService, uri, type);

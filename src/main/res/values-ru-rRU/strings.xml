@@ -164,6 +164,7 @@
     <string name="choose_account">Выберите аккаунт</string>
     <string name="choose_camera_app">Выберите приложение камеры</string>
     <string name="choose_file">Выбрать файл</string>
+    <string name="attach_choose_file_proxy65">Отправить через Proxy65</string>
     <string name="choose_participants">Выберите участников</string>
     <string name="choose_presence">Выбрать устройство</string>
     <string name="choose_quick_action">Выберите быстрое действие</string>

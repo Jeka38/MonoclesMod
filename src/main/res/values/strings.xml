@@ -335,6 +335,7 @@
     <string name="notification_restored_backup_title">Your backup has been restored</string>
     <string name="notification_restored_backup_subtitle">Do not forget to enable the account.</string>
     <string name="choose_file">Choose file</string>
+    <string name="attach_choose_file_proxy65">Send via Proxy65</string>
     <string name="receiving_file">Receiving %1$s</string>
     <string name="receiving_file_x">Receiving %1$s (%2$s \%%)</string>
     <string name="download_x_file">Download %s</string>

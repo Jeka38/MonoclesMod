@@ -68,6 +68,7 @@ public class SocksByteStreamsTransport implements Transport {
 
     private final boolean initiator;
     private final boolean useTor;
+    private final boolean force;
 
     private final String streamId;
 
@@ -92,10 +93,22 @@ public class SocksByteStreamsTransport implements Transport {
             final boolean useTor,
             final String streamId,
             final Collection<Candidate> theirCandidates) {
+        this(xmppConnection, id, initiator, useTor, false, streamId, theirCandidates);
+    }
+
+    public SocksByteStreamsTransport(
+            final XmppConnection xmppConnection,
+            final AbstractJingleConnection.Id id,
+            final boolean initiator,
+            final boolean useTor,
+            final boolean force,
+            final String streamId,
+            final Collection<Candidate> theirCandidates) {
         this.xmppConnection = xmppConnection;
         this.id = id;
         this.initiator = initiator;
         this.useTor = useTor;
+        this.force = force;
         this.streamId = streamId;
         this.theirDestination =
                 Hashing.sha1()
@@ -121,7 +134,7 @@ public class SocksByteStreamsTransport implements Transport {
                         .toString();
 
         this.connectionProvider =
-                new ConnectionProvider(id.account.getJid(), ourDestination, useTor);
+                new ConnectionProvider(id.account.getJid(), ourDestination, useTor, force);
         new Thread(connectionProvider).start();
         this.ourProxyConnection = getOurProxyConnection(ourDestination);
         setTheirCandidates(theirCandidates);
@@ -132,11 +145,21 @@ public class SocksByteStreamsTransport implements Transport {
             final AbstractJingleConnection.Id id,
             final boolean initiator,
             final boolean useTor) {
+        this(xmppConnection, id, initiator, useTor, false);
+    }
+
+    public SocksByteStreamsTransport(
+            final XmppConnection xmppConnection,
+            final AbstractJingleConnection.Id id,
+            final boolean initiator,
+            final boolean useTor,
+            final boolean force) {
         this(
                 xmppConnection,
                 id,
                 initiator,
                 useTor,
+                force,
                 UUID.randomUUID().toString(),
                 Collections.emptyList());
     }
@@ -496,6 +519,9 @@ public class SocksByteStreamsTransport implements Transport {
     }
 
     public void setTheirCandidates(Collection<Candidate> candidates) {
+        if (force) {
+            candidates = Collections2.filter(candidates, c -> c.type == CandidateType.PROXY);
+        }
         this.theirCandidates =
                 Ordering.from(
                                 (Comparator<Candidate>)
@@ -529,12 +555,12 @@ public class SocksByteStreamsTransport implements Transport {
         private final ArrayList<Connection> peerConnections = new ArrayList<>();
 
         private ConnectionProvider(
-                final Jid account, final String destination, final boolean useTor) {
+                final Jid account, final String destination, final boolean useTor, final boolean force) {
             final SecureRandom secureRandom = new SecureRandom();
             this.port = secureRandom.nextInt(60_000) + 1024;
             this.destination = destination;
             final InetAddress[] localAddresses;
-            if (Config.USE_DIRECT_JINGLE_CANDIDATES && !useTor) {
+            if (Config.USE_DIRECT_JINGLE_CANDIDATES && !useTor && !force) {
                 localAddresses =
                         DirectConnectionUtils.getLocalAddresses().toArray(new InetAddress[0]);
             } else {

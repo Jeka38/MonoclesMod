@@ -30,14 +30,17 @@
 package eu.siacs.conversations.ui.util;
 
 import static eu.siacs.conversations.ui.ConversationFragment.ATTACHMENT_CHOICE;
+import static eu.siacs.conversations.ui.ConversationFragment.ATTACHMENT_CHOICE_CHOOSE_FILE;
+import static eu.siacs.conversations.ui.ConversationFragment.ATTACHMENT_CHOICE_CHOOSE_FILE_PROXY65;
 import static eu.siacs.conversations.ui.ConversationFragment.ATTACHMENT_CHOICE_CHOOSE_IMAGE;
+import static eu.siacs.conversations.ui.ConversationFragment.ATTACHMENT_CHOICE_CHOOSE_VIDEO;
 import static eu.siacs.conversations.ui.ConversationFragment.ATTACHMENT_CHOICE_LOCATION;
 import static eu.siacs.conversations.ui.ConversationFragment.ATTACHMENT_CHOICE_RECORD_VIDEO;
 import static eu.siacs.conversations.ui.ConversationFragment.ATTACHMENT_CHOICE_RECORD_VOICE;
 import static eu.siacs.conversations.ui.ConversationFragment.ATTACHMENT_CHOICE_TAKE_PHOTO;
 
 public enum SendButtonAction {
-    TEXT, TAKE_PHOTO, SEND_LOCATION, RECORD_VOICE, CANCEL, CHOOSE_PICTURE, RECORD_VIDEO, CHOOSE_ATTACHMENT;
+    TEXT, TAKE_PHOTO, SEND_LOCATION, RECORD_VOICE, CANCEL, CHOOSE_PICTURE, RECORD_VIDEO, CHOOSE_ATTACHMENT, CHOOSE_FILE, CHOOSE_FILE_PROXY65, CHOOSE_VIDEO;
 
     public static SendButtonAction valueOfOrDefault(final String setting) {
         if (setting == null) {
@@ -62,10 +65,16 @@ public enum SendButtonAction {
                 return TAKE_PHOTO;
             case ATTACHMENT_CHOICE_CHOOSE_IMAGE:
                 return CHOOSE_PICTURE;
+            case ATTACHMENT_CHOICE_CHOOSE_VIDEO:
+                return CHOOSE_VIDEO;
+            case ATTACHMENT_CHOICE_CHOOSE_FILE:
+                return CHOOSE_FILE;
+            case ATTACHMENT_CHOICE_CHOOSE_FILE_PROXY65:
+                return CHOOSE_FILE_PROXY65;
             case ATTACHMENT_CHOICE:
                 return CHOOSE_ATTACHMENT;
             default:
-                throw new IllegalArgumentException("Not a known attachment choice");
+                throw new IllegalArgumentException("Not a known attachment choice: " + attachmentChoice);
         }
     }
 
@@ -81,6 +90,12 @@ public enum SendButtonAction {
                 return ATTACHMENT_CHOICE_RECORD_VOICE;
             case CHOOSE_PICTURE:
                 return ATTACHMENT_CHOICE_CHOOSE_IMAGE;
+            case CHOOSE_VIDEO:
+                return ATTACHMENT_CHOICE_CHOOSE_VIDEO;
+            case CHOOSE_FILE:
+                return ATTACHMENT_CHOICE_CHOOSE_FILE;
+            case CHOOSE_FILE_PROXY65:
+                return ATTACHMENT_CHOICE_CHOOSE_FILE_PROXY65;
             case CHOOSE_ATTACHMENT:
                 return ATTACHMENT_CHOICE;
             default:

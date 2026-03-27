@@ -800,6 +800,10 @@ public class XmppConnectionService extends Service {
     }
 
     public void attachFileToConversation(final Conversation conversation, final Uri uri, final String type, final String subject, final UiCallback<Message> callback) {
+        attachFileToConversation(conversation, uri, type, subject, false, callback);
+    }
+
+    public void attachFileToConversation(final Conversation conversation, final Uri uri, final String type, final String subject, final boolean forceProxy65, final UiCallback<Message> callback) {
         final Message message;
         if (conversation.getReplyTo() == null) {
             message = new Message(conversation, "", conversation.getNextEncryption());
@@ -823,7 +827,7 @@ public class XmppConnectionService extends Service {
         }
         Log.d(Config.LOGTAG, "attachFile: type=" + message.getType());
         Log.d(Config.LOGTAG, "counterpart=" + message.getCounterpart());
-        final AttachFileToConversationRunnable runnable = new AttachFileToConversationRunnable(this, uri, type, message, conversation, callback, getMaxHttpUploadSize(conversation));
+        final AttachFileToConversationRunnable runnable = new AttachFileToConversationRunnable(this, uri, type, message, conversation, forceProxy65, callback, getMaxHttpUploadSize(conversation));
         if (runnable.isVideoMessage()) {
             VIDEO_COMPRESSION_EXECUTOR.execute(runnable);
         } else {
@@ -2212,8 +2216,8 @@ public class XmppConnectionService extends Service {
     private void sendFileMessage(final Message message, final boolean delay) {
         Log.d(Config.LOGTAG, "send file message");
         final Account account = message.getConversation().getAccount();
-        if (account.httpUploadAvailable(fileBackend.getFile(message, false).getSize())
-                || message.getConversation().getMode() == Conversation.MODE_MULTI) {
+        if (!message.isForceProxy65() && (account.httpUploadAvailable(fileBackend.getFile(message, false).getSize())
+                || message.getConversation().getMode() == Conversation.MODE_MULTI)) {
             mHttpConnectionManager.createNewUploadConnection(message, delay);
         } else {
             mJingleConnectionManager.startJingleFileTransfer(message);
