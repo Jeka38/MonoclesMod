@@ -201,6 +201,18 @@ public class EditAccountActivity extends OmemoActivity implements OnAccountUpdat
                 }
             }
 
+            final String proxyJidString = binding.accountProxyJid.getText().toString();
+            if (!proxyJidString.isEmpty()) {
+                try {
+                    Jid.ofEscaped(proxyJidString);
+                } catch (final IllegalArgumentException e) {
+                    binding.accountProxyJidLayout.setError(getString(R.string.invalid_jid));
+                    binding.accountProxyJid.requestFocus();
+                    removeErrorsOnAllBut(binding.accountProxyJidLayout);
+                    return;
+                }
+            }
+
             final Jid jid;
             try {
                 if (mUsernameMode) {
@@ -287,6 +299,8 @@ public class EditAccountActivity extends OmemoActivity implements OnAccountUpdat
                     binding.accountJidLayout.setError(null);
                 }
                 mAccount.setPassword(password);
+                mAccount.setXmppProxy(binding.accountProxyJid.getText().toString());
+                mAccount.setForceProxy65(binding.accountForceProxy65.isChecked());
                 mAccount.setOption(Account.OPTION_REGISTER, registerNewAccount);
                 if (!xmppConnectionService.updateAccount(mAccount)) {
                     ToastCompat.makeText(EditAccountActivity.this, R.string.unable_to_update_account, ToastCompat.LENGTH_SHORT).show();
@@ -302,6 +316,8 @@ public class EditAccountActivity extends OmemoActivity implements OnAccountUpdat
                 mAccount = new Account(jid.asBareJid(), password);
                 mAccount.setPort(numericPort);
                 mAccount.setHostname(hostname);
+                mAccount.setXmppProxy(binding.accountProxyJid.getText().toString());
+                mAccount.setForceProxy65(binding.accountForceProxy65.isChecked());
                 mAccount.setOption(Account.OPTION_REGISTER, registerNewAccount);
                 xmppConnectionService.createAccount(mAccount);
             }
@@ -467,6 +483,9 @@ public class EditAccountActivity extends OmemoActivity implements OnAccountUpdat
                 }
                 if (view.getId() == R.id.port) {
                     resId = R.string.port_example;
+                }
+                if (view.getId() == R.id.account_proxy_jid) {
+                    resId = R.string.account_settings_proxy_jid_hint;
                 }
                 final int res = resId;
                 new Handler().postDelayed(() -> et.setHint(res), 500);
@@ -658,6 +677,8 @@ public class EditAccountActivity extends OmemoActivity implements OnAccountUpdat
         return jidEdited() ||
                 !this.mAccount.getPassword().equals(binding.accountPassword.getText().toString()) ||
                 !this.mAccount.getHostname().equals(this.binding.hostname.getText().toString()) ||
+                !Strings.nullToEmpty(this.mAccount.getXmppProxy()).equals(this.binding.accountProxyJid.getText().toString()) ||
+                this.mAccount.isForceProxy65() != this.binding.accountForceProxy65.isChecked() ||
                 this.mAccount.getColor(isDarkTheme()) != (previewColor == null ? 0 : previewColor.getColor()) ||
                 !String.valueOf(this.mAccount.getPort()).equals(this.binding.port.getText().toString());
     }
@@ -693,6 +714,8 @@ public class EditAccountActivity extends OmemoActivity implements OnAccountUpdat
         configureActionBar(getSupportActionBar());
         this.binding.accountJid.addTextChangedListener(this.mTextWatcher);
         this.binding.accountJid.setOnFocusChangeListener(this.mEditTextFocusListener);
+        this.binding.accountProxyJid.addTextChangedListener(this.mTextWatcher);
+        this.binding.accountProxyJid.setOnFocusChangeListener(this.mEditTextFocusListener);
         this.binding.accountPassword.addTextChangedListener(this.mTextWatcher);
         this.binding.avater.setOnClickListener(this.mAvatarClickListener);
         this.binding.hostname.addTextChangedListener(mTextWatcher);
@@ -712,12 +735,13 @@ public class EditAccountActivity extends OmemoActivity implements OnAccountUpdat
         if (savedInstanceState != null && savedInstanceState.getBoolean("showMoreTable")) {
             changeMoreTableVisibility(true);
         }
-        final OnCheckedChangeListener OnCheckedShowConfirmPassword = (buttonView, isChecked) -> {
+        final OnCheckedChangeListener onSettingsChangedListener = (buttonView, isChecked) -> {
             updatePortLayout();
             updateSaveButton();
             updateInfoButtons();
         };
-        this.binding.accountRegisterNew.setOnCheckedChangeListener(OnCheckedShowConfirmPassword);
+        this.binding.accountRegisterNew.setOnCheckedChangeListener(onSettingsChangedListener);
+        this.binding.accountForceProxy65.setOnCheckedChangeListener(onSettingsChangedListener);
         if (Config.DISALLOW_REGISTRATION_IN_UI) {
             this.binding.accountRegisterNew.setVisibility(View.GONE);
         }
@@ -1322,8 +1346,11 @@ public class EditAccountActivity extends OmemoActivity implements OnAccountUpdat
             }
             this.binding.port.setText("");
             this.binding.port.getEditableText().append(String.valueOf(this.mAccount.getPort()));
+            this.binding.accountProxyJid.setText(Strings.nullToEmpty(this.mAccount.getXmppProxy()));
+            this.binding.accountForceProxy65.setChecked(this.mAccount.isForceProxy65());
             this.binding.namePort.setVisibility(mShowOptions ? View.VISIBLE : View.GONE);
-
+            this.binding.accountProxyJidLayout.setVisibility(mShowOptions ? View.VISIBLE : View.GONE);
+            this.binding.accountForceProxy65.setVisibility(mShowOptions ? View.VISIBLE : View.GONE);
         }
 
         if (!mInitMode && Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
@@ -1616,6 +1643,10 @@ public class EditAccountActivity extends OmemoActivity implements OnAccountUpdat
         if (this.binding.portLayout != exception) {
             this.binding.portLayout.setErrorEnabled(false);
             this.binding.portLayout.setError(null);
+        }
+        if (this.binding.accountProxyJidLayout != exception) {
+            this.binding.accountProxyJidLayout.setErrorEnabled(false);
+            this.binding.accountProxyJidLayout.setError(null);
         }
     }
 

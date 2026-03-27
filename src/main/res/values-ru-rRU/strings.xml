@@ -15,6 +15,9 @@
     <string name="account_settings_hostname">Имя хоста</string>
     <string name="account_settings_jabber_id">Аккаунт</string>
     <string name="account_settings_port">Порт</string>
+    <string name="account_settings_proxy_jid">JID прокси</string>
+    <string name="account_settings_proxy_jid_hint">proxy.example.com</string>
+    <string name="account_settings_force_proxy65">Использовать только Proxy65</string>
     <string name="account_status_bind_failure">Неудачная связка</string>
     <string name="account_status_connecting">Подключение…</string>
     <string name="account_status_disabled">Временно отключено</string>

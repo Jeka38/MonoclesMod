@@ -24,6 +24,7 @@ import com.google.common.util.concurrent.MoreExecutors;
 import com.google.common.util.concurrent.SettableFuture;
 
 import eu.siacs.conversations.Config;
+import eu.siacs.conversations.entities.Account;
 import eu.siacs.conversations.utils.SocksSocketFactory;
 import eu.siacs.conversations.xml.Element;
 import eu.siacs.conversations.xml.Namespace;
@@ -121,7 +122,7 @@ public class SocksByteStreamsTransport implements Transport {
                         .toString();
 
         this.connectionProvider =
-                new ConnectionProvider(id.account.getJid(), ourDestination, useTor);
+                new ConnectionProvider(id.account, ourDestination, useTor);
         new Thread(connectionProvider).start();
         this.ourProxyConnection = getOurProxyConnection(ourDestination);
         setTheirCandidates(theirCandidates);
@@ -145,9 +146,14 @@ public class SocksByteStreamsTransport implements Transport {
         Preconditions.checkState(
                 this.transportCallback != null, "transport callback needs to be set");
         // TODO this needs to go into a variable so we can cancel it
+        final var candidates =
+                id.account.isForceProxy65()
+                        ? ImmutableList.copyOf(
+                                Collections2.filter(
+                                        theirCandidates, c -> c.type == CandidateType.PROXY))
+                        : theirCandidates;
         final var connectionFinder =
-                new ConnectionFinder(
-                        theirCandidates, theirDestination, selectedByThemCandidate, useTor);
+                new ConnectionFinder(candidates, theirDestination, selectedByThemCandidate, useTor);
         new Thread(connectionFinder).start();
         Futures.addCallback(
                 connectionFinder.connectionFuture,
@@ -309,7 +315,13 @@ public class SocksByteStreamsTransport implements Transport {
             return Futures.immediateFailedFuture(
                     new IllegalStateException("Proxy look up is disabled"));
         }
-        final Jid streamer = xmppConnection.findDiscoItemByFeature(Namespace.BYTE_STREAMS);
+        final String manualProxy = id.account.getXmppProxy();
+        final Jid streamer;
+        if (!Strings.isNullOrEmpty(manualProxy)) {
+            streamer = Jid.ofEscaped(manualProxy);
+        } else {
+            streamer = xmppConnection.findDiscoItemByFeature(Namespace.BYTE_STREAMS);
+        }
         if (streamer == null) {
             return Futures.immediateFailedFuture(
                     new IllegalStateException("No proxy/streamer found"));
@@ -529,12 +541,12 @@ public class SocksByteStreamsTransport implements Transport {
         private final ArrayList<Connection> peerConnections = new ArrayList<>();
 
         private ConnectionProvider(
-                final Jid account, final String destination, final boolean useTor) {
+                final Account account, final String destination, final boolean useTor) {
             final SecureRandom secureRandom = new SecureRandom();
             this.port = secureRandom.nextInt(60_000) + 1024;
             this.destination = destination;
             final InetAddress[] localAddresses;
-            if (Config.USE_DIRECT_JINGLE_CANDIDATES && !useTor) {
+            if (Config.USE_DIRECT_JINGLE_CANDIDATES && !useTor && !account.isForceProxy65()) {
                 localAddresses =
                         DirectConnectionUtils.getLocalAddresses().toArray(new InetAddress[0]);
             } else {
@@ -547,7 +559,7 @@ public class SocksByteStreamsTransport implements Transport {
                         new Candidate(
                                 UUID.randomUUID().toString(),
                                 inetAddress.getHostAddress(),
-                                account,
+                                account.getJid(),
                                 port,
                                 8257536 + i,
                                 CandidateType.DIRECT));
