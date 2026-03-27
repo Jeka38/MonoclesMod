@@ -87,6 +87,7 @@ public class Account extends AbstractEntity implements AvatarService.Avatarable 
     private static final String KEY_PINNED_MECHANISM = "pinned_mechanism";
     public static final String KEY_PRE_AUTH_REGISTRATION_TOKEN = "pre_auth_registration";
     public static final String KEY_XMPP_PROXY = "xmpp_proxy";
+    public static final String KEY_FORCE_PROXY65 = "force_proxy65";
 
 
     protected final JSONObject keys;
@@ -549,6 +550,14 @@ public class Account extends AbstractEntity implements AvatarService.Avatarable 
 
     public void setXmppProxy(String jid) {
         setKey(KEY_XMPP_PROXY, jid);
+    }
+
+    public boolean forceProxy65() {
+        return Boolean.parseBoolean(getKey(KEY_FORCE_PROXY65));
+    }
+
+    public void setForceProxy65(boolean value) {
+        setKey(KEY_FORCE_PROXY65, Boolean.toString(value));
     }
 
     @Override

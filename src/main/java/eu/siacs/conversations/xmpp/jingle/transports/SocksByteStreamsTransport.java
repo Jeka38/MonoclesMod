@@ -144,10 +144,16 @@ public class SocksByteStreamsTransport implements Transport {
     public void connectTheirCandidates() {
         Preconditions.checkState(
                 this.transportCallback != null, "transport callback needs to be set");
+        final ImmutableList<Candidate> candidatesToTry;
+        if (id.account.forceProxy65()) {
+            candidatesToTry = ImmutableList.copyOf(Collections2.filter(theirCandidates, c -> c.type == CandidateType.PROXY));
+        } else {
+            candidatesToTry = theirCandidates;
+        }
         // TODO this needs to go into a variable so we can cancel it
         final var connectionFinder =
                 new ConnectionFinder(
-                        theirCandidates, theirDestination, selectedByThemCandidate, useTor);
+                        candidatesToTry, theirDestination, selectedByThemCandidate, useTor);
         new Thread(connectionFinder).start();
         Futures.addCallback(
                 connectionFinder.connectionFuture,
@@ -352,7 +358,7 @@ public class SocksByteStreamsTransport implements Transport {
                                         host,
                                         streamer,
                                         port,
-                                        Strings.isNullOrEmpty(xmppProxy)
+                                        Strings.isNullOrEmpty(xmppProxy) && !id.account.forceProxy65()
                                                 ? 655360 + (initiator ? 0 : 15)
                                                 : 9345280 + (initiator ? 0 : 15),
                                         CandidateType.PROXY));
@@ -394,7 +400,9 @@ public class SocksByteStreamsTransport implements Transport {
                 proxyConnections,
                 proxies -> {
                     final var candidateBuilder = new ImmutableList.Builder<Candidate>();
-                    candidateBuilder.addAll(this.connectionProvider.candidates);
+                    if (!id.account.forceProxy65()) {
+                        candidateBuilder.addAll(this.connectionProvider.candidates);
+                    }
                     candidateBuilder.addAll(Collections2.transform(proxies, p -> p.candidate));
                     final var transportInfo =
                             new SocksByteStreamsTransportInfo(

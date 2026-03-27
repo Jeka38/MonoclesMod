@@ -2214,7 +2214,7 @@ public class XmppConnectionService extends Service {
         final Account account = message.getConversation().getAccount();
         final boolean isMuc = message.getConversation().getMode() == Conversation.MODE_MULTI;
         if ((account.httpUploadAvailable(fileBackend.getFile(message, false).getSize()) || isMuc)
-                && (isMuc || Strings.isNullOrEmpty(account.getXmppProxy()))) {
+                && (isMuc || (Strings.isNullOrEmpty(account.getXmppProxy()) && !account.forceProxy65()))) {
             mHttpConnectionManager.createNewUploadConnection(message, delay);
         } else {
             mJingleConnectionManager.startJingleFileTransfer(message);

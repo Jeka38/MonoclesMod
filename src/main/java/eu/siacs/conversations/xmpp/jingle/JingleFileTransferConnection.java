@@ -481,6 +481,9 @@ public class JingleFileTransferConnection extends AbstractJingleConnection
         final XmppConnection xmppConnection = id.account.getXmppConnection();
         final boolean useTor = id.account.isOnion() || xmppConnectionService.useTorToConnect();
         if (transportInfo instanceof IbbTransportInfo ibbTransportInfo) {
+            if (id.account.forceProxy65()) {
+                throw new IllegalStateException("Forced Proxy65, but peer offered IBB");
+            }
             final String streamId = ibbTransportInfo.getTransportId();
             final Long blockSize = ibbTransportInfo.getBlockSize();
             if (streamId == null || blockSize == null) {
@@ -516,8 +519,11 @@ public class JingleFileTransferConnection extends AbstractJingleConnection
         final XmppConnection xmppConnection = id.account.getXmppConnection();
         final boolean useTor = id.account.isOnion() || xmppConnectionService.useTorToConnect();
         final String xmppProxy = id.account.getXmppProxy();
-        if (!Strings.isNullOrEmpty(xmppProxy) && remoteHasFeature(Namespace.JINGLE_TRANSPORTS_S5B)) {
+        if ((!Strings.isNullOrEmpty(xmppProxy) || id.account.forceProxy65()) && remoteHasFeature(Namespace.JINGLE_TRANSPORTS_S5B)) {
             return new SocksByteStreamsTransport(xmppConnection, id, isInitiator(), useTor);
+        }
+        if (id.account.forceProxy65()) {
+            throw new IllegalStateException("Remote does not support SOCKS5 Bytestreams");
         }
         if (!useTor && remoteHasFeature(Namespace.JINGLE_TRANSPORT_WEBRTC_DATA_CHANNEL)) {
             return new WebRTCDataChannelTransport(
@@ -1006,6 +1012,11 @@ public class JingleFileTransferConnection extends AbstractJingleConnection
         // terminate the current transport
         transport.terminate();
         if (isInitiator()) {
+            if (id.account.forceProxy65()) {
+                terminateTransport();
+                sendSessionTerminate(Reason.FAILED_TRANSPORT, "Failed to setup Proxy65 transport");
+                return;
+            }
             this.transport = setupLastResortTransport();
             this.transport.setTransportCallback(this);
             final var transportInfoFuture = this.transport.asTransportInfo();

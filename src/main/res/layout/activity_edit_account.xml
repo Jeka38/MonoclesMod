@@ -130,6 +130,14 @@ android:fontFamily="notosansregular"
                                     android:inputType="textEmailAddress" />
                             </com.google.android.material.textfield.TextInputLayout>
 
+                            <com.google.android.material.materialswitch.MaterialSwitch
+                                android:id="@+id/force_proxy65"
+                                style="@style/Widget.monocles.Switch"
+                                android:layout_width="wrap_content"
+                                android:layout_height="wrap_content"
+                                android:layout_marginTop="8dp"
+                                android:text="@string/force_proxy65" />
+
                             <com.google.android.material.textfield.TextInputLayout
                                 android:id="@+id/account_jid_layout"
                                 style="@style/Widget.Conversations.TextInputLayout.OutlinedBox"

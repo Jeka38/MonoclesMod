@@ -496,6 +496,7 @@
     <string name="account_settings_hostname">Hostname</string>
     <string name="account_settings_port">Port</string>
     <string name="account_settings_xmpp_proxy">Proxy65 JID</string>
+    <string name="force_proxy65">Use Proxy65 exclusively</string>
     <string name="hostname_or_onion">Hostname or .onion address</string>
     <string name="not_a_valid_port">This is not a valid port number</string>
     <string name="not_valid_hostname">This is not a valid hostname</string>
