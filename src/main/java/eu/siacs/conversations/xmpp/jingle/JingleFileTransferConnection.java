@@ -515,6 +515,10 @@ public class JingleFileTransferConnection extends AbstractJingleConnection
     private Transport setupTransport() {
         final XmppConnection xmppConnection = id.account.getXmppConnection();
         final boolean useTor = id.account.isOnion() || xmppConnectionService.useTorToConnect();
+        final String xmppProxy = id.account.getXmppProxy();
+        if (!Strings.isNullOrEmpty(xmppProxy) && remoteHasFeature(Namespace.JINGLE_TRANSPORTS_S5B)) {
+            return new SocksByteStreamsTransport(xmppConnection, id, isInitiator(), useTor);
+        }
         if (!useTor && remoteHasFeature(Namespace.JINGLE_TRANSPORT_WEBRTC_DATA_CHANNEL)) {
             return new WebRTCDataChannelTransport(
                     xmppConnectionService.getApplicationContext(),
