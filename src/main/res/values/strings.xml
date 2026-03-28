@@ -1513,4 +1513,8 @@
     <string name="schedule_message_title">Schedule message</string>
     <string name="pref_message_autocomplete">Mention autocomplete</string>
     <string name="pref_message_autocomplete_summary">Use \"@\" in a chat room to autocomplete and list users</string>
+    <string name="pref_use_proxy65">Use Proxy65 for file transfers</string>
+    <string name="pref_use_proxy65_summary">Force file transfers via Proxy65 (XEP-0065) in 1:1 chats</string>
+    <string name="pref_proxy65_jid">Proxy65 JID</string>
+    <string name="pref_proxy65_jid_summary">Manual JID of the Proxy65 streamhost</string>
 </resources>

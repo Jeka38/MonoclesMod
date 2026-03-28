@@ -480,6 +480,9 @@ public class JingleFileTransferConnection extends AbstractJingleConnection
     private Transport setupTransport(final GenericTransportInfo transportInfo) {
         final XmppConnection xmppConnection = id.account.getXmppConnection();
         final boolean useTor = id.account.isOnion() || xmppConnectionService.useTorToConnect();
+        if (id.account.useProxy65() && !(transportInfo instanceof SocksByteStreamsTransportInfo)) {
+            throw new IllegalStateException("Forced Proxy65 but peer offered something else");
+        }
         if (transportInfo instanceof IbbTransportInfo ibbTransportInfo) {
             final String streamId = ibbTransportInfo.getTransportId();
             final Long blockSize = ibbTransportInfo.getBlockSize();
@@ -515,6 +518,9 @@ public class JingleFileTransferConnection extends AbstractJingleConnection
     private Transport setupTransport() {
         final XmppConnection xmppConnection = id.account.getXmppConnection();
         final boolean useTor = id.account.isOnion() || xmppConnectionService.useTorToConnect();
+        if (id.account.useProxy65()) {
+            return new SocksByteStreamsTransport(xmppConnection, id, isInitiator(), useTor);
+        }
         if (!useTor && remoteHasFeature(Namespace.JINGLE_TRANSPORT_WEBRTC_DATA_CHANNEL)) {
             return new WebRTCDataChannelTransport(
                     xmppConnectionService.getApplicationContext(),
@@ -1002,6 +1008,10 @@ public class JingleFileTransferConnection extends AbstractJingleConnection
         // terminate the current transport
         transport.terminate();
         if (isInitiator()) {
+            if (id.account.useProxy65()) {
+                sendSessionTerminate(Reason.CONNECTIVITY_ERROR, "Failed to setup Proxy65 transport");
+                return;
+            }
             this.transport = setupLastResortTransport();
             this.transport.setTransportCallback(this);
             final var transportInfoFuture = this.transport.asTransportInfo();

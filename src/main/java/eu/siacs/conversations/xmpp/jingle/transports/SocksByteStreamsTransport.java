@@ -121,7 +121,7 @@ public class SocksByteStreamsTransport implements Transport {
                         .toString();
 
         this.connectionProvider =
-                new ConnectionProvider(id.account.getJid(), ourDestination, useTor);
+                new ConnectionProvider(id.account.getJid(), ourDestination, useTor || id.account.useProxy65());
         new Thread(connectionProvider).start();
         this.ourProxyConnection = getOurProxyConnection(ourDestination);
         setTheirCandidates(theirCandidates);
@@ -144,10 +144,16 @@ public class SocksByteStreamsTransport implements Transport {
     public void connectTheirCandidates() {
         Preconditions.checkState(
                 this.transportCallback != null, "transport callback needs to be set");
+        final ImmutableList<Candidate> candidatesToTry;
+        if (id.account.useProxy65()) {
+            candidatesToTry = ImmutableList.copyOf(Iterables.filter(theirCandidates, c -> c.type == CandidateType.PROXY));
+        } else {
+            candidatesToTry = theirCandidates;
+        }
         // TODO this needs to go into a variable so we can cancel it
         final var connectionFinder =
                 new ConnectionFinder(
-                        theirCandidates, theirDestination, selectedByThemCandidate, useTor);
+                        candidatesToTry, theirDestination, selectedByThemCandidate, useTor);
         new Thread(connectionFinder).start();
         Futures.addCallback(
                 connectionFinder.connectionFuture,
@@ -309,7 +315,13 @@ public class SocksByteStreamsTransport implements Transport {
             return Futures.immediateFailedFuture(
                     new IllegalStateException("Proxy look up is disabled"));
         }
-        final Jid streamer = xmppConnection.findDiscoItemByFeature(Namespace.BYTE_STREAMS);
+        final String manualProxyJid = id.account.getProxy65Jid();
+        final Jid streamer;
+        if (!manualProxyJid.isEmpty()) {
+            streamer = Jid.of(manualProxyJid);
+        } else {
+            streamer = xmppConnection.findDiscoItemByFeature(Namespace.BYTE_STREAMS);
+        }
         if (streamer == null) {
             return Futures.immediateFailedFuture(
                     new IllegalStateException("No proxy/streamer found"));

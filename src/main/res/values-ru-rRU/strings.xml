@@ -1623,4 +1623,8 @@
     <string name="webxdc_store_hint_summary">Чтобы использовать приложения WebXDC с обновлениями статуса, вам необходимо отключить шифрование при отправке WebXDC. Пожалуйста, включите шифрование позже снова.</string>
     <string name="send_encrypted">Отправить зашифрованное</string>
     <string name="choose_webxdc">Выберите WebXDC</string>
+    <string name="pref_use_proxy65">Использовать Proxy65 для пересылки файлов</string>
+    <string name="pref_use_proxy65_summary">Принудительно отправлять файлы через Proxy65 (XEP-0065) в чатах 1 на 1</string>
+    <string name="pref_proxy65_jid">Proxy65 JID</string>
+    <string name="pref_proxy65_jid_summary">Ручной ввод JID прокси-сервера (streamhost)</string>
 </resources>

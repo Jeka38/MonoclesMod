@@ -439,6 +439,33 @@ android:fontFamily="notosansregular"
                             android:layout_below="@id/jid_password_box"
                             android:layout_marginTop="8dp"
                             android:text="@string/register_account" />
+
+                        <com.google.android.material.materialswitch.MaterialSwitch
+                            android:id="@+id/use_proxy65"
+                            style="@style/Widget.monocles.Switch"
+                            android:layout_width="wrap_content"
+                            android:layout_height="wrap_content"
+                            android:layout_below="@id/account_register_new"
+                            android:layout_marginTop="8dp"
+                            android:text="@string/pref_use_proxy65" />
+
+                        <com.google.android.material.textfield.TextInputLayout
+                            android:id="@+id/proxy65_jid_layout"
+                            style="@style/Widget.Conversations.TextInputLayout.OutlinedBox"
+                            android:layout_width="match_parent"
+                            android:layout_height="wrap_content"
+                            android:layout_below="@id/use_proxy65"
+                            android:hint="@string/pref_proxy65_jid"
+                            app:errorTextAppearance="@style/TextAppearance.Conversations.Design.Error"
+                            app:hintTextAppearance="@style/TextAppearance.Conversations.Design.Hint">
+
+                            <eu.siacs.conversations.ui.widget.TextInputEditText
+                                android:id="@+id/proxy65_jid"
+                                style="@style/Widget.Material3.TextInputEditText.FilledBox"
+                                android:layout_width="match_parent"
+                                android:layout_height="wrap_content"
+                                android:inputType="textEmailAddress" />
+                        </com.google.android.material.textfield.TextInputLayout>
                     </RelativeLayout>
                 </androidx.cardview.widget.CardView>
 

@@ -86,6 +86,8 @@ public class Account extends AbstractEntity implements AvatarService.Avatarable 
     private static final String KEY_PGP_ID = "pgp_id";
     private static final String KEY_PINNED_MECHANISM = "pinned_mechanism";
     public static final String KEY_PRE_AUTH_REGISTRATION_TOKEN = "pre_auth_registration";
+    public static final String KEY_USE_PROXY65 = "use_proxy65";
+    public static final String KEY_PROXY65_JID = "proxy65_jid";
 
 
     protected final JSONObject keys;
@@ -540,6 +542,22 @@ public class Account extends AbstractEntity implements AvatarService.Avatarable 
 
     public String getPrivateKeyAlias() {
         return getKey("private_key_alias");
+    }
+
+    public boolean useProxy65() {
+        return Boolean.parseBoolean(getKey(KEY_USE_PROXY65));
+    }
+
+    public void setUseProxy65(boolean useProxy65) {
+        setKey(KEY_USE_PROXY65, Boolean.toString(useProxy65));
+    }
+
+    public String getProxy65Jid() {
+        return Strings.nullToEmpty(getKey(KEY_PROXY65_JID));
+    }
+
+    public void setProxy65Jid(String proxy65Jid) {
+        setKey(KEY_PROXY65_JID, proxy65Jid);
     }
 
     @Override

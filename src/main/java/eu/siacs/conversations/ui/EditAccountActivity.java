@@ -230,7 +230,18 @@ public class EditAccountActivity extends OmemoActivity implements OnAccountUpdat
             }
             final String hostname;
             int numericPort = 5222;
+            final String proxy65JidText = binding.proxy65Jid.getText().toString();
             if (mShowOptions) {
+                if (binding.useProxy65.isChecked() && !proxy65JidText.isEmpty()) {
+                    try {
+                        Jid.ofEscaped(proxy65JidText);
+                    } catch (IllegalArgumentException e) {
+                        binding.proxy65JidLayout.setError(getString(R.string.invalid_jid));
+                        binding.proxy65Jid.requestFocus();
+                        removeErrorsOnAllBut(binding.proxy65JidLayout);
+                        return;
+                    }
+                }
                 hostname = CharMatcher.whitespace().removeFrom(binding.hostname.getText());
                 final String port = CharMatcher.whitespace().removeFrom(binding.port.getText());
                 if (Resolver.invalidHostname(hostname)) {
@@ -281,6 +292,8 @@ public class EditAccountActivity extends OmemoActivity implements OnAccountUpdat
                 mAccount.setJid(jid);
                 mAccount.setPort(numericPort);
                 mAccount.setHostname(hostname);
+                mAccount.setUseProxy65(binding.useProxy65.isChecked());
+                mAccount.setProxy65Jid(proxy65JidText);
                 if (XmppConnection.errorMessage != null) {
                     binding.accountJidLayout.setError(XmppConnection.errorMessage);
                 } else {
@@ -302,6 +315,8 @@ public class EditAccountActivity extends OmemoActivity implements OnAccountUpdat
                 mAccount = new Account(jid.asBareJid(), password);
                 mAccount.setPort(numericPort);
                 mAccount.setHostname(hostname);
+                mAccount.setUseProxy65(binding.useProxy65.isChecked());
+                mAccount.setProxy65Jid(proxy65JidText);
                 mAccount.setOption(Account.OPTION_REGISTER, registerNewAccount);
                 xmppConnectionService.createAccount(mAccount);
             }
@@ -658,6 +673,8 @@ public class EditAccountActivity extends OmemoActivity implements OnAccountUpdat
         return jidEdited() ||
                 !this.mAccount.getPassword().equals(binding.accountPassword.getText().toString()) ||
                 !this.mAccount.getHostname().equals(this.binding.hostname.getText().toString()) ||
+                this.mAccount.useProxy65() != binding.useProxy65.isChecked() ||
+                !this.mAccount.getProxy65Jid().equals(binding.proxy65Jid.getText().toString()) ||
                 this.mAccount.getColor(isDarkTheme()) != (previewColor == null ? 0 : previewColor.getColor()) ||
                 !String.valueOf(this.mAccount.getPort()).equals(this.binding.port.getText().toString());
     }
@@ -703,6 +720,11 @@ public class EditAccountActivity extends OmemoActivity implements OnAccountUpdat
         this.binding.port.addTextChangedListener(mTextWatcher);
         this.binding.saveButton.setOnClickListener(this.mSaveButtonClickListener);
         this.binding.cancelButton.setOnClickListener(this.mCancelButtonClickListener);
+        this.binding.useProxy65.setOnCheckedChangeListener((buttonView, isChecked) -> {
+            updateSaveButton();
+            binding.proxy65JidLayout.setVisibility(isChecked ? View.VISIBLE : View.GONE);
+        });
+        this.binding.proxy65Jid.addTextChangedListener(mTextWatcher);
         this.binding.actionEditYourName.setOnClickListener(this::onEditYourNameClicked);
         this.binding.scanButton.setOnClickListener((v) -> ScanActivity.scan(this));
         binding.accountColorBox.setOnClickListener((v) -> {
@@ -893,6 +915,8 @@ public class EditAccountActivity extends OmemoActivity implements OnAccountUpdat
         mUseI2P = QuickConversationsService.isConversations() && preferences.getBoolean("use_i2p", getResources().getBoolean(R.bool.use_i2p));
         this.mShowOptions = mUseTor || mUseI2P || (preferences.getBoolean("show_connection_options", getResources().getBoolean(R.bool.show_connection_options)));
         this.binding.namePort.setVisibility(mShowOptions ? View.VISIBLE : View.GONE);
+        this.binding.useProxy65.setVisibility(mShowOptions ? View.VISIBLE : View.GONE);
+        this.binding.proxy65JidLayout.setVisibility(mShowOptions && binding.useProxy65.isChecked() ? View.VISIBLE : View.GONE);
         if (mForceRegister != null) {
             this.binding.accountRegisterNew.setVisibility(View.GONE);
         }
@@ -1323,6 +1347,10 @@ public class EditAccountActivity extends OmemoActivity implements OnAccountUpdat
             this.binding.port.setText("");
             this.binding.port.getEditableText().append(String.valueOf(this.mAccount.getPort()));
             this.binding.namePort.setVisibility(mShowOptions ? View.VISIBLE : View.GONE);
+            this.binding.useProxy65.setChecked(this.mAccount.useProxy65());
+            this.binding.proxy65Jid.setText(this.mAccount.getProxy65Jid());
+            this.binding.useProxy65.setVisibility(mShowOptions ? View.VISIBLE : View.GONE);
+            this.binding.proxy65JidLayout.setVisibility(mShowOptions && this.mAccount.useProxy65() ? View.VISIBLE : View.GONE);
 
         }
 
@@ -1616,6 +1644,10 @@ public class EditAccountActivity extends OmemoActivity implements OnAccountUpdat
         if (this.binding.portLayout != exception) {
             this.binding.portLayout.setErrorEnabled(false);
             this.binding.portLayout.setError(null);
+        }
+        if (this.binding.proxy65JidLayout != exception) {
+            this.binding.proxy65JidLayout.setErrorEnabled(false);
+            this.binding.proxy65JidLayout.setError(null);
         }
     }
 
