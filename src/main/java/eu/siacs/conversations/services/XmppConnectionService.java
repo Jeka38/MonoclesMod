@@ -2212,8 +2212,7 @@ public class XmppConnectionService extends Service {
     private void sendFileMessage(final Message message, final boolean delay) {
         Log.d(Config.LOGTAG, "send file message");
         final Account account = message.getConversation().getAccount();
-        if (account.httpUploadAvailable(fileBackend.getFile(message, false).getSize())
-                || message.getConversation().getMode() == Conversation.MODE_MULTI) {
+        if (message.getConversation().getMode() == Conversation.MODE_MULTI && !message.isPrivateMessage()) {
             mHttpConnectionManager.createNewUploadConnection(message, delay);
         } else {
             mJingleConnectionManager.startJingleFileTransfer(message);
@@ -2381,9 +2380,9 @@ public class XmppConnectionService extends Service {
             switch (message.getEncryption()) {
                 case Message.ENCRYPTION_NONE:
                     if (message.needsUploading()) {
-                        if (account.httpUploadAvailable(fileBackend.getFile(message, false).getSize())
-                                || conversation.getMode() == Conversation.MODE_MULTI
-                                || message.fixCounterpart()) {
+                        if (conversation.getMode() == Conversation.MODE_MULTI && !message.isPrivateMessage()) {
+                            this.sendFileMessage(message, delay);
+                        } else if (message.fixCounterpart()) {
                             this.sendFileMessage(message, delay);
                         } else {
                             break;
@@ -2395,9 +2394,9 @@ public class XmppConnectionService extends Service {
                 case Message.ENCRYPTION_PGP:
                 case Message.ENCRYPTION_DECRYPTED:
                     if (message.needsUploading()) {
-                        if (account.httpUploadAvailable(fileBackend.getFile(message, false).getSize())
-                                || conversation.getMode() == Conversation.MODE_MULTI
-                                || message.fixCounterpart()) {
+                        if (conversation.getMode() == Conversation.MODE_MULTI && !message.isPrivateMessage()) {
+                            this.sendFileMessage(message, delay);
+                        } else if (message.fixCounterpart()) {
                             this.sendFileMessage(message, delay);
                         } else {
                             break;
@@ -2433,9 +2432,9 @@ public class XmppConnectionService extends Service {
                 case Message.ENCRYPTION_AXOLOTL:
                     message.setFingerprint(account.getAxolotlService().getOwnFingerprint());
                     if (message.needsUploading()) {
-                        if (account.httpUploadAvailable(fileBackend.getFile(message, false).getSize())
-                                || conversation.getMode() == Conversation.MODE_MULTI
-                                || message.fixCounterpart()) {
+                        if (conversation.getMode() == Conversation.MODE_MULTI && !message.isPrivateMessage()) {
+                            this.sendFileMessage(message, delay);
+                        } else if (message.fixCounterpart()) {
                             this.sendFileMessage(message, delay);
                         } else {
                             break;

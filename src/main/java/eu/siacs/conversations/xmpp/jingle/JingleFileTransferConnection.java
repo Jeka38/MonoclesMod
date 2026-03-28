@@ -288,22 +288,11 @@ public class JingleFileTransferConnection extends AbstractJingleConnection
     private static boolean configureTransportWithPeerInfo(
             final Transport transport, final FileTransferContentMap contentMap) {
         final GenericTransportInfo transportInfo = contentMap.requireOnlyTransportInfo();
-        if (transport instanceof WebRTCDataChannelTransport webRTCDataChannelTransport
-                && transportInfo instanceof WebRTCDataChannelTransportInfo) {
-            webRTCDataChannelTransport.setResponderDescription(SessionDescription.of(contentMap));
-            return true;
-        } else if (transport instanceof SocksByteStreamsTransport socksBytestreamsTransport
+        if (transport instanceof SocksByteStreamsTransport socksBytestreamsTransport
                 && transportInfo
                 instanceof SocksByteStreamsTransportInfo socksBytestreamsTransportInfo) {
             socksBytestreamsTransport.setTheirCandidates(
                     socksBytestreamsTransportInfo.getCandidates());
-            return true;
-        } else if (transport instanceof InbandBytestreamsTransport inbandBytestreamsTransport
-                && transportInfo instanceof IbbTransportInfo ibbTransportInfo) {
-            final var peerBlockSize = ibbTransportInfo.getBlockSize();
-            if (peerBlockSize != null) {
-                inbandBytestreamsTransport.setPeerBlockSize(peerBlockSize);
-            }
             return true;
         } else {
             return false;
@@ -480,58 +469,24 @@ public class JingleFileTransferConnection extends AbstractJingleConnection
     private Transport setupTransport(final GenericTransportInfo transportInfo) {
         final XmppConnection xmppConnection = id.account.getXmppConnection();
         final boolean useTor = id.account.isOnion() || xmppConnectionService.useTorToConnect();
-        if (transportInfo instanceof IbbTransportInfo ibbTransportInfo) {
-            final String streamId = ibbTransportInfo.getTransportId();
-            final Long blockSize = ibbTransportInfo.getBlockSize();
-            if (streamId == null || blockSize == null) {
-                throw new IllegalStateException("ibb transport is missing sid and/or block-size");
-            }
-            return new InbandBytestreamsTransport(
-                    xmppConnection,
-                    id.with,
-                    isInitiator(),
-                    streamId,
-                    Ints.saturatedCast(blockSize));
-        } else if (transportInfo
-                instanceof SocksByteStreamsTransportInfo socksBytestreamsTransportInfo) {
+        if (transportInfo instanceof SocksByteStreamsTransportInfo socksBytestreamsTransportInfo) {
             final String streamId = socksBytestreamsTransportInfo.getTransportId();
-            final String destination = socksBytestreamsTransportInfo.getDestinationAddress();
             final List<SocksByteStreamsTransport.Candidate> candidates =
                     socksBytestreamsTransportInfo.getCandidates();
             Log.d(Config.LOGTAG, "received socks candidates " + candidates);
             return new SocksByteStreamsTransport(
                     xmppConnection, id, isInitiator(), useTor, streamId, candidates);
-        } else if (!useTor && transportInfo instanceof WebRTCDataChannelTransportInfo) {
-            return new WebRTCDataChannelTransport(
-                    xmppConnectionService.getApplicationContext(),
-                    xmppConnection,
-                    id.account,
-                    isInitiator());
         } else {
-            throw new IllegalArgumentException("Do not know how to create transport");
+            throw new IllegalArgumentException("Do not know how to create transport " + transportInfo.getClass().getSimpleName());
         }
     }
 
     private Transport setupTransport() {
         final XmppConnection xmppConnection = id.account.getXmppConnection();
         final boolean useTor = id.account.isOnion() || xmppConnectionService.useTorToConnect();
-        if (!useTor && remoteHasFeature(Namespace.JINGLE_TRANSPORT_WEBRTC_DATA_CHANNEL)) {
-            return new WebRTCDataChannelTransport(
-                    xmppConnectionService.getApplicationContext(),
-                    xmppConnection,
-                    id.account,
-                    isInitiator());
-        }
-        if (remoteHasFeature(Namespace.JINGLE_TRANSPORTS_S5B)) {
-            return new SocksByteStreamsTransport(xmppConnection, id, isInitiator(), useTor);
-        }
-        return setupLastResortTransport();
+        return new SocksByteStreamsTransport(xmppConnection, id, isInitiator(), useTor);
     }
 
-    private Transport setupLastResortTransport() {
-        final XmppConnection xmppConnection = id.account.getXmppConnection();
-        return new InbandBytestreamsTransport(xmppConnection, id.with, isInitiator());
-    }
 
     private void failureToAcceptSession(final Throwable throwable) {
         if (isTerminated()) {
@@ -993,37 +948,8 @@ public class JingleFileTransferConnection extends AbstractJingleConnection
             return;
         }
         Log.d(Config.LOGTAG, "onTransportSetupFailed");
-        final var isTransportInBand = transport instanceof InbandBytestreamsTransport;
-        if (isTransportInBand) {
-            terminateTransport();
-            sendSessionTerminate(Reason.CONNECTIVITY_ERROR, "Failed to setup IBB transport");
-            return;
-        }
-        // terminate the current transport
-        transport.terminate();
-        if (isInitiator()) {
-            this.transport = setupLastResortTransport();
-            this.transport.setTransportCallback(this);
-            final var transportInfoFuture = this.transport.asTransportInfo();
-            Futures.addCallback(
-                    transportInfoFuture,
-                    new FutureCallback<>() {
-                        @Override
-                        public void onSuccess(final Transport.TransportInfo transportWrapper) {
-                            final FileTransferContentMap contentMap = getLocalContentMap();
-                            sendTransportReplace(contentMap.withTransport(transportWrapper));
-                        }
-
-                        @Override
-                        public void onFailure(@NonNull Throwable throwable) {
-                            // TODO send application failure;
-                        }
-                    },
-                    MoreExecutors.directExecutor());
-
-        } else {
-            Log.d(Config.LOGTAG, "transport setup failed. waiting for initiator to replace");
-        }
+        terminateTransport();
+        sendSessionTerminate(Reason.CONNECTIVITY_ERROR, "Transport setup failed");
     }
 
     private void sendTransportReplace(final FileTransferContentMap contentMap) {
