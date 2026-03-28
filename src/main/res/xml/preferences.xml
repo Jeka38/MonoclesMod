@@ -751,6 +751,13 @@
                 android:key="show_connection_options"
                 android:summary="@string/pref_show_connection_options_summary"
                 android:title="@string/pref_show_connection_options" />
+            <EditTextPreference
+                android:key="global_proxy_hostname"
+                android:title="@string/pref_proxy_hostname" />
+            <EditTextPreference
+                android:defaultValue="1080"
+                android:key="global_proxy_port"
+                android:title="@string/pref_proxy_port" />
         </PreferenceCategory>
         <PreferenceCategory android:title="@string/pref_input_options">
             <SwitchPreference

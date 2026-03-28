@@ -354,7 +354,16 @@ public class XmppConnection implements Runnable {
                 } catch (Exception e) {
                     throw new IOException(e.getMessage());
                 }
-            } else if (!account.getProxyHostname().isEmpty()) {
+            } else if (!account.getProxyHostname().isEmpty() || !mXmppConnectionService.getPreferences().getString("global_proxy_hostname", "").isEmpty()) {
+                final String proxyHostname;
+                final int proxyPort;
+                if (!account.getProxyHostname().isEmpty()) {
+                    proxyHostname = account.getProxyHostname();
+                    proxyPort = account.getProxyPort();
+                } else {
+                    proxyHostname = mXmppConnectionService.getPreferences().getString("global_proxy_hostname", "");
+                    proxyPort = Integer.parseInt(mXmppConnectionService.getPreferences().getString("global_proxy_port", "1080"));
+                }
                 String destination;
                 if (account.getHostname().isEmpty()) {
                     destination = account.getServer();
@@ -371,12 +380,12 @@ public class XmppConnection implements Runnable {
                                 + ": connect to "
                                 + destination
                                 + " via Proxy "
-                                + account.getProxyHostname()
+                                + proxyHostname
                                 + ":"
-                                + account.getProxyPort()
+                                + proxyPort
                                 + ". directTls="
                                 + directTls);
-                localSocket = SocksSocketFactory.createSocket(account.getProxyHostname(), account.getProxyPort(), destination, port);
+                localSocket = SocksSocketFactory.createSocket(proxyHostname, proxyPort, destination, port);
 
                 if (directTls) {
                     localSocket = upgradeSocketToTls(localSocket);
@@ -1912,9 +1921,9 @@ public class XmppConnection implements Runnable {
                                 final String url = data.getValue("url");
                                 final String fallbackUrl = data.getValue("captcha-fallback-url");
                                 if (url != null) {
-                                    is = HttpConnectionManager.open(url, useTor, useI2P);
+                                    is = HttpConnectionManager.open(mXmppConnectionService.getApplicationContext(), url, useTor, useI2P);
                                 } else if (fallbackUrl != null) {
-                                    is = HttpConnectionManager.open(fallbackUrl, useTor, useI2P);
+                                    is = HttpConnectionManager.open(mXmppConnectionService.getApplicationContext(), fallbackUrl, useTor, useI2P);
                                 } else {
                                     is = null;
                                 }

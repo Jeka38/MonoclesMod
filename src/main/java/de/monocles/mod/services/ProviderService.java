@@ -50,7 +50,7 @@ public class ProviderService extends AsyncTask<String, Object, Boolean> {
 
         try {
             Log.d(Config.LOGTAG, "ProviderService: Updating provider list from " + Config.PROVIDER_URL);
-            final InputStream is = HttpConnectionManager.open(Config.PROVIDER_URL, mUseTor, false);
+            final InputStream is = HttpConnectionManager.open(xmppConnectionService == null ? null : xmppConnectionService.getApplicationContext(), Config.PROVIDER_URL, mUseTor, false);
             final BufferedReader reader = new BufferedReader(new InputStreamReader(is));
             String line;
             while ((line = reader.readLine()) != null) {

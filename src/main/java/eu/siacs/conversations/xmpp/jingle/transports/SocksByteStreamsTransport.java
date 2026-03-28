@@ -154,7 +154,7 @@ public class SocksByteStreamsTransport implements Transport {
         // TODO this needs to go into a variable so we can cancel it
         final var connectionFinder =
                 new ConnectionFinder(
-                        id.account, candidatesToTry, theirDestination, selectedByThemCandidate, useTor);
+                        xmppConnection, id.account, candidatesToTry, theirDestination, selectedByThemCandidate, useTor);
         new Thread(connectionFinder).start();
         Futures.addCallback(
                 connectionFinder.connectionFuture,
@@ -291,7 +291,7 @@ public class SocksByteStreamsTransport implements Transport {
                 proxy -> {
                     final var connectionFinder =
                             new ConnectionFinder(
-                                    id.account, ImmutableList.of(proxy), ourDestination, null, useTor);
+                                    xmppConnection, id.account, ImmutableList.of(proxy), ourDestination, null, useTor);
                     new Thread(connectionFinder).start();
                     return Futures.transform(
                             connectionFinder.connectionFuture,
@@ -717,6 +717,7 @@ public class SocksByteStreamsTransport implements Transport {
 
         private final SettableFuture<Connection> connectionFuture = SettableFuture.create();
 
+        private final XmppConnection xmppConnection;
         private final Account account;
         private final ImmutableList<Candidate> candidates;
         private final String destination;
@@ -725,11 +726,13 @@ public class SocksByteStreamsTransport implements Transport {
         private final boolean useTor;
 
         private ConnectionFinder(
+                final XmppConnection xmppConnection,
                 final Account account,
                 final ImmutableList<Candidate> candidates,
                 final String destination,
                 final ListenableFuture<Connection> selectedByThemCandidate,
                 final boolean useTor) {
+            this.xmppConnection = xmppConnection;
             this.account = account;
             this.candidates = candidates;
             this.destination = destination;
@@ -771,9 +774,14 @@ public class SocksByteStreamsTransport implements Transport {
         private Connection connect(final Candidate candidate) throws IOException {
             final var timeout = 3000;
             final Socket socket;
+            final String globalProxyHostname = xmppConnection.getXmppConnectionService().getPreferences().getString("global_proxy_hostname", "");
             if (account != null && !account.getProxyHostname().isEmpty()) {
                 Log.d(Config.LOGTAG, "using Proxy to connect to candidate " + candidate.host);
                 socket = SocksSocketFactory.createSocket(account.getProxyHostname(), account.getProxyPort(), candidate.host, candidate.port);
+            } else if (!globalProxyHostname.isEmpty()) {
+                final int globalProxyPort = Integer.parseInt(xmppConnection.getXmppConnectionService().getPreferences().getString("global_proxy_port", "1080"));
+                Log.d(Config.LOGTAG, "using Global Proxy to connect to candidate " + candidate.host);
+                socket = SocksSocketFactory.createSocket(globalProxyHostname, globalProxyPort, candidate.host, candidate.port);
             } else if (useTor) {
                 Log.d(Config.LOGTAG, "using Tor to connect to candidate " + candidate.host);
                 socket = SocksSocketFactory.createSocketOverTor(candidate.host, candidate.port);

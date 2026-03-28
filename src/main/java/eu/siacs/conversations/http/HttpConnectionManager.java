@@ -1,6 +1,9 @@
 package eu.siacs.conversations.http;
 
+import android.content.Context;
+import android.content.SharedPreferences;
 import android.os.Build;
+import android.preference.PreferenceManager;
 import android.util.Log;
 
 import org.apache.http.conn.ssl.StrictHostnameVerifier;
@@ -159,28 +162,45 @@ public class HttpConnectionManager extends AbstractConnectionManager {
         }
     }
 
-    public static OkHttpClient.Builder newBuilder(final boolean tor, final boolean i2p) {
-        return newBuilder(null, tor, i2p);
+    public static OkHttpClient.Builder newBuilder(final Context context, final boolean tor, final boolean i2p) {
+        return newBuilder(context, null, tor, i2p);
     }
 
-    public static OkHttpClient.Builder newBuilder(final Account account, final boolean tor, final boolean i2p) {
+    public OkHttpClient.Builder newBuilder(final boolean tor, final boolean i2p) {
+        return newBuilder(mXmppConnectionService, null, tor, i2p);
+    }
+
+    public OkHttpClient.Builder newBuilder(final Account account, final boolean tor, final boolean i2p) {
+        return newBuilder(mXmppConnectionService, account, tor, i2p);
+    }
+
+    public static OkHttpClient.Builder newBuilder(final Context context, final Account account, final boolean tor, final boolean i2p) {
         final OkHttpClient.Builder builder = OK_HTTP_CLIENT.newBuilder();
         builder.writeTimeout(30, TimeUnit.SECONDS);
         builder.readTimeout(30, TimeUnit.SECONDS);
         if (account != null && !account.getProxyHostname().isEmpty()) {
             builder.proxy(new Proxy(Proxy.Type.SOCKS, new InetSocketAddress(account.getProxyHostname(), account.getProxyPort())));
+        } else if (context != null) {
+            final SharedPreferences preferences = PreferenceManager.getDefaultSharedPreferences(context);
+            final String proxyHostname = preferences.getString("global_proxy_hostname", "");
+            if (!proxyHostname.isEmpty()) {
+                final int proxyPort = Integer.parseInt(preferences.getString("global_proxy_port", "1080"));
+                builder.proxy(new Proxy(Proxy.Type.SOCKS, new InetSocketAddress(proxyHostname, proxyPort)));
+            } else if (tor || i2p) {
+                builder.proxy(HttpConnectionManager.getProxy(i2p));
+            }
         } else if (tor || i2p) {
             builder.proxy(HttpConnectionManager.getProxy(i2p));
         }
         return builder;
     }
 
-    public static InputStream open(final String url, final boolean tor, final boolean i2p) throws IOException {
-        return open(HttpUrl.get(url), tor, i2p);
+    public static InputStream open(final Context context, final String url, final boolean tor, final boolean i2p) throws IOException {
+        return open(context, HttpUrl.get(url), tor, i2p);
     }
 
-    public static InputStream open(final HttpUrl httpUrl, final boolean tor, final boolean i2p) throws IOException {
-        final OkHttpClient client = newBuilder(tor, i2p).build();
+    public static InputStream open(final Context context, final HttpUrl httpUrl, final boolean tor, final boolean i2p) throws IOException {
+        final OkHttpClient client = newBuilder(context, tor, i2p).build();
         final Request request = new Request.Builder().get().url(httpUrl).build();
         final ResponseBody body = client.newCall(request).execute().body();
         if (body == null) {
