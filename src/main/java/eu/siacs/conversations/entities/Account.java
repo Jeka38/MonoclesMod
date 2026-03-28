@@ -88,6 +88,8 @@ public class Account extends AbstractEntity implements AvatarService.Avatarable 
     public static final String KEY_PRE_AUTH_REGISTRATION_TOKEN = "pre_auth_registration";
     public static final String KEY_USE_PROXY65 = "use_proxy65";
     public static final String KEY_PROXY65_JID = "proxy65_jid";
+    public static final String KEY_PROXY_HOSTNAME = "proxy_hostname";
+    public static final String KEY_PROXY_PORT = "proxy_port";
 
 
     protected final JSONObject keys;
@@ -558,6 +560,22 @@ public class Account extends AbstractEntity implements AvatarService.Avatarable 
 
     public void setProxy65Jid(String proxy65Jid) {
         setKey(KEY_PROXY65_JID, proxy65Jid);
+    }
+
+    public String getProxyHostname() {
+        return Strings.nullToEmpty(getKey(KEY_PROXY_HOSTNAME));
+    }
+
+    public void setProxyHostname(String hostname) {
+        setKey(KEY_PROXY_HOSTNAME, hostname);
+    }
+
+    public int getProxyPort() {
+        return getKeyAsInt(KEY_PROXY_PORT, 1080);
+    }
+
+    public void setProxyPort(int port) {
+        setKey(KEY_PROXY_PORT, String.valueOf(port));
     }
 
     @Override

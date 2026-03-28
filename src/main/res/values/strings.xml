@@ -1517,4 +1517,6 @@
     <string name="pref_use_proxy65_summary">Force file transfers via Proxy65 (XEP-0065) in 1:1 chats</string>
     <string name="pref_proxy65_jid">Proxy65 JID</string>
     <string name="pref_proxy65_jid_summary">Manual JID of the Proxy65 streamhost</string>
+    <string name="pref_proxy_hostname">Proxy Hostname</string>
+    <string name="pref_proxy_port">Proxy Port</string>
 </resources>

@@ -354,6 +354,46 @@ public class XmppConnection implements Runnable {
                 } catch (Exception e) {
                     throw new IOException(e.getMessage());
                 }
+            } else if (!account.getProxyHostname().isEmpty()) {
+                String destination;
+                if (account.getHostname().isEmpty()) {
+                    destination = account.getServer();
+                } else {
+                    destination = account.getHostname();
+                    this.verifiedHostname = destination;
+                }
+                final int port = account.getPort();
+                final boolean directTls = Resolver.useDirectTls(port);
+
+                Log.d(
+                        Config.LOGTAG,
+                        account.getJid().asBareJid()
+                                + ": connect to "
+                                + destination
+                                + " via Proxy "
+                                + account.getProxyHostname()
+                                + ":"
+                                + account.getProxyPort()
+                                + ". directTls="
+                                + directTls);
+                localSocket = SocksSocketFactory.createSocket(account.getProxyHostname(), account.getProxyPort(), destination, port);
+
+                if (directTls) {
+                    localSocket = upgradeSocketToTls(localSocket);
+                    features.encryptionEnabled = true;
+                }
+
+                try {
+                    startXmpp(localSocket);
+                } catch (final InterruptedException e) {
+                    Log.d(
+                            Config.LOGTAG,
+                            account.getJid().asBareJid()
+                                    + ": thread was interrupted before beginning stream");
+                    return;
+                } catch (final Exception e) {
+                    throw new IOException("Could not start stream", e);
+                }
             } else if (useTor && !useI2P) {
                 String destination;
                 if (account.getHostname().isEmpty() || account.isOnion()) {

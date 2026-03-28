@@ -137,7 +137,7 @@ public class HttpConnectionManager extends AbstractConnectionManager {
         final String slotHostname = url.host();
         final boolean onionSlot = slotHostname.endsWith(".onion");
         final boolean I2PSlot = slotHostname.endsWith(".i2p");
-        final OkHttpClient.Builder builder = newBuilder(mXmppConnectionService.useTorToConnect() || account.isOnion() || onionSlot , mXmppConnectionService.useI2PToConnect() || account.isI2P() || I2PSlot);
+        final OkHttpClient.Builder builder = newBuilder(account, mXmppConnectionService.useTorToConnect() || account.isOnion() || onionSlot , mXmppConnectionService.useI2PToConnect() || account.isI2P() || I2PSlot);
         builder.readTimeout(readTimeout, TimeUnit.SECONDS);
         setupTrustManager(builder, interactive);
         return builder.build();
@@ -160,11 +160,17 @@ public class HttpConnectionManager extends AbstractConnectionManager {
     }
 
     public static OkHttpClient.Builder newBuilder(final boolean tor, final boolean i2p) {
+        return newBuilder(null, tor, i2p);
+    }
+
+    public static OkHttpClient.Builder newBuilder(final Account account, final boolean tor, final boolean i2p) {
         final OkHttpClient.Builder builder = OK_HTTP_CLIENT.newBuilder();
         builder.writeTimeout(30, TimeUnit.SECONDS);
         builder.readTimeout(30, TimeUnit.SECONDS);
-        if (tor || i2p) {
-            builder.proxy(HttpConnectionManager.getProxy(i2p)).build();
+        if (account != null && !account.getProxyHostname().isEmpty()) {
+            builder.proxy(new Proxy(Proxy.Type.SOCKS, new InetSocketAddress(account.getProxyHostname(), account.getProxyPort())));
+        } else if (tor || i2p) {
+            builder.proxy(HttpConnectionManager.getProxy(i2p));
         }
         return builder;
     }

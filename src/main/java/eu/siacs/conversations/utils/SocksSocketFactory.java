@@ -86,6 +86,10 @@ public class SocksSocketFactory {
         return false;
     }
 
+    public static Socket createSocket(String proxyHost, int proxyPort, String host, int port) throws IOException {
+        return createSocket(new InetSocketAddress(proxyHost, proxyPort), host, port);
+    }
+
     private static Socket createSocket(InetSocketAddress address, String destination, int port) throws IOException {
         Socket socket = new Socket();
         try {

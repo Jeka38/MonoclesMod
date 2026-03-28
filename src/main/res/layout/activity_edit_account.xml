@@ -440,32 +440,98 @@ android:fontFamily="notosansregular"
                             android:layout_marginTop="8dp"
                             android:text="@string/register_account" />
 
-                        <com.google.android.material.materialswitch.MaterialSwitch
-                            android:id="@+id/use_proxy65"
-                            style="@style/Widget.monocles.Switch"
-                            android:layout_width="wrap_content"
-                            android:layout_height="wrap_content"
-                            android:layout_below="@id/account_register_new"
-                            android:layout_marginTop="8dp"
-                            android:text="@string/pref_use_proxy65" />
-
-                        <com.google.android.material.textfield.TextInputLayout
-                            android:id="@+id/proxy65_jid_layout"
-                            style="@style/Widget.Conversations.TextInputLayout.OutlinedBox"
+                        <LinearLayout
+                            android:id="@+id/proxy_settings"
                             android:layout_width="match_parent"
                             android:layout_height="wrap_content"
-                            android:layout_below="@id/use_proxy65"
-                            android:hint="@string/pref_proxy65_jid"
-                            app:errorTextAppearance="@style/TextAppearance.Conversations.Design.Error"
-                            app:hintTextAppearance="@style/TextAppearance.Conversations.Design.Hint">
+                            android:layout_below="@id/account_register_new"
+                            android:orientation="vertical">
 
-                            <eu.siacs.conversations.ui.widget.TextInputEditText
-                                android:id="@+id/proxy65_jid"
-                                style="@style/Widget.Material3.TextInputEditText.FilledBox"
+                            <LinearLayout
+                                android:id="@+id/proxy_host_port"
                                 android:layout_width="match_parent"
                                 android:layout_height="wrap_content"
-                                android:inputType="textEmailAddress" />
-                        </com.google.android.material.textfield.TextInputLayout>
+                                android:layout_marginTop="8dp"
+                                android:orientation="horizontal"
+                                android:weightSum="1">
+
+                                <LinearLayout
+                                    android:layout_width="0dp"
+                                    android:layout_height="match_parent"
+                                    android:layout_weight="0.7"
+                                    android:orientation="vertical">
+
+                                    <com.google.android.material.textfield.TextInputLayout
+                                        android:id="@+id/proxy_hostname_layout"
+                                        style="@style/Widget.Conversations.TextInputLayout.OutlinedBox"
+                                        android:layout_width="match_parent"
+                                        android:layout_height="wrap_content"
+                                        android:hint="@string/pref_proxy_hostname"
+                                        app:errorTextAppearance="@style/TextAppearance.Conversations.Design.Error"
+                                        app:hintTextAppearance="@style/TextAppearance.Conversations.Design.Hint">
+
+                                        <eu.siacs.conversations.ui.widget.TextInputEditText
+                                            android:id="@+id/proxy_hostname"
+                                            style="@style/Widget.Material3.TextInputEditText.FilledBox"
+                                            android:fontFamily="notosansregular"
+                                            android:layout_width="match_parent"
+                                            android:layout_height="wrap_content"
+                                            android:inputType="textWebEmailAddress" />
+                                    </com.google.android.material.textfield.TextInputLayout>
+                                </LinearLayout>
+
+                                <LinearLayout
+                                    android:layout_width="0dp"
+                                    android:layout_height="match_parent"
+                                    android:layout_weight="0.3"
+                                    android:orientation="vertical">
+
+                                    <com.google.android.material.textfield.TextInputLayout
+                                        android:id="@+id/proxy_port_layout"
+                                        style="@style/Widget.Conversations.TextInputLayout.OutlinedBox"
+                                        android:layout_width="match_parent"
+                                        android:layout_height="match_parent"
+                                        android:hint="@string/pref_proxy_port"
+                                        app:errorTextAppearance="@style/TextAppearance.Conversations.Design.Error"
+                                        app:hintTextAppearance="@style/TextAppearance.Conversations.Design.Hint">
+
+                                        <eu.siacs.conversations.ui.widget.TextInputEditText
+                                            android:id="@+id/proxy_port"
+                                            style="@style/Widget.Material3.TextInputEditText.FilledBox"
+                                            android:fontFamily="notosansregular"
+                                            android:layout_width="match_parent"
+                                            android:layout_height="match_parent"
+                                            android:inputType="number"
+                                            android:maxLength="5" />
+                                    </com.google.android.material.textfield.TextInputLayout>
+                                </LinearLayout>
+                            </LinearLayout>
+
+                            <com.google.android.material.materialswitch.MaterialSwitch
+                                android:id="@+id/use_proxy65"
+                                style="@style/Widget.monocles.Switch"
+                                android:layout_width="wrap_content"
+                                android:layout_height="wrap_content"
+                                android:layout_marginTop="8dp"
+                                android:text="@string/pref_use_proxy65" />
+
+                            <com.google.android.material.textfield.TextInputLayout
+                                android:id="@+id/proxy65_jid_layout"
+                                style="@style/Widget.Conversations.TextInputLayout.OutlinedBox"
+                                android:layout_width="match_parent"
+                                android:layout_height="wrap_content"
+                                android:hint="@string/pref_proxy65_jid"
+                                app:errorTextAppearance="@style/TextAppearance.Conversations.Design.Error"
+                                app:hintTextAppearance="@style/TextAppearance.Conversations.Design.Hint">
+
+                                <eu.siacs.conversations.ui.widget.TextInputEditText
+                                    android:id="@+id/proxy65_jid"
+                                    style="@style/Widget.Material3.TextInputEditText.FilledBox"
+                                    android:layout_width="match_parent"
+                                    android:layout_height="wrap_content"
+                                    android:inputType="textEmailAddress" />
+                            </com.google.android.material.textfield.TextInputLayout>
+                        </LinearLayout>
                     </RelativeLayout>
                 </androidx.cardview.widget.CardView>
 
