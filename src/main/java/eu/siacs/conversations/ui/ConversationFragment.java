@@ -1977,6 +1977,12 @@ public class ConversationFragment extends XmppFragment
         binding.takePictureButton.setOnClickListener(this.mtakePictureButtonListener);
         binding.messagesView.setOnScrollListener(mOnScrollListener);
         binding.messagesView.setTranscriptMode(ListView.TRANSCRIPT_MODE_NORMAL);
+        binding.messagesView.setOnItemLongClickListener((parent, view, position, id) -> {
+            if (position >= 0 && position < messageList.size()) {
+                selectedMessage = messageList.get(position);
+            }
+            return false;
+        });
         mediaPreviewAdapter = new MediaPreviewAdapter(this);
         binding.mediaPreview.setAdapter(mediaPreviewAdapter);
         messageListAdapter = new MessageAdapter((XmppActivity) getActivity(), this.messageList);
@@ -2372,8 +2378,11 @@ public class ConversationFragment extends XmppFragment
 
         synchronized (this.messageList) {
             super.onCreateContextMenu(menu, v, menuInfo);
-            AdapterView.AdapterContextMenuInfo acmi = (AdapterContextMenuInfo) menuInfo;
-            this.selectedMessage = this.messageList.get(acmi.position);
+            if (menuInfo instanceof AdapterContextMenuInfo acmi) {
+                this.selectedMessage = this.messageList.get(acmi.position);
+            } else if (selectedMessage == null) {
+                return;
+            }
             populateContextMenu(menu);
         }
     }

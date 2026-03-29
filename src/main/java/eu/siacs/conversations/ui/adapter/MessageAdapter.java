@@ -1639,8 +1639,6 @@ public class MessageAdapter extends ArrayAdapter<Message> {
                         .onContactPictureClicked(message);
             }
         });
-        viewHolder.message_box.setOnLongClickListener(View::showContextMenu);
-        viewHolder.messageBody.setOnLongClickListener(View::showContextMenu);
 
 
         viewHolder.contact_picture.setOnClickListener(v -> {
