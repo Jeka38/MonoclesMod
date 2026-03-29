@@ -1664,28 +1664,6 @@ public class MessageAdapter extends ArrayAdapter<Message> {
             AvatarWorkerTask.loadAvatar(message, viewHolder.contact_picture, R.dimen.avatar);
         }
 
-        resetClickListener(viewHolder.message_box, viewHolder.messageBody);
-        if (activity != null && activity.xmppConnectionService != null && activity.xmppConnectionService.getBooleanPreference("show_thread_feature", R.bool.show_thread_feature)) {
-            viewHolder.message_box.setOnClickListener(v -> {
-                if (MessageAdapter.this.mOnMessageBoxClickedListener != null) {
-                    MessageAdapter.this.mOnMessageBoxClickedListener
-                            .onContactPictureClicked(message);
-                }
-            });
-            viewHolder.messageBody.setOnClickListener(v -> {
-                if (MessageAdapter.this.mOnMessageBoxClickedListener != null) {
-                    MessageAdapter.this.mOnMessageBoxClickedListener
-                            .onContactPictureClicked(message);
-                }
-            });
-        }
-
-        viewHolder.messageBody.setOnClickListener(v -> {
-            if (MessageAdapter.this.mOnMessageBoxClickedListener != null) {
-                MessageAdapter.this.mOnMessageBoxClickedListener
-                        .onContactPictureClicked(message);
-            }
-        });
 
 
         viewHolder.contact_picture.setOnClickListener(v -> {
@@ -1907,6 +1885,12 @@ public class MessageAdapter extends ArrayAdapter<Message> {
         }
         displayStatus(viewHolder, message, type, darkBackground);
 
+        View.OnClickListener messageClickListener = v -> {
+            if (MessageAdapter.this.mOnMessageBoxClickedListener != null) {
+                MessageAdapter.this.mOnMessageBoxClickedListener.onContactPictureClicked(message);
+            }
+        };
+
         View.OnLongClickListener messageLongClickListener = v -> {
             return view.performLongClick();
         };
@@ -1923,23 +1907,63 @@ public class MessageAdapter extends ArrayAdapter<Message> {
             return false;
         };
 
-        if (viewHolder.message_box != null) viewHolder.message_box.setOnLongClickListener(messageLongClickListener);
-        if (viewHolder.messageBody != null) viewHolder.messageBody.setOnLongClickListener(messageLongClickListener);
-        if (viewHolder.username != null) viewHolder.username.setOnLongClickListener(contactLongClickListener);
-        if (viewHolder.user != null) viewHolder.user.setOnLongClickListener(contactLongClickListener);
-        if (viewHolder.subject != null) viewHolder.subject.setOnLongClickListener(messageLongClickListener);
-        if (viewHolder.encryption != null) viewHolder.encryption.setOnLongClickListener(messageLongClickListener);
-        if (viewHolder.time != null) viewHolder.time.setOnLongClickListener(messageLongClickListener);
-        if (viewHolder.indicator != null) viewHolder.indicator.setOnLongClickListener(messageLongClickListener);
-        if (viewHolder.indicatorReceived != null) viewHolder.indicatorReceived.setOnLongClickListener(messageLongClickListener);
-        if (viewHolder.status_message != null) viewHolder.status_message.setOnLongClickListener(messageLongClickListener);
+        if (viewHolder.message_box != null) {
+            viewHolder.message_box.setOnClickListener(messageClickListener);
+            viewHolder.message_box.setOnLongClickListener(messageLongClickListener);
+        }
+        if (viewHolder.messageBody != null) {
+            viewHolder.messageBody.setOnClickListener(messageClickListener);
+            viewHolder.messageBody.setOnLongClickListener(messageLongClickListener);
+        }
+        if (viewHolder.username != null) {
+            viewHolder.username.setOnClickListener(messageClickListener);
+            viewHolder.username.setOnLongClickListener(contactLongClickListener);
+        }
+        if (viewHolder.user != null) {
+            viewHolder.user.setOnClickListener(messageClickListener);
+            viewHolder.user.setOnLongClickListener(contactLongClickListener);
+        }
+        if (viewHolder.subject != null) {
+            viewHolder.subject.setOnClickListener(messageClickListener);
+            viewHolder.subject.setOnLongClickListener(messageLongClickListener);
+        }
+        if (viewHolder.encryption != null) {
+            viewHolder.encryption.setOnClickListener(messageClickListener);
+            viewHolder.encryption.setOnLongClickListener(messageLongClickListener);
+        }
+        if (viewHolder.time != null) {
+            viewHolder.time.setOnClickListener(messageClickListener);
+            viewHolder.time.setOnLongClickListener(messageLongClickListener);
+        }
+        if (viewHolder.indicator != null) {
+            viewHolder.indicator.setOnClickListener(messageClickListener);
+            viewHolder.indicator.setOnLongClickListener(messageLongClickListener);
+        }
+        if (viewHolder.indicatorReceived != null) {
+            viewHolder.indicatorReceived.setOnClickListener(messageClickListener);
+            viewHolder.indicatorReceived.setOnLongClickListener(messageLongClickListener);
+        }
+        if (viewHolder.status_message != null) {
+            viewHolder.status_message.setOnClickListener(messageClickListener);
+            viewHolder.status_message.setOnLongClickListener(messageLongClickListener);
+        }
+        if (viewHolder.images != null) {
+            viewHolder.images.setOnClickListener(messageClickListener);
+            viewHolder.images.setOnLongClickListener(messageLongClickListener);
+        }
+        if (viewHolder.edit_indicator != null) {
+            viewHolder.edit_indicator.setOnClickListener(messageClickListener);
+            viewHolder.edit_indicator.setOnLongClickListener(messageLongClickListener);
+        }
+        if (viewHolder.retract_indicator != null) {
+            viewHolder.retract_indicator.setOnClickListener(messageClickListener);
+            viewHolder.retract_indicator.setOnLongClickListener(messageLongClickListener);
+        }
+
         if (viewHolder.download_button != null) viewHolder.download_button.setOnLongClickListener(messageLongClickListener);
         if (viewHolder.resend_button != null) viewHolder.resend_button.setOnLongClickListener(messageLongClickListener);
         if (viewHolder.answer_button != null) viewHolder.answer_button.setOnLongClickListener(messageLongClickListener);
         if (viewHolder.load_more_messages != null) viewHolder.load_more_messages.setOnLongClickListener(messageLongClickListener);
-        if (viewHolder.images != null) viewHolder.images.setOnLongClickListener(messageLongClickListener);
-        if (viewHolder.edit_indicator != null) viewHolder.edit_indicator.setOnLongClickListener(messageLongClickListener);
-        if (viewHolder.retract_indicator != null) viewHolder.retract_indicator.setOnLongClickListener(messageLongClickListener);
         if (viewHolder.richlinkview != null) viewHolder.richlinkview.setOnLongClickListener(messageLongClickListener);
         if (viewHolder.audioPlayer != null) viewHolder.audioPlayer.setOnLongClickListener(messageLongClickListener);
         if (viewHolder.transfer != null) viewHolder.transfer.setOnLongClickListener(messageLongClickListener);
