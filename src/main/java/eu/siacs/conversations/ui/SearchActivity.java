@@ -175,9 +175,6 @@ public class SearchActivity extends XmppActivity implements TextWatcher, OnSearc
         final String user = multi ? UIHelper.getDisplayedMucCounterpart(message.getCounterpart()) : null;
         if (message != null) {
             switch (item.getItemId()) {
-                case R.id.open_conversation:
-                    switchToConversation(wrap(message.getConversation()));
-                    break;
                 case R.id.share_with:
                     ShareUtil.share(this, message, user);
                     break;
