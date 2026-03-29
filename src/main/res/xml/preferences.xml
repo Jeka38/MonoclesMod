@@ -763,6 +763,16 @@
                 android:key="proxy_port"
                 android:summary="@string/pref_proxy_port_summary"
                 android:title="@string/pref_proxy_port" />
+            <EditTextPreference
+                android:dependency="use_proxy"
+                android:key="proxy_username"
+                android:summary="@string/pref_proxy_username_summary"
+                android:title="@string/pref_proxy_username" />
+            <EditTextPreference
+                android:dependency="use_proxy"
+                android:key="proxy_password"
+                android:summary="@string/pref_proxy_password_summary"
+                android:title="@string/pref_proxy_password" />
             <SwitchPreference
                 android:defaultValue="@bool/show_connection_options"
                 android:key="show_connection_options"

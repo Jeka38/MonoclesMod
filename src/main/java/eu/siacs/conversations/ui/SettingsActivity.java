@@ -121,6 +121,8 @@ public class SettingsActivity extends XmppActivity implements OnSharedPreference
     public static final String USE_PROXY = "use_proxy";
     public static final String PROXY_HOST = "proxy_host";
     public static final String PROXY_PORT = "proxy_port";
+    public static final String PROXY_USERNAME = "proxy_username";
+    public static final String PROXY_PASSWORD = "proxy_password";
     public static final String ALLOW_MESSAGE_CORRECTION = "allow_message_correction";
     public static final String ALLOW_MESSAGE_RETRACTION = "allow_message_retraction";
     public static final String ENABLE_OTR_ENCRYPTION = "enable_otr_encryption";
@@ -1249,7 +1251,9 @@ public class SettingsActivity extends XmppActivity implements OnSharedPreference
         } else if (name.equals("use_tor")
                 || name.equals(USE_PROXY)
                 || name.equals(PROXY_HOST)
-                || name.equals(PROXY_PORT)) {
+                || name.equals(PROXY_PORT)
+                || name.equals(PROXY_USERNAME)
+                || name.equals(PROXY_PASSWORD)) {
             if (name.equals("use_tor") && preferences.getBoolean(name, false)) {
                 displayToast(getString(R.string.audio_video_disabled_tor));
             }

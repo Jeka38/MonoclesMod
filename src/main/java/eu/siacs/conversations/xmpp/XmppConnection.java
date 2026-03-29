@@ -522,13 +522,20 @@ public class XmppConnection implements Runnable {
                         if (useProxy) {
                             final String proxyHost = mXmppConnectionService.getProxyHost();
                             final int proxyPort = mXmppConnectionService.getProxyPort();
+                            final String proxyUsername = mXmppConnectionService.getProxyUsername();
+                            final String proxyPassword = mXmppConnectionService.getProxyPassword();
                             final String destination =
                                     result.getHostname() == null
                                             ? result.getIp().getHostAddress()
                                             : IDN.toASCII(result.getHostname().toString());
                             localSocket =
                                     SocksSocketFactory.createSocketOverProxy(
-                                            proxyHost, proxyPort, destination, result.getPort());
+                                            proxyHost,
+                                            proxyPort,
+                                            destination,
+                                            result.getPort(),
+                                            proxyUsername,
+                                            proxyPassword);
                         } else {
                             localSocket = new Socket();
                             localSocket.connect(addr, Config.SOCKET_TIMEOUT * 1000);

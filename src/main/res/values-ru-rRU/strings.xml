@@ -929,6 +929,10 @@
     <string name="pref_proxy_host_summary">Имя хоста или IP-адрес SOCKS5 proxy</string>
     <string name="pref_proxy_port">Порт proxy</string>
     <string name="pref_proxy_port_summary">Порт SOCKS5 proxy-сервера</string>
+    <string name="pref_proxy_username">Имя пользователя proxy</string>
+    <string name="pref_proxy_username_summary">Необязательное имя пользователя для SOCKS5-аутентификации</string>
+    <string name="pref_proxy_password">Пароль proxy</string>
+    <string name="pref_proxy_password_summary">Необязательный пароль для SOCKS5-аутентификации</string>
     <string name="pref_use_indicate_received">Уведомления о доставке сообщений</string>
     <string name="pref_use_indicate_received_summary">Если поддерживается, полученные сообщения будут помечены галочкой</string>
     <string name="pref_use_inner_storage">Использование внутреннего хранилища для хранения медиа</string>

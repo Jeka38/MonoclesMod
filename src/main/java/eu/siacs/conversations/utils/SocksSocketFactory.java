@@ -15,14 +15,53 @@ import eu.siacs.conversations.Config;
 public class SocksSocketFactory {
 
     public static void createSocksConnection(final Socket socket, final String destination, final int port) throws IOException {
+        createSocksConnection(socket, destination, port, null, null);
+    }
+
+    public static void createSocksConnection(
+            final Socket socket,
+            final String destination,
+            final int port,
+            final String username,
+            final String password) throws IOException {
         //TODO use different Socks Addr Type if destination is IP or IPv6
         final InputStream proxyIs = socket.getInputStream();
         final OutputStream proxyOs = socket.getOutputStream();
-        proxyOs.write(new byte[]{0x05, 0x01, 0x00});
+        final boolean hasAuth = username != null && !username.isEmpty();
+        if (hasAuth) {
+            proxyOs.write(new byte[]{0x05, 0x02, 0x00, 0x02});
+        } else {
+            proxyOs.write(new byte[]{0x05, 0x01, 0x00});
+        }
         proxyOs.flush();
         final byte[] handshake = new byte[2];
         ByteStreams.readFully(proxyIs, handshake);
-        if (handshake[0] != 0x05 || handshake[1] != 0x00) {
+        if (handshake[0] != 0x05) {
+            throw new SocksConnectionException("Socks 5 handshake failed");
+        }
+        if (handshake[1] == 0x02) {
+            if (!hasAuth) {
+                throw new SocksConnectionException("SOCKS5 proxy requires authentication");
+            }
+            final byte[] userBytes = username.getBytes();
+            final byte[] passBytes = (password == null ? "" : password).getBytes();
+            if (userBytes.length > 255 || passBytes.length > 255) {
+                throw new SocksConnectionException("SOCKS5 credentials are too long");
+            }
+            final ByteBuffer auth = ByteBuffer.allocate(3 + userBytes.length + passBytes.length);
+            auth.put((byte) 0x01);
+            auth.put((byte) userBytes.length);
+            auth.put(userBytes);
+            auth.put((byte) passBytes.length);
+            auth.put(passBytes);
+            proxyOs.write(auth.array());
+            proxyOs.flush();
+            final byte[] authResponse = new byte[2];
+            ByteStreams.readFully(proxyIs, authResponse);
+            if (authResponse[1] != 0x00) {
+                throw new SocksConnectionException("SOCKS5 authentication failed");
+            }
+        } else if (handshake[1] != 0x00) {
             throw new SocksConnectionException("Socks 5 handshake failed");
         }
         final byte[] dest = destination.getBytes();
@@ -87,13 +126,22 @@ public class SocksSocketFactory {
     }
 
     private static Socket createSocket(InetSocketAddress address, String destination, int port) throws IOException {
+        return createSocket(address, destination, port, null, null);
+    }
+
+    private static Socket createSocket(
+            InetSocketAddress address,
+            String destination,
+            int port,
+            String username,
+            String password) throws IOException {
         Socket socket = new Socket();
         try {
             socket.connect(address, Config.CONNECT_TIMEOUT * 1000);
         } catch (IOException e) {
             throw new SocksProxyNotFoundException();
         }
-        createSocksConnection(socket, destination, port);
+        createSocksConnection(socket, destination, port, username, password);
         return socket;
     }
 
@@ -111,6 +159,21 @@ public class SocksSocketFactory {
             final String destination,
             final int port) throws IOException {
         return createSocket(new InetSocketAddress(proxyHost, proxyPort), destination, port);
+    }
+
+    public static Socket createSocketOverProxy(
+            final String proxyHost,
+            final int proxyPort,
+            final String destination,
+            final int port,
+            final String username,
+            final String password) throws IOException {
+        return createSocket(
+                new InetSocketAddress(proxyHost, proxyPort),
+                destination,
+                port,
+                username,
+                password);
     }
 
     private static class SocksConnectionException extends IOException {

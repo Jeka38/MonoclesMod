@@ -694,6 +694,10 @@
     <string name="pref_proxy_host_summary">Hostname or IP address of the SOCKS5 proxy</string>
     <string name="pref_proxy_port">Proxy port</string>
     <string name="pref_proxy_port_summary">Port of the SOCKS5 proxy server</string>
+    <string name="pref_proxy_username">Proxy username</string>
+    <string name="pref_proxy_username_summary">Optional username for SOCKS5 authentication</string>
+    <string name="pref_proxy_password">Proxy password</string>
+    <string name="pref_proxy_password_summary">Optional password for SOCKS5 authentication</string>
     <string name="pref_connection_options">Connection options</string>
     <string name="image_low">Low (720p)</string>
     <string name="image_mid">Medium (1920p)</string>

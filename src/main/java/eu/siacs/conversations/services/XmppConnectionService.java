@@ -5610,6 +5610,14 @@ public class XmppConnectionService extends Service {
         }
     }
 
+    public String getProxyUsername() {
+        return Strings.nullToEmpty(getPreferences().getString("proxy_username", "")).trim();
+    }
+
+    public String getProxyPassword() {
+        return Strings.nullToEmpty(getPreferences().getString("proxy_password", ""));
+    }
+
     public boolean showExtendedConnectionOptions() {
         return getBooleanPreference("show_connection_options", R.bool.show_connection_options);
     }
