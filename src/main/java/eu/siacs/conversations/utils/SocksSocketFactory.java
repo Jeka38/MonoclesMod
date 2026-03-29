@@ -105,6 +105,14 @@ public class SocksSocketFactory {
         return createSocket(new InetSocketAddress(InetAddress.getLocalHost(), 4447), destination, port);
     }
 
+    public static Socket createSocketOverProxy(
+            final String proxyHost,
+            final int proxyPort,
+            final String destination,
+            final int port) throws IOException {
+        return createSocket(new InetSocketAddress(proxyHost, proxyPort), destination, port);
+    }
+
     private static class SocksConnectionException extends IOException {
         SocksConnectionException(String message) {
             super(message);

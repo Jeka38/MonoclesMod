@@ -59,6 +59,8 @@ import java.util.Collections;
 import java.util.List;
 import java.util.Map;
 import android.provider.MediaStore;
+import android.view.Menu;
+import android.view.MenuItem;
 import android.widget.Toast;
 
 import eu.siacs.conversations.Config;
@@ -116,6 +118,9 @@ public class SettingsActivity extends XmppActivity implements OnSharedPreference
     public static final String USE_INNER_STORAGE = "use_inner_storage";
     public static final String INVIDIOUS_HOST = "invidious_host";
     public static final String MAPPREVIEW_HOST = "mappreview_host";
+    public static final String USE_PROXY = "use_proxy";
+    public static final String PROXY_HOST = "proxy_host";
+    public static final String PROXY_PORT = "proxy_port";
     public static final String ALLOW_MESSAGE_CORRECTION = "allow_message_correction";
     public static final String ALLOW_MESSAGE_RETRACTION = "allow_message_retraction";
     public static final String ENABLE_OTR_ENCRYPTION = "enable_otr_encryption";
@@ -165,6 +170,23 @@ public class SettingsActivity extends XmppActivity implements OnSharedPreference
         getWindow().getDecorView().setBackgroundColor(StyledAttributes.getColor(this, R.attr.color_background_secondary));
         setSupportActionBar(findViewById(R.id.toolbar));
         configureActionBar(getSupportActionBar());
+    }
+
+    @Override
+    public boolean onCreateOptionsMenu(final Menu menu) {
+        getMenuInflater().inflate(R.menu.settings_activity, menu);
+        return super.onCreateOptionsMenu(menu);
+    }
+
+    @Override
+    public boolean onOptionsItemSelected(final MenuItem item) {
+        if (item.getItemId() == R.id.action_search_settings) {
+            if (mSettingsFragment != null) {
+                mSettingsFragment.showSearchDialog();
+            }
+            return true;
+        }
+        return super.onOptionsItemSelected(item);
     }
 
     @Override
@@ -1224,8 +1246,11 @@ public class SettingsActivity extends XmppActivity implements OnSharedPreference
         } else if (name.equals("dont_trust_system_cas")) {
             xmppConnectionService.updateMemorizingTrustmanager();
             reconnectAccounts();
-        } else if (name.equals("use_tor")) {
-            if (preferences.getBoolean(name, false)) {
+        } else if (name.equals("use_tor")
+                || name.equals(USE_PROXY)
+                || name.equals(PROXY_HOST)
+                || name.equals(PROXY_PORT)) {
+            if (name.equals("use_tor") && preferences.getBoolean(name, false)) {
                 displayToast(getString(R.string.audio_video_disabled_tor));
             }
             reconnectAccounts();

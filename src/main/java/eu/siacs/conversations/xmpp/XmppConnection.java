@@ -335,6 +335,7 @@ public class XmppConnection implements Runnable {
             this.changeStatus(Account.State.CONNECTING);
             final boolean useTor = mXmppConnectionService.useTorToConnect() || account.isOnion();
             final boolean useI2P = mXmppConnectionService.useI2PToConnect() || account.isI2P();
+            final boolean useProxy = mXmppConnectionService.useProxyToConnect() && !useTor && !useI2P;
             final boolean extended = mXmppConnectionService.showExtendedConnectionOptions();
             if (Config.XMPP_IP != null && Config.XMPP_Ports != null) {
                 Integer[] XMPP_Port = Config.XMPP_Ports;
@@ -518,8 +519,20 @@ public class XmppConnection implements Runnable {
                                             + features.encryptionEnabled);
                         }
 
-                        localSocket = new Socket();
-                        localSocket.connect(addr, Config.SOCKET_TIMEOUT * 1000);
+                        if (useProxy) {
+                            final String proxyHost = mXmppConnectionService.getProxyHost();
+                            final int proxyPort = mXmppConnectionService.getProxyPort();
+                            final String destination =
+                                    result.getHostname() == null
+                                            ? result.getIp().getHostAddress()
+                                            : IDN.toASCII(result.getHostname().toString());
+                            localSocket =
+                                    SocksSocketFactory.createSocketOverProxy(
+                                            proxyHost, proxyPort, destination, result.getPort());
+                        } else {
+                            localSocket = new Socket();
+                            localSocket.connect(addr, Config.SOCKET_TIMEOUT * 1000);
+                        }
 
                         if (features.encryptionEnabled) {
                             localSocket = upgradeSocketToTls(localSocket);

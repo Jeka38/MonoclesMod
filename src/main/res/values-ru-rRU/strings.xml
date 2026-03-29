@@ -923,6 +923,12 @@
     <string name="pref_use_colored_names_to_indicate_status_summary">Раскрасить имена контактов для индикации статуса контакта</string>
     <string name="pref_use_i2p">Соединение через I2P</string>
     <string name="pref_use_i2p_summary">Направить все соединения через сеть I2P. Требуется I2P клиент</string>
+    <string name="pref_use_proxy">Подключение через proxy-сервер</string>
+    <string name="pref_use_proxy_summary">Использовать SOCKS5 proxy для XMPP-соединений</string>
+    <string name="pref_proxy_host">Хост proxy</string>
+    <string name="pref_proxy_host_summary">Имя хоста или IP-адрес SOCKS5 proxy</string>
+    <string name="pref_proxy_port">Порт proxy</string>
+    <string name="pref_proxy_port_summary">Порт SOCKS5 proxy-сервера</string>
     <string name="pref_use_indicate_received">Уведомления о доставке сообщений</string>
     <string name="pref_use_indicate_received_summary">Если поддерживается, полученные сообщения будут помечены галочкой</string>
     <string name="pref_use_inner_storage">Использование внутреннего хранилища для хранения медиа</string>

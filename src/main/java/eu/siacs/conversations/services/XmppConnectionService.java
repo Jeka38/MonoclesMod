@@ -5589,6 +5589,27 @@ public class XmppConnectionService extends Service {
         return getBooleanPreference("use_i2p", R.bool.use_i2p);
     }
 
+    public boolean useProxyToConnect() {
+        return getBooleanPreference("use_proxy", R.bool.use_proxy);
+    }
+
+    public String getProxyHost() {
+        return Strings.nullToEmpty(getPreferences().getString("proxy_host", "127.0.0.1")).trim();
+    }
+
+    public int getProxyPort() {
+        final String configured = Strings.nullToEmpty(getPreferences().getString("proxy_port", "1080")).trim();
+        try {
+            final int port = Integer.parseInt(configured);
+            if (port <= 0 || port > 65535) {
+                return 1080;
+            }
+            return port;
+        } catch (final NumberFormatException e) {
+            return 1080;
+        }
+    }
+
     public boolean showExtendedConnectionOptions() {
         return getBooleanPreference("show_connection_options", R.bool.show_connection_options);
     }

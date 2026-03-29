@@ -87,6 +87,7 @@ public class SearchActivity extends XmppActivity implements TextWatcher, OnSearc
     private final ChangeWatcher<List<String>> currentSearch = new ChangeWatcher<>();
     private final PendingItem<String> pendingSearchTerm = new PendingItem<>();
     private final PendingItem<List<String>> pendingSearch = new PendingItem<>();
+    private long lastOpenConversationTapTs = 0L;
 
     @Override
     public void onCreate(final Bundle bundle) {
@@ -100,9 +101,25 @@ public class SearchActivity extends XmppActivity implements TextWatcher, OnSearc
         this.binding = DataBindingUtil.setContentView(this, R.layout.activity_search);
         setSupportActionBar((Toolbar) this.binding.toolbar.getRoot());
         configureActionBar(getSupportActionBar());
-		this.messageListAdapter = new MessageAdapter(this, this.messages, uuid == null);
+        this.messageListAdapter = new MessageAdapter(this, this.messages, uuid == null);
         this.messageListAdapter.setOnContactPictureClicked(this);
+        this.messageListAdapter.setOnMessageBoxClicked(message -> {
+            if (message == null || message.getType() == Message.TYPE_STATUS || message.getUuid() == null) {
+                return;
+            }
+            openConversationAtMessage(message);
+        });
         this.binding.searchResults.setAdapter(messageListAdapter);
+        this.binding.searchResults.setOnItemClickListener((parent, view, position, id) -> {
+            if (position < 0 || position >= this.messages.size()) {
+                return;
+            }
+            final Message message = this.messages.get(position);
+            if (message == null || message.getType() == Message.TYPE_STATUS || message.getUuid() == null) {
+                return;
+            }
+            openConversationAtMessage(message);
+        });
         registerForContextMenu(this.binding.searchResults);
     }
 
@@ -165,9 +182,6 @@ public class SearchActivity extends XmppActivity implements TextWatcher, OnSearc
         final String user = multi ? UIHelper.getDisplayedMucCounterpart(message.getCounterpart()) : null;
         if (message != null) {
             switch (item.getItemId()) {
-                case R.id.open_conversation:
-                    switchToConversation(wrap(message.getConversation()));
-                    break;
                 case R.id.share_with:
                     ShareUtil.share(this, message, user);
                     break;
@@ -197,6 +211,19 @@ public class SearchActivity extends XmppActivity implements TextWatcher, OnSearc
     private void quote(Message message, String user) {
         Log.d(Config.LOGTAG, "Quote User: " + user);
         switchToConversationAndQuote(wrap(message.getConversation()), MessageUtils.prepareQuote(message), user);
+    }
+
+    private void openConversationAtMessage(final Message message) {
+        final long now = System.currentTimeMillis();
+        if (now - lastOpenConversationTapTs < 600) {
+            return;
+        }
+        final Conversation conversation = wrap(message.getConversation());
+        if (conversation == null) {
+            return;
+        }
+        lastOpenConversationTapTs = now;
+        switchToConversationAndHighlightMessage(conversation, message.getUuid());
     }
 
     private Conversation wrap(Conversational conversational) {

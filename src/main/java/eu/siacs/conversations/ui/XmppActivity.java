@@ -645,15 +645,24 @@ public abstract class XmppActivity extends ActionBarActivity {
     }
 
     public void switchToConversation(Conversation conversation, String text, boolean asQuote, String nick, boolean pm, boolean doNotAppend, String postInit) {
-        switchToConversation(conversation, text, asQuote, nick, pm, doNotAppend, postInit, null);
+        switchToConversation(conversation, text, asQuote, nick, pm, doNotAppend, postInit, null, null);
     }
 
     public void switchToConversation(Conversation conversation, String text, boolean asQuote, String nick, boolean pm, boolean doNotAppend, String postInit, String thread) {
+        switchToConversation(conversation, text, asQuote, nick, pm, doNotAppend, postInit, thread, null);
+    }
+
+    public void switchToConversationAndHighlightMessage(Conversation conversation, String messageUuid) {
+        switchToConversation(conversation, null, false, null, false, false, null, null, messageUuid);
+    }
+
+    public void switchToConversation(Conversation conversation, String text, boolean asQuote, String nick, boolean pm, boolean doNotAppend, String postInit, String thread, String messageUuid) {
         if (conversation == null) return;
         Intent intent = new Intent(this, ConversationsActivity.class);
         intent.setAction(ConversationsActivity.ACTION_VIEW_CONVERSATION);
         intent.putExtra(ConversationsActivity.EXTRA_CONVERSATION, conversation.getUuid());
         intent.putExtra(ConversationsActivity.EXTRA_THREAD, thread);
+        intent.putExtra(ConversationsActivity.EXTRA_MESSAGE_UUID, messageUuid);
         if (text != null) {
             intent.putExtra(Intent.EXTRA_TEXT, text);
             if (asQuote) {

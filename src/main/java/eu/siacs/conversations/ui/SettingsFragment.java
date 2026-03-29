@@ -1,24 +1,43 @@
 package eu.siacs.conversations.ui;
 
 import android.content.Intent;
+import android.animation.ArgbEvaluator;
+import android.animation.ValueAnimator;
+import android.graphics.Color;
+import android.graphics.drawable.Drawable;
 import android.os.Bundle;
+import android.preference.PreferenceGroup;
 import android.preference.Preference;
 import android.preference.PreferenceCategory;
 import android.preference.SwitchPreference;
 import android.preference.PreferenceFragment;
 import android.preference.PreferenceScreen;
 import android.text.TextUtils;
+import android.view.View;
+import android.view.ViewGroup;
+import android.widget.ArrayAdapter;
+import android.widget.EditText;
+import android.widget.LinearLayout;
+import android.widget.ListView;
 
+import androidx.appcompat.app.AlertDialog;
+
+import java.util.ArrayList;
 import java.lang.reflect.Method;
+import java.util.List;
+import java.util.Locale;
 
 import eu.siacs.conversations.Config;
 import eu.siacs.conversations.R;
+import eu.siacs.conversations.ui.util.StyledAttributes;
 import eu.siacs.conversations.utils.Compatibility;
 
 public class SettingsFragment extends PreferenceFragment {
 
     private String page = null;
     private String suffix = null;
+    private final List<SearchEntry> searchIndex = new ArrayList<>();
+    private PreferenceScreen rootPreferenceScreen;
 
     @Override
     public void onCreate(Bundle savedInstanceState) {
@@ -35,10 +54,87 @@ public class SettingsFragment extends PreferenceFragment {
             }
         }
         Compatibility.removeUnusedPreferences(this);
+        rootPreferenceScreen = getPreferenceScreen();
+        rebuildSearchIndex();
 
         if (!TextUtils.isEmpty(page)) {
             openPreferenceScreen(page);
         }
+    }
+
+    public void showSearchDialog() {
+        if (getActivity() == null) {
+            return;
+        }
+        if (searchIndex.isEmpty()) {
+            rebuildSearchIndex();
+        }
+
+        final LinearLayout container = new LinearLayout(getActivity());
+        container.setOrientation(LinearLayout.VERTICAL);
+        final int padding = (int) (getResources().getDisplayMetrics().density * 16);
+        container.setPadding(padding, padding, padding, 0);
+
+        final EditText searchInput = new EditText(getActivity());
+        searchInput.setHint(R.string.search);
+        container.addView(searchInput, new LinearLayout.LayoutParams(
+                ViewGroup.LayoutParams.MATCH_PARENT,
+                ViewGroup.LayoutParams.WRAP_CONTENT
+        ));
+
+        final ListView resultList = new ListView(getActivity());
+        container.addView(resultList, new LinearLayout.LayoutParams(
+                ViewGroup.LayoutParams.MATCH_PARENT,
+                ViewGroup.LayoutParams.WRAP_CONTENT,
+                1f
+        ));
+
+        final List<SearchEntry> filtered = new ArrayList<>();
+        final ArrayAdapter<String> adapter =
+                new ArrayAdapter<>(getActivity(), android.R.layout.simple_list_item_1, new ArrayList<>());
+        resultList.setAdapter(adapter);
+
+        final Runnable updateResults = () -> {
+            final String query = searchInput.getText() == null ? "" : searchInput.getText().toString();
+            filtered.clear();
+            adapter.clear();
+            for (SearchEntry entry : searchIndex) {
+                if (matchesQuery(entry, query)) {
+                    filtered.add(entry);
+                    adapter.add(entry.displayTitle);
+                }
+            }
+            adapter.notifyDataSetChanged();
+        };
+        updateResults.run();
+        searchInput.addTextChangedListener(new android.text.TextWatcher() {
+            @Override
+            public void beforeTextChanged(CharSequence s, int start, int count, int after) {}
+
+            @Override
+            public void onTextChanged(CharSequence s, int start, int before, int count) {}
+
+            @Override
+            public void afterTextChanged(android.text.Editable s) {
+                updateResults.run();
+            }
+        });
+
+        final AlertDialog dialog = new AlertDialog.Builder(getActivity())
+                .setTitle(R.string.search)
+                .setView(container)
+                .setNegativeButton(android.R.string.cancel, null)
+                .create();
+
+        resultList.setOnItemClickListener((parent, view, position, id) -> {
+            if (position < 0 || position >= filtered.size()) {
+                return;
+            }
+            navigateToPreference(filtered.get(position));
+            dialog.dismiss();
+        });
+
+        dialog.show();
     }
 
     public void setActivityIntent(final Intent intent) {
@@ -57,7 +153,7 @@ public class SettingsFragment extends PreferenceFragment {
     }
 
     private void openPreferenceScreen(final String screenName) {
-        final Preference pref = findPreference(screenName);
+        final Preference pref = findPreferenceInTree(rootPreferenceScreen, screenName);
         if (pref instanceof PreferenceScreen) {
             final PreferenceScreen preferenceScreen = (PreferenceScreen) pref;
             getActivity().setTitle(preferenceScreen.getTitle());
@@ -74,6 +170,169 @@ public class SettingsFragment extends PreferenceFragment {
                 }
             }
             setPreferenceScreen((PreferenceScreen) pref);
+        }
+    }
+
+    private Preference findPreferenceInTree(final PreferenceGroup group, final String key) {
+        if (group == null || TextUtils.isEmpty(key)) {
+            return null;
+        }
+        for (int i = 0; i < group.getPreferenceCount(); i++) {
+            final Preference pref = group.getPreference(i);
+            if (key.equals(pref.getKey())) {
+                return pref;
+            }
+            if (pref instanceof PreferenceGroup) {
+                final Preference nested = findPreferenceInTree((PreferenceGroup) pref, key);
+                if (nested != null) {
+                    return nested;
+                }
+            }
+        }
+        return null;
+    }
+
+    private void rebuildSearchIndex() {
+        searchIndex.clear();
+        final PreferenceScreen root = getPreferenceScreen();
+        if (root != null) {
+            collectSearchEntries(root, null);
+        }
+    }
+
+    private void collectSearchEntries(final PreferenceGroup group, final String parentScreenKey) {
+        for (int i = 0; i < group.getPreferenceCount(); i++) {
+            final Preference pref = group.getPreference(i);
+            String nextParentScreenKey = parentScreenKey;
+            if (pref instanceof PreferenceScreen && pref.hasKey()) {
+                nextParentScreenKey = pref.getKey();
+            }
+            if (pref.hasKey() && !(pref instanceof PreferenceCategory)) {
+                final CharSequence title = pref.getTitle();
+                if (!TextUtils.isEmpty(title)) {
+                    searchIndex.add(new SearchEntry(
+                            pref.getKey(),
+                            title.toString(),
+                            pref.getSummary() == null ? "" : pref.getSummary().toString(),
+                            parentScreenKey,
+                            pref instanceof PreferenceScreen ? pref.getKey() : parentScreenKey,
+                            pref instanceof PreferenceScreen
+                    ));
+                }
+            }
+            if (pref instanceof PreferenceGroup) {
+                collectSearchEntries((PreferenceGroup) pref, nextParentScreenKey);
+            }
+        }
+    }
+
+    private boolean matchesQuery(final SearchEntry entry, final String query) {
+        if (TextUtils.isEmpty(query)) {
+            return true;
+        }
+        final String needle = query.toLowerCase(Locale.getDefault()).trim();
+        return entry.displayTitle.toLowerCase(Locale.getDefault()).contains(needle)
+                || entry.summary.toLowerCase(Locale.getDefault()).contains(needle);
+    }
+
+    private void navigateToPreference(final SearchEntry entry) {
+        if (entry.isPreferenceScreen) {
+            openPreferenceScreen(entry.targetScreenKey);
+            return;
+        } else if (!TextUtils.isEmpty(entry.targetScreenKey)) {
+            openPreferenceScreen(entry.targetScreenKey);
+        } else if (rootPreferenceScreen != null) {
+            setPreferenceScreen(rootPreferenceScreen);
+        }
+        if (getView() == null) {
+            return;
+        }
+        final ListView listView = getView().findViewById(android.R.id.list);
+        if (listView == null) {
+            return;
+        }
+        final android.widget.ListAdapter adapter = listView.getAdapter();
+        if (adapter == null) {
+            return;
+        }
+        highlightByPreferenceKey(listView, entry.preferenceKey, 0);
+    }
+
+    private void highlightByPreferenceKey(final ListView listView, final String preferenceKey, final int attempt) {
+        final android.widget.ListAdapter adapter = listView.getAdapter();
+        if (adapter == null) {
+            return;
+        }
+        for (int i = 0; i < adapter.getCount(); i++) {
+            final Object item = adapter.getItem(i);
+            if (item instanceof Preference) {
+                final Preference pref = (Preference) item;
+                if (preferenceKey.equals(pref.getKey())) {
+                    highlightPreferenceAtPosition(listView, i);
+                    return;
+                }
+            }
+        }
+        if (attempt < 8) {
+            listView.postDelayed(() -> highlightByPreferenceKey(listView, preferenceKey, attempt + 1), 80);
+        }
+    }
+
+    private void highlightPreferenceAtPosition(final ListView listView, final int position) {
+        listView.smoothScrollToPosition(position);
+        listView.postDelayed(() -> tryHighlightPreference(listView, position, 0), 120);
+    }
+
+    private void tryHighlightPreference(final ListView listView, final int position, final int attempt) {
+        final int firstVisible = listView.getFirstVisiblePosition();
+        final int childIndex = position - firstVisible;
+        if (childIndex >= 0 && childIndex < listView.getChildCount()) {
+            final View target = listView.getChildAt(childIndex);
+            if (target != null) {
+                final Drawable originalBackground = target.getBackground();
+                final int accentBase = StyledAttributes.getColor(getActivity(), R.attr.colorAccent);
+                final int accent = Color.argb(110, Color.red(accentBase), Color.green(accentBase), Color.blue(accentBase));
+                final ValueAnimator animator = ValueAnimator.ofObject(
+                        new ArgbEvaluator(),
+                        Color.TRANSPARENT,
+                        accent,
+                        Color.TRANSPARENT
+                );
+                animator.setDuration(800);
+                animator.addUpdateListener(valueAnimator ->
+                        target.setBackgroundColor((int) valueAnimator.getAnimatedValue()));
+                animator.start();
+                target.postDelayed(() -> target.setBackground(originalBackground), 820);
+                return;
+            }
+        }
+        if (attempt < 8) {
+            listView.postDelayed(() -> tryHighlightPreference(listView, position, attempt + 1), 80);
+        }
+    }
+
+    private static class SearchEntry {
+        private final String preferenceKey;
+        private final String displayTitle;
+        private final String summary;
+        private final String parentScreenKey;
+        private final String targetScreenKey;
+        private final boolean isPreferenceScreen;
+
+        private SearchEntry(
+                final String preferenceKey,
+                final String displayTitle,
+                final String summary,
+                final String parentScreenKey,
+                final String targetScreenKey,
+                final boolean isPreferenceScreen
+        ) {
+            this.preferenceKey = preferenceKey;
+            this.displayTitle = displayTitle;
+            this.summary = summary;
+            this.parentScreenKey = parentScreenKey;
+            this.targetScreenKey = targetScreenKey;
+            this.isPreferenceScreen = isPreferenceScreen;
         }
     }
 
