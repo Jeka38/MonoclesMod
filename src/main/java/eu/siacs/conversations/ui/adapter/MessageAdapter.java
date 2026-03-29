@@ -47,7 +47,6 @@ import android.util.Base64;
 import android.util.DisplayMetrics;
 import android.util.Log;
 import android.util.LruCache;
-import android.view.MotionEvent;
 import android.view.View;
 import android.view.ViewGroup;
 import android.view.WindowManager;
@@ -166,6 +165,9 @@ public class MessageAdapter extends ArrayAdapter<Message> {
     private boolean mPlayGifInside = false;
     private boolean mShowLinksInside = false;
     private boolean mShowMapsInside = false;
+    private boolean mLargeFontForMucStatus = false;
+    private boolean mShowMucStatusMessages = true;
+    private boolean mShowJoinLeave = false;
     private final boolean mForceNames;
     private final Map<String, WebxdcUpdate> lastWebxdcUpdate = new HashMap<>();
     private String readmarkervalue;
@@ -479,7 +481,13 @@ public class MessageAdapter extends ArrayAdapter<Message> {
         viewHolder.richlinkview.setVisibility(GONE);
         viewHolder.transfer.setVisibility(GONE);
         viewHolder.messageBody.setVisibility(View.VISIBLE);
-        viewHolder.messageBody.setText(text);
+        if (activity.xmppConnectionService != null && mLargeFontForMucStatus && message.getType() == Message.TYPE_STATUS && message.getConversation().getMode() == Conversation.MODE_MULTI) {
+            SpannableStringBuilder builder = new SpannableStringBuilder(text);
+            builder.setSpan(new RelativeSizeSpan(1.5f), 0, builder.length(), Spannable.SPAN_EXCLUSIVE_EXCLUSIVE);
+            viewHolder.messageBody.setText(builder);
+        } else {
+            viewHolder.messageBody.setText(text);
+        }
         showProgress(viewHolder, message.getTransferable(), message);
         if (darkBackground) {
             viewHolder.messageBody.setTextAppearance(getContext(), R.style.TextAppearance_Conversations_Body1_Secondary_OnDark);
@@ -719,8 +727,6 @@ public class MessageAdapter extends ArrayAdapter<Message> {
         viewHolder.messageBody.setVisibility(View.GONE);
         viewHolder.images.setVisibility(View.GONE);
 
-        Log.d("ChatDebug", "Starting displayTextMessage for message: " + message.getBody());
-
         if (darkBackground) {
             viewHolder.messageBody.setTextAppearance(getContext(), R.style.TextAppearance_Conversations_Body1_OnDark);
         } else {
@@ -733,79 +739,53 @@ public class MessageAdapter extends ArrayAdapter<Message> {
         viewHolder.messageBody.setTypeface(null, Typeface.NORMAL);
 
         if (message.getBody() != null && !message.getBody().equals("")) {
-            Log.d("ChatDebug", "Processing message: " + message.getBody());
             viewHolder.messageBody.setTextIsSelectable(true);
             viewHolder.messageBody.setVisibility(View.VISIBLE);
 
             String trimmedBody = message.getBody().trim();
-            Log.d("ChatDebug", "Trimmed body: " + trimmedBody);
-
             String imageUrl = extractFirstImageUrl(trimmedBody);
-            Log.d("ChatDebug", "Extracted image URL: " + imageUrl);
 
             if (imageUrl != null && isDirectImageUrl(imageUrl)) {
-                Log.d("ChatDebug", "Image URL detected: " + imageUrl);
                 viewHolder.images.setVisibility(View.VISIBLE);
                 viewHolder.image.setVisibility(View.VISIBLE);
 
-                final float maxWidth = activity.getResources().getDimension(R.dimen.image_preview_width);
-                final float maxHeight = maxWidth * 0.5f;
+                final float target_size = activity.getResources().getDimension(R.dimen.image_preview_width);
 
-                LinearLayout.LayoutParams layoutParams = new LinearLayout.LayoutParams(
+                LinearLayout.LayoutParams placeholderParams = new LinearLayout.LayoutParams(
                         LinearLayout.LayoutParams.WRAP_CONTENT,
                         LinearLayout.LayoutParams.WRAP_CONTENT
                 );
-                layoutParams.setMargins(0, (int) (metrics.density * 4), 0, (int) (metrics.density * 4));
-                viewHolder.images.setLayoutParams(layoutParams);
+                placeholderParams.setMargins(0, (int) (metrics.density * 4), 0, (int) (metrics.density * 4));
+                viewHolder.images.setLayoutParams(placeholderParams);
 
                 Glide.with(activity)
                         .load(imageUrl)
-                        .override((int) maxWidth, (int) maxHeight)
-                        .fitCenter()
+                        .override((int) target_size)
+                        .centerInside()
                         .placeholder(R.drawable.ic_image_grey600_48dp)
                         .error(R.drawable.ic_error_white_24dp)
                         .listener(new RequestListener<Drawable>() {
                             @Override
                             public boolean onLoadFailed(@Nullable GlideException e, Object model, Target<Drawable> target, boolean isFirstResource) {
-                                Log.e("GlideDebug", "Failed to load image: " + imageUrl + ", error: " + (e != null ? e.getMessage() : "unknown"));
                                 viewHolder.images.setVisibility(View.GONE);
                                 return false;
                             }
 
                             @Override
                             public boolean onResourceReady(Drawable resource, Object model, Target<Drawable> target, DataSource dataSource, boolean isFirstResource) {
-                                Log.d("GlideDebug", "Image loaded successfully: " + imageUrl);
                                 viewHolder.images.setVisibility(View.VISIBLE);
                                 viewHolder.image.setVisibility(View.VISIBLE);
 
                                 int intrinsicWidth = resource.getIntrinsicWidth();
                                 int intrinsicHeight = resource.getIntrinsicHeight();
-                                float aspectRatio = (float) intrinsicWidth / intrinsicHeight;
 
-                                int finalWidth, finalHeight;
-                                if (intrinsicWidth > maxWidth || intrinsicHeight > maxHeight) {
-                                    if (aspectRatio > 1) {
-                                        finalWidth = (int) maxWidth;
-                                        finalHeight = (int) (maxWidth / aspectRatio);
-                                    } else {
-                                        finalHeight = (int) maxHeight;
-                                        finalWidth = (int) (maxHeight * aspectRatio);
-                                    }
-                                } else {
-                                    finalWidth = intrinsicWidth;
-                                    finalHeight = intrinsicHeight;
-                                }
+                                imagePreviewLayout(intrinsicWidth, intrinsicHeight, viewHolder.image);
 
-                                finalWidth = Math.max(finalWidth, (int) (maxWidth * 0.5f));
-                                finalHeight = Math.max(finalHeight, (int) (maxWidth * 0.5f));
+                                ViewGroup.LayoutParams params = viewHolder.image.getLayoutParams();
+                                LinearLayout.LayoutParams containerLayoutParams = new LinearLayout.LayoutParams(params.width, params.height);
+                                containerLayoutParams.setMargins(0, (int) (metrics.density * 4), 0, (int) (metrics.density * 4));
+                                viewHolder.images.setLayoutParams(containerLayoutParams);
 
-                                LinearLayout.LayoutParams imageParams = new LinearLayout.LayoutParams(
-                                        finalWidth,
-                                        finalHeight
-                                );
-                                viewHolder.image.setLayoutParams(imageParams);
-
-                                Log.d("ChatDebug", "Image dimensions - width: " + finalWidth + ", height: " + finalHeight);
                                 return false;
                             }
                         })
@@ -875,20 +855,15 @@ public class MessageAdapter extends ArrayAdapter<Message> {
 
     private boolean isDirectImageUrl(String url) {
         if (url == null) return false;
-        boolean matches = url.matches("(?i)^(http|https)://.*(\\.(jpg|jpeg|png|gif|webp|bmp|tiff|ico|webm|heif|heic|apng)(\\?.*)?$|\\?q=tbn:.*)");
-        Log.d("ChatDebug", "Checking URL: " + url + ", isDirectImageUrl: " + matches);
-        return matches;
+        return url.matches("(?i)^(http|https)://.*(\\.(jpg|jpeg|png|gif|webp|bmp|tiff|ico|webm|heif|heic|apng)(\\?.*)?$|\\?q=tbn:.*)");
     }
 
     private String extractFirstImageUrl(String text) {
         if (text == null) return null;
-        // Обновлённое регулярное выражение
         Pattern pattern = Pattern.compile("(?i)(http|https)://[^\\s]+?\\.(jpg|jpeg|png|gif|webp|bmp|tiff|ico|webm|heif|heic|apng)(?:\\?.*?)?(?=\\s|$)");
         Matcher matcher = pattern.matcher(text);
         if (matcher.find()) {
-            String url = matcher.group();
-            Log.d("ChatDebug", "Found potential image URL: " + url);
-            return url;
+            return matcher.group();
         }
         return null;
     }
@@ -930,6 +905,13 @@ public class MessageAdapter extends ArrayAdapter<Message> {
 
                 viewHolder.image.setVisibility(View.VISIBLE);
                 imagePreviewLayout(width, height, viewHolder.image);
+
+                ViewGroup.LayoutParams params_image = viewHolder.image.getLayoutParams();
+                LinearLayout.LayoutParams layoutParams = new LinearLayout.LayoutParams(params_image.width, params_image.height);
+                layoutParams.setMargins(0, (int) (metrics.density * 4), 0, (int) (metrics.density * 4));
+                viewHolder.images.setLayoutParams(layoutParams);
+                viewHolder.images.setVisibility(View.VISIBLE);
+
                 activity.loadBitmap(message, viewHolder.image);
                 viewHolder.image.setOnClickListener(v -> ConversationFragment.downloadFile(activity, message));
 
@@ -998,6 +980,16 @@ public class MessageAdapter extends ArrayAdapter<Message> {
         } else {
             viewHolder.images.setVisibility(View.VISIBLE);
             viewHolder.image.setVisibility(View.VISIBLE);
+
+            int width = d.getIntrinsicWidth();
+            int height = d.getIntrinsicHeight();
+            imagePreviewLayout(width, height, viewHolder.image);
+
+            ViewGroup.LayoutParams params_image = viewHolder.image.getLayoutParams();
+            LinearLayout.LayoutParams layoutParams = new LinearLayout.LayoutParams(params_image.width, params_image.height);
+            layoutParams.setMargins(0, (int) (metrics.density * 4), 0, (int) (metrics.density * 4));
+            viewHolder.images.setLayoutParams(layoutParams);
+
             viewHolder.image.setImageDrawable(d);
         }
     }
@@ -1153,31 +1145,21 @@ public class MessageAdapter extends ArrayAdapter<Message> {
         viewHolder.richlinkview.setVisibility(GONE);
         viewHolder.transfer.setVisibility(GONE);
         if (mShowMapsInside) {
-            showImages(mShowMapsInside, 0, false, viewHolder);
-            final double target = activity.getResources().getDimension(R.dimen.image_preview_width);
-            final int scaledW;
-            final int scaledH;
-            if (Math.max(500, 500) * metrics.density <= target) {
-                scaledW = (int) (500 * metrics.density);
-                scaledH = (int) (500 * metrics.density);
-            } else if (Math.max(500, 500) <= target) {
-                scaledW = 500;
-                scaledH = 500;
-            } else {
-                scaledW = (int) target;
-                scaledH = (int) (500 / ((double) 500 / target));
-            }
-            LinearLayout.LayoutParams layoutParams = new LinearLayout.LayoutParams(scaledW, scaledH);
+            showImages(mShowMapsInside, 0, false, false, viewHolder);
+
+            imagePreviewLayout(500, 500, viewHolder.image);
+
+            ViewGroup.LayoutParams params = viewHolder.image.getLayoutParams();
+            LinearLayout.LayoutParams layoutParams = new LinearLayout.LayoutParams(params.width, params.height);
             layoutParams.setMargins(0, (int) (metrics.density * 4), 0, (int) (metrics.density * 4));
             viewHolder.images.setLayoutParams(layoutParams);
+
             viewHolder.image.setOnClickListener(v -> showLocation(message));
             Glide.with(activity)
                     .load(Uri.parse(url))
                     .placeholder(R.drawable.ic_map_marker_grey600_48dp)
                     .error(R.drawable.ic_map_marker_grey600_48dp)
                     .into(viewHolder.image);
-            viewHolder.image.setMaxWidth(500);
-            viewHolder.image.setAdjustViewBounds(true);
             viewHolder.download_button.setVisibility(GONE);
         } else {
             showImages(false, viewHolder);
@@ -1247,42 +1229,25 @@ public class MessageAdapter extends ArrayAdapter<Message> {
 
         final String mime = file.getMimeType();
         final boolean isGif = mime != null && mime.equals("image/gif");
+        final boolean isVideo = mime != null && mime.contains("video");
         final int mediaRuntime = message.getFileParams().runtime;
 
-        // Устанавливаем максимальные размеры превью
-        final float maxWidth = activity.getResources().getDimension(R.dimen.image_preview_width);
-        final float maxHeight = maxWidth * 1.5f; // Ограничение по высоте (настраиваемое)
-
         FileParams params = message.getFileParams();
-        int width = params.width > 0 ? params.width : 1920; // Значение по умолчанию, если ширина неизвестна
-        int height = params.height > 0 ? params.height : 1080; // Значение по умолчанию, если высота неизвестна
-        float aspectRatio = (float) width / height;
+        int width = params.width > 0 ? params.width : 1920;
+        int height = params.height > 0 ? params.height : 1080;
 
-        // Вычисляем размеры с учётом максимальной ширины и соотношения сторон
-        int scaledW, scaledH;
+        imagePreviewLayout(width, height, viewHolder.image);
 
-        if (width > height) {
-            scaledW = (int) maxWidth;
-            scaledH = (int) (maxWidth / aspectRatio);
-        } else {
-            scaledH = (int) maxHeight;
-            scaledW = (int) (maxHeight * aspectRatio);
-        }
+        ViewGroup.LayoutParams params_image = viewHolder.image.getLayoutParams();
+        int scaledW = params_image.width;
+        int scaledH = params_image.height;
 
-        // Уменьшаем размеры для GIF
-        if (isGif) {
-            scaledW *= 0.5;
-            scaledH *= 0.5;
-        }
-
-        // Устанавливаем размеры для контейнера и ImageView
         LinearLayout.LayoutParams layoutParams = new LinearLayout.LayoutParams(scaledW, scaledH);
         layoutParams.setMargins(0, (int) (metrics.density * 4), 0, (int) (metrics.density * 4));
         viewHolder.images.setLayoutParams(layoutParams);
-        viewHolder.image.setLayoutParams(layoutParams);
 
         if (isGif && mPlayGifInside) {
-            showImages(true, mediaRuntime, true, viewHolder);
+            showImages(true, mediaRuntime, true, isVideo, viewHolder);
             Log.d(Config.LOGTAG, "Gif Image file");
 
             Glide.with(activity)
@@ -1291,7 +1256,7 @@ public class MessageAdapter extends ArrayAdapter<Message> {
                     .centerInside() // Сохраняем пропорции без кадрирования
                     .into(viewHolder.image);
         } else {
-            showImages(true, mediaRuntime, false, viewHolder);
+            showImages(true, mediaRuntime, false, isVideo, viewHolder);
 
             Glide.with(activity)
                     .load(file)
@@ -1306,29 +1271,29 @@ public class MessageAdapter extends ArrayAdapter<Message> {
         final float target = activity.getResources().getDimension(R.dimen.image_preview_width);
         final int scaledW;
         final int scaledH;
-        if (Math.max(h, w) * metrics.density <= target) {
-            scaledW = (int) (w * metrics.density);
-            scaledH = (int) (h * metrics.density);
-        } else if (Math.max(h, w) <= target) {
-            scaledW = w;
-            scaledH = h;
-        } else if (w <= h) {
-            scaledW = (int) (w / ((double) h / target));
+        if (w <= 0 || h <= 0) {
+            scaledW = (int) target;
             scaledH = (int) target;
         } else {
-            scaledW = (int) target;
-            scaledH = (int) (h / ((double) w / target));
+            float ratio = (float) w / h;
+            if (ratio >= 1.0f) {
+                scaledW = (int) target;
+                scaledH = (int) (target / ratio);
+            } else {
+                scaledH = (int) target;
+                scaledW = (int) (target * ratio);
+            }
         }
-        final LinearLayout.LayoutParams layoutParams = new LinearLayout.LayoutParams(scaledW, scaledH);
-        layoutParams.setMargins(0, (int) (metrics.density * 4), 0, (int) (metrics.density * 4));
+        final RelativeLayout.LayoutParams layoutParams = new RelativeLayout.LayoutParams(scaledW, scaledH);
         image.setLayoutParams(layoutParams);
+        image.setScaleType(ImageView.ScaleType.FIT_CENTER);
     }
 
     private void showImages(final boolean show, final ViewHolder viewHolder) {
-        showImages(show, 0, false, viewHolder);
+        showImages(show, 0, false, false, viewHolder);
     }
 
-    private void showImages(final boolean show, final int duration, final boolean isGif, final ViewHolder viewHolder) {
+    private void showImages(final boolean show, final int duration, final boolean isGif, final boolean isVideo, final ViewHolder viewHolder) {
         boolean hasDuration = duration > 0;
         if (show) {
             viewHolder.images.setVisibility(View.VISIBLE);
@@ -1339,10 +1304,16 @@ public class MessageAdapter extends ArrayAdapter<Message> {
             } else {
                 viewHolder.mediaduration.setVisibility(GONE);
             }
+            if (viewHolder.play_button != null) {
+                viewHolder.play_button.setVisibility(isVideo ? View.VISIBLE : GONE);
+            }
         } else {
             viewHolder.images.setVisibility(GONE);
             viewHolder.image.setVisibility(GONE);
             viewHolder.mediaduration.setVisibility(GONE);
+            if (viewHolder.play_button != null) {
+                viewHolder.play_button.setVisibility(GONE);
+            }
         }
     }
 
@@ -1361,7 +1332,9 @@ public class MessageAdapter extends ArrayAdapter<Message> {
         } else {
             viewHolder.messageBody.setTextAppearance(getContext(), R.style.TextAppearance_Conversations_Body1);
         }
-        if (message.isPrivateMessage()) {
+        final Conversational conversation = message.getConversation();
+        final boolean isPersistentPm = conversation instanceof Conversation && ((Conversation) conversation).hasPermanentCounterpart();
+        if (message.isPrivateMessage() && !isPersistentPm) {
             final String privateMarker;
             if (message.getStatus() <= Message.STATUS_RECEIVED) {
                 privateMarker = activity.getString(R.string.private_message);
@@ -1457,6 +1430,7 @@ public class MessageAdapter extends ArrayAdapter<Message> {
                     viewHolder.retract_indicator = view.findViewById(R.id.retract_indicator);
                     viewHolder.images = view.findViewById(R.id.images);
                     viewHolder.mediaduration = view.findViewById(R.id.media_duration);
+                    viewHolder.play_button = view.findViewById(R.id.play_button);
                     viewHolder.image = view.findViewById(R.id.message_image);
                     viewHolder.richlinkview = view.findViewById(R.id.richLinkView);
                     if (activity.xmppConnectionService.getBooleanPreference("set_text_collapsable", R.bool.set_text_collapsable)) {
@@ -1489,6 +1463,7 @@ public class MessageAdapter extends ArrayAdapter<Message> {
                     viewHolder.retract_indicator = view.findViewById(R.id.retract_indicator);
                     viewHolder.images = view.findViewById(R.id.images);
                     viewHolder.mediaduration = view.findViewById(R.id.media_duration);
+                    viewHolder.play_button = view.findViewById(R.id.play_button);
                     viewHolder.image = view.findViewById(R.id.message_image);
                     viewHolder.richlinkview = view.findViewById(R.id.richLinkView);
                     if (activity.xmppConnectionService.getBooleanPreference("set_text_collapsable", R.bool.set_text_collapsable)) {
@@ -1575,31 +1550,67 @@ public class MessageAdapter extends ArrayAdapter<Message> {
             activity.setBubbleColor(viewHolder.message_box, (date_bubble_color), -1); //themed color
             return view;
         } else if (type == STATUS) {
-            if ("LOAD_MORE".equals(message.getBody())) {
+            final String bodyText = message.getBody();
+            if ("LOAD_MORE".equals(bodyText)) {
                 viewHolder.status_message.setVisibility(GONE);
                 viewHolder.contact_picture.setVisibility(GONE);
                 viewHolder.load_more_messages.setVisibility(View.VISIBLE);
                 viewHolder.load_more_messages.setOnClickListener(v -> loadMoreMessages((Conversation) message.getConversation()));
             } else {
+                final boolean isJoined = bodyText != null && bodyText.startsWith("MUC_JOINED:");
+                final boolean isLeft = bodyText != null && bodyText.startsWith("MUC_LEFT:");
+                final boolean isRole = bodyText != null && bodyText.startsWith("MUC_ROLE:");
+                final boolean isAffiliation = bodyText != null && bodyText.startsWith("MUC_AFFILIATION:");
+                final boolean isRoleAffiliation = bodyText != null && bodyText.startsWith("MUC_ROLE_AFFILIATION:");
+                final boolean isJoinLeave = isJoined || isLeft;
+                final boolean isMucStatus = isRole || isAffiliation || isRoleAffiliation;
+                if (conversation.getMode() == Conversation.MODE_MULTI && !((Conversation) conversation).hasPermanentCounterpart()) {
+                    final boolean hide;
+                    if (isJoinLeave) {
+                        hide = !mShowJoinLeave;
+                    } else if (isMucStatus) {
+                        hide = !mShowMucStatusMessages;
+                    } else {
+                        hide = false;
+                    }
+                    if (hide) {
+                        view.setVisibility(GONE);
+                        view.setLayoutParams(new ListView.LayoutParams(0, 1));
+                        return view;
+                    }
+                }
+                view.setVisibility(View.VISIBLE);
+                view.setLayoutParams(new ListView.LayoutParams(ListView.LayoutParams.MATCH_PARENT, ListView.LayoutParams.WRAP_CONTENT));
                 viewHolder.status_message.setVisibility(View.VISIBLE);
                 viewHolder.load_more_messages.setVisibility(GONE);
-                viewHolder.status_message.setText(message.getBody());
-                boolean showAvatar;
-                if (conversation.getMode() == Conversation.MODE_SINGLE) {
-                    showAvatar = true;
-                    AvatarWorkerTask.loadAvatar(message, viewHolder.contact_picture, R.dimen.avatar_on_status_message);
-                } else if (message.getCounterpart() != null || message.getTrueCounterpart() != null || (message.getCounterparts() != null && message.getCounterparts().size() > 0)) {
-                    showAvatar = true;
-                    AvatarWorkerTask.loadAvatar(message, viewHolder.contact_picture, R.dimen.avatar_on_status_message);
+                final String displayBody;
+                if (isJoined) {
+                    displayBody = bodyText.substring(11);
+                } else if (isLeft) {
+                    displayBody = bodyText.substring(9);
+                } else if (bodyText.startsWith("MUC_ROLE:")) {
+                    displayBody = bodyText.substring(9);
+                } else if (bodyText.startsWith("MUC_AFFILIATION:")) {
+                    displayBody = bodyText.substring(16);
+                } else if (bodyText.startsWith("MUC_ROLE_AFFILIATION:")) {
+                    displayBody = bodyText.substring(21);
+                } else if (bodyText.startsWith("MUC_NICK:")) {
+                    displayBody = bodyText.substring(9);
+                } else if (bodyText.startsWith("MUC_KICKED:")) {
+                    displayBody = bodyText.substring(11);
+                } else if (bodyText.startsWith("MUC_BANNED:")) {
+                    displayBody = bodyText.substring(11);
                 } else {
-                    showAvatar = false;
+                    displayBody = bodyText;
                 }
-                if (showAvatar) {
-                    viewHolder.contact_picture.setAlpha(0.5f);
-                    viewHolder.contact_picture.setVisibility(View.VISIBLE);
+                if (mLargeFontForMucStatus && conversation.getMode() == Conversation.MODE_MULTI) {
+                    SpannableStringBuilder builder = new SpannableStringBuilder(displayBody);
+                    builder.setSpan(new RelativeSizeSpan(1.5f), 0, builder.length(), Spannable.SPAN_EXCLUSIVE_EXCLUSIVE);
+                    viewHolder.status_message.setText(builder);
                 } else {
-                    viewHolder.contact_picture.setVisibility(GONE);
+                    viewHolder.status_message.setText(displayBody);
                 }
+                viewHolder.contact_picture.setVisibility(GONE);
             }
             return view;
         } else {
@@ -1697,18 +1708,6 @@ public class MessageAdapter extends ArrayAdapter<Message> {
             }
         });
 
-        // Treat touch-up as click so we don't have to touch twice
-        // (touch twice is because it's waiting to see if you double-touch for text selection)
-        viewHolder.messageBody.setOnTouchListener((v, event) -> {
-            if (event.getAction() == MotionEvent.ACTION_UP) {
-                if (MessageAdapter.this.mOnMessageBoxClickedListener != null) {
-                    MessageAdapter.this.mOnMessageBoxClickedListener
-                            .onContactPictureClicked(message);
-                }
-            }
-            return false;
-        });
-
         viewHolder.contact_picture.setOnLongClickListener(v -> {
             if (MessageAdapter.this.mOnContactPictureLongClickedListener != null) {
                 MessageAdapter.this.mOnContactPictureLongClickedListener.onContactPictureLongClicked(v, message);
@@ -1721,7 +1720,7 @@ public class MessageAdapter extends ArrayAdapter<Message> {
         final Transferable transferable = message.getTransferable();
         final boolean unInitiatedButKnownSize = MessageUtils.unInitiatedButKnownSize(message);
 
-        final boolean muted = message.getStatus() == Message.STATUS_RECEIVED && conversation.getMode() == Conversation.MODE_MULTI && activity.xmppConnectionService.isMucUserMuted(new MucOptions.User(null, conversation.getJid(), message.getOccupantId(), null, null));
+        final boolean muted = message.getStatus() == Message.STATUS_RECEIVED && conversation.getMode() == Conversation.MODE_MULTI && !((Conversation) conversation).hasPermanentCounterpart() && activity.xmppConnectionService.isMucUserMuted(new MucOptions.User(null, conversation.getJid(), message.getOccupantId(), null, null));
         if (muted) {
             // Muted MUC participant
             displayInfoMessage(viewHolder, "Muted", darkBackground, message);
@@ -1790,7 +1789,7 @@ public class MessageAdapter extends ArrayAdapter<Message> {
                                     UIHelper.getFileDescriptionString(activity, message)),
                             darkBackground, type);
                 }
-            } else if (message.bodyIsOnlyEmojis() && message.getType() != Message.TYPE_PRIVATE) {
+            } else if (message.bodyIsOnlyEmojis() && (message.getType() != Message.TYPE_PRIVATE || (conversation instanceof Conversation && ((Conversation) conversation).hasPermanentCounterpart()))) {
                 displayEmojiMessage(viewHolder, getSpannableBody(message), darkBackground);
             } else {
                 displayTextMessage(viewHolder, message, darkBackground, type);
@@ -1816,29 +1815,7 @@ public class MessageAdapter extends ArrayAdapter<Message> {
                 viewHolder.commands_list.setVisibility(GONE);
                 viewHolder.commands_list.setOnItemClickListener(null);
             }
-            if (message.isPrivateMessage()) {
-                viewHolder.answer_button.setVisibility(View.VISIBLE);
-                Drawable icon = activity.getResources().getDrawable(R.drawable.ic_reply_circle_black_24dp);
-                Drawable drawable = DrawableCompat.wrap(icon);
-                DrawableCompat.setTint(drawable, StyledAttributes.getColor(getContext(), R.attr.colorAccent));
-                viewHolder.answer_button.setImageDrawable(drawable);
-                viewHolder.answer_button.setOnClickListener(v -> {
-                    try {
-                        if (activity instanceof ConversationsActivity) {
-                            ConversationFragment conversationFragment = ConversationFragment.get(activity);
-                            if (conversationFragment != null) {
-                                activity.invalidateOptionsMenu();
-                                conversationFragment.privateMessageWith(message.getCounterpart());
-                            }
-                        }
-                    } catch (Exception e) {
-                        viewHolder.answer_button.setVisibility(GONE);
-                        e.printStackTrace();
-                    }
-                });
-            } else {
-                viewHolder.answer_button.setVisibility(GONE);
-            }
+            viewHolder.answer_button.setVisibility(GONE);
             if (isInValidSession) {
                 setBubbleBackgroundColor(viewHolder.message_box, type, message.isPrivateMessage(), isInValidSession);
                 viewHolder.encryption.setVisibility(GONE);
@@ -1992,6 +1969,9 @@ public class MessageAdapter extends ArrayAdapter<Message> {
         this.mPlayGifInside = p.getBoolean(PLAY_GIF_INSIDE, activity.getResources().getBoolean(R.bool.play_gif_inside));
         this.mShowLinksInside = p.getBoolean(SHOW_LINKS_INSIDE, activity.getResources().getBoolean(R.bool.show_links_inside));
         this.mShowMapsInside = p.getBoolean(SHOW_MAPS_INSIDE, activity.getResources().getBoolean(R.bool.show_maps_inside));
+        this.mLargeFontForMucStatus = p.getBoolean("large_font_for_muc_status", activity.getResources().getBoolean(R.bool.large_font_for_muc_status));
+        this.mShowMucStatusMessages = p.getBoolean("show_muc_status_messages", activity.getResources().getBoolean(R.bool.show_muc_status_messages));
+        this.mShowJoinLeave = p.getBoolean("show_join_leave", activity.getResources().getBoolean(R.bool.show_join_leave));
         SharedPreferences sharedPref = PreferenceManager.getDefaultSharedPreferences(activity);
         this.readmarkervalue = sharedPref.getString("readmarker_style", "blue_readmarkers");
     }
@@ -2027,12 +2007,13 @@ public class MessageAdapter extends ArrayAdapter<Message> {
         public ImageView edit_indicator;
         public ImageView retract_indicator;
         public RelativeLayout audioPlayer;
-        public LinearLayout images;
+        public RelativeLayout images;
         protected LinearLayout message_box;
         protected Button download_button;
         protected Button resend_button;
         protected ImageButton answer_button;
         protected ImageView image;
+        protected ImageView play_button;
         protected TextView mediaduration;
         protected RichLinkView richlinkview;
         protected ImageView indicator;
@@ -2057,44 +2038,24 @@ public class MessageAdapter extends ArrayAdapter<Message> {
                                          final boolean isPrivateMessage, final boolean isInValidSession) {
         if (type == RECEIVED) {
             if (isInValidSession) {
-                if (isPrivateMessage) {
-                    viewHolder.setBackgroundResource(R.drawable.message_bubble_received_light_private);
-                    activity.setBubbleColor(viewHolder, StyledAttributes.getColor(activity, R.attr.color_bubble_light), StyledAttributes.getColor(activity, R.attr.colorAccent));
-                } else {
-                    viewHolder.setBackgroundResource(R.drawable.message_bubble_received_light);
-                    activity.setBubbleColor(viewHolder, StyledAttributes.getColor(activity, R.attr.color_bubble_light), -1);
-                }
+                viewHolder.setBackgroundResource(R.drawable.message_bubble_received_light);
+                activity.setBubbleColor(viewHolder, StyledAttributes.getColor(activity, R.attr.color_bubble_light), -1);
             } else {
-                if (isPrivateMessage) {
-                    viewHolder.setBackgroundResource(R.drawable.message_bubble_received_warning_private);
-                    activity.setBubbleColor(viewHolder, StyledAttributes.getColor(activity, R.attr.color_bubble_warning), StyledAttributes.getColor(activity, R.attr.colorAccent));
-                } else {
-                    viewHolder.setBackgroundResource(R.drawable.message_bubble_received_warning);
-                    activity.setBubbleColor(viewHolder, StyledAttributes.getColor(activity, R.attr.color_bubble_warning), -1);
-                }
+                viewHolder.setBackgroundResource(R.drawable.message_bubble_received_warning);
+                activity.setBubbleColor(viewHolder, StyledAttributes.getColor(activity, R.attr.color_bubble_warning), -1);
             }
         }
 
         if (type == SENT) {
-            if (isPrivateMessage) {
-                viewHolder.setBackgroundResource(R.drawable.message_bubble_sent_private);
-                activity.setBubbleColor(viewHolder, StyledAttributes.getColor(activity, R.attr.color_bubble_dark), StyledAttributes.getColor(activity, R.attr.colorAccent));
-            } else {
-                viewHolder.setBackgroundResource(R.drawable.message_bubble_sent);
-                activity.setBubbleColor(viewHolder, StyledAttributes.getColor(activity, R.attr.color_bubble_dark), -1);
-            }
+            viewHolder.setBackgroundResource(R.drawable.message_bubble_sent);
+            activity.setBubbleColor(viewHolder, StyledAttributes.getColor(activity, R.attr.color_bubble_dark), -1);
         }
     }
 
     public void setInputBubbleBackgroundColor(final View viewHolder,
                                               final boolean isPrivateMessage) {
-        if (isPrivateMessage) {
-            viewHolder.setBackgroundResource(R.drawable.input_bubble_sent_private);
-            activity.setBubbleColor(viewHolder, StyledAttributes.getColor(activity, R.attr.color_bubble_dark), StyledAttributes.getColor(activity, R.attr.colorAccent));
-        } else {
-            viewHolder.setBackgroundResource(R.drawable.input_bubble_light);
-            activity.setBubbleColor(viewHolder, StyledAttributes.getColor(activity, R.attr.color_bubble_dark), -1);
-        }
+        viewHolder.setBackgroundResource(R.drawable.input_bubble_light);
+        activity.setBubbleColor(viewHolder, StyledAttributes.getColor(activity, R.attr.color_bubble_dark), -1);
     }
 
     class ThumbnailTask extends AsyncTask<DownloadableFile, Void, Drawable[]> {
