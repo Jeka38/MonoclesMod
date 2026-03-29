@@ -1488,6 +1488,7 @@ public class MessageAdapter extends ArrayAdapter<Message> {
                     viewHolder.subject = view.findViewById(R.id.message_subject);
 //                    viewHolder.inReplyToBox = view.findViewById(R.id.in_reply_to_box);
                     viewHolder.indicatorReceived = view.findViewById(R.id.indicator_received);
+                    viewHolder.message_surface = view.findViewById(R.id.message_surface);
                     viewHolder.transfer = view.findViewById(R.id.transfer);
                     viewHolder.progressBar = view.findViewById(R.id.progressBar);
                     viewHolder.cancel_transfer = view.findViewById(R.id.cancel_transfer);
@@ -1521,6 +1522,7 @@ public class MessageAdapter extends ArrayAdapter<Message> {
                     viewHolder.subject = view.findViewById(R.id.message_subject);
 //                    viewHolder.inReplyToBox = view.findViewById(R.id.in_reply_to_box);
                     viewHolder.indicatorReceived = view.findViewById(R.id.indicator_received);
+                    viewHolder.message_surface = view.findViewById(R.id.message_surface);
                     viewHolder.encryption = view.findViewById(R.id.message_encryption);
                     viewHolder.transfer = view.findViewById(R.id.transfer);
                     viewHolder.progressBar = view.findViewById(R.id.progressBar);
@@ -1968,6 +1970,10 @@ public class MessageAdapter extends ArrayAdapter<Message> {
         if (viewHolder.audioPlayer != null) viewHolder.audioPlayer.setOnLongClickListener(messageLongClickListener);
         if (viewHolder.transfer != null) viewHolder.transfer.setOnLongClickListener(messageLongClickListener);
         if (viewHolder.contact_picture != null) viewHolder.contact_picture.setOnLongClickListener(contactLongClickListener);
+        if (viewHolder.message_surface != null) {
+            viewHolder.message_surface.setOnClickListener(messageClickListener);
+            viewHolder.message_surface.setOnLongClickListener(messageLongClickListener);
+        }
 
         return view;
     }
@@ -2142,6 +2148,7 @@ public class MessageAdapter extends ArrayAdapter<Message> {
         protected TextView status_message;
         protected TextView encryption;
         protected ListView commands_list;
+        protected RelativeLayout message_surface;
         protected RelativeLayout transfer;
         protected ProgressBar progressBar;
         protected ImageButton cancel_transfer;
