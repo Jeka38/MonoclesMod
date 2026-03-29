@@ -47,9 +47,7 @@ import android.util.Base64;
 import android.util.DisplayMetrics;
 import android.util.Log;
 import android.util.LruCache;
-import android.view.MotionEvent;
 import android.view.View;
-import android.view.ViewConfiguration;
 import android.view.ViewGroup;
 import android.view.WindowManager;
 import android.widget.ArrayAdapter;
@@ -1708,20 +1706,6 @@ public class MessageAdapter extends ArrayAdapter<Message> {
                 swipeLayout.close(true);
                 swipeArrow.setVisibility(View.GONE);
             }
-        });
-
-        // Treat touch-up as click so we don't have to touch twice
-        // (touch twice is because it's waiting to see if you double-touch for text selection)
-        viewHolder.messageBody.setOnTouchListener((v, event) -> {
-            if (event.getAction() == MotionEvent.ACTION_UP) {
-                final long pressDuration = event.getEventTime() - event.getDownTime();
-                final boolean wasLongPress = pressDuration >= ViewConfiguration.getLongPressTimeout();
-                if (!wasLongPress && MessageAdapter.this.mOnMessageBoxClickedListener != null) {
-                    MessageAdapter.this.mOnMessageBoxClickedListener
-                            .onContactPictureClicked(message);
-                }
-            }
-            return false;
         });
 
         viewHolder.contact_picture.setOnLongClickListener(v -> {
