@@ -25,7 +25,8 @@ import eu.siacs.conversations.ui.EditAccountActivity;
 import eu.siacs.conversations.ui.ManageAccountActivity;
 
 public class SignUpPage extends RegisterMonoclesActivity {
-    final String url = "https://ocean.monocles.eu/apps/registration/";
+    public static final String EXTRA_URL = "de.monocles.mod.extra.URL";
+    private static final String DEFAULT_URL = "https://ocean.monocles.eu/apps/registration/";
     private WebView webView;
     @Override
     public void onCreate(Bundle savedInstanceState) {
@@ -36,6 +37,9 @@ public class SignUpPage extends RegisterMonoclesActivity {
         getSupportActionBar().setDisplayHomeAsUpEnabled(true);
         webView = (WebView) findViewById(R.id.sign_up_view);
         ProgressBar progressBar = findViewById(R.id.progressbar);
+        final String url = getIntent() != null && getIntent().getStringExtra(EXTRA_URL) != null
+                ? getIntent().getStringExtra(EXTRA_URL)
+                : DEFAULT_URL;
 
         if(isNetworkAvailable()) {
             webView.getSettings().setJavaScriptEnabled(true);

@@ -72,6 +72,7 @@ import eu.siacs.conversations.services.XmppConnectionService.OnAccountUpdate;
 import eu.siacs.conversations.services.XmppConnectionService.OnCaptchaRequested;
 import eu.siacs.conversations.ui.adapter.KnownHostsAdapter;
 import eu.siacs.conversations.ui.adapter.PresenceTemplateAdapter;
+import de.monocles.mod.SignUpPage;
 import eu.siacs.conversations.ui.util.AvatarWorkerTask;
 import eu.siacs.conversations.ui.util.CustomTab;
 import eu.siacs.conversations.ui.util.PendingItem;
@@ -192,6 +193,12 @@ public class EditAccountActivity extends OmemoActivity implements OnAccountUpdat
             final boolean redirectionWorthyStatus = openPaymentUrl || openRegistrationUrl;
             final HttpUrl url = connection != null && redirectionWorthyStatus ? connection.getRedirectionUrl() : null;
             if (url != null && !wasDisabled) {
+                if (openRegistrationUrl) {
+                    final Intent signUpIntent = new Intent(EditAccountActivity.this, SignUpPage.class);
+                    signUpIntent.putExtra(SignUpPage.EXTRA_URL, url.toString());
+                    startActivity(signUpIntent);
+                    return;
+                }
                 try {
                     CustomTab.openTab(EditAccountActivity.this, Uri.parse(url.toString()), isDarkTheme());
                     return;
