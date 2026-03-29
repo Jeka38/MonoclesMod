@@ -100,9 +100,19 @@ public class SearchActivity extends XmppActivity implements TextWatcher, OnSearc
         this.binding = DataBindingUtil.setContentView(this, R.layout.activity_search);
         setSupportActionBar((Toolbar) this.binding.toolbar.getRoot());
         configureActionBar(getSupportActionBar());
-		this.messageListAdapter = new MessageAdapter(this, this.messages, uuid == null);
+        this.messageListAdapter = new MessageAdapter(this, this.messages, uuid == null);
         this.messageListAdapter.setOnContactPictureClicked(this);
         this.binding.searchResults.setAdapter(messageListAdapter);
+        this.binding.searchResults.setOnItemClickListener((parent, view, position, id) -> {
+            if (position < 0 || position >= this.messages.size()) {
+                return;
+            }
+            final Message message = this.messages.get(position);
+            if (message == null || message.getType() == Message.TYPE_STATUS || message.getUuid() == null) {
+                return;
+            }
+            openConversationAtMessage(message);
+        });
         registerForContextMenu(this.binding.searchResults);
     }
 
@@ -197,6 +207,21 @@ public class SearchActivity extends XmppActivity implements TextWatcher, OnSearc
     private void quote(Message message, String user) {
         Log.d(Config.LOGTAG, "Quote User: " + user);
         switchToConversationAndQuote(wrap(message.getConversation()), MessageUtils.prepareQuote(message), user);
+    }
+
+    private void openConversationAtMessage(final Message message) {
+        final Conversation conversation = wrap(message.getConversation());
+        if (conversation == null) {
+            return;
+        }
+        final Intent intent = new Intent(this, ConversationsActivity.class);
+        intent.setAction(ConversationsActivity.ACTION_VIEW_CONVERSATION);
+        intent.putExtra(ConversationsActivity.EXTRA_CONVERSATION, conversation.getUuid());
+        intent.putExtra(ConversationsActivity.EXTRA_MESSAGE_UUID, message.getUuid());
+        intent.setFlags(intent.getFlags() | Intent.FLAG_ACTIVITY_CLEAR_TOP);
+        startActivity(intent);
+        overridePendingTransition(R.animator.fade_in, R.animator.fade_out);
+        finish();
     }
 
     private Conversation wrap(Conversational conversational) {

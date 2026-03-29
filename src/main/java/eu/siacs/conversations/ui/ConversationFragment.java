@@ -25,8 +25,10 @@ import static eu.siacs.conversations.utils.StorageHelper.getConversationsDirecto
 import static eu.siacs.conversations.xmpp.Patches.ENCRYPTION_EXCEPTIONS;
 
 import android.Manifest;
+import android.animation.ArgbEvaluator;
 import android.animation.Animator;
 import android.animation.AnimatorInflater;
+import android.animation.ValueAnimator;
 import android.annotation.SuppressLint;
 import android.app.Activity;
 import android.app.Fragment;
@@ -40,7 +42,9 @@ import android.content.IntentSender.SendIntentException;
 import android.content.SharedPreferences;
 import android.content.pm.ActivityInfo;
 import android.content.pm.PackageManager;
+import android.graphics.Color;
 import android.graphics.Typeface;
+import android.graphics.drawable.Drawable;
 import android.icu.util.Calendar;
 import android.icu.util.TimeZone;
 import android.media.MediaRecorder;
@@ -3896,6 +3900,65 @@ public class ConversationFragment extends XmppFragment
         }
     }
 
+    private void jumpToMessageUuid(final String messageUuid, final int attempt) {
+        if (binding == null || binding.messagesView == null || TextUtils.isEmpty(messageUuid)) {
+            return;
+        }
+        synchronized (this.messageList) {
+            for (int i = 0; i < messageList.size(); i++) {
+                final Message item = messageList.get(i);
+                if (item != null && messageUuid.equals(item.getUuid())) {
+                    highlightMessageAtPosition(i);
+                    return;
+                }
+            }
+        }
+        if (attempt < 12) {
+            binding.messagesView.postDelayed(() -> jumpToMessageUuid(messageUuid, attempt + 1), 90);
+        }
+    }
+
+    private void highlightMessageAtPosition(final int position) {
+        if (binding == null || binding.messagesView == null) {
+            return;
+        }
+        setSelection(position, false);
+        binding.messagesView.postDelayed(() -> animateMessageHighlight(position, 0), 130);
+    }
+
+    private void animateMessageHighlight(final int position, final int attempt) {
+        if (binding == null || binding.messagesView == null) {
+            return;
+        }
+        final ListView listView = binding.messagesView;
+        final int childIndex = position - listView.getFirstVisiblePosition();
+        if (childIndex >= 0 && childIndex < listView.getChildCount()) {
+            final View target = listView.getChildAt(childIndex);
+            if (target != null && activity != null) {
+                final Drawable originalBackground = target.getBackground();
+                final int accentBase = StyledAttributes.getColor(activity, R.attr.colorAccent);
+                final int accent =
+                        Color.argb(
+                                105,
+                                Color.red(accentBase),
+                                Color.green(accentBase),
+                                Color.blue(accentBase));
+                final ValueAnimator animator =
+                        ValueAnimator.ofObject(
+                                new ArgbEvaluator(), Color.TRANSPARENT, accent, Color.TRANSPARENT);
+                animator.setDuration(850);
+                animator.addUpdateListener(
+                        animation -> target.setBackgroundColor((int) animation.getAnimatedValue()));
+                animator.start();
+                target.postDelayed(() -> target.setBackground(originalBackground), 900);
+                return;
+            }
+        }
+        if (attempt < 10) {
+            listView.postDelayed(() -> animateMessageHighlight(position, attempt + 1), 80);
+        }
+    }
+
     private void openWith(final Message message) {
         if (message.isGeoUri()) {
             GeoHelper.view(getActivity(), message);
@@ -4662,6 +4725,7 @@ public class ConversationFragment extends XmppFragment
         final boolean doNotAppend =
                 extras.getBoolean(ConversationsActivity.EXTRA_DO_NOT_APPEND, false);
         final String type = extras.getString(ConversationsActivity.EXTRA_TYPE);
+        final String messageUuid = extras.getString(ConversationsActivity.EXTRA_MESSAGE_UUID);
 
         final String thread = extras.getString(ConversationsActivity.EXTRA_THREAD);
         if (thread != null) {
@@ -4762,6 +4826,9 @@ public class ConversationFragment extends XmppFragment
         }
         if (message != null) {
             startDownloadable(message);
+        }
+        if (!TextUtils.isEmpty(messageUuid)) {
+            binding.messagesView.post(() -> jumpToMessageUuid(messageUuid, 0));
         }
         if (activity.xmppConnectionService.isOnboarding() && conversation.getJid().equals(Jid.of("cheogram.com"))) {
             if (!conversation.switchToSession("jabber:iq:register")) {
