@@ -86,7 +86,6 @@ import android.view.inputmethod.InputMethodManager;
 import android.widget.AbsListView;
 import android.widget.AbsListView.OnScrollListener;
 import android.widget.AdapterView;
-import android.widget.AdapterView.AdapterContextMenuInfo;
 import android.widget.LinearLayout;
 import android.widget.ListView;
 import android.widget.RelativeLayout;
@@ -1977,12 +1976,7 @@ public class ConversationFragment extends XmppFragment
         binding.takePictureButton.setOnClickListener(this.mtakePictureButtonListener);
         binding.messagesView.setOnScrollListener(mOnScrollListener);
         binding.messagesView.setTranscriptMode(ListView.TRANSCRIPT_MODE_NORMAL);
-        binding.messagesView.setOnItemLongClickListener((parent, view, position, id) -> {
-            if (position >= 0 && position < messageList.size()) {
-                selectedMessage = messageList.get(position);
-            }
-            return false;
-        });
+        binding.messagesView.setOnItemLongClickListener((parent, view, position, id) -> showMessageContextMenu(view, position));
         mediaPreviewAdapter = new MediaPreviewAdapter(this);
         binding.mediaPreview.setAdapter(mediaPreviewAdapter);
         messageListAdapter = new MessageAdapter((XmppActivity) getActivity(), this.messageList);
@@ -1995,7 +1989,6 @@ public class ConversationFragment extends XmppFragment
         binding.textinput.addTextChangedListener(
                 new StylingHelper.MessageEditorStyler(binding.textinput, messageListAdapter));
 
-        registerForContextMenu(binding.messagesView);
         registerForContextMenu(binding.textSendButton);
 
         this.binding.textinput.setCustomInsertionActionModeCallback(new EditMessageActionModeCallback(this.binding.textinput));
@@ -2376,18 +2369,25 @@ public class ConversationFragment extends XmppFragment
             return;
         }
 
-        synchronized (this.messageList) {
-            super.onCreateContextMenu(menu, v, menuInfo);
-            if (menuInfo instanceof AdapterContextMenuInfo acmi) {
-                this.selectedMessage = this.messageList.get(acmi.position);
-            } else if (selectedMessage == null) {
-                return;
-            }
-            populateContextMenu(menu);
-        }
+        super.onCreateContextMenu(menu, v, menuInfo);
     }
 
-    private void populateContextMenu(ContextMenu menu) {
+    private boolean showMessageContextMenu(final View anchor, final int position) {
+        synchronized (this.messageList) {
+            if (position < 0 || position >= this.messageList.size()) {
+                return false;
+            }
+            this.selectedMessage = this.messageList.get(position);
+        }
+        final PopupMenu popupMenu = new PopupMenu(activity, anchor);
+        activity.getMenuInflater().inflate(R.menu.message_context, popupMenu.getMenu());
+        populateContextMenu(popupMenu.getMenu());
+        popupMenu.setOnMenuItemClickListener(this::onContextItemSelected);
+        popupMenu.show();
+        return true;
+    }
+
+    private void populateContextMenu(Menu menu) {
         final Message m = this.selectedMessage;
         final Transferable t = m.getTransferable();
         Message relevantForCorrection = m;
