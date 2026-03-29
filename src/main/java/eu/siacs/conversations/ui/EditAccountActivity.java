@@ -35,6 +35,10 @@ import android.widget.EditText;
 import android.widget.ImageView;
 import android.widget.TextView;
 import android.widget.Toast;
+import android.webkit.WebResourceRequest;
+import android.webkit.WebSettings;
+import android.webkit.WebView;
+import android.webkit.WebViewClient;
 
 import androidx.annotation.NonNull;
 import androidx.appcompat.app.ActionBar;
@@ -72,7 +76,6 @@ import eu.siacs.conversations.services.XmppConnectionService.OnAccountUpdate;
 import eu.siacs.conversations.services.XmppConnectionService.OnCaptchaRequested;
 import eu.siacs.conversations.ui.adapter.KnownHostsAdapter;
 import eu.siacs.conversations.ui.adapter.PresenceTemplateAdapter;
-import de.monocles.mod.SignUpPage;
 import eu.siacs.conversations.ui.util.AvatarWorkerTask;
 import eu.siacs.conversations.ui.util.CustomTab;
 import eu.siacs.conversations.ui.util.PendingItem;
@@ -111,6 +114,7 @@ public class EditAccountActivity extends OmemoActivity implements OnAccountUpdat
     private static final int REQUEST_UNLOCK = 0xff23;
     private static final int REQUEST_IMPORT_BACKUP = 0x63fb;
     private AlertDialog mCaptchaDialog = null;
+    private AlertDialog mRegistrationWebDialog = null;
     private final AtomicBoolean mPendingReconnect = new AtomicBoolean(false);
     private final AtomicBoolean redirectInProgress = new AtomicBoolean(false);
     private Jid jidToEdit;
@@ -194,9 +198,7 @@ public class EditAccountActivity extends OmemoActivity implements OnAccountUpdat
             final HttpUrl url = connection != null && redirectionWorthyStatus ? connection.getRedirectionUrl() : null;
             if (url != null && !wasDisabled) {
                 if (openRegistrationUrl) {
-                    final Intent signUpIntent = new Intent(EditAccountActivity.this, SignUpPage.class);
-                    signUpIntent.putExtra(SignUpPage.EXTRA_URL, url.toString());
-                    startActivity(signUpIntent);
+                    showRegistrationWebDialog(url);
                     return;
                 }
                 try {
@@ -1749,6 +1751,47 @@ public class EditAccountActivity extends OmemoActivity implements OnAccountUpdat
             mCaptchaDialog = builder.create();
             mCaptchaDialog.show();
             input.requestFocus();
+        });
+    }
+
+    private void showRegistrationWebDialog(final HttpUrl url) {
+        runOnUiThread(() -> {
+            if (mRegistrationWebDialog != null && mRegistrationWebDialog.isShowing()) {
+                mRegistrationWebDialog.dismiss();
+            }
+            final WebView webView = new WebView(EditAccountActivity.this);
+            final WebSettings settings = webView.getSettings();
+            settings.setJavaScriptEnabled(true);
+            settings.setDomStorageEnabled(true);
+            settings.setSupportZoom(true);
+            webView.setWebViewClient(new WebViewClient() {
+                @Override
+                public boolean shouldOverrideUrlLoading(WebView view, WebResourceRequest request) {
+                    final Uri uri = request.getUrl();
+                    final String scheme = uri.getScheme();
+                    if ("http".equals(scheme) || "https".equals(scheme)) {
+                        return false;
+                    }
+                    try {
+                        startActivity(new Intent(Intent.ACTION_VIEW, uri));
+                    } catch (ActivityNotFoundException e) {
+                        ToastCompat.makeText(
+                                EditAccountActivity.this,
+                                R.string.application_found_to_open_website,
+                                ToastCompat.LENGTH_SHORT).show();
+                    }
+                    return true;
+                }
+            });
+            webView.loadUrl(url.toString());
+
+            final AlertDialog.Builder builder = new AlertDialog.Builder(EditAccountActivity.this);
+            builder.setTitle(getString(R.string.captcha_required));
+            builder.setView(webView);
+            builder.setPositiveButton(getString(R.string.ok), null);
+            builder.setOnDismissListener(dialog -> webView.destroy());
+            mRegistrationWebDialog = builder.create();
+            mRegistrationWebDialog.show();
         });
     }
 
