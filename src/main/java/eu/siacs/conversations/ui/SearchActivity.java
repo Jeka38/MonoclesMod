@@ -102,6 +102,12 @@ public class SearchActivity extends XmppActivity implements TextWatcher, OnSearc
         configureActionBar(getSupportActionBar());
         this.messageListAdapter = new MessageAdapter(this, this.messages, uuid == null);
         this.messageListAdapter.setOnContactPictureClicked(this);
+        this.messageListAdapter.setOnMessageBoxClicked(message -> {
+            if (message == null || message.getType() == Message.TYPE_STATUS || message.getUuid() == null) {
+                return;
+            }
+            openConversationAtMessage(message);
+        });
         this.binding.searchResults.setAdapter(messageListAdapter);
         this.binding.searchResults.setOnItemClickListener((parent, view, position, id) -> {
             if (position < 0 || position >= this.messages.size()) {
