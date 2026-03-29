@@ -214,14 +214,7 @@ public class SearchActivity extends XmppActivity implements TextWatcher, OnSearc
         if (conversation == null) {
             return;
         }
-        final Intent intent = new Intent(this, ConversationsActivity.class);
-        intent.setAction(ConversationsActivity.ACTION_VIEW_CONVERSATION);
-        intent.putExtra(ConversationsActivity.EXTRA_CONVERSATION, conversation.getUuid());
-        intent.putExtra(ConversationsActivity.EXTRA_MESSAGE_UUID, message.getUuid());
-        intent.setFlags(intent.getFlags() | Intent.FLAG_ACTIVITY_CLEAR_TOP);
-        startActivity(intent);
-        overridePendingTransition(R.animator.fade_in, R.animator.fade_out);
-        finish();
+        switchToConversationAndHighlightMessage(conversation, message.getUuid());
     }
 
     private Conversation wrap(Conversational conversational) {
