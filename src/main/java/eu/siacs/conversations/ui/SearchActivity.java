@@ -87,6 +87,7 @@ public class SearchActivity extends XmppActivity implements TextWatcher, OnSearc
     private final ChangeWatcher<List<String>> currentSearch = new ChangeWatcher<>();
     private final PendingItem<String> pendingSearchTerm = new PendingItem<>();
     private final PendingItem<List<String>> pendingSearch = new PendingItem<>();
+    private long lastOpenConversationTapTs = 0L;
 
     @Override
     public void onCreate(final Bundle bundle) {
@@ -213,10 +214,15 @@ public class SearchActivity extends XmppActivity implements TextWatcher, OnSearc
     }
 
     private void openConversationAtMessage(final Message message) {
+        final long now = System.currentTimeMillis();
+        if (now - lastOpenConversationTapTs < 600) {
+            return;
+        }
         final Conversation conversation = wrap(message.getConversation());
         if (conversation == null) {
             return;
         }
+        lastOpenConversationTapTs = now;
         switchToConversationAndHighlightMessage(conversation, message.getUuid());
     }
 
