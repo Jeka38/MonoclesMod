@@ -480,6 +480,7 @@ public class JingleFileTransferConnection extends AbstractJingleConnection
     private Transport setupTransport(final GenericTransportInfo transportInfo) {
         final XmppConnection xmppConnection = id.account.getXmppConnection();
         final boolean useTor = id.account.isOnion() || xmppConnectionService.useTorToConnect();
+        final boolean useSocks5ProxyForFileTransfers = useSocks5ProxyForFileTransfers();
         if (transportInfo instanceof IbbTransportInfo ibbTransportInfo) {
             final String streamId = ibbTransportInfo.getTransportId();
             final Long blockSize = ibbTransportInfo.getBlockSize();
@@ -501,7 +502,9 @@ public class JingleFileTransferConnection extends AbstractJingleConnection
             Log.d(Config.LOGTAG, "received socks candidates " + candidates);
             return new SocksByteStreamsTransport(
                     xmppConnection, id, isInitiator(), useTor, streamId, candidates);
-        } else if (!useTor && transportInfo instanceof WebRTCDataChannelTransportInfo) {
+        } else if (!useTor
+                && !useSocks5ProxyForFileTransfers
+                && transportInfo instanceof WebRTCDataChannelTransportInfo) {
             return new WebRTCDataChannelTransport(
                     xmppConnectionService.getApplicationContext(),
                     xmppConnection,
@@ -515,7 +518,10 @@ public class JingleFileTransferConnection extends AbstractJingleConnection
     private Transport setupTransport() {
         final XmppConnection xmppConnection = id.account.getXmppConnection();
         final boolean useTor = id.account.isOnion() || xmppConnectionService.useTorToConnect();
-        if (!useTor && remoteHasFeature(Namespace.JINGLE_TRANSPORT_WEBRTC_DATA_CHANNEL)) {
+        final boolean useSocks5ProxyForFileTransfers = useSocks5ProxyForFileTransfers();
+        if (!useTor
+                && !useSocks5ProxyForFileTransfers
+                && remoteHasFeature(Namespace.JINGLE_TRANSPORT_WEBRTC_DATA_CHANNEL)) {
             return new WebRTCDataChannelTransport(
                     xmppConnectionService.getApplicationContext(),
                     xmppConnection,
@@ -526,6 +532,10 @@ public class JingleFileTransferConnection extends AbstractJingleConnection
             return new SocksByteStreamsTransport(xmppConnection, id, isInitiator(), useTor);
         }
         return setupLastResortTransport();
+    }
+
+    private boolean useSocks5ProxyForFileTransfers() {
+        return xmppConnectionService.showExtendedConnectionOptions();
     }
 
     private Transport setupLastResortTransport() {
