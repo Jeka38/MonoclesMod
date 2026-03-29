@@ -68,6 +68,11 @@ public class SocksByteStreamsTransport implements Transport {
 
     private final boolean initiator;
     private final boolean useTor;
+    private final boolean useProxy;
+    private final String proxyHost;
+    private final int proxyPort;
+    private final String proxyUsername;
+    private final String proxyPassword;
 
     private final String streamId;
 
@@ -96,6 +101,11 @@ public class SocksByteStreamsTransport implements Transport {
         this.id = id;
         this.initiator = initiator;
         this.useTor = useTor;
+        this.useProxy = xmppConnection.getXmppConnectionService().useProxyToConnect() && !useTor;
+        this.proxyHost = xmppConnection.getXmppConnectionService().getProxyHost();
+        this.proxyPort = xmppConnection.getXmppConnectionService().getProxyPort();
+        this.proxyUsername = xmppConnection.getXmppConnectionService().getProxyUsername();
+        this.proxyPassword = xmppConnection.getXmppConnectionService().getProxyPassword();
         this.streamId = streamId;
         this.theirDestination =
                 Hashing.sha1()
@@ -121,7 +131,7 @@ public class SocksByteStreamsTransport implements Transport {
                         .toString();
 
         this.connectionProvider =
-                new ConnectionProvider(id.account.getJid(), ourDestination, useTor);
+                new ConnectionProvider(id.account.getJid(), ourDestination, useTor, useProxy);
         new Thread(connectionProvider).start();
         this.ourProxyConnection = getOurProxyConnection(ourDestination);
         setTheirCandidates(theirCandidates);
@@ -147,7 +157,15 @@ public class SocksByteStreamsTransport implements Transport {
         // TODO this needs to go into a variable so we can cancel it
         final var connectionFinder =
                 new ConnectionFinder(
-                        theirCandidates, theirDestination, selectedByThemCandidate, useTor);
+                        theirCandidates,
+                        theirDestination,
+                        selectedByThemCandidate,
+                        useTor,
+                        useProxy,
+                        proxyHost,
+                        proxyPort,
+                        proxyUsername,
+                        proxyPassword);
         new Thread(connectionFinder).start();
         Futures.addCallback(
                 connectionFinder.connectionFuture,
@@ -284,7 +302,15 @@ public class SocksByteStreamsTransport implements Transport {
                 proxy -> {
                     final var connectionFinder =
                             new ConnectionFinder(
-                                    ImmutableList.of(proxy), ourDestination, null, useTor);
+                                    ImmutableList.of(proxy),
+                                    ourDestination,
+                                    null,
+                                    useTor,
+                                    useProxy,
+                                    proxyHost,
+                                    proxyPort,
+                                    proxyUsername,
+                                    proxyPassword);
                     new Thread(connectionFinder).start();
                     return Futures.transform(
                             connectionFinder.connectionFuture,
@@ -529,12 +555,15 @@ public class SocksByteStreamsTransport implements Transport {
         private final ArrayList<Connection> peerConnections = new ArrayList<>();
 
         private ConnectionProvider(
-                final Jid account, final String destination, final boolean useTor) {
+                final Jid account,
+                final String destination,
+                final boolean useTor,
+                final boolean useProxy) {
             final SecureRandom secureRandom = new SecureRandom();
             this.port = secureRandom.nextInt(60_000) + 1024;
             this.destination = destination;
             final InetAddress[] localAddresses;
-            if (Config.USE_DIRECT_JINGLE_CANDIDATES && !useTor) {
+            if (Config.USE_DIRECT_JINGLE_CANDIDATES && !useTor && !useProxy) {
                 localAddresses =
                         DirectConnectionUtils.getLocalAddresses().toArray(new InetAddress[0]);
             } else {
@@ -709,16 +738,31 @@ public class SocksByteStreamsTransport implements Transport {
 
         private final ListenableFuture<Connection> selectedByThemCandidate;
         private final boolean useTor;
+        private final boolean useProxy;
+        private final String proxyHost;
+        private final int proxyPort;
+        private final String proxyUsername;
+        private final String proxyPassword;
 
         private ConnectionFinder(
                 final ImmutableList<Candidate> candidates,
                 final String destination,
                 final ListenableFuture<Connection> selectedByThemCandidate,
-                final boolean useTor) {
+                final boolean useTor,
+                final boolean useProxy,
+                final String proxyHost,
+                final int proxyPort,
+                final String proxyUsername,
+                final String proxyPassword) {
             this.candidates = candidates;
             this.destination = destination;
             this.selectedByThemCandidate = selectedByThemCandidate;
             this.useTor = useTor;
+            this.useProxy = useProxy;
+            this.proxyHost = proxyHost;
+            this.proxyPort = proxyPort;
+            this.proxyUsername = proxyUsername;
+            this.proxyPassword = proxyPassword;
         }
 
         @Override
@@ -758,6 +802,15 @@ public class SocksByteStreamsTransport implements Transport {
             if (useTor) {
                 Log.d(Config.LOGTAG, "using Tor to connect to candidate " + candidate.host);
                 socket = SocksSocketFactory.createSocketOverTor(candidate.host, candidate.port);
+            } else if (useProxy) {
+                socket =
+                        SocksSocketFactory.createSocketOverProxy(
+                                proxyHost,
+                                proxyPort,
+                                candidate.host,
+                                candidate.port,
+                                proxyUsername,
+                                proxyPassword);
             } else {
                 socket = new Socket();
                 final SocketAddress address = new InetSocketAddress(candidate.host, candidate.port);
