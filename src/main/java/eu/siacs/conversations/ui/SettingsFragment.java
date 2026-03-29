@@ -1,6 +1,10 @@
 package eu.siacs.conversations.ui;
 
 import android.content.Intent;
+import android.animation.ArgbEvaluator;
+import android.animation.ValueAnimator;
+import android.graphics.Color;
+import android.graphics.drawable.Drawable;
 import android.os.Bundle;
 import android.preference.PreferenceGroup;
 import android.preference.Preference;
@@ -25,6 +29,7 @@ import java.util.Locale;
 
 import eu.siacs.conversations.Config;
 import eu.siacs.conversations.R;
+import eu.siacs.conversations.ui.util.StyledAttributes;
 import eu.siacs.conversations.utils.Compatibility;
 
 public class SettingsFragment extends PreferenceFragment {
@@ -210,6 +215,7 @@ public class SettingsFragment extends PreferenceFragment {
                             title.toString(),
                             pref.getSummary() == null ? "" : pref.getSummary().toString(),
                             parentScreenKey,
+                            pref instanceof PreferenceScreen ? pref.getKey() : parentScreenKey,
                             pref instanceof PreferenceScreen
                     ));
                 }
@@ -231,9 +237,10 @@ public class SettingsFragment extends PreferenceFragment {
 
     private void navigateToPreference(final SearchEntry entry) {
         if (entry.isPreferenceScreen) {
-            openPreferenceScreen(entry.preferenceKey);
-        } else if (!TextUtils.isEmpty(entry.parentScreenKey)) {
-            openPreferenceScreen(entry.parentScreenKey);
+            openPreferenceScreen(entry.targetScreenKey);
+            return;
+        } else if (!TextUtils.isEmpty(entry.targetScreenKey)) {
+            openPreferenceScreen(entry.targetScreenKey);
         } else if (rootPreferenceScreen != null) {
             setPreferenceScreen(rootPreferenceScreen);
         }
@@ -248,15 +255,26 @@ public class SettingsFragment extends PreferenceFragment {
         if (adapter == null) {
             return;
         }
+        highlightByPreferenceKey(listView, entry.preferenceKey, 0);
+    }
+
+    private void highlightByPreferenceKey(final ListView listView, final String preferenceKey, final int attempt) {
+        final android.widget.ListAdapter adapter = listView.getAdapter();
+        if (adapter == null) {
+            return;
+        }
         for (int i = 0; i < adapter.getCount(); i++) {
             final Object item = adapter.getItem(i);
             if (item instanceof Preference) {
                 final Preference pref = (Preference) item;
-                if (entry.preferenceKey.equals(pref.getKey())) {
+                if (preferenceKey.equals(pref.getKey())) {
                     highlightPreferenceAtPosition(listView, i);
-                    break;
+                    return;
                 }
             }
+        }
+        if (attempt < 8) {
+            listView.postDelayed(() -> highlightByPreferenceKey(listView, preferenceKey, attempt + 1), 80);
         }
     }
 
@@ -271,22 +289,20 @@ public class SettingsFragment extends PreferenceFragment {
         if (childIndex >= 0 && childIndex < listView.getChildCount()) {
             final View target = listView.getChildAt(childIndex);
             if (target != null) {
-                target.animate()
-                        .alpha(0.35f)
-                        .setDuration(140)
-                        .withEndAction(() -> target.animate()
-                                .alpha(1f)
-                                .setDuration(160)
-                                .withEndAction(() -> target.animate()
-                                        .alpha(0.35f)
-                                        .setDuration(140)
-                                        .withEndAction(() -> target.animate()
-                                                .alpha(1f)
-                                                .setDuration(160)
-                                                .start())
-                                        .start())
-                                .start())
-                        .start();
+                final Drawable originalBackground = target.getBackground();
+                final int accentBase = StyledAttributes.getColor(getActivity(), R.attr.color_accent);
+                final int accent = Color.argb(110, Color.red(accentBase), Color.green(accentBase), Color.blue(accentBase));
+                final ValueAnimator animator = ValueAnimator.ofObject(
+                        new ArgbEvaluator(),
+                        Color.TRANSPARENT,
+                        accent,
+                        Color.TRANSPARENT
+                );
+                animator.setDuration(800);
+                animator.addUpdateListener(valueAnimator ->
+                        target.setBackgroundColor((int) valueAnimator.getAnimatedValue()));
+                animator.start();
+                target.postDelayed(() -> target.setBackground(originalBackground), 820);
                 return;
             }
         }
@@ -300,6 +316,7 @@ public class SettingsFragment extends PreferenceFragment {
         private final String displayTitle;
         private final String summary;
         private final String parentScreenKey;
+        private final String targetScreenKey;
         private final boolean isPreferenceScreen;
 
         private SearchEntry(
@@ -307,12 +324,14 @@ public class SettingsFragment extends PreferenceFragment {
                 final String displayTitle,
                 final String summary,
                 final String parentScreenKey,
+                final String targetScreenKey,
                 final boolean isPreferenceScreen
         ) {
             this.preferenceKey = preferenceKey;
             this.displayTitle = displayTitle;
             this.summary = summary;
             this.parentScreenKey = parentScreenKey;
+            this.targetScreenKey = targetScreenKey;
             this.isPreferenceScreen = isPreferenceScreen;
         }
     }
