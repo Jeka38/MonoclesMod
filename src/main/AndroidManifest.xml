@@ -117,7 +117,7 @@
 
 
     <application
-        android:allowBackup="true"
+        android:allowBackup="false"
         android:appCategory="social"
         android:dataExtractionRules="@xml/data_extraction_rules"
         android:fullBackupContent="@xml/backup_content"
@@ -131,6 +131,7 @@
         android:requestLegacyExternalStorage="true"
         android:supportsRtl="true"
         android:theme="@style/ConversationsTheme"
+        tools:replace="android:allowBackup"
         tools:targetApi="tiramisu">
 
         <service

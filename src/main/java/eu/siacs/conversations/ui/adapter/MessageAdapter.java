@@ -49,6 +49,7 @@ import android.util.Log;
 import android.util.LruCache;
 import android.view.MotionEvent;
 import android.view.View;
+import android.view.ViewConfiguration;
 import android.view.ViewGroup;
 import android.view.WindowManager;
 import android.widget.ArrayAdapter;
@@ -1713,7 +1714,9 @@ public class MessageAdapter extends ArrayAdapter<Message> {
         // (touch twice is because it's waiting to see if you double-touch for text selection)
         viewHolder.messageBody.setOnTouchListener((v, event) -> {
             if (event.getAction() == MotionEvent.ACTION_UP) {
-                if (MessageAdapter.this.mOnMessageBoxClickedListener != null) {
+                final long pressDuration = event.getEventTime() - event.getDownTime();
+                final boolean wasLongPress = pressDuration >= ViewConfiguration.getLongPressTimeout();
+                if (!wasLongPress && MessageAdapter.this.mOnMessageBoxClickedListener != null) {
                     MessageAdapter.this.mOnMessageBoxClickedListener
                             .onContactPictureClicked(message);
                 }

@@ -259,12 +259,18 @@ public class ConversationsActivity extends XmppActivity implements OnConversatio
             editor.commit();
             // restart if storage not accessable
             if (FileBackend.getDiskSize() <= 0) {
-                Intent restartintent = getBaseContext().getPackageManager().getLaunchIntentForPackage(getBaseContext().getPackageName());
-                restartintent.addFlags(Intent.FLAG_ACTIVITY_CLEAR_TOP);
-                restartintent.addFlags(Intent.FLAG_ACTIVITY_NEW_TASK);
-                startActivity(restartintent);
-                overridePendingTransition(R.animator.fade_in, R.animator.fade_out);
-                System.exit(0);
+                Log.w(Config.LOGTAG, "Storage size is reported as zero on first start; trying soft restart");
+                Intent restartIntent = getPackageManager().getLaunchIntentForPackage(getPackageName());
+                if (restartIntent != null) {
+                    restartIntent.addFlags(Intent.FLAG_ACTIVITY_CLEAR_TOP);
+                    restartIntent.addFlags(Intent.FLAG_ACTIVITY_NEW_TASK);
+                    startActivity(restartIntent);
+                    overridePendingTransition(R.animator.fade_in, R.animator.fade_out);
+                    finishAffinity();
+                    return;
+                } else {
+                    Log.w(Config.LOGTAG, "Unable to restart app after first start because launch intent is null; continue without restart");
+                }
             }
         }
 
