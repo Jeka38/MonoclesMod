@@ -290,7 +290,7 @@ public class SettingsFragment extends PreferenceFragment {
             final View target = listView.getChildAt(childIndex);
             if (target != null) {
                 final Drawable originalBackground = target.getBackground();
-                final int accentBase = StyledAttributes.getColor(getActivity(), R.attr.color_accent);
+                final int accentBase = StyledAttributes.getColor(getActivity(), R.attr.colorAccent);
                 final int accent = Color.argb(110, Color.red(accentBase), Color.green(accentBase), Color.blue(accentBase));
                 final ValueAnimator animator = ValueAnimator.ofObject(
                         new ArgbEvaluator(),
