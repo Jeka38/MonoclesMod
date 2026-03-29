@@ -32,6 +32,7 @@ public class SettingsFragment extends PreferenceFragment {
     private String page = null;
     private String suffix = null;
     private final List<SearchEntry> searchIndex = new ArrayList<>();
+    private PreferenceScreen rootPreferenceScreen;
 
     @Override
     public void onCreate(Bundle savedInstanceState) {
@@ -48,6 +49,7 @@ public class SettingsFragment extends PreferenceFragment {
             }
         }
         Compatibility.removeUnusedPreferences(this);
+        rootPreferenceScreen = getPreferenceScreen();
         rebuildSearchIndex();
 
         if (!TextUtils.isEmpty(page)) {
@@ -146,7 +148,7 @@ public class SettingsFragment extends PreferenceFragment {
     }
 
     private void openPreferenceScreen(final String screenName) {
-        final Preference pref = findPreference(screenName);
+        final Preference pref = findPreferenceInTree(rootPreferenceScreen, screenName);
         if (pref instanceof PreferenceScreen) {
             final PreferenceScreen preferenceScreen = (PreferenceScreen) pref;
             getActivity().setTitle(preferenceScreen.getTitle());
@@ -164,6 +166,25 @@ public class SettingsFragment extends PreferenceFragment {
             }
             setPreferenceScreen((PreferenceScreen) pref);
         }
+    }
+
+    private Preference findPreferenceInTree(final PreferenceGroup group, final String key) {
+        if (group == null || TextUtils.isEmpty(key)) {
+            return null;
+        }
+        for (int i = 0; i < group.getPreferenceCount(); i++) {
+            final Preference pref = group.getPreference(i);
+            if (key.equals(pref.getKey())) {
+                return pref;
+            }
+            if (pref instanceof PreferenceGroup) {
+                final Preference nested = findPreferenceInTree((PreferenceGroup) pref, key);
+                if (nested != null) {
+                    return nested;
+                }
+            }
+        }
+        return null;
     }
 
     private void rebuildSearchIndex() {
@@ -188,7 +209,8 @@ public class SettingsFragment extends PreferenceFragment {
                             pref.getKey(),
                             title.toString(),
                             pref.getSummary() == null ? "" : pref.getSummary().toString(),
-                            parentScreenKey
+                            parentScreenKey,
+                            pref instanceof PreferenceScreen
                     ));
                 }
             }
@@ -208,8 +230,12 @@ public class SettingsFragment extends PreferenceFragment {
     }
 
     private void navigateToPreference(final SearchEntry entry) {
-        if (!TextUtils.isEmpty(entry.parentScreenKey)) {
+        if (entry.isPreferenceScreen) {
+            openPreferenceScreen(entry.preferenceKey);
+        } else if (!TextUtils.isEmpty(entry.parentScreenKey)) {
             openPreferenceScreen(entry.parentScreenKey);
+        } else if (rootPreferenceScreen != null) {
+            setPreferenceScreen(rootPreferenceScreen);
         }
         if (getView() == null) {
             return;
@@ -274,17 +300,20 @@ public class SettingsFragment extends PreferenceFragment {
         private final String displayTitle;
         private final String summary;
         private final String parentScreenKey;
+        private final boolean isPreferenceScreen;
 
         private SearchEntry(
                 final String preferenceKey,
                 final String displayTitle,
                 final String summary,
-                final String parentScreenKey
+                final String parentScreenKey,
+                final boolean isPreferenceScreen
         ) {
             this.preferenceKey = preferenceKey;
             this.displayTitle = displayTitle;
             this.summary = summary;
             this.parentScreenKey = parentScreenKey;
+            this.isPreferenceScreen = isPreferenceScreen;
         }
     }
 
