@@ -481,6 +481,10 @@ public class JingleFileTransferConnection extends AbstractJingleConnection
         final XmppConnection xmppConnection = id.account.getXmppConnection();
         final boolean useTor = id.account.isOnion() || xmppConnectionService.useTorToConnect();
         final boolean useSocks5ProxyForFileTransfers = useSocks5ProxyForFileTransfers();
+        if (useSocks5ProxyForFileTransfers
+                && !(transportInfo instanceof SocksByteStreamsTransportInfo)) {
+            throw new IllegalArgumentException("S5B transport is required for file transfer");
+        }
         if (transportInfo instanceof IbbTransportInfo ibbTransportInfo) {
             final String streamId = ibbTransportInfo.getTransportId();
             final Long blockSize = ibbTransportInfo.getBlockSize();
@@ -519,6 +523,12 @@ public class JingleFileTransferConnection extends AbstractJingleConnection
         final XmppConnection xmppConnection = id.account.getXmppConnection();
         final boolean useTor = id.account.isOnion() || xmppConnectionService.useTorToConnect();
         final boolean useSocks5ProxyForFileTransfers = useSocks5ProxyForFileTransfers();
+        if (useSocks5ProxyForFileTransfers) {
+            if (remoteHasFeature(Namespace.JINGLE_TRANSPORTS_S5B)) {
+                return new SocksByteStreamsTransport(xmppConnection, id, isInitiator(), useTor);
+            }
+            throw new IllegalStateException("Remote does not support required S5B transport");
+        }
         if (!useTor
                 && !useSocks5ProxyForFileTransfers
                 && remoteHasFeature(Namespace.JINGLE_TRANSPORT_WEBRTC_DATA_CHANNEL)) {
