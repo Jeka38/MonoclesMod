@@ -9,6 +9,7 @@ import android.preference.SwitchPreference;
 import android.preference.PreferenceFragment;
 import android.preference.PreferenceScreen;
 import android.text.TextUtils;
+import android.view.View;
 import android.view.ViewGroup;
 import android.widget.ArrayAdapter;
 import android.widget.EditText;
@@ -226,10 +227,45 @@ public class SettingsFragment extends PreferenceFragment {
             if (item instanceof Preference) {
                 final Preference pref = (Preference) item;
                 if (entry.preferenceKey.equals(pref.getKey())) {
-                    listView.setSelection(i);
+                    highlightPreferenceAtPosition(listView, i);
                     break;
                 }
             }
+        }
+    }
+
+    private void highlightPreferenceAtPosition(final ListView listView, final int position) {
+        listView.smoothScrollToPosition(position);
+        listView.postDelayed(() -> tryHighlightPreference(listView, position, 0), 120);
+    }
+
+    private void tryHighlightPreference(final ListView listView, final int position, final int attempt) {
+        final int firstVisible = listView.getFirstVisiblePosition();
+        final int childIndex = position - firstVisible;
+        if (childIndex >= 0 && childIndex < listView.getChildCount()) {
+            final View target = listView.getChildAt(childIndex);
+            if (target != null) {
+                target.animate()
+                        .alpha(0.35f)
+                        .setDuration(140)
+                        .withEndAction(() -> target.animate()
+                                .alpha(1f)
+                                .setDuration(160)
+                                .withEndAction(() -> target.animate()
+                                        .alpha(0.35f)
+                                        .setDuration(140)
+                                        .withEndAction(() -> target.animate()
+                                                .alpha(1f)
+                                                .setDuration(160)
+                                                .start())
+                                        .start())
+                                .start())
+                        .start();
+                return;
+            }
+        }
+        if (attempt < 8) {
+            listView.postDelayed(() -> tryHighlightPreference(listView, position, attempt + 1), 80);
         }
     }
 
