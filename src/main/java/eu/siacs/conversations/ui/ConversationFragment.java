@@ -86,6 +86,7 @@ import android.view.inputmethod.InputMethodManager;
 import android.widget.AbsListView;
 import android.widget.AbsListView.OnScrollListener;
 import android.widget.AdapterView;
+import android.widget.AdapterView.AdapterContextMenuInfo;
 import android.widget.LinearLayout;
 import android.widget.ListView;
 import android.widget.RelativeLayout;
@@ -1205,21 +1206,11 @@ public class ConversationFragment extends XmppFragment
         } else {
             binding.scrollToBottomButton.setEnabled(true);
             binding.scrollToBottomButton.show();
-            final int count;
             if (lastMessageUuid == null) {
-                count = conversation.unreadCount();
-                if (count == 0) {
-                    lastMessageUuid = conversation.getLatestMessage().getUuid();
-                }
-            } else {
-                count = conversation.getReceivedMessagesCountSinceUuid(lastMessageUuid);
+                lastMessageUuid = conversation.getLatestMessage().getUuid();
             }
-            if (count > 0) {
-                binding.unreadCountCustomView.setUnreadCount(count);
-                binding.unreadCountCustomView.setShowText(true);
+            if (conversation.getReceivedMessagesCountSinceUuid(lastMessageUuid) > 0) {
                 binding.unreadCountCustomView.setVisibility(View.VISIBLE);
-            } else {
-                binding.unreadCountCustomView.setVisibility(View.GONE);
             }
         }
     }
@@ -1592,7 +1583,7 @@ public class ConversationFragment extends XmppFragment
     }
 
     private boolean isPrivateMessage() {
-        return conversation != null && conversation.getMode() == Conversation.MODE_MULTI && conversation.getNextCounterpart() != null && !conversation.hasPermanentCounterpart();
+        return conversation != null && conversation.getMode() == Conversation.MODE_MULTI && conversation.getNextCounterpart() != null;
     }
 
     public void setupIme() {
@@ -1864,7 +1855,7 @@ public class ConversationFragment extends XmppFragment
             final MenuItem deleteCustomBg = menu.findItem(R.id.action_delete_custom_bg);
 
             if (conversation != null) {
-                if ((conversation.getMode() == Conversation.MODE_MULTI && !conversation.hasPermanentCounterpart()) || (activity.xmppConnectionService != null && !activity.xmppConnectionService.hasInternetConnection())) {
+                if (conversation.getMode() == Conversation.MODE_MULTI || (activity.xmppConnectionService != null && !activity.xmppConnectionService.hasInternetConnection())) {
                     menuInviteContact.setVisible(conversation.getMucOptions().canInvite());
                     menuArchiveChat.setVisible(false);
                     menuLeaveGroup.setVisible(true);
@@ -1897,7 +1888,7 @@ public class ConversationFragment extends XmppFragment
                 try {
                     Fragment secondaryFragment = activity.getFragmentManager().findFragmentById(R.id.secondary_fragment);
                     if (secondaryFragment instanceof ConversationFragment) {
-                        if (conversation.getMode() == Conversation.MODE_MULTI && !conversation.hasPermanentCounterpart()) {
+                        if (conversation.getMode() == Conversation.MODE_MULTI) {
                             menuGroupDetails.setTitle(conversation.getMucOptions().isPrivateAndNonAnonymous() ? R.string.action_group_details : R.string.channel_details);
                             menuGroupDetails.setVisible(true);
                             menuContactDetails.setVisible(false);
@@ -1976,7 +1967,6 @@ public class ConversationFragment extends XmppFragment
         binding.takePictureButton.setOnClickListener(this.mtakePictureButtonListener);
         binding.messagesView.setOnScrollListener(mOnScrollListener);
         binding.messagesView.setTranscriptMode(ListView.TRANSCRIPT_MODE_NORMAL);
-        binding.messagesView.setOnItemLongClickListener((parent, view, position, id) -> showMessageContextMenu(view, position));
         mediaPreviewAdapter = new MediaPreviewAdapter(this);
         binding.mediaPreview.setAdapter(mediaPreviewAdapter);
         messageListAdapter = new MessageAdapter((XmppActivity) getActivity(), this.messageList);
@@ -1989,6 +1979,7 @@ public class ConversationFragment extends XmppFragment
         binding.textinput.addTextChangedListener(
                 new StylingHelper.MessageEditorStyler(binding.textinput, messageListAdapter));
 
+        registerForContextMenu(binding.messagesView);
         registerForContextMenu(binding.textSendButton);
 
         this.binding.textinput.setCustomInsertionActionModeCallback(new EditMessageActionModeCallback(this.binding.textinput));
@@ -2369,25 +2360,15 @@ public class ConversationFragment extends XmppFragment
             return;
         }
 
-        super.onCreateContextMenu(menu, v, menuInfo);
-    }
-
-    private boolean showMessageContextMenu(final View anchor, final int position) {
         synchronized (this.messageList) {
-            if (position < 0 || position >= this.messageList.size()) {
-                return false;
-            }
-            this.selectedMessage = this.messageList.get(position);
+            super.onCreateContextMenu(menu, v, menuInfo);
+            AdapterView.AdapterContextMenuInfo acmi = (AdapterContextMenuInfo) menuInfo;
+            this.selectedMessage = this.messageList.get(acmi.position);
+            populateContextMenu(menu);
         }
-        final PopupMenu popupMenu = new PopupMenu(activity, anchor);
-        activity.getMenuInflater().inflate(R.menu.message_context, popupMenu.getMenu());
-        populateContextMenu(popupMenu.getMenu());
-        popupMenu.setOnMenuItemClickListener(this::onContextItemSelected);
-        popupMenu.show();
-        return true;
     }
 
-    private void populateContextMenu(Menu menu) {
+    private void populateContextMenu(ContextMenu menu) {
         final Message m = this.selectedMessage;
         final Transferable t = m.getTransferable();
         Message relevantForCorrection = m;
@@ -2741,19 +2722,15 @@ public class ConversationFragment extends XmppFragment
         else if (itemId == R.id.action_archive_chat) {
             activity.xmppConnectionService.archiveConversation(conversation);
         } else if (itemId == R.id.action_leave_group) {
-            if (conversation.hasPermanentCounterpart()) {
-                activity.xmppConnectionService.archiveConversation(conversation);
-            } else {
-                final AlertDialog.Builder builder = new AlertDialog.Builder(activity);
-                builder.setTitle(activity.getString(R.string.action_end_conversation_muc));
-                builder.setMessage(activity.getString(R.string.leave_conference_warning));
-                builder.setNegativeButton(activity.getString(R.string.cancel), null);
-                builder.setPositiveButton(activity.getString(R.string.action_end_conversation_muc),
-                        (dialog, which) -> {
-                            activity.xmppConnectionService.archiveConversation(conversation);
-                        });
-                builder.create().show();
-            }
+            final AlertDialog.Builder builder = new AlertDialog.Builder(activity);
+            builder.setTitle(activity.getString(R.string.action_end_conversation_muc));
+            builder.setMessage(activity.getString(R.string.leave_conference_warning));
+            builder.setNegativeButton(activity.getString(R.string.cancel), null);
+            builder.setPositiveButton(activity.getString(R.string.action_end_conversation_muc),
+                    (dialog, which) -> {
+                        activity.xmppConnectionService.archiveConversation(conversation);
+                    });
+            builder.create().show();
         } else if (itemId == R.id.action_invite) {
             startActivityForResult(ChooseContactActivity.create(activity, conversation), REQUEST_INVITE_TO_CONVERSATION);
         } else if (itemId == R.id.action_clear_history) {
@@ -3823,8 +3800,8 @@ public class ConversationFragment extends XmppFragment
     }
     private void fireReadEvent() {
         if (activity != null && this.conversation != null) {
-            String uuid = scrolledToBottom() ? null : getLastVisibleMessageUuid();
-            if (uuid != null || scrolledToBottom()) {
+            String uuid = getLastVisibleMessageUuid();
+            if (uuid != null) {
                 activity.onConversationRead(this.conversation, uuid);
             }
         }
@@ -4190,11 +4167,18 @@ public class ConversationFragment extends XmppFragment
                 ToastCompat.makeText(getActivity(), activity.getString(R.string.user_has_left_conference, counterpart.getResource()), ToastCompat.LENGTH_SHORT).show();
                 return;
             }
-            Conversation pmConversation = activity.xmppConnectionService.findOrCreateConversation(conversation.getAccount(), conversation.getJid().asBareJid(), counterpart, true, false, null, true, null);
-            activity.switchToConversation(pmConversation);
+            if (conversation.setOutgoingChatState(Config.DEFAULT_CHAT_STATE)) {
+                activity.xmppConnectionService.sendChatState(conversation);
+            }
+            this.binding.textinput.setText("");
+            this.conversation.setNextCounterpart(counterpart);
         } catch (Exception e) {
             e.printStackTrace();
             ToastCompat.makeText(getActivity(), activity.getString(R.string.user_has_left_conference, activity.getString(R.string.user)), ToastCompat.LENGTH_SHORT).show();
+        } finally {
+            updateChatMsgHint();
+            updateSendButton();
+            updateEditablity();
         }
     }
 
@@ -4499,11 +4483,11 @@ public class ConversationFragment extends XmppFragment
         this.conversation.messagesLoaded.set(true);
         Log.d(Config.LOGTAG, "scrolledToBottomAndNoPending=" + Boolean.toString(scrolledToBottomAndNoPending));
 
-        if (hasExtras || scrolledToBottomAndNoPending || !conversation.isRead()) {
+        if (hasExtras || scrolledToBottomAndNoPending) {
+            resetUnreadMessagesCount();
             synchronized (this.messageList) {
                 Log.d(Config.LOGTAG, "jump to first unread message");
                 final Message first = conversation.getFirstUnreadMessage();
-                resetUnreadMessagesCount();
                 final int bottom = Math.max(0, this.messageList.size() - 1);
                 final int pos;
                 final boolean jumpToBottom;
@@ -4874,8 +4858,7 @@ public class ConversationFragment extends XmppFragment
             showSnackbar(R.string.contact_asks_for_presence_subscription, R.string.allow, this.mAllowPresenceSubscription, this.mLongPressBlockListener);
         } else if (mode == Conversation.MODE_MULTI
                 && !conversation.getMucOptions().online()
-                && account.getStatus() == Account.State.ONLINE
-                && !conversation.hasPermanentCounterpart()) {
+                && account.getStatus() == Account.State.ONLINE) {
             MucOptions.Error error = conversation.getMucOptions().getError();
             if (Objects.requireNonNull(error) == MucOptions.Error.NICK_IN_USE) {
                 showSnackbar(R.string.nick_in_use, R.string.edit, clickToMuc);
@@ -4984,13 +4967,9 @@ public class ConversationFragment extends XmppFragment
             if (this.conversation != null) {
                 conversation.populateWithMessages(this.messageList, activity == null ? null : activity.xmppConnectionService);
                 updateStatusMessages();
-                final int unreadCount = lastMessageUuid != null ? conversation.getReceivedMessagesCountSinceUuid(lastMessageUuid) : conversation.unreadCount();
-                if (unreadCount > 0) {
+                if (conversation.unreadCount() > 0) {
                     binding.unreadCountCustomView.setVisibility(View.VISIBLE);
-                    binding.unreadCountCustomView.setUnreadCount(unreadCount);
-                    binding.unreadCountCustomView.setShowText(true);
-                } else {
-                    binding.unreadCountCustomView.setVisibility(View.GONE);
+                    binding.unreadCountCustomView.setUnreadCount(conversation.unreadCount());
                 }
                 this.messageListAdapter.notifyDataSetChanged();
                 updateChatMsgHint();
