@@ -59,6 +59,8 @@ import java.util.Collections;
 import java.util.List;
 import java.util.Map;
 import android.provider.MediaStore;
+import android.view.Menu;
+import android.view.MenuItem;
 import android.widget.Toast;
 
 import eu.siacs.conversations.Config;
@@ -165,6 +167,23 @@ public class SettingsActivity extends XmppActivity implements OnSharedPreference
         getWindow().getDecorView().setBackgroundColor(StyledAttributes.getColor(this, R.attr.color_background_secondary));
         setSupportActionBar(findViewById(R.id.toolbar));
         configureActionBar(getSupportActionBar());
+    }
+
+    @Override
+    public boolean onCreateOptionsMenu(final Menu menu) {
+        getMenuInflater().inflate(R.menu.settings_activity, menu);
+        return super.onCreateOptionsMenu(menu);
+    }
+
+    @Override
+    public boolean onOptionsItemSelected(final MenuItem item) {
+        if (item.getItemId() == R.id.action_search_settings) {
+            if (mSettingsFragment != null) {
+                mSettingsFragment.showSearchDialog();
+            }
+            return true;
+        }
+        return super.onOptionsItemSelected(item);
     }
 
     @Override
