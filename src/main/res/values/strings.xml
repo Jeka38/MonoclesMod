@@ -495,6 +495,12 @@
     <string name="changelog">Changes</string>
     <string name="account_settings_hostname">Hostname</string>
     <string name="account_settings_port">Port</string>
+    <string name="proxy_hostname">Proxy Hostname</string>
+    <string name="proxy_port">Proxy Port</string>
+    <string name="global_proxy_hostname">Global Proxy Hostname</string>
+    <string name="global_proxy_hostname_summary">Fallback SOCKS5 proxy hostname</string>
+    <string name="global_proxy_port">Global Proxy Port</string>
+    <string name="global_proxy_port_summary">Fallback SOCKS5 proxy port</string>
     <string name="hostname_or_onion">Hostname or .onion address</string>
     <string name="not_a_valid_port">This is not a valid port number</string>
     <string name="not_valid_hostname">This is not a valid hostname</string>

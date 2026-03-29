@@ -78,6 +78,9 @@ import eu.siacs.conversations.xmpp.Jid;
 import me.drakeet.support.toast.ToastCompat;
 import eu.siacs.conversations.services.UnifiedPushDistributor;
 import p32929.easypasscodelock.Utils.EasyLock;
+import android.view.Menu;
+import android.view.MenuItem;
+import androidx.appcompat.widget.SearchView;
 
 public class SettingsActivity extends XmppActivity implements OnSharedPreferenceChangeListener {
 
@@ -147,6 +150,28 @@ public class SettingsActivity extends XmppActivity implements OnSharedPreference
     boolean isBundledEmojiChecked;
     boolean isQuickShareAttachmentChoiceChecked = false;
     private SettingsFragment mSettingsFragment;
+
+    @Override
+    public boolean onCreateOptionsMenu(Menu menu) {
+        getMenuInflater().inflate(R.menu.activity_settings, menu);
+        MenuItem searchItem = menu.findItem(R.id.action_search);
+        SearchView searchView = (SearchView) searchItem.getActionView();
+        searchView.setOnQueryTextListener(new SearchView.OnQueryTextListener() {
+            @Override
+            public boolean onQueryTextSubmit(String query) {
+                return false;
+            }
+
+            @Override
+            public boolean onQueryTextChange(String newText) {
+                if (mSettingsFragment != null) {
+                    mSettingsFragment.filter(newText);
+                }
+                return true;
+            }
+        });
+        return super.onCreateOptionsMenu(menu);
+    }
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {

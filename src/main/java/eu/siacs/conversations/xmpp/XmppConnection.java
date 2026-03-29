@@ -229,6 +229,10 @@ public class XmppConnection implements Runnable {
         return mXmppConnectionService;
     }
 
+    public Account getAccount() {
+        return account;
+    }
+
     private void fixResource(Context context, Account account) {
         String resource = account.getResource();
         if (resource != null && !resource.startsWith(context.getString(R.string.app_name) + '[' + BuildConfig.VERSION_NAME + ']')) {
@@ -426,6 +430,55 @@ public class XmppConnection implements Runnable {
                     return;
                 } catch (Exception e) {
                     throw new IOException(e.getMessage());
+                }
+            } else if (!account.getProxyHostname().isEmpty() || !mXmppConnectionService.getPreferences().getString("global_proxy_hostname", "").isEmpty()) {
+                final String proxyHost;
+                final int proxyPort;
+                if (!account.getProxyHostname().isEmpty() && account.getProxyPort() != 0) {
+                    proxyHost = account.getProxyHostname();
+                    proxyPort = account.getProxyPort();
+                } else {
+                    proxyHost = mXmppConnectionService.getPreferences().getString("global_proxy_hostname", "");
+                    try {
+                        proxyPort = Integer.parseInt(mXmppConnectionService.getPreferences().getString("global_proxy_port", "1080"));
+                    } catch (NumberFormatException e) {
+                        throw new IOException("Invalid global proxy port");
+                    }
+                }
+
+                if (proxyHost.isEmpty()) {
+                    throw new IOException("Proxy hostname not configured");
+                }
+                if (proxyPort == 0) {
+                    throw new IOException("Proxy port not configured");
+                }
+
+                String destination;
+                if (account.getHostname().isEmpty()) {
+                    destination = account.getServer();
+                    this.verifiedHostname = destination;
+                } else {
+                    destination = account.getHostname();
+                    this.verifiedHostname = destination;
+                }
+                final int port = account.getPort();
+                final boolean directTls = Resolver.useDirectTls(port);
+
+                Log.d(Config.LOGTAG, account.getJid().asBareJid() + ": connect to " + destination + " via proxy " + proxyHost + ":" + proxyPort + ". directTls=" + directTls);
+                localSocket = SocksSocketFactory.createSocket(proxyHost, proxyPort, destination, port);
+
+                if (directTls) {
+                    localSocket = upgradeSocketToTls(localSocket);
+                    features.encryptionEnabled = true;
+                }
+
+                try {
+                    startXmpp(localSocket);
+                } catch (final InterruptedException e) {
+                    Log.d(Config.LOGTAG, account.getJid().asBareJid() + ": thread was interrupted before beginning stream");
+                    return;
+                } catch (final Exception e) {
+                    throw new IOException("Could not start stream", e);
                 }
             } else {
                 final String domain = account.getServer();

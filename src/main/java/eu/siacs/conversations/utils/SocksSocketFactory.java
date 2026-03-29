@@ -97,6 +97,10 @@ public class SocksSocketFactory {
         return socket;
     }
 
+    public static Socket createSocket(String proxyHost, int proxyPort, String destination, int port) throws IOException {
+        return createSocket(new InetSocketAddress(proxyHost, proxyPort), destination, port);
+    }
+
     public static Socket createSocketOverTor(String destination, int port) throws IOException {
         return createSocket(new InetSocketAddress(InetAddress.getLocalHost(), 9050), destination, port);
     }

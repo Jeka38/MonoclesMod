@@ -145,9 +145,23 @@ public class SocksByteStreamsTransport implements Transport {
         Preconditions.checkState(
                 this.transportCallback != null, "transport callback needs to be set");
         // TODO this needs to go into a variable so we can cancel it
+        final String proxyHostname;
+        final int proxyPort;
+        if (!xmppConnection.getAccount().getProxyHostname().isEmpty()) {
+            proxyHostname = xmppConnection.getAccount().getProxyHostname();
+            proxyPort = xmppConnection.getAccount().getProxyPort();
+        } else {
+            proxyHostname = xmppConnection.getXmppConnectionService().getGlobalProxyHostname();
+            proxyPort = xmppConnection.getXmppConnectionService().getGlobalProxyPort();
+        }
         final var connectionFinder =
                 new ConnectionFinder(
-                        theirCandidates, theirDestination, selectedByThemCandidate, useTor);
+                        theirCandidates,
+                        theirDestination,
+                        selectedByThemCandidate,
+                        useTor,
+                        proxyHostname,
+                        proxyPort);
         new Thread(connectionFinder).start();
         Futures.addCallback(
                 connectionFinder.connectionFuture,
@@ -282,9 +296,24 @@ public class SocksByteStreamsTransport implements Transport {
         return Futures.transformAsync(
                 proxyFuture,
                 proxy -> {
+                    final String proxyHostname;
+                    final int proxyPort;
+                    if (!xmppConnection.getAccount().getProxyHostname().isEmpty()) {
+                        proxyHostname = xmppConnection.getAccount().getProxyHostname();
+                        proxyPort = xmppConnection.getAccount().getProxyPort();
+                    } else {
+                        proxyHostname =
+                                xmppConnection.getXmppConnectionService().getGlobalProxyHostname();
+                        proxyPort = xmppConnection.getXmppConnectionService().getGlobalProxyPort();
+                    }
                     final var connectionFinder =
                             new ConnectionFinder(
-                                    ImmutableList.of(proxy), ourDestination, null, useTor);
+                                    ImmutableList.of(proxy),
+                                    ourDestination,
+                                    null,
+                                    useTor,
+                                    proxyHostname,
+                                    proxyPort);
                     new Thread(connectionFinder).start();
                     return Futures.transform(
                             connectionFinder.connectionFuture,
@@ -709,16 +738,22 @@ public class SocksByteStreamsTransport implements Transport {
 
         private final ListenableFuture<Connection> selectedByThemCandidate;
         private final boolean useTor;
+        private final String proxyHostname;
+        private final int proxyPort;
 
         private ConnectionFinder(
                 final ImmutableList<Candidate> candidates,
                 final String destination,
                 final ListenableFuture<Connection> selectedByThemCandidate,
-                final boolean useTor) {
+                final boolean useTor,
+                final String proxyHostname,
+                final int proxyPort) {
             this.candidates = candidates;
             this.destination = destination;
             this.selectedByThemCandidate = selectedByThemCandidate;
             this.useTor = useTor;
+            this.proxyHostname = proxyHostname;
+            this.proxyPort = proxyPort;
         }
 
         @Override
@@ -758,6 +793,18 @@ public class SocksByteStreamsTransport implements Transport {
             if (useTor) {
                 Log.d(Config.LOGTAG, "using Tor to connect to candidate " + candidate.host);
                 socket = SocksSocketFactory.createSocketOverTor(candidate.host, candidate.port);
+            } else if (proxyHostname != null && !proxyHostname.isEmpty()) {
+                Log.d(
+                        Config.LOGTAG,
+                        "using SOCKS5 proxy "
+                                + proxyHostname
+                                + ":"
+                                + proxyPort
+                                + " to connect to candidate "
+                                + candidate.host);
+                socket =
+                        SocksSocketFactory.createSocket(
+                                proxyHostname, proxyPort, candidate.host, candidate.port);
             } else {
                 socket = new Socket();
                 final SocketAddress address = new InetSocketAddress(candidate.host, candidate.port);

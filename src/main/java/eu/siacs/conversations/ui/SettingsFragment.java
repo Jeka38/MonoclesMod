@@ -4,12 +4,17 @@ import android.content.Intent;
 import android.os.Bundle;
 import android.preference.Preference;
 import android.preference.PreferenceCategory;
-import android.preference.SwitchPreference;
+import android.preference.PreferenceGroup;
 import android.preference.PreferenceFragment;
 import android.preference.PreferenceScreen;
 import android.text.TextUtils;
 
 import java.lang.reflect.Method;
+import java.util.ArrayList;
+import java.util.HashMap;
+import java.util.List;
+import java.util.Locale;
+import java.util.Map;
 
 import eu.siacs.conversations.Config;
 import eu.siacs.conversations.R;
@@ -19,6 +24,11 @@ public class SettingsFragment extends PreferenceFragment {
 
     private String page = null;
     private String suffix = null;
+    private PreferenceScreen mRootPreferenceScreen;
+    private PreferenceScreen mBeforeSearchScreen;
+    private PreferenceScreen mSearchResultScreen;
+    private Map<Preference, PreferenceGroup> originalParents = new HashMap<>();
+    private Map<Preference, Integer> originalOrders = new HashMap<>();
 
     @Override
     public void onCreate(Bundle savedInstanceState) {
@@ -36,8 +46,86 @@ public class SettingsFragment extends PreferenceFragment {
         }
         Compatibility.removeUnusedPreferences(this);
 
+        mRootPreferenceScreen = getPreferenceScreen();
+        captureInfos(mRootPreferenceScreen);
+        mBeforeSearchScreen = mRootPreferenceScreen;
+
         if (!TextUtils.isEmpty(page)) {
             openPreferenceScreen(page);
+            mBeforeSearchScreen = getPreferenceScreen();
+        }
+    }
+
+    private void captureInfos(PreferenceGroup group) {
+        for (int i = 0; i < group.getPreferenceCount(); i++) {
+            Preference p = group.getPreference(i);
+            originalParents.put(p, group);
+            originalOrders.put(p, p.getOrder());
+            if (p instanceof PreferenceGroup) {
+                captureInfos((PreferenceGroup) p);
+            }
+        }
+    }
+
+    public void filter(String query) {
+        if (mRootPreferenceScreen == null) {
+            return;
+        }
+
+        restoreAll();
+
+        if (TextUtils.isEmpty(query)) {
+            setPreferenceScreen(mBeforeSearchScreen);
+            return;
+        }
+
+        query = query.toLowerCase(Locale.getDefault());
+        if (mSearchResultScreen == null) {
+            mSearchResultScreen = getPreferenceManager().createPreferenceScreen(getActivity());
+        } else {
+            mSearchResultScreen.removeAll();
+        }
+
+        List<Preference> matches = new ArrayList<>();
+        filter(mRootPreferenceScreen, query, matches);
+
+        for (Preference p : matches) {
+            PreferenceGroup parent = originalParents.get(p);
+            if (parent != null) {
+                parent.removePreference(p);
+            }
+            mSearchResultScreen.addPreference(p);
+        }
+
+        setPreferenceScreen(mSearchResultScreen);
+    }
+
+    private void restoreAll() {
+        if (mSearchResultScreen != null) {
+            for (int i = mSearchResultScreen.getPreferenceCount() - 1; i >= 0; i--) {
+                Preference p = mSearchResultScreen.getPreference(i);
+                mSearchResultScreen.removePreference(p);
+                PreferenceGroup originalParent = originalParents.get(p);
+                if (originalParent != null) {
+                    originalParent.addPreference(p);
+                    p.setOrder(originalOrders.get(p));
+                }
+            }
+        }
+    }
+
+    private void filter(PreferenceGroup group, String query, List<Preference> matches) {
+        for (int i = 0; i < group.getPreferenceCount(); i++) {
+            Preference p = group.getPreference(i);
+            if (p instanceof PreferenceGroup) {
+                filter((PreferenceGroup) p, query, matches);
+            } else {
+                String title = p.getTitle() != null ? p.getTitle().toString().toLowerCase(Locale.getDefault()) : "";
+                String summary = p.getSummary() != null ? p.getSummary().toString().toLowerCase(Locale.getDefault()) : "";
+                if (title.contains(query) || summary.contains(query)) {
+                    matches.add(p);
+                }
+            }
         }
     }
 
@@ -50,6 +138,7 @@ public class SettingsFragment extends PreferenceFragment {
                     this.suffix = intent.getExtras().getString("suffix");
                     if (wasEmpty) {
                         openPreferenceScreen(page);
+                        mBeforeSearchScreen = getPreferenceScreen();
                     }
                 }
             }

@@ -29,16 +29,11 @@ import eu.siacs.conversations.xmpp.Jid;
 import eu.siacs.conversations.xmpp.XmppConnection;
 import eu.siacs.conversations.xmpp.jingle.stanzas.FileTransferDescription;
 import eu.siacs.conversations.xmpp.jingle.stanzas.GenericTransportInfo;
-import eu.siacs.conversations.xmpp.jingle.stanzas.IbbTransportInfo;
-import eu.siacs.conversations.xmpp.jingle.stanzas.IceUdpTransportInfo;
 import eu.siacs.conversations.xmpp.jingle.stanzas.JinglePacket;
 import eu.siacs.conversations.xmpp.jingle.stanzas.Reason;
 import eu.siacs.conversations.xmpp.jingle.stanzas.SocksByteStreamsTransportInfo;
-import eu.siacs.conversations.xmpp.jingle.stanzas.WebRTCDataChannelTransportInfo;
-import eu.siacs.conversations.xmpp.jingle.transports.InbandBytestreamsTransport;
 import eu.siacs.conversations.xmpp.jingle.transports.SocksByteStreamsTransport;
 import eu.siacs.conversations.xmpp.jingle.transports.Transport;
-import eu.siacs.conversations.xmpp.jingle.transports.WebRTCDataChannelTransport;
 import eu.siacs.conversations.xmpp.stanzas.IqPacket;
 
 import org.bouncycastle.crypto.engines.AESEngine;
@@ -48,7 +43,6 @@ import org.bouncycastle.crypto.modes.AEADBlockCipher;
 import org.bouncycastle.crypto.modes.GCMBlockCipher;
 import org.bouncycastle.crypto.params.AEADParameters;
 import org.bouncycastle.crypto.params.KeyParameter;
-import org.webrtc.IceCandidate;
 
 import java.io.Closeable;
 import java.io.EOFException;
@@ -61,11 +55,9 @@ import java.io.InputStream;
 import java.io.OutputStream;
 import java.util.Arrays;
 import java.util.Collections;
-import java.util.LinkedList;
 import java.util.List;
 import java.util.Objects;
 import java.util.Optional;
-import java.util.Queue;
 import java.util.concurrent.CountDownLatch;
 
 public class JingleFileTransferConnection extends AbstractJingleConnection
@@ -80,7 +72,6 @@ public class JingleFileTransferConnection extends AbstractJingleConnection
     private TransportSecurity transportSecurity;
     private AbstractFileTransceiver fileTransceiver;
 
-    private final Queue<IceCandidate> pendingIncomingIceCandidates = new LinkedList<>();
     private boolean acceptedAutomatically = false;
 
     public JingleFileTransferConnection(
@@ -418,10 +409,6 @@ public class JingleFileTransferConnection extends AbstractJingleConnection
         transitionOrThrow(State.SESSION_ACCEPTED);
         this.transport = transport;
         this.transport.setTransportCallback(this);
-        if (this.transport instanceof WebRTCDataChannelTransport webRTCDataChannelTransport) {
-            final var sessionDescription = SessionDescription.of(contentMap);
-            webRTCDataChannelTransport.setInitiatorDescription(sessionDescription);
-        }
         final var transportInfoFuture = transport.asTransportInfo();
         Futures.addCallback(
                 transportInfoFuture,
@@ -450,20 +437,6 @@ public class JingleFileTransferConnection extends AbstractJingleConnection
         // this needs to come after session-accept or else our candidate-error might arrive first
         this.transport.connect();
         this.transport.readyToSentAdditionalCandidates();
-        if (this.transport instanceof WebRTCDataChannelTransport webRTCDataChannelTransport) {
-            drainPendingIncomingIceCandidates(webRTCDataChannelTransport);
-        }
-    }
-
-    private void drainPendingIncomingIceCandidates(
-            final WebRTCDataChannelTransport webRTCDataChannelTransport) {
-        while (this.pendingIncomingIceCandidates.peek() != null) {
-            final var candidate = this.pendingIncomingIceCandidates.poll();
-            if (candidate == null) {
-                continue;
-            }
-            webRTCDataChannelTransport.addIceCandidates(ImmutableList.of(candidate));
-        }
     }
 
     private Transport setupTransport(final GenericTransportInfo transportInfo) {
@@ -595,11 +568,9 @@ public class JingleFileTransferConnection extends AbstractJingleConnection
     }
 
     private void receiveTransportInfo(final JinglePacket jinglePacket) {
-        final FileTransferContentMap contentMap;
         final GenericTransportInfo transportInfo;
         try {
-            contentMap = FileTransferContentMap.of(jinglePacket);
-            transportInfo = contentMap.requireOnlyTransportInfo();
+            transportInfo = FileTransferContentMap.of(jinglePacket).requireOnlyTransportInfo();
         } catch (final RuntimeException e) {
             Log.d(
                     Config.LOGTAG,
@@ -616,48 +587,9 @@ public class JingleFileTransferConnection extends AbstractJingleConnection
                 && transportInfo
                 instanceof SocksByteStreamsTransportInfo socksBytestreamsTransportInfo) {
             receiveTransportInfo(socksBytestreamsTransport, socksBytestreamsTransportInfo);
-        } else if (transport instanceof WebRTCDataChannelTransport webRTCDataChannelTransport
-                && transportInfo
-                instanceof WebRTCDataChannelTransportInfo webRTCDataChannelTransportInfo) {
-            receiveTransportInfo(
-                    Iterables.getOnlyElement(contentMap.contents.keySet()),
-                    webRTCDataChannelTransport,
-                    webRTCDataChannelTransportInfo);
-        } else if (transportInfo
-                instanceof WebRTCDataChannelTransportInfo webRTCDataChannelTransportInfo) {
-            receiveTransportInfo(
-                    Iterables.getOnlyElement(contentMap.contents.keySet()),
-                    webRTCDataChannelTransportInfo);
         } else {
             Log.d(Config.LOGTAG, "could not deliver transport-info to transport");
         }
-    }
-
-    private void receiveTransportInfo(
-            final String contentName,
-            final WebRTCDataChannelTransport webRTCDataChannelTransport,
-            final WebRTCDataChannelTransportInfo webRTCDataChannelTransportInfo) {
-        final var credentials = webRTCDataChannelTransportInfo.getCredentials();
-        final var iceCandidates =
-                WebRTCDataChannelTransport.iceCandidatesOf(
-                        contentName, credentials, webRTCDataChannelTransportInfo.getCandidates());
-        final var localContentMap = getLocalContentMap();
-        if (localContentMap == null) {
-            Log.d(Config.LOGTAG, "transport not ready. add pending ice candidate");
-            this.pendingIncomingIceCandidates.addAll(iceCandidates);
-        } else {
-            webRTCDataChannelTransport.addIceCandidates(iceCandidates);
-        }
-    }
-
-    private void receiveTransportInfo(
-            final String contentName,
-            final WebRTCDataChannelTransportInfo webRTCDataChannelTransportInfo) {
-        final var credentials = webRTCDataChannelTransportInfo.getCredentials();
-        final var iceCandidates =
-                WebRTCDataChannelTransport.iceCandidatesOf(
-                        contentName, credentials, webRTCDataChannelTransportInfo.getCandidates());
-        this.pendingIncomingIceCandidates.addAll(iceCandidates);
     }
 
     private void receiveTransportInfo(
@@ -965,29 +897,7 @@ public class JingleFileTransferConnection extends AbstractJingleConnection
     @Override
     public void onAdditionalCandidate(
             final String contentName, final Transport.Candidate candidate) {
-        if (candidate instanceof IceUdpTransportInfo.Candidate iceCandidate) {
-            sendTransportInfo(contentName, iceCandidate);
-        }
-    }
-
-    public void sendTransportInfo(
-            final String contentName, final IceUdpTransportInfo.Candidate candidate) {
-        final FileTransferContentMap transportInfo;
-        try {
-            final FileTransferContentMap rtpContentMap = getLocalContentMap();
-            transportInfo = rtpContentMap.transportInfo(contentName, candidate);
-        } catch (final Exception e) {
-            Log.d(
-                    Config.LOGTAG,
-                    id.account.getJid().asBareJid()
-                            + ": unable to prepare transport-info from candidate for content="
-                            + contentName);
-            return;
-        }
-        final JinglePacket jinglePacket =
-                transportInfo.toJinglePacket(JinglePacket.Action.TRANSPORT_INFO, id.sessionId);
-        Log.d(Config.LOGTAG, "--> " + jinglePacket);
-        send(jinglePacket);
+        // Only SOCKS5 candidates are supported, and they are handled differently
     }
 
     @Override

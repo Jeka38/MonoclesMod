@@ -2212,7 +2212,10 @@ public class XmppConnectionService extends Service {
     private void sendFileMessage(final Message message, final boolean delay) {
         Log.d(Config.LOGTAG, "send file message");
         final Account account = message.getConversation().getAccount();
-        if (message.getConversation().getMode() == Conversation.MODE_MULTI && !message.isPrivateMessage()) {
+        final Conversational conversation = message.getConversation();
+        final XmppConnection connection = account.getXmppConnection();
+        final boolean isPublicMuc = conversation.getMode() == Conversational.MODE_MULTI && !message.isPrivateMessage();
+        if (isPublicMuc && connection != null && connection.getFeatures().httpUpload(message.getFileParams().size)) {
             mHttpConnectionManager.createNewUploadConnection(message, delay);
         } else {
             mJingleConnectionManager.startJingleFileTransfer(message);
@@ -6417,6 +6420,18 @@ public class XmppConnectionService extends Service {
 
     public PushManagementService getPushManagementService() {
         return mPushManagementService;
+    }
+
+    public String getGlobalProxyHostname() {
+        return getPreferences().getString("global_proxy_hostname", "");
+    }
+
+    public int getGlobalProxyPort() {
+        try {
+            return Integer.parseInt(getPreferences().getString("global_proxy_port", "0"));
+        } catch (NumberFormatException e) {
+            return 0;
+        }
     }
 
     public void changeStatus(Account account, PresenceTemplate template, String signature) {
