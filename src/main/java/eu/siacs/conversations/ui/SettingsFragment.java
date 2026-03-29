@@ -13,7 +13,6 @@ import android.view.ViewGroup;
 import android.widget.ArrayAdapter;
 import android.widget.EditText;
 import android.widget.LinearLayout;
-import android.widget.ListAdapter;
 import android.widget.ListView;
 
 import androidx.appcompat.app.AlertDialog;
@@ -211,11 +210,14 @@ public class SettingsFragment extends PreferenceFragment {
         if (!TextUtils.isEmpty(entry.parentScreenKey)) {
             openPreferenceScreen(entry.parentScreenKey);
         }
-        final ListView listView = getListView();
+        if (getView() == null) {
+            return;
+        }
+        final ListView listView = getView().findViewById(android.R.id.list);
         if (listView == null) {
             return;
         }
-        final ListAdapter adapter = listView.getAdapter();
+        final android.widget.ListAdapter adapter = listView.getAdapter();
         if (adapter == null) {
             return;
         }
