@@ -1549,6 +1549,43 @@ public class MessageAdapter extends ArrayAdapter<Message> {
             viewHolder.messageBody.setCustomSelectionActionModeCallback(new MessageTextActionModeCallback(this, viewHolder.messageBody));
         }
 
+        View.OnLongClickListener messageLongClickListener = v -> {
+            return view.performLongClick();
+        };
+
+        view.setOnLongClickListener(v -> {
+            return ((ListView) parent).showContextMenuForChild(view);
+        });
+
+        View.OnLongClickListener contactLongClickListener = v -> {
+            if (MessageAdapter.this.mOnContactPictureLongClickedListener != null) {
+                MessageAdapter.this.mOnContactPictureLongClickedListener.onContactPictureLongClicked(v, message);
+                return true;
+            }
+            return false;
+        };
+
+        if (viewHolder.message_box != null) viewHolder.message_box.setOnLongClickListener(messageLongClickListener);
+        if (viewHolder.messageBody != null) viewHolder.messageBody.setOnLongClickListener(messageLongClickListener);
+        if (viewHolder.username != null) viewHolder.username.setOnLongClickListener(contactLongClickListener);
+        if (viewHolder.user != null) viewHolder.user.setOnLongClickListener(contactLongClickListener);
+        if (viewHolder.subject != null) viewHolder.subject.setOnLongClickListener(messageLongClickListener);
+        if (viewHolder.encryption != null) viewHolder.encryption.setOnLongClickListener(messageLongClickListener);
+        if (viewHolder.time != null) viewHolder.time.setOnLongClickListener(messageLongClickListener);
+        if (viewHolder.indicator != null) viewHolder.indicator.setOnLongClickListener(messageLongClickListener);
+        if (viewHolder.indicatorReceived != null) viewHolder.indicatorReceived.setOnLongClickListener(messageLongClickListener);
+        if (viewHolder.status_message != null) viewHolder.status_message.setOnLongClickListener(messageLongClickListener);
+        if (viewHolder.download_button != null) viewHolder.download_button.setOnLongClickListener(messageLongClickListener);
+        if (viewHolder.resend_button != null) viewHolder.resend_button.setOnLongClickListener(messageLongClickListener);
+        if (viewHolder.answer_button != null) viewHolder.answer_button.setOnLongClickListener(messageLongClickListener);
+        if (viewHolder.load_more_messages != null) viewHolder.load_more_messages.setOnLongClickListener(messageLongClickListener);
+        if (viewHolder.images != null) viewHolder.images.setOnLongClickListener(messageLongClickListener);
+        if (viewHolder.edit_indicator != null) viewHolder.edit_indicator.setOnLongClickListener(messageLongClickListener);
+        if (viewHolder.retract_indicator != null) viewHolder.retract_indicator.setOnLongClickListener(messageLongClickListener);
+        if (viewHolder.richlinkview != null) viewHolder.richlinkview.setOnLongClickListener(messageLongClickListener);
+        if (viewHolder.audioPlayer != null) viewHolder.audioPlayer.setOnLongClickListener(messageLongClickListener);
+        if (viewHolder.transfer != null) viewHolder.transfer.setOnLongClickListener(messageLongClickListener);
+
         boolean darkBackground = activity.isDarkTheme();
 
         if (type == DATE_SEPARATOR) {
@@ -1754,15 +1791,6 @@ public class MessageAdapter extends ArrayAdapter<Message> {
             }
         });
 
-        View.OnLongClickListener messageLongClickListener = v -> {
-            return view.performLongClick();
-        };
-        viewHolder.message_box.setOnLongClickListener(messageLongClickListener);
-        viewHolder.messageBody.setOnLongClickListener(messageLongClickListener);
-
-        view.setOnLongClickListener(v -> {
-            return ((ListView) parent).showContextMenuForChild(view);
-        });
 
         viewHolder.contact_picture.setOnLongClickListener(v -> {
             if (MessageAdapter.this.mOnContactPictureLongClickedListener != null) {
