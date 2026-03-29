@@ -719,7 +719,7 @@ public class MessageAdapter extends ArrayAdapter<Message> {
         }, fallbackImg));
     }
 
-    private void displayTextMessage(final ViewHolder viewHolder,
+    private void displayTextMessage(View view, final ViewHolder viewHolder,
                                     final Message message, boolean darkBackground, int type) {
         viewHolder.download_button.setVisibility(View.GONE);
         viewHolder.richlinkview.setVisibility(View.GONE);
@@ -740,7 +740,6 @@ public class MessageAdapter extends ArrayAdapter<Message> {
         viewHolder.messageBody.setTypeface(null, Typeface.NORMAL);
 
         if (message.getBody() != null && !message.getBody().equals("")) {
-            viewHolder.messageBody.setTextIsSelectable(true);
             viewHolder.messageBody.setVisibility(View.VISIBLE);
 
             String trimmedBody = message.getBody().trim();
@@ -808,10 +807,12 @@ public class MessageAdapter extends ArrayAdapter<Message> {
                     if (MessageAdapter.this.mOnInlineImageLongClickedListener != null) {
                         List<Cid> cids = message.getFileParams().getCids();
                         if (!cids.isEmpty()) {
-                            return MessageAdapter.this.mOnInlineImageLongClickedListener.onInlineImageLongClicked(cids.get(0));
+                            if (MessageAdapter.this.mOnInlineImageLongClickedListener.onInlineImageLongClicked(cids.get(0))) {
+                                return true;
+                            }
                         }
                     }
-                    return false;
+                    return view.performLongClick();
                 });
             }
 
@@ -878,8 +879,8 @@ public class MessageAdapter extends ArrayAdapter<Message> {
         return null;
     }
 
-    private void displayDownloadableMessage(ViewHolder viewHolder, final Message message, String text, final boolean darkBackground, final int type) {
-        displayTextMessage(viewHolder, message, darkBackground, type);
+    private void displayDownloadableMessage(View view, ViewHolder viewHolder, final Message message, String text, final boolean darkBackground, final int type) {
+        displayTextMessage(view, viewHolder, message, darkBackground, type);
         viewHolder.image.setVisibility(GONE);
         List<Element> thumbs = message.getFileParams() != null ? message.getFileParams().getThumbnails() : null;
         if (thumbs != null && !thumbs.isEmpty()) {
@@ -928,10 +929,12 @@ public class MessageAdapter extends ArrayAdapter<Message> {
                     if (MessageAdapter.this.mOnInlineImageLongClickedListener != null) {
                         List<Cid> cids = message.getFileParams().getCids();
                         if (!cids.isEmpty()) {
-                            return MessageAdapter.this.mOnInlineImageLongClickedListener.onInlineImageLongClicked(cids.get(0));
+                            if (MessageAdapter.this.mOnInlineImageLongClickedListener.onInlineImageLongClicked(cids.get(0))) {
+                                return true;
+                            }
                         }
                     }
-                    return false;
+                    return view.performLongClick();
                 });
 
                 break;
@@ -951,10 +954,10 @@ public class MessageAdapter extends ArrayAdapter<Message> {
     }
 
 
-    private void displayWebxdcMessage(ViewHolder viewHolder, final Message message, final boolean darkBackground, final int type) {
+    private void displayWebxdcMessage(View view, ViewHolder viewHolder, final Message message, final boolean darkBackground, final int type) {
         Cid webxdcCid = message.getFileParams().getCids().get(0);
         WebxdcPage webxdc = new WebxdcPage(activity, webxdcCid, message, activity.xmppConnectionService);
-        displayTextMessage(viewHolder, message, darkBackground, type);
+        displayTextMessage(view, viewHolder, message, darkBackground, type);
         viewHolder.image.setVisibility(GONE);
         viewHolder.audioPlayer.setVisibility(GONE);
         viewHolder.download_button.setVisibility(View.VISIBLE);
@@ -1014,16 +1017,18 @@ public class MessageAdapter extends ArrayAdapter<Message> {
                 if (MessageAdapter.this.mOnInlineImageLongClickedListener != null) {
                     List<Cid> cids = message.getFileParams().getCids();
                     if (!cids.isEmpty()) {
-                        return MessageAdapter.this.mOnInlineImageLongClickedListener.onInlineImageLongClicked(cids.get(0));
+                        if (MessageAdapter.this.mOnInlineImageLongClickedListener.onInlineImageLongClicked(cids.get(0))) {
+                            return true;
+                        }
                     }
                 }
-                return false;
+                return view.performLongClick();
             });
         }
     }
 
-    private void displayOpenableMessage(ViewHolder viewHolder, final Message message, final boolean darkBackground, final int type) {
-        displayTextMessage(viewHolder, message, darkBackground, type);
+    private void displayOpenableMessage(View view, ViewHolder viewHolder, final Message message, final boolean darkBackground, final int type) {
+        displayTextMessage(view, viewHolder, message, darkBackground, type);
         viewHolder.download_button.setVisibility(View.VISIBLE);
         viewHolder.audioPlayer.setVisibility(GONE);
         showImages(false, viewHolder);
@@ -1165,8 +1170,8 @@ public class MessageAdapter extends ArrayAdapter<Message> {
         }
     }
 
-    private void displayLocationMessage(ViewHolder viewHolder, final Message message, final boolean darkBackground, final int type) {
-        displayTextMessage(viewHolder, message, darkBackground, type);
+    private void displayLocationMessage(View view, ViewHolder viewHolder, final Message message, final boolean darkBackground, final int type) {
+        displayTextMessage(view, viewHolder, message, darkBackground, type);
         viewHolder.audioPlayer.setVisibility(GONE);
         final String url = GeoHelper.MapPreviewUri(message, activity);
         showImages(false, viewHolder);
@@ -1201,10 +1206,10 @@ public class MessageAdapter extends ArrayAdapter<Message> {
         }
     }
 
-    private void displayAudioMessage(ViewHolder viewHolder, Message message, boolean darkBackground, final int type) {
+    private void displayAudioMessage(View view, ViewHolder viewHolder, Message message, boolean darkBackground, final int type) {
         final Resources res = activity.getResources();
         viewHolder.messageBody.setWidth((int) res.getDimension(R.dimen.audio_player_width));
-        displayTextMessage(viewHolder, message, darkBackground, type);
+        displayTextMessage(view, viewHolder, message, darkBackground, type);
         showImages(false, viewHolder);
         viewHolder.richlinkview.setVisibility(GONE);
         viewHolder.transfer.setVisibility(GONE);
@@ -1240,8 +1245,8 @@ public class MessageAdapter extends ArrayAdapter<Message> {
         return "";
     }
 
-    private void displayMediaPreviewMessage(ViewHolder viewHolder, final Message message, final boolean darkBackground, final int type) {
-        displayTextMessage(viewHolder, message, darkBackground, type);
+    private void displayMediaPreviewMessage(View view, ViewHolder viewHolder, final Message message, final boolean darkBackground, final int type) {
+        displayTextMessage(view, viewHolder, message, darkBackground, type);
         viewHolder.download_button.setVisibility(View.GONE);
         viewHolder.audioPlayer.setVisibility(View.GONE);
         viewHolder.richlinkview.setVisibility(View.GONE);
@@ -1298,10 +1303,12 @@ public class MessageAdapter extends ArrayAdapter<Message> {
             if (MessageAdapter.this.mOnInlineImageLongClickedListener != null) {
                 List<Cid> cids = message.getFileParams().getCids();
                 if (!cids.isEmpty()) {
-                    return MessageAdapter.this.mOnInlineImageLongClickedListener.onInlineImageLongClicked(cids.get(0));
+                    if (MessageAdapter.this.mOnInlineImageLongClickedListener.onInlineImageLongClicked(cids.get(0))) {
+                        return true;
+                    }
                 }
             }
-            return false;
+            return view.performLongClick();
         });
     }
     private void imagePreviewLayout(int w, int h, ImageView image) {
@@ -1390,7 +1397,7 @@ public class MessageAdapter extends ArrayAdapter<Message> {
             MyLinkify.addLinks(body, false);
             viewHolder.messageBody.setText(body);
             viewHolder.messageBody.setAutoLinkMask(0);
-            viewHolder.messageBody.setTextIsSelectable(true);
+            viewHolder.messageBody.setTextIsSelectable(false);
             viewHolder.messageBody.setMovementMethod(ClickableMovementMethod.getInstance());
         } else {
             if (includeBody) {
@@ -1399,7 +1406,7 @@ public class MessageAdapter extends ArrayAdapter<Message> {
                 MyLinkify.addLinks(body, false);
                 viewHolder.messageBody.setText(body);
                 viewHolder.messageBody.setAutoLinkMask(0);
-                viewHolder.messageBody.setTextIsSelectable(true);
+                viewHolder.messageBody.setTextIsSelectable(false);
                 viewHolder.messageBody.setMovementMethod(ClickableMovementMethod.getInstance());
             } else {
                 viewHolder.messageBody.setVisibility(GONE);
@@ -1427,7 +1434,8 @@ public class MessageAdapter extends ArrayAdapter<Message> {
 
     @SuppressLint({"StringFormatInvalid", "ClickableViewAccessibility"})
     @Override
-    public View getView(int position, View view, ViewGroup parent) {
+    public View getView(int position, View convertView, ViewGroup parent) {
+        final View view;
         final Message message = getItem(position);
         final boolean omemoEncryption = message.getEncryption() == Message.ENCRYPTION_AXOLOTL;
         final boolean isInValidSession = message.isValidInSession() && (!omemoEncryption || message.isTrusted());
@@ -1436,7 +1444,7 @@ public class MessageAdapter extends ArrayAdapter<Message> {
         final List<Element> commands = message.getCommands();
         final int type = getItemViewType(position);
         ViewHolder viewHolder;
-        if (view == null) {
+        if (convertView == null) {
             viewHolder = new ViewHolder();
             switch (type) {
                 case DATE_SEPARATOR:
@@ -1530,6 +1538,7 @@ public class MessageAdapter extends ArrayAdapter<Message> {
             }
             view.setTag(viewHolder);
         } else {
+            view = convertView;
             viewHolder = (ViewHolder) view.getTag();
             if (viewHolder == null) {
                 return view;
@@ -1745,16 +1754,14 @@ public class MessageAdapter extends ArrayAdapter<Message> {
             }
         });
 
-        // Treat touch-up as click so we don't have to touch twice
-        // (touch twice is because it's waiting to see if you double-touch for text selection)
-        viewHolder.messageBody.setOnTouchListener((v, event) -> {
-            if (event.getAction() == MotionEvent.ACTION_UP) {
-                if (MessageAdapter.this.mOnMessageBoxClickedListener != null) {
-                    MessageAdapter.this.mOnMessageBoxClickedListener
-                            .onContactPictureClicked(message);
-                }
-            }
-            return false;
+        View.OnLongClickListener messageLongClickListener = v -> {
+            return view.performLongClick();
+        };
+        viewHolder.message_box.setOnLongClickListener(messageLongClickListener);
+        viewHolder.messageBody.setOnLongClickListener(messageLongClickListener);
+
+        view.setOnLongClickListener(v -> {
+            return ((ListView) parent).showContextMenuForChild(view);
         });
 
         viewHolder.contact_picture.setOnLongClickListener(v -> {
@@ -1775,9 +1782,9 @@ public class MessageAdapter extends ArrayAdapter<Message> {
             displayInfoMessage(viewHolder, "Muted", darkBackground, message);
         } else if (unInitiatedButKnownSize || message.isFileDeleted() || (transferable != null && transferable.getStatus() != Transferable.STATUS_UPLOADING)) {
             if (unInitiatedButKnownSize || (message.isMessageDeleted() && message.getModerated() == null)  || transferable != null && transferable.getStatus() == Transferable.STATUS_OFFER) {
-                displayDownloadableMessage(viewHolder, message, activity.getString(R.string.download_x_file, UIHelper.getFileDescriptionString(activity, message)), darkBackground, type);
+                displayDownloadableMessage(view, viewHolder, message, activity.getString(R.string.download_x_file, UIHelper.getFileDescriptionString(activity, message)), darkBackground, type);
             } else if (transferable != null && transferable.getStatus() == Transferable.STATUS_OFFER_CHECK_FILESIZE) {
-                displayDownloadableMessage(viewHolder, message, activity.getString(R.string.check_x_filesize, UIHelper.getFileDescriptionString(activity, message)), darkBackground, type);
+                displayDownloadableMessage(view, viewHolder, message, activity.getString(R.string.check_x_filesize, UIHelper.getFileDescriptionString(activity, message)), darkBackground, type);
             } else {
                 /* todo why should we mark a file as deleted? --> causing strange side effects
                 if (!activity.xmppConnectionService.getFileBackend().getFile(message).exists() && !message.isFileDeleted()) {
@@ -1791,13 +1798,13 @@ public class MessageAdapter extends ArrayAdapter<Message> {
             }
         } else if (message.isFileOrImage() && message.getEncryption() != Message.ENCRYPTION_PGP && message.getEncryption() != Message.ENCRYPTION_DECRYPTION_FAILED) {
             if (message.getFileParams().width > 0 && message.getFileParams().height > 0) {
-                displayMediaPreviewMessage(viewHolder, message, darkBackground, type);
+                displayMediaPreviewMessage(view, viewHolder, message, darkBackground, type);
             } else if (message.getFileParams().runtime > 0 && (message.getFileParams().width == 0 && message.getFileParams().height == 0)) {
-                displayAudioMessage(viewHolder, message, darkBackground, type);
+                displayAudioMessage(view, viewHolder, message, darkBackground, type);
             } else if ("application/webxdc+zip".equals(message.getFileParams().getMediaType()) && message.getConversation() instanceof Conversation && !message.getFileParams().getCids().isEmpty()) {
-                displayWebxdcMessage(viewHolder, message, darkBackground, type);
+                displayWebxdcMessage(view, viewHolder, message, darkBackground, type);
             } else {
-                displayOpenableMessage(viewHolder, message, darkBackground, type);
+                displayOpenableMessage(view, viewHolder, message, darkBackground, type);
             }
         } else if (message.getEncryption() == Message.ENCRYPTION_PGP) {
             if (account.isPgpDecryptionServiceConnected()) {
@@ -1819,20 +1826,22 @@ public class MessageAdapter extends ArrayAdapter<Message> {
             displayInfoMessage(viewHolder, activity.getString(R.string.omemo_decryption_failed), darkBackground, message);
         } else {
             if (message.isGeoUri()) {
-                displayLocationMessage(viewHolder, message, darkBackground, type);
+                displayLocationMessage(view, viewHolder, message, darkBackground, type);
             } else if (message.isXmppUri()) {
                 displayXmppMessage(viewHolder, message.getBody().trim());
             } else if (message.treatAsDownloadable()) {
                 try {
                     final URI uri = message.getOob();
-                    displayDownloadableMessage(viewHolder,
+                    displayDownloadableMessage(view,
+                            viewHolder,
                             message,
                             activity.getString(R.string.check_x_filesize_on_host,
                                     UIHelper.getFileDescriptionString(activity, message),
                                     uri.getHost()),
                             darkBackground, type);
                 } catch (Exception e) {
-                    displayDownloadableMessage(viewHolder,
+                    displayDownloadableMessage(view,
+                            viewHolder,
                             message,
                             activity.getString(R.string.check_x_filesize,
                                     UIHelper.getFileDescriptionString(activity, message)),
@@ -1841,7 +1850,7 @@ public class MessageAdapter extends ArrayAdapter<Message> {
             } else if (message.bodyIsOnlyEmojis() && (message.getType() != Message.TYPE_PRIVATE || (conversation instanceof Conversation && ((Conversation) conversation).hasPermanentCounterpart()))) {
                 displayEmojiMessage(viewHolder, getSpannableBody(message), darkBackground);
             } else {
-                displayTextMessage(viewHolder, message, darkBackground, type);
+                displayTextMessage(view, viewHolder, message, darkBackground, type);
             }
         }
 
