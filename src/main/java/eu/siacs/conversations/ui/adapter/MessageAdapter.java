@@ -804,6 +804,15 @@ public class MessageAdapter extends ArrayAdapter<Message> {
                         ToastCompat.makeText(activity, R.string.error_message, ToastCompat.LENGTH_LONG).show();
                     }
                 });
+                viewHolder.image.setOnLongClickListener(v -> {
+                    if (MessageAdapter.this.mOnInlineImageLongClickedListener != null) {
+                        List<Cid> cids = message.getFileParams().getCids();
+                        if (!cids.isEmpty()) {
+                            return MessageAdapter.this.mOnInlineImageLongClickedListener.onInlineImageLongClicked(cids.get(0));
+                        }
+                    }
+                    return false;
+                });
             }
 
             // Обработка текста сообщения
@@ -915,6 +924,15 @@ public class MessageAdapter extends ArrayAdapter<Message> {
 
                 activity.loadBitmap(message, viewHolder.image);
                 viewHolder.image.setOnClickListener(v -> ConversationFragment.downloadFile(activity, message));
+                viewHolder.image.setOnLongClickListener(v -> {
+                    if (MessageAdapter.this.mOnInlineImageLongClickedListener != null) {
+                        List<Cid> cids = message.getFileParams().getCids();
+                        if (!cids.isEmpty()) {
+                            return MessageAdapter.this.mOnInlineImageLongClickedListener.onInlineImageLongClicked(cids.get(0));
+                        }
+                    }
+                    return false;
+                });
 
                 break;
             }
@@ -992,6 +1010,15 @@ public class MessageAdapter extends ArrayAdapter<Message> {
             viewHolder.images.setLayoutParams(layoutParams);
 
             viewHolder.image.setImageDrawable(d);
+            viewHolder.image.setOnLongClickListener(v -> {
+                if (MessageAdapter.this.mOnInlineImageLongClickedListener != null) {
+                    List<Cid> cids = message.getFileParams().getCids();
+                    if (!cids.isEmpty()) {
+                        return MessageAdapter.this.mOnInlineImageLongClickedListener.onInlineImageLongClicked(cids.get(0));
+                    }
+                }
+                return false;
+            });
         }
     }
 
@@ -1267,6 +1294,15 @@ public class MessageAdapter extends ArrayAdapter<Message> {
         }
 
         viewHolder.image.setOnClickListener(v -> openDownloadable(message));
+        viewHolder.image.setOnLongClickListener(v -> {
+            if (MessageAdapter.this.mOnInlineImageLongClickedListener != null) {
+                List<Cid> cids = message.getFileParams().getCids();
+                if (!cids.isEmpty()) {
+                    return MessageAdapter.this.mOnInlineImageLongClickedListener.onInlineImageLongClicked(cids.get(0));
+                }
+            }
+            return false;
+        });
     }
     private void imagePreviewLayout(int w, int h, ImageView image) {
         final float target = activity.getResources().getDimension(R.dimen.image_preview_width);

@@ -68,7 +68,6 @@
             android:layout_toStartOf="@+id/message_photo"
             android:layout_toLeftOf="@+id/message_photo"
             android:background="@drawable/message_bubble_sent"
-            android:longClickable="true"
             android:minHeight="48dp">
 
             <LinearLayout
@@ -97,7 +96,6 @@
                     android:id="@+id/resend_button"
                     android:layout_width="wrap_content"
                     android:layout_height="wrap_content"
-                    android:longClickable="true"
                     android:visibility="gone" />
 
                 <com.wefika.flowlayout.FlowLayout
