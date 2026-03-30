@@ -520,8 +520,7 @@ public class JingleFileTransferConnection extends AbstractJingleConnection
                 !Strings.isNullOrEmpty(id.account.getKey(Account.KEY_PROXY65_HOST));
         final boolean useProxy65ForFileTransfers =
                 xmppConnectionService.useProxy65ForFileTransfers();
-        if ((hasConfiguredProxyServer || useProxy65ForFileTransfers)
-                && remoteHasFeature(Namespace.JINGLE_TRANSPORTS_S5B)) {
+        if (hasConfiguredProxyServer || useProxy65ForFileTransfers) {
             return new SocksByteStreamsTransport(xmppConnection, id, isInitiator(), useTor);
         }
         if (!useTor && remoteHasFeature(Namespace.JINGLE_TRANSPORT_WEBRTC_DATA_CHANNEL)) {
