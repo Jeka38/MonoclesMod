@@ -48,6 +48,7 @@ import android.content.Context;
 import android.content.Intent;
 import android.content.SharedPreferences;
 import android.content.pm.PackageManager;
+import android.graphics.Bitmap;
 import android.graphics.Typeface;
 import android.graphics.drawable.ColorDrawable;
 import android.net.Uri;
@@ -65,6 +66,7 @@ import android.view.Menu;
 import android.view.MenuItem;
 import android.view.View;
 import android.widget.ImageView;
+import android.widget.EditText;
 import android.widget.TextView;
 import android.widget.Toast;
 
@@ -131,6 +133,7 @@ import eu.siacs.conversations.utils.PhoneNumberUtilWrapper;
 import eu.siacs.conversations.xmpp.Jid;
 import eu.siacs.conversations.xmpp.OnUpdateBlocklist;
 import eu.siacs.conversations.xmpp.chatstate.ChatState;
+import eu.siacs.conversations.xmpp.forms.Data;
 import me.drakeet.support.toast.ToastCompat;
 import eu.siacs.conversations.utils.ThemeHelper;
 import p32929.easypasscodelock.Utils.EasyLock;
@@ -138,7 +141,7 @@ import p32929.easypasscodelock.Utils.EasyLock;
 import com.google.android.material.bottomnavigation.BottomNavigationView;
 
 
-public class ConversationsActivity extends XmppActivity implements OnConversationSelected, OnConversationArchived, OnConversationsListItemUpdated, OnConversationRead, XmppConnectionService.OnAccountUpdate, XmppConnectionService.OnConversationUpdate, XmppConnectionService.OnRosterUpdate, OnUpdateBlocklist, XmppConnectionService.OnShowErrorToast, XmppConnectionService.OnAffiliationChanged, XmppConnectionService.OnRoomDestroy {
+public class ConversationsActivity extends XmppActivity implements OnConversationSelected, OnConversationArchived, OnConversationsListItemUpdated, OnConversationRead, XmppConnectionService.OnAccountUpdate, XmppConnectionService.OnConversationUpdate, XmppConnectionService.OnRosterUpdate, OnUpdateBlocklist, XmppConnectionService.OnShowErrorToast, XmppConnectionService.OnAffiliationChanged, XmppConnectionService.OnRoomDestroy, XmppConnectionService.OnMucCaptchaRequested {
 
     public static final String ACTION_VIEW_CONVERSATION = "eu.siacs.conversations.VIEW";
     public static final String EXTRA_CONVERSATION = "conversationUuid";
@@ -174,6 +177,7 @@ public class ConversationsActivity extends XmppActivity implements OnConversatio
     private boolean showLastSeen;
 
     AlertDialog memoryWarningDialog;
+    private AlertDialog mucCaptchaDialog;
 
     long FirstStartTime = -1;
     String PREF_FIRST_START = "FirstStart";
@@ -1356,6 +1360,36 @@ public class ConversationsActivity extends XmppActivity implements OnConversatio
     @Override
     public void onShowErrorToast(int resId) {
         runOnUiThread(() -> ToastCompat.makeText(this, resId, ToastCompat.LENGTH_SHORT).show());
+    }
+
+    @Override
+    public void onMucCaptchaRequested(final Conversation conversation, final String id, final Data data, final Bitmap captcha) {
+        runOnUiThread(() -> {
+            if (mucCaptchaDialog != null && mucCaptchaDialog.isShowing()) {
+                mucCaptchaDialog.dismiss();
+            }
+            final AlertDialog.Builder builder = new AlertDialog.Builder(this);
+            final View view = getLayoutInflater().inflate(R.layout.captcha, null);
+            final ImageView imageView = view.findViewById(R.id.captcha);
+            final EditText input = view.findViewById(R.id.input);
+            imageView.setImageBitmap(captcha);
+            builder.setTitle(getString(R.string.captcha_required));
+            builder.setView(view);
+            builder.setPositiveButton(getString(R.string.ok), (dialog, which) -> {
+                if (xmppConnectionService != null) {
+                    xmppConnectionService.submitMucCaptcha(
+                            conversation,
+                            id,
+                            data,
+                            input.getText().toString()
+                    );
+                }
+            });
+            builder.setNegativeButton(getString(R.string.cancel), null);
+            mucCaptchaDialog = builder.create();
+            mucCaptchaDialog.show();
+            input.requestFocus();
+        });
     }
 
     protected void AppUpdate(String Store) {

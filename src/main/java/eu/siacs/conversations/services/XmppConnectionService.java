@@ -55,6 +55,7 @@ import android.content.SharedPreferences;
 import android.content.pm.PackageManager;
 import android.database.ContentObserver;
 import android.graphics.Bitmap;
+import android.graphics.BitmapFactory;
 import android.graphics.drawable.BitmapDrawable;
 import android.graphics.drawable.Drawable;
 import android.media.AudioManager;
@@ -82,6 +83,7 @@ import android.util.DisplayMetrics;
 import android.util.Log;
 import android.util.LruCache;
 import android.util.Pair;
+import android.util.Base64;
 
 import net.java.otr4j.OtrException;
 import net.java.otr4j.session.Session;
@@ -118,6 +120,8 @@ import org.openintents.openpgp.util.OpenPgpServiceConnection;
 import com.google.common.base.Optional;
 
 import eu.siacs.conversations.utils.Emoticons;
+import java.io.ByteArrayInputStream;
+import java.io.InputStream;
 import java.io.FileInputStream;
 import java.io.IOException;
 import java.io.File;
@@ -409,6 +413,7 @@ public class XmppConnectionService extends Service {
     private final Set<OnShowErrorToast> mOnShowErrorToasts = Collections.newSetFromMap(new WeakHashMap<OnShowErrorToast, Boolean>());
     private final Set<OnAccountUpdate> mOnAccountUpdates = Collections.newSetFromMap(new WeakHashMap<OnAccountUpdate, Boolean>());
     private final Set<OnCaptchaRequested> mOnCaptchaRequested = Collections.newSetFromMap(new WeakHashMap<OnCaptchaRequested, Boolean>());
+    private final Set<OnMucCaptchaRequested> mOnMucCaptchaRequested = Collections.newSetFromMap(new WeakHashMap<OnMucCaptchaRequested, Boolean>());
     private final Set<OnRosterUpdate> mOnRosterUpdates = Collections.newSetFromMap(new WeakHashMap<OnRosterUpdate, Boolean>());
     private final Set<OnUpdateBlocklist> mOnUpdateBlocklist = Collections.newSetFromMap(new WeakHashMap<OnUpdateBlocklist, Boolean>());
     private final Set<OnMucRosterUpdate> mOnMucRosterUpdate = Collections.newSetFromMap(new WeakHashMap<OnMucRosterUpdate, Boolean>());
@@ -3794,6 +3799,30 @@ public class XmppConnectionService extends Service {
         }
     }
 
+    public void setOnMucCaptchaRequestedListener(OnMucCaptchaRequested listener) {
+        final boolean remainingListeners;
+        synchronized (LISTENER_LOCK) {
+            remainingListeners = checkListeners();
+            if (!this.mOnMucCaptchaRequested.add(listener)) {
+                Log.w(Config.LOGTAG, listener.getClass().getName() + " is already registered as OnMucCaptchaRequestListener");
+            }
+        }
+        if (remainingListeners) {
+            switchToForeground();
+        }
+    }
+
+    public void removeOnMucCaptchaRequestedListener(OnMucCaptchaRequested listener) {
+        final boolean remainingListeners;
+        synchronized (LISTENER_LOCK) {
+            this.mOnMucCaptchaRequested.remove(listener);
+            remainingListeners = checkListeners();
+        }
+        if (remainingListeners) {
+            switchToBackground();
+        }
+    }
+
     public void setOnRosterUpdateListener(final OnRosterUpdate listener) {
         final boolean remainingListeners;
         synchronized (LISTENER_LOCK) {
@@ -3919,6 +3948,7 @@ public class XmppConnectionService extends Service {
                 && this.mOnConversationUpdates.size() == 0
                 && this.mOnRosterUpdates.size() == 0
                 && this.mOnCaptchaRequested.size() == 0
+                && this.mOnMucCaptchaRequested.size() == 0
                 && this.mOnMucRosterUpdate.size() == 0
                 && this.mOnUpdateBlocklist.size() == 0
                 && this.mOnShowErrorToasts.size() == 0
@@ -4205,6 +4235,25 @@ public class XmppConnectionService extends Service {
         for (String affiliation : affiliations) {
             sendIqPacket(account, mIqGenerator.queryAffiliation(conversation, affiliation), callback);
         }
+    }
+
+    public void submitMucCaptcha(final Conversation conversation, final String id, final Data data, final String answer) {
+        final Account account = conversation.getAccount();
+        final IqPacket packet = new IqPacket(IqPacket.TYPE.SET);
+        packet.setTo(conversation.getJid().asBareJid());
+        if (id != null) {
+            packet.setId(id);
+        }
+        data.put("ocr", answer);
+        data.submit();
+        packet.addChild("captcha", "urn:xmpp:captcha").addChild(data);
+        sendIqPacket(account, packet, (a, response) -> {
+            if (response.getType() == IqPacket.TYPE.RESULT) {
+                joinMuc(conversation);
+            } else {
+                joinMuc(conversation);
+            }
+        });
     }
 
 
@@ -5716,6 +5765,44 @@ public class XmppConnectionService extends Service {
         return false;
     }
 
+    public boolean displayMucCaptchaRequest(final Conversation conversation, final String id, final Data data, final Bitmap captcha) {
+        if (captcha != null && mOnMucCaptchaRequested.size() > 0) {
+            DisplayMetrics metrics = getApplicationContext().getResources().getDisplayMetrics();
+            Bitmap scaled = Bitmap.createScaledBitmap(captcha, (int) (captcha.getWidth() * metrics.scaledDensity),
+                    (int) (captcha.getHeight() * metrics.scaledDensity), false);
+            for (OnMucCaptchaRequested listener : threadSafeList(this.mOnMucCaptchaRequested)) {
+                listener.onMucCaptchaRequested(conversation, id, data, scaled);
+            }
+            return true;
+        }
+        return false;
+    }
+
+    @Nullable
+    public Bitmap decodeCaptcha(final Account account, @Nullable final Data data, @Nullable final Element bobData) {
+        InputStream is = null;
+        try {
+            if (bobData != null && bobData.getContent() != null) {
+                final byte[] decodedBlob = Base64.decode(bobData.getContent(), Base64.DEFAULT);
+                is = new ByteArrayInputStream(decodedBlob);
+            } else if (data != null) {
+                final boolean useTor = useTorToConnect() || account.isOnion();
+                final boolean useI2P = useI2PToConnect() || account.isI2P();
+                final String url = data.getValue("url");
+                final String fallbackUrl = data.getValue("captcha-fallback-url");
+                if (url != null) {
+                    is = HttpConnectionManager.open(url, useTor, useI2P);
+                } else if (fallbackUrl != null) {
+                    is = HttpConnectionManager.open(fallbackUrl, useTor, useI2P);
+                }
+            }
+            return is == null ? null : BitmapFactory.decodeStream(is);
+        } catch (final Exception e) {
+            Log.d(Config.LOGTAG, account.getJid().asBareJid() + ": unable to decode captcha", e);
+            return null;
+        }
+    }
+
     public void updateBlocklistUi(final OnUpdateBlocklist.Status status) {
         for (OnUpdateBlocklist listener : threadSafeList(this.mOnUpdateBlocklist)) {
             listener.OnUpdateBlocklist(status);
@@ -6726,6 +6813,10 @@ public class XmppConnectionService extends Service {
 
     public interface OnCaptchaRequested {
         void onCaptchaRequested(Account account, String id, Data data, Bitmap captcha);
+    }
+
+    public interface OnMucCaptchaRequested {
+        void onMucCaptchaRequested(Conversation conversation, String id, Data data, Bitmap captcha);
     }
 
     public interface OnRosterUpdate {

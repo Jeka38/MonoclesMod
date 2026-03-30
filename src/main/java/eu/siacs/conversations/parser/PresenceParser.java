@@ -27,6 +27,7 @@ import eu.siacs.conversations.xml.Namespace;
 import eu.siacs.conversations.xmpp.InvalidJid;
 import eu.siacs.conversations.xmpp.Jid;
 import eu.siacs.conversations.xmpp.OnPresencePacketReceived;
+import eu.siacs.conversations.xmpp.forms.Data;
 import eu.siacs.conversations.xmpp.pep.Avatar;
 import eu.siacs.conversations.xmpp.stanzas.PresencePacket;
 
@@ -318,6 +319,21 @@ public class PresenceParser extends AbstractParser implements
                 final Element error = packet.findChild("error");
                 if (error == null) {
                     return addedStatusMessage;
+                }
+                final Element captchaData = error.findChild("x", Namespace.DATA);
+                if (captchaData != null && (error.hasChild("not-acceptable") || error.hasChild("captcha", "urn:xmpp:captcha"))) {
+                    final Data data = Data.parse(captchaData);
+                    final Element bob = error.findChild("data", "urn:xmpp:bob");
+                    if (data != null) {
+                        if (mXmppConnectionService.displayMucCaptchaRequest(
+                                conversation,
+                                packet.getId(),
+                                data,
+                                mXmppConnectionService.decodeCaptcha(account, data, bob))) {
+                            mucOptions.setError(MucOptions.Error.CAPTCHA_REQUIRED);
+                            return addedStatusMessage;
+                        }
+                    }
                 }
                 if (error.hasChild("conflict")) {
                     if (mucOptions.online()) {

@@ -816,6 +816,7 @@ public class MucOptions {
         NONE,
         NICK_IN_USE,
         PASSWORD_REQUIRED,
+        CAPTCHA_REQUIRED,
         BANNED,
         MEMBERS_ONLY,
         RESOURCE_CONSTRAINT,
