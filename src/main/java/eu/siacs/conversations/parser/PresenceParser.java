@@ -71,7 +71,7 @@ public class PresenceParser extends AbstractParser implements
         final Jid jid = conversation.getAccount().getJid();
         final Jid from = packet.getFrom();
         boolean addedStatusMessage = false;
-        if (!from.isBareJid()) {
+        if (!from.isBareJid() || "error".equals(packet.getAttribute("type"))) {
             final String type = packet.getAttribute("type");
             final Element x = packet.findChild("x", Namespace.MUC_USER);
             final Element nick = packet.findChild("nick", Namespace.NICK);
