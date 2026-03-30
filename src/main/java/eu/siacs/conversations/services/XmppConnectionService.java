@@ -6008,7 +6008,7 @@ public class XmppConnectionService extends Service {
         }
         data.submit();
         pendingMucCaptchaChallenges.put(conversation.getUuid(), data);
-        joinMuc(conversation, null, false, null, false);
+        joinMuc(conversation, null, false);
     }
 
     public void sendIqPacket(final Account account, final IqPacket packet, final OnIqPacketReceived callback) {
