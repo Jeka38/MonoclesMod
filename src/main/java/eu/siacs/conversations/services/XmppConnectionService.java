@@ -6014,9 +6014,18 @@ public class XmppConnectionService extends Service {
             try {
                 final IqPacket packet = new IqPacket(IqPacket.TYPE.SET);
                 packet.setTo(Jid.of(from));
+                packet.setFrom(conversation.getAccount().getJid().asBareJid());
                 packet.addChild("captcha", "urn:xmpp:captcha").addChild(data);
                 sendIqPacket(conversation.getAccount(), packet, (account, response) -> {
                     if (response.getType() == IqPacket.TYPE.RESULT) {
+                        joinMuc(conversation, null, false);
+                    } else {
+                        Log.d(
+                                Config.LOGTAG,
+                                conversation.getAccount().getJid().asBareJid()
+                                        + ": captcha iq was not accepted ("
+                                        + response.getType()
+                                        + "), retrying with join payload");
                         joinMuc(conversation, null, false);
                     }
                 });
