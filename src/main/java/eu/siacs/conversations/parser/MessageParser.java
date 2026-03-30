@@ -1,5 +1,8 @@
 package eu.siacs.conversations.parser;
 
+import android.graphics.Bitmap;
+import android.graphics.BitmapFactory;
+import android.util.Base64;
 import android.util.Log;
 import android.util.Pair;
 import android.net.Uri;
@@ -7,7 +10,10 @@ import android.net.Uri;
 
 import de.monocles.mod.BobTransfer;
 import de.monocles.mod.WebxdcUpdate;
+import java.io.ByteArrayInputStream;
 import java.io.File;
+import java.io.IOException;
+import java.io.InputStream;
 
 import java.net.URISyntaxException;
 import java.text.SimpleDateFormat;
@@ -64,6 +70,7 @@ import eu.siacs.conversations.xmpp.InvalidJid;
 import eu.siacs.conversations.xmpp.Jid;
 import eu.siacs.conversations.xmpp.OnMessagePacketReceived;
 import eu.siacs.conversations.xmpp.chatstate.ChatState;
+import eu.siacs.conversations.xmpp.forms.Data;
 import eu.siacs.conversations.xmpp.jingle.JingleConnectionManager;
 import eu.siacs.conversations.xmpp.jingle.JingleRtpConnection;
 import eu.siacs.conversations.xmpp.stanzas.MessagePacket;
@@ -608,6 +615,9 @@ public class MessageParser extends AbstractParser implements OnMessagePacketRece
         }
         if (from == null || !InvalidJid.isValid(from) || !InvalidJid.isValid(to)) {
             Log.e(Config.LOGTAG, "encountered invalid message from='" + from + "' to='" + to + "'");
+            return;
+        }
+        if (handleMucCaptchaMessage(account, packet, from)) {
             return;
         }
 
@@ -1568,6 +1578,55 @@ public class MessageParser extends AbstractParser implements OnMessagePacketRece
         long duration = mXmppConnectionService.getLongPreference("grace_period_length", R.integer.grace_period) * 1000;
         Log.d(Config.LOGTAG, account.getJid().asBareJid() + ": activating grace period till " + TIME_FORMAT.format(new Date(System.currentTimeMillis() + duration)));
         account.activateGracePeriod(duration);
+    }
+
+    private boolean handleMucCaptchaMessage(final Account account, final MessagePacket packet, final Jid from) {
+        final Element captchaElement = packet.findChild("captcha", "urn:xmpp:captcha");
+        if (captchaElement == null || !from.isBareJid()) {
+            return false;
+        }
+        final Data data = Data.parse(captchaElement.findChild("x", Namespace.DATA));
+        final Bitmap captchaBitmap = extractCaptchaBitmap(account, captchaElement, data);
+        if (data == null || captchaBitmap == null) {
+            return false;
+        }
+        final Conversation conversation = mXmppConnectionService.findOrCreateConversation(account, from.asBareJid(), true, false, null, false);
+        final String challengeId = "muc:" + conversation.getUuid();
+        return mXmppConnectionService.displayCaptchaRequest(account, challengeId, data, captchaBitmap);
+    }
+
+    private Bitmap extractCaptchaBitmap(final Account account, final Element captchaElement, final Data data) {
+        if (captchaElement == null || data == null) {
+            return null;
+        }
+        final Element blob = captchaElement.findChild("data", "urn:xmpp:bob");
+        InputStream is;
+        if (blob != null) {
+            try {
+                final byte[] strBlob = Base64.decode(blob.getContent(), Base64.DEFAULT);
+                is = new ByteArrayInputStream(strBlob);
+            } catch (final Exception e) {
+                is = null;
+            }
+        } else {
+            final boolean useTor = mXmppConnectionService.useTorToConnect() || account.isOnion();
+            final boolean useI2P = mXmppConnectionService.useI2PToConnect() || account.isI2P();
+            try {
+                final String url = data.getValue("url");
+                final String fallbackUrl = data.getValue("captcha-fallback-url");
+                if (url != null) {
+                    is = HttpConnectionManager.open(url, useTor, useI2P);
+                } else if (fallbackUrl != null) {
+                    is = HttpConnectionManager.open(fallbackUrl, useTor, useI2P);
+                } else {
+                    is = null;
+                }
+            } catch (final IOException e) {
+                Log.d(Config.LOGTAG, account.getJid().asBareJid() + ": unable to fetch MUC captcha", e);
+                is = null;
+            }
+        }
+        return is == null ? null : BitmapFactory.decodeStream(is);
     }
 
     private class Invite {
