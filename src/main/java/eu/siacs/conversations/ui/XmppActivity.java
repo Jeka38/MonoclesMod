@@ -1647,7 +1647,7 @@ public abstract class XmppActivity extends ActionBarActivity implements XmppConn
             builder.setTitle(getString(R.string.captcha_required));
             builder.setView(view);
             builder.setPositiveButton(getString(R.string.ok), (dialog, which) -> {
-                data.put("ocr", input.getText().toString());
+                applyCaptchaResponse(data, input.getText().toString());
                 if (xmppConnectionService != null) {
                     final Conversation conversation = xmppConnectionService.findConversationByUuid(id.substring(4));
                     xmppConnectionService.provideMucCaptcha(conversation, data);
@@ -1658,6 +1658,22 @@ public abstract class XmppActivity extends ActionBarActivity implements XmppConn
             mMucCaptchaDialog.show();
             input.requestFocus();
         });
+    }
+
+
+    private void applyCaptchaResponse(final Data data, final String response) {
+        if (data.getFieldByName("ocr") != null) {
+            data.put("ocr", response);
+            return;
+        }
+        for (eu.siacs.conversations.xmpp.forms.Field field : data.getFields()) {
+            final String type = field.getType();
+            if (!"hidden".equals(type) && (type == null || "text-single".equals(type)) && (field.isRequired() || field.getValue() == null)) {
+                data.put(field.getFieldName(), response);
+                return;
+            }
+        }
+        data.put("ocr", response);
     }
 
 }

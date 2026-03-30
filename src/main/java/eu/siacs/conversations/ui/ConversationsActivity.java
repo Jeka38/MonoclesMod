@@ -1413,7 +1413,7 @@ public class ConversationsActivity extends XmppActivity implements OnConversatio
 
             builder.setPositiveButton(getString(R.string.ok), (dialog, which) -> {
                 final String rc = input.getText().toString();
-                data.put("ocr", rc);
+                applyCaptchaResponse(data, rc);
                 if (xmppConnectionService != null) {
                     final String conversationUuid = id.substring(4);
                     final Conversation conversation = xmppConnectionService.findConversationByUuid(conversationUuid);
@@ -1426,4 +1426,20 @@ public class ConversationsActivity extends XmppActivity implements OnConversatio
             input.requestFocus();
         });
     }
+
+    private void applyCaptchaResponse(final Data data, final String response) {
+        if (data.getFieldByName("ocr") != null) {
+            data.put("ocr", response);
+            return;
+        }
+        for (eu.siacs.conversations.xmpp.forms.Field field : data.getFields()) {
+            final String type = field.getType();
+            if (!"hidden".equals(type) && (type == null || "text-single".equals(type)) && (field.isRequired() || field.getValue() == null)) {
+                data.put(field.getFieldName(), response);
+                return;
+            }
+        }
+        data.put("ocr", response);
+    }
+
 }

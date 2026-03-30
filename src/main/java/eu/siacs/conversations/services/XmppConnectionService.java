@@ -6008,6 +6008,24 @@ public class XmppConnectionService extends Service {
         }
         data.submit();
         pendingMucCaptchaChallenges.put(conversation.getUuid(), data);
+
+        final String from = data.getValue("from");
+        if (from != null) {
+            try {
+                final IqPacket packet = new IqPacket(IqPacket.TYPE.SET);
+                packet.setTo(Jid.of(from));
+                packet.addChild("captcha", "urn:xmpp:captcha").addChild(data);
+                sendIqPacket(conversation.getAccount(), packet, (account, response) -> {
+                    if (response.getType() == IqPacket.TYPE.RESULT) {
+                        joinMuc(conversation, null, false);
+                    }
+                });
+                return;
+            } catch (final Exception e) {
+                Log.d(Config.LOGTAG, conversation.getAccount().getJid().asBareJid() + ": unable to send captcha iq", e);
+            }
+        }
+
         joinMuc(conversation, null, false);
     }
 
