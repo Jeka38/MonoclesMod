@@ -13,8 +13,10 @@
     <string name="account_registrations_are_not_supported">Регистрация учетной записи не поддерживается</string>
     <string name="account_settings_example_jabber_id">username@monocles.eu</string>
     <string name="account_settings_hostname">Имя хоста</string>
+    <string name="account_settings_proxy_hostname">Имя прокси-сервера</string>
     <string name="account_settings_jabber_id">Аккаунт</string>
     <string name="account_settings_port">Порт</string>
+    <string name="account_settings_proxy_port">Порт прокси</string>
     <string name="account_status_bind_failure">Неудачная связка</string>
     <string name="account_status_connecting">Подключение…</string>
     <string name="account_status_disabled">Временно отключено</string>
