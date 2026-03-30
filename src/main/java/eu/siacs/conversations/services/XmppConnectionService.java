@@ -410,6 +410,7 @@ public class XmppConnectionService extends Service {
     private final Set<OnAccountUpdate> mOnAccountUpdates = Collections.newSetFromMap(new WeakHashMap<OnAccountUpdate, Boolean>());
     private final Set<OnCaptchaRequested> mOnCaptchaRequested = Collections.newSetFromMap(new WeakHashMap<OnCaptchaRequested, Boolean>());
     private final Map<String, Data> pendingMucCaptchaChallenges = Collections.synchronizedMap(new HashMap<>());
+    private final Map<String, Long> lastMucCaptchaRequest = Collections.synchronizedMap(new HashMap<>());
     private final Set<OnRosterUpdate> mOnRosterUpdates = Collections.newSetFromMap(new WeakHashMap<OnRosterUpdate, Boolean>());
     private final Set<OnUpdateBlocklist> mOnUpdateBlocklist = Collections.newSetFromMap(new WeakHashMap<OnUpdateBlocklist, Boolean>());
     private final Set<OnMucRosterUpdate> mOnMucRosterUpdate = Collections.newSetFromMap(new WeakHashMap<OnMucRosterUpdate, Boolean>());
@@ -5709,6 +5710,14 @@ public class XmppConnectionService extends Service {
     }
 
     public boolean displayCaptchaRequest(Account account, String id, Data data, Bitmap captcha) {
+        if (id != null && id.startsWith("muc:")) {
+            final long now = SystemClock.elapsedRealtime();
+            final Long lastShown = lastMucCaptchaRequest.get(id);
+            if (lastShown != null && (now - lastShown) < 5000L) {
+                return true;
+            }
+            lastMucCaptchaRequest.put(id, now);
+        }
         if (mOnCaptchaRequested.size() > 0) {
             DisplayMetrics metrics = getApplicationContext().getResources().getDisplayMetrics();
             Bitmap scaled = Bitmap.createScaledBitmap(captcha, (int) (captcha.getWidth() * metrics.scaledDensity),
@@ -5717,6 +5726,9 @@ public class XmppConnectionService extends Service {
                 listener.onCaptchaRequested(account, id, data, scaled);
             }
             return true;
+        }
+        if (id != null && id.startsWith("muc:")) {
+            lastMucCaptchaRequest.remove(id);
         }
         return false;
     }
@@ -6006,6 +6018,7 @@ public class XmppConnectionService extends Service {
         if (conversation == null || data == null) {
             return;
         }
+        lastMucCaptchaRequest.remove("muc:" + conversation.getUuid());
         data.submit();
         pendingMucCaptchaChallenges.put(conversation.getUuid(), data);
 
