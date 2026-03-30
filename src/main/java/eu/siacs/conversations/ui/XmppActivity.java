@@ -50,6 +50,7 @@ import android.view.Menu;
 import android.view.MenuItem;
 import android.view.View;
 import android.view.Window;
+import android.widget.EditText;
 import android.widget.ImageView;
 import android.widget.Spinner;
 import android.widget.Toast;
@@ -102,6 +103,7 @@ import eu.siacs.conversations.xmpp.Jid;
 import eu.siacs.conversations.xmpp.OnKeyStatusUpdated;
 import eu.siacs.conversations.xmpp.OnUpdateBlocklist;
 import eu.siacs.conversations.xmpp.XmppConnection;
+import eu.siacs.conversations.xmpp.forms.Data;
 import me.drakeet.support.toast.ToastCompat;
 import p32929.easypasscodelock.Utils.EasylockSP;
 import pl.droidsonroids.gif.GifDrawable;
@@ -118,7 +120,7 @@ import java.util.concurrent.RejectedExecutionException;
 
 import static eu.siacs.conversations.ui.SettingsActivity.ENABLE_OTR_ENCRYPTION;
 
-public abstract class XmppActivity extends ActionBarActivity {
+public abstract class XmppActivity extends ActionBarActivity implements XmppConnectionService.OnCaptchaRequested {
 
     protected static final int REQUEST_ANNOUNCE_PGP = 0x0101;
     protected static final int REQUEST_INVITE_TO_CONVERSATION = 0x0102;
@@ -134,6 +136,7 @@ public abstract class XmppActivity extends ActionBarActivity {
     public boolean xmppConnectionServiceBound = false;
 
     public AlertDialog AvatarPopup;
+    protected AlertDialog mMucCaptchaDialog;
 
     protected int mColorWarningButton;
     protected int mColorWarningText;
@@ -1625,4 +1628,36 @@ public abstract class XmppActivity extends ActionBarActivity {
             Glide.with(activity).load(imageUrl).into(statusimage);
         }
     }
+
+    @Override
+    public void onCaptchaRequested(final Account account, final String id, final Data data, final Bitmap captcha) {
+        if (id == null || !id.startsWith("muc:")) {
+            return;
+        }
+        runOnUiThread(() -> {
+            if ((mMucCaptchaDialog != null) && mMucCaptchaDialog.isShowing()) {
+                mMucCaptchaDialog.dismiss();
+            }
+            final AlertDialog.Builder builder = new AlertDialog.Builder(XmppActivity.this);
+            final View view = getLayoutInflater().inflate(R.layout.captcha, null);
+            final ImageView imageView = view.findViewById(R.id.captcha);
+            final EditText input = view.findViewById(R.id.input);
+            imageView.setImageBitmap(captcha);
+
+            builder.setTitle(getString(R.string.captcha_required));
+            builder.setView(view);
+            builder.setPositiveButton(getString(R.string.ok), (dialog, which) -> {
+                data.put("ocr", input.getText().toString());
+                if (xmppConnectionService != null) {
+                    final Conversation conversation = xmppConnectionService.findConversationByUuid(id.substring(4));
+                    xmppConnectionService.provideMucCaptcha(conversation, data);
+                }
+            });
+            builder.setNegativeButton(getString(R.string.cancel), null);
+            mMucCaptchaDialog = builder.create();
+            mMucCaptchaDialog.show();
+            input.requestFocus();
+        });
+    }
+
 }
