@@ -1,25 +1,49 @@
 <?xml version="1.0" encoding="utf-8"?>
 <LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:app="http://schemas.android.com/apk/res-auto"
     android:layout_width="match_parent"
-    android:layout_height="match_parent"
+    android:layout_height="wrap_content"
     android:orientation="vertical"
-    android:padding="16dp">
+    android:padding="?dialogPreferredPadding">
 
     <ImageView
         android:id="@+id/captcha"
         android:layout_width="wrap_content"
         android:layout_height="wrap_content"
-        android:layout_gravity="center_horizontal" />
+        android:layout_gravity="center_horizontal"
+        android:adjustViewBounds="true"
+        android:maxWidth="300dp"
+        android:contentDescription="@string/captcha_required" />
 
-    <eu.siacs.conversations.ui.widget.TextInputEditText
-        android:id="@+id/input"
+    <TextView
+        android:id="@+id/captcha_label"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:layout_marginTop="12dp"
+        android:text="@string/captcha_input_label"
+        android:textAppearance="@style/TextAppearance.Conversations.Body1" />
+
+    <com.google.android.material.textfield.TextInputLayout
+        android:id="@+id/captcha_input_layout"
+        style="@style/Widget.Conversations.TextInputLayout.OutlinedBox"
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
         android:layout_marginTop="8dp"
-        android:hint="@string/captcha_hint"
-        android:inputType="textNoSuggestions">
+        app:errorTextAppearance="@style/TextAppearance.Conversations.Design.Error"
+        app:hintTextAppearance="@style/TextAppearance.Conversations.Design.Hint">
 
-        <requestFocus />
-    </eu.siacs.conversations.ui.widget.TextInputEditText>
+        <eu.siacs.conversations.ui.widget.TextInputEditText
+            android:id="@+id/input"
+            style="@style/Widget.Material3.TextInputEditText.FilledBox"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:hint="@string/captcha_hint"
+            android:inputType="textNoSuggestions"
+            android:textColor="?attr/edit_text_color">
+
+            <requestFocus />
+        </eu.siacs.conversations.ui.widget.TextInputEditText>
+
+    </com.google.android.material.textfield.TextInputLayout>
 
 </LinearLayout>
