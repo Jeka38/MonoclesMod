@@ -55,6 +55,7 @@ import android.content.SharedPreferences;
 import android.content.pm.PackageManager;
 import android.database.ContentObserver;
 import android.graphics.Bitmap;
+import android.graphics.BitmapFactory;
 import android.graphics.drawable.BitmapDrawable;
 import android.graphics.drawable.Drawable;
 import android.media.AudioManager;
@@ -214,6 +215,9 @@ import eu.siacs.conversations.utils.TorServiceUtils;
 import eu.siacs.conversations.utils.TranscoderStrategies;
 import eu.siacs.conversations.utils.WakeLockHelper;
 import eu.siacs.conversations.utils.XmppUri;
+import java.io.ByteArrayInputStream;
+import java.io.InputStream;
+import android.util.Base64;
 import eu.siacs.conversations.xml.Element;
 import eu.siacs.conversations.xml.LocalizedContent;
 import eu.siacs.conversations.xmpp.InvalidJid;
@@ -5995,6 +5999,51 @@ public class XmppConnectionService extends Service {
             IqPacket request = mIqGenerator.generateCreateAccountWithCaptcha(account, id, data);
             connection.sendUnmodifiedIqPacket(request, connection.registrationResponseListener, true);
         }
+    }
+
+    public void fetchCaptchaAndDisplay(Account account, String id, Data data, Element blob) {
+        new Thread(() -> {
+            InputStream is;
+            if (blob != null) {
+                try {
+                    final String base64Blob = blob.getContent();
+                    final byte[] strBlob = Base64.decode(base64Blob, Base64.DEFAULT);
+                    is = new ByteArrayInputStream(strBlob);
+                } catch (Exception e) {
+                    is = null;
+                }
+            } else {
+                final boolean useTor = useTorToConnect() || account.isOnion();
+                final boolean useI2P = useI2PToConnect() || account.isI2P();
+                try {
+                    final String url = data.getValue("url");
+                    final String fallbackUrl = data.getValue("captcha-fallback-url");
+                    if (url != null) {
+                        is = HttpConnectionManager.open(url, useTor, useI2P);
+                    } else if (fallbackUrl != null) {
+                        is = HttpConnectionManager.open(fallbackUrl, useTor, useI2P);
+                    } else {
+                        is = null;
+                    }
+                } catch (final IOException e) {
+                    Log.d(Config.LOGTAG, account.getJid().asBareJid() + ": unable to fetch captcha", e);
+                    is = null;
+                }
+            }
+            if (is != null) {
+                Bitmap captcha = BitmapFactory.decodeStream(is);
+                if (captcha != null) {
+                    displayCaptchaRequest(account, id, data, captcha);
+                }
+            }
+        }).start();
+    }
+
+    public void sendMucCaptchaPacket(Account account, Jid muc, Data data) {
+        PresencePacket packet = mPresenceGenerator.selfPresence(account, Presence.Status.ONLINE, true, muc.getResource());
+        packet.setTo(muc);
+        packet.addChild(data);
+        sendPresencePacket(account, packet);
     }
 
     public void sendIqPacket(final Account account, final IqPacket packet, final OnIqPacketReceived callback) {

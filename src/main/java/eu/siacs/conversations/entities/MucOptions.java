@@ -825,7 +825,8 @@ public class MucOptions {
         INVALID_NICK,
         TECHNICAL_PROBLEMS,
         UNKNOWN,
-        NON_ANONYMOUS
+        NON_ANONYMOUS,
+        CAPTCHA_REQUIRED
     }
 
     private interface OnEventListener {

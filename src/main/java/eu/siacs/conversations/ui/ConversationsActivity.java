@@ -48,6 +48,7 @@ import android.content.Context;
 import android.content.Intent;
 import android.content.SharedPreferences;
 import android.content.pm.PackageManager;
+import android.graphics.Bitmap;
 import android.graphics.Typeface;
 import android.graphics.drawable.ColorDrawable;
 import android.net.Uri;
@@ -64,6 +65,7 @@ import android.view.KeyEvent;
 import android.view.Menu;
 import android.view.MenuItem;
 import android.view.View;
+import android.widget.EditText;
 import android.widget.ImageView;
 import android.widget.TextView;
 import android.widget.Toast;
@@ -110,6 +112,7 @@ import eu.siacs.conversations.entities.Conversational;
 import eu.siacs.conversations.entities.MucOptions;
 import eu.siacs.conversations.persistance.FileBackend;
 import eu.siacs.conversations.services.XmppConnectionService;
+import eu.siacs.conversations.xmpp.forms.Data;
 import eu.siacs.conversations.ui.interfaces.OnBackendConnected;
 import eu.siacs.conversations.ui.interfaces.OnConversationArchived;
 import eu.siacs.conversations.ui.interfaces.OnConversationRead;
@@ -138,7 +141,7 @@ import p32929.easypasscodelock.Utils.EasyLock;
 import com.google.android.material.bottomnavigation.BottomNavigationView;
 
 
-public class ConversationsActivity extends XmppActivity implements OnConversationSelected, OnConversationArchived, OnConversationsListItemUpdated, OnConversationRead, XmppConnectionService.OnAccountUpdate, XmppConnectionService.OnConversationUpdate, XmppConnectionService.OnRosterUpdate, OnUpdateBlocklist, XmppConnectionService.OnShowErrorToast, XmppConnectionService.OnAffiliationChanged, XmppConnectionService.OnRoomDestroy {
+public class ConversationsActivity extends XmppActivity implements OnConversationSelected, OnConversationArchived, OnConversationsListItemUpdated, OnConversationRead, XmppConnectionService.OnAccountUpdate, XmppConnectionService.OnConversationUpdate, XmppConnectionService.OnRosterUpdate, OnUpdateBlocklist, XmppConnectionService.OnShowErrorToast, XmppConnectionService.OnAffiliationChanged, XmppConnectionService.OnRoomDestroy, XmppConnectionService.OnCaptchaRequested {
 
     public static final String ACTION_VIEW_CONVERSATION = "eu.siacs.conversations.VIEW";
     public static final String EXTRA_CONVERSATION = "conversationUuid";
@@ -189,6 +192,8 @@ public class ConversationsActivity extends XmppActivity implements OnConversatio
     private boolean refreshForNewCaps = false;
     private Set<Jid> newCapsJids = new HashSet<>();
     private int mRequestCode = -1;
+
+    private AlertDialog mCaptchaDialog = null;
 
 
     private static boolean isViewOrShareIntent(Intent i) {
@@ -1387,5 +1392,51 @@ public class ConversationsActivity extends XmppActivity implements OnConversatio
         Conversation conversation = ConversationFragment.getConversationReliable(this);
         final boolean groupChat = conversation != null && conversation.isPrivateAndNonAnonymous();
         displayToast(getString(groupChat ? R.string.destroy_room_failed : R.string.destroy_channel_failed));
+    }
+
+    @Override
+    public void onCaptchaRequested(final Account account, final String id, final Data data, final Bitmap captcha) {
+        runOnUiThread(() -> {
+            if ((mCaptchaDialog != null) && mCaptchaDialog.isShowing()) {
+                mCaptchaDialog.dismiss();
+            }
+            final AlertDialog.Builder builder = new AlertDialog.Builder(this);
+            final View view = getLayoutInflater().inflate(R.layout.captcha, null);
+            final ImageView imageView = view.findViewById(R.id.captcha);
+            final EditText input = view.findViewById(R.id.input);
+            imageView.setImageBitmap(captcha);
+
+            builder.setTitle(getString(R.string.captcha_required));
+            builder.setView(view);
+
+            builder.setPositiveButton(getString(R.string.ok),
+                    (dialog, which) -> {
+                        String rc = input.getText().toString();
+                        data.put("ocr", rc);
+                        if (id != null && id.startsWith("muc:")) {
+                            try {
+                                Jid jid = Jid.of(id.substring(4));
+                                data.submit();
+                                xmppConnectionService.sendMucCaptchaPacket(account, jid, data);
+                            } catch (IllegalArgumentException e) {
+                                Log.e(Config.LOGTAG, "Invalid MUC JID in CAPTCHA request", e);
+                            }
+                        } else if (id != null && id.startsWith("reg:")) {
+                            final String iqId = id.substring(4);
+                            data.put("username", account.getUsername());
+                            data.put("password", account.getPassword());
+                            data.submit();
+                            xmppConnectionService.sendCreateAccountWithCaptchaPacket(account, iqId, data);
+                        } else {
+                            data.put("username", account.getUsername());
+                            data.put("password", account.getPassword());
+                            data.submit();
+                            xmppConnectionService.sendCreateAccountWithCaptchaPacket(account, id, data);
+                        }
+                    });
+            builder.setNegativeButton(getString(R.string.cancel), null);
+            mCaptchaDialog = builder.create();
+            mCaptchaDialog.show();
+        });
     }
 }

@@ -18,6 +18,7 @@ import eu.siacs.conversations.entities.Message;
 import eu.siacs.conversations.entities.MucOptions;
 import eu.siacs.conversations.R;
 import eu.siacs.conversations.entities.Presence;
+import eu.siacs.conversations.xmpp.forms.Data;
 import eu.siacs.conversations.generator.IqGenerator;
 import eu.siacs.conversations.generator.PresenceGenerator;
 import eu.siacs.conversations.services.XmppConnectionService;
@@ -335,6 +336,17 @@ public class PresenceParser extends AbstractParser implements
                     mucOptions.setError(MucOptions.Error.RESOURCE_CONSTRAINT);
                 } else if (error.hasChild("remote-server-timeout")) {
                     mucOptions.setError(MucOptions.Error.REMOTE_SERVER_TIMEOUT);
+                } else if (error.hasChild("captcha", Namespace.CAPTCHA)) {
+                    final Element captcha = error.findChild("captcha", Namespace.CAPTCHA);
+                    final Element xForm = captcha == null ? null : captcha.findChild("x", Namespace.DATA);
+                    if (xForm != null) {
+                        mucOptions.setError(MucOptions.Error.CAPTCHA_REQUIRED);
+                        final Data data = Data.parse(xForm);
+                        final Element bob = captcha.findChild("data", "urn:xmpp:bob");
+                        mXmppConnectionService.fetchCaptchaAndDisplay(account, "muc:" + from.asBareJid().toString(), data, bob);
+                    } else {
+                        mucOptions.setError(MucOptions.Error.UNKNOWN);
+                    }
                 } else if (error.hasChild("gone")) {
                     final String gone = error.findChildContent("gone");
                     final Jid alternate;
