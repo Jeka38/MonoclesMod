@@ -1621,9 +1621,17 @@ public class MessageParser extends AbstractParser implements OnMessagePacketRece
             final boolean useTor = mXmppConnectionService.useTorToConnect() || account.isOnion();
             final boolean useI2P = mXmppConnectionService.useI2PToConnect() || account.isI2P();
             try {
-                final String url = data.getValue("url");
+                final String url = getCaptchaUri(data);
                 final String fallbackUrl = data.getValue("captcha-fallback-url");
-                if (url != null) {
+                if (url != null && url.startsWith("cid:")) {
+                    final Element cidBlob = findBobDataByCid(packet, captchaElement, url.substring(4));
+                    if (cidBlob != null) {
+                        final byte[] strBlob = Base64.decode(cidBlob.getContent(), Base64.DEFAULT);
+                        is = new ByteArrayInputStream(strBlob);
+                    } else {
+                        is = null;
+                    }
+                } else if (url != null) {
                     is = HttpConnectionManager.open(url, useTor, useI2P);
                 } else if (fallbackUrl != null) {
                     is = HttpConnectionManager.open(fallbackUrl, useTor, useI2P);
@@ -1636,6 +1644,35 @@ public class MessageParser extends AbstractParser implements OnMessagePacketRece
             }
         }
         return is == null ? null : BitmapFactory.decodeStream(is);
+    }
+
+    private String getCaptchaUri(final Data data) {
+        final String direct = data.getValue("url");
+        if (direct != null) {
+            return direct;
+        }
+        final eu.siacs.conversations.xmpp.forms.Field ocrField = data.getFieldByName("ocr");
+        if (ocrField == null) {
+            return null;
+        }
+        final Element media = ocrField.findChild("media", "urn:xmpp:media-element");
+        return media == null ? null : media.findChildContent("uri", "urn:xmpp:media-element");
+    }
+
+    private Element findBobDataByCid(final MessagePacket packet, final Element captchaElement, final String cid) {
+        if (captchaElement != null) {
+            for (Element child : captchaElement.getChildren()) {
+                if ("data".equals(child.getName()) && "urn:xmpp:bob".equals(child.getNamespace()) && cid.equals(child.getAttribute("cid"))) {
+                    return child;
+                }
+            }
+        }
+        for (Element child : packet.getChildren()) {
+            if ("data".equals(child.getName()) && "urn:xmpp:bob".equals(child.getNamespace()) && cid.equals(child.getAttribute("cid"))) {
+                return child;
+            }
+        }
+        return null;
     }
 
     private class Invite {
