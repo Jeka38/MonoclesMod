@@ -5589,6 +5589,10 @@ public class XmppConnectionService extends Service {
         return getBooleanPreference("use_i2p", R.bool.use_i2p);
     }
 
+    public boolean useProxy65ForFileTransfers() {
+        return getBooleanPreference("use_proxy65", R.bool.use_proxy65);
+    }
+
     public boolean showExtendedConnectionOptions() {
         return getBooleanPreference("show_connection_options", R.bool.show_connection_options);
     }

@@ -747,6 +747,11 @@
                 android:summary="@string/pref_use_i2p_summary"
                 android:title="@string/pref_use_i2p" />
             <SwitchPreference
+                android:defaultValue="@bool/use_proxy65"
+                android:key="use_proxy65"
+                android:summary="@string/pref_use_proxy65_summary"
+                android:title="@string/pref_use_proxy65" />
+            <SwitchPreference
                 android:defaultValue="@bool/show_connection_options"
                 android:key="show_connection_options"
                 android:summary="@string/pref_show_connection_options_summary"

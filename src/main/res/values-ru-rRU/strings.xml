@@ -923,6 +923,8 @@
     <string name="pref_use_colored_names_to_indicate_status_summary">Раскрасить имена контактов для индикации статуса контакта</string>
     <string name="pref_use_i2p">Соединение через I2P</string>
     <string name="pref_use_i2p_summary">Направить все соединения через сеть I2P. Требуется I2P клиент</string>
+    <string name="pref_use_proxy65">Использовать Proxy65 для передачи файлов</string>
+    <string name="pref_use_proxy65_summary">Если включено, исходящая передача файлов будет предпочитать Jingle + SOCKS5 Bytestreams (S5B).</string>
     <string name="pref_use_indicate_received">Уведомления о доставке сообщений</string>
     <string name="pref_use_indicate_received_summary">Если поддерживается, полученные сообщения будут помечены галочкой</string>
     <string name="pref_use_inner_storage">Использование внутреннего хранилища для хранения медиа</string>
