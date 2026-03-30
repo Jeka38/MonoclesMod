@@ -1582,12 +1582,19 @@ public class MessageParser extends AbstractParser implements OnMessagePacketRece
 
     private boolean handleMucCaptchaMessage(final Account account, final MessagePacket packet, final Jid from) {
         final Element captchaElement = packet.findChild("captcha", "urn:xmpp:captcha");
-        if (captchaElement == null || !from.isBareJid()) {
+        final Element dataElement = captchaElement != null
+                ? captchaElement.findChild("x", Namespace.DATA)
+                : packet.findChild("x", Namespace.DATA);
+        final Data data = Data.parse(dataElement);
+        if (data == null) {
             return false;
         }
-        final Data data = Data.parse(captchaElement.findChild("x", Namespace.DATA));
-        final Bitmap captchaBitmap = extractCaptchaBitmap(account, captchaElement, data);
-        if (data == null || captchaBitmap == null) {
+        final String formType = data.getFormType();
+        if (!"urn:xmpp:captcha".equals(formType) && data.getFieldByName("ocr") == null) {
+            return false;
+        }
+        final Bitmap captchaBitmap = extractCaptchaBitmap(account, packet, captchaElement, data);
+        if (captchaBitmap == null) {
             return false;
         }
         final Conversation conversation = mXmppConnectionService.findOrCreateConversation(account, from.asBareJid(), true, false, null, false);
@@ -1595,11 +1602,13 @@ public class MessageParser extends AbstractParser implements OnMessagePacketRece
         return mXmppConnectionService.displayCaptchaRequest(account, challengeId, data, captchaBitmap);
     }
 
-    private Bitmap extractCaptchaBitmap(final Account account, final Element captchaElement, final Data data) {
-        if (captchaElement == null || data == null) {
+    private Bitmap extractCaptchaBitmap(final Account account, final MessagePacket packet, final Element captchaElement, final Data data) {
+        if (data == null) {
             return null;
         }
-        final Element blob = captchaElement.findChild("data", "urn:xmpp:bob");
+        final Element blob = captchaElement != null && captchaElement.findChild("data", "urn:xmpp:bob") != null
+                ? captchaElement.findChild("data", "urn:xmpp:bob")
+                : packet.findChild("data", "urn:xmpp:bob");
         InputStream is;
         if (blob != null) {
             try {
