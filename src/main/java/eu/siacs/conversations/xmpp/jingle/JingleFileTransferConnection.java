@@ -19,6 +19,7 @@ import com.google.common.util.concurrent.SettableFuture;
 
 import eu.siacs.conversations.Config;
 import eu.siacs.conversations.crypto.axolotl.XmppAxolotlMessage;
+import eu.siacs.conversations.entities.Account;
 import eu.siacs.conversations.entities.Conversation;
 import eu.siacs.conversations.entities.Message;
 import eu.siacs.conversations.entities.Transferable;
@@ -515,9 +516,12 @@ public class JingleFileTransferConnection extends AbstractJingleConnection
     private Transport setupTransport() {
         final XmppConnection xmppConnection = id.account.getXmppConnection();
         final boolean useTor = id.account.isOnion() || xmppConnectionService.useTorToConnect();
+        final boolean hasConfiguredProxyServer =
+                !Strings.isNullOrEmpty(id.account.getKey(Account.KEY_PROXY65_HOST));
         final boolean useProxy65ForFileTransfers =
                 xmppConnectionService.useProxy65ForFileTransfers();
-        if (useProxy65ForFileTransfers && remoteHasFeature(Namespace.JINGLE_TRANSPORTS_S5B)) {
+        if ((hasConfiguredProxyServer || useProxy65ForFileTransfers)
+                && remoteHasFeature(Namespace.JINGLE_TRANSPORTS_S5B)) {
             return new SocksByteStreamsTransport(xmppConnection, id, isInitiator(), useTor);
         }
         if (!useTor && remoteHasFeature(Namespace.JINGLE_TRANSPORT_WEBRTC_DATA_CHANNEL)) {
