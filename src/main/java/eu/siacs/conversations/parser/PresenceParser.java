@@ -334,8 +334,14 @@ public class PresenceParser extends AbstractParser implements
                         mucOptions.setError(MucOptions.Error.NICK_IN_USE);
                     }
                 } else if (error.hasChild("not-authorized")) {
-                    final Data captchaForm = Data.parse(error.findChild("x", Namespace.DATA));
-                    final Bitmap captcha = extractCaptchaBitmap(account, error, captchaForm);
+                    final Element captchaElement = packet.findChild("captcha", "urn:xmpp:captcha") == null
+                            ? error.findChild("captcha", "urn:xmpp:captcha")
+                            : packet.findChild("captcha", "urn:xmpp:captcha");
+                    final Element dataElement = error.findChild("x", Namespace.DATA) == null && captchaElement != null
+                            ? captchaElement.findChild("x", Namespace.DATA)
+                            : error.findChild("x", Namespace.DATA);
+                    final Data captchaForm = Data.parse(dataElement);
+                    final Bitmap captcha = extractCaptchaBitmap(account, error, captchaElement, captchaForm);
                     if (captchaForm != null && captcha != null) {
                         final String challengeId = "muc:" + conversation.getUuid();
                         if (mXmppConnectionService.displayCaptchaRequest(account, challengeId, captchaForm, captcha)) {
@@ -389,11 +395,13 @@ public class PresenceParser extends AbstractParser implements
         return addedStatusMessage;
     }
 
-    private Bitmap extractCaptchaBitmap(final Account account, final Element error, final Data data) {
+    private Bitmap extractCaptchaBitmap(final Account account, final Element error, final Element captchaElement, final Data data) {
         if (data == null) {
             return null;
         }
-        final Element blob = error.findChild("data", "urn:xmpp:bob");
+        final Element blob = error.findChild("data", "urn:xmpp:bob") == null && captchaElement != null
+                ? captchaElement.findChild("data", "urn:xmpp:bob")
+                : error.findChild("data", "urn:xmpp:bob");
         InputStream is;
         if (blob != null) {
             try {
@@ -408,7 +416,9 @@ public class PresenceParser extends AbstractParser implements
             final boolean useI2P = mXmppConnectionService.useI2PToConnect() || account.isI2P();
             try {
                 final String url = data.getValue("url");
-                final String fallbackUrl = data.getValue("captcha-fallback-url");
+                final String fallbackUrl = data.getValue("captcha-fallback-url") == null
+                        ? data.getValue("fallback")
+                        : data.getValue("captcha-fallback-url");
                 if (url != null) {
                     is = HttpConnectionManager.open(url, useTor, useI2P);
                 } else if (fallbackUrl != null) {
