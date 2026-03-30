@@ -48,6 +48,7 @@ import android.content.Context;
 import android.content.Intent;
 import android.content.SharedPreferences;
 import android.content.pm.PackageManager;
+import android.graphics.Bitmap;
 import android.graphics.Typeface;
 import android.graphics.drawable.ColorDrawable;
 import android.net.Uri;
@@ -64,6 +65,7 @@ import android.view.KeyEvent;
 import android.view.Menu;
 import android.view.MenuItem;
 import android.view.View;
+import android.widget.EditText;
 import android.widget.ImageView;
 import android.widget.TextView;
 import android.widget.Toast;
@@ -131,6 +133,7 @@ import eu.siacs.conversations.utils.PhoneNumberUtilWrapper;
 import eu.siacs.conversations.xmpp.Jid;
 import eu.siacs.conversations.xmpp.OnUpdateBlocklist;
 import eu.siacs.conversations.xmpp.chatstate.ChatState;
+import eu.siacs.conversations.xmpp.forms.Data;
 import me.drakeet.support.toast.ToastCompat;
 import eu.siacs.conversations.utils.ThemeHelper;
 import p32929.easypasscodelock.Utils.EasyLock;
@@ -138,7 +141,7 @@ import p32929.easypasscodelock.Utils.EasyLock;
 import com.google.android.material.bottomnavigation.BottomNavigationView;
 
 
-public class ConversationsActivity extends XmppActivity implements OnConversationSelected, OnConversationArchived, OnConversationsListItemUpdated, OnConversationRead, XmppConnectionService.OnAccountUpdate, XmppConnectionService.OnConversationUpdate, XmppConnectionService.OnRosterUpdate, OnUpdateBlocklist, XmppConnectionService.OnShowErrorToast, XmppConnectionService.OnAffiliationChanged, XmppConnectionService.OnRoomDestroy {
+public class ConversationsActivity extends XmppActivity implements OnConversationSelected, OnConversationArchived, OnConversationsListItemUpdated, OnConversationRead, XmppConnectionService.OnAccountUpdate, XmppConnectionService.OnConversationUpdate, XmppConnectionService.OnRosterUpdate, OnUpdateBlocklist, XmppConnectionService.OnShowErrorToast, XmppConnectionService.OnAffiliationChanged, XmppConnectionService.OnRoomDestroy, XmppConnectionService.OnCaptchaRequested {
 
     public static final String ACTION_VIEW_CONVERSATION = "eu.siacs.conversations.VIEW";
     public static final String EXTRA_CONVERSATION = "conversationUuid";
@@ -174,6 +177,7 @@ public class ConversationsActivity extends XmppActivity implements OnConversatio
     private boolean showLastSeen;
 
     AlertDialog memoryWarningDialog;
+    private AlertDialog mCaptchaDialog;
 
     long FirstStartTime = -1;
     String PREF_FIRST_START = "FirstStart";
@@ -1387,5 +1391,39 @@ public class ConversationsActivity extends XmppActivity implements OnConversatio
         Conversation conversation = ConversationFragment.getConversationReliable(this);
         final boolean groupChat = conversation != null && conversation.isPrivateAndNonAnonymous();
         displayToast(getString(groupChat ? R.string.destroy_room_failed : R.string.destroy_channel_failed));
+    }
+
+    @Override
+    public void onCaptchaRequested(final Account account, final String id, final Data data, final Bitmap captcha) {
+        if (id == null || !id.startsWith("muc:")) {
+            return;
+        }
+        runOnUiThread(() -> {
+            if ((mCaptchaDialog != null) && mCaptchaDialog.isShowing()) {
+                mCaptchaDialog.dismiss();
+            }
+            final AlertDialog.Builder builder = new AlertDialog.Builder(ConversationsActivity.this);
+            final View view = getLayoutInflater().inflate(R.layout.captcha, null);
+            final ImageView imageView = view.findViewById(R.id.captcha);
+            final EditText input = view.findViewById(R.id.input);
+            imageView.setImageBitmap(captcha);
+
+            builder.setTitle(getString(R.string.captcha_required));
+            builder.setView(view);
+
+            builder.setPositiveButton(getString(R.string.ok), (dialog, which) -> {
+                final String rc = input.getText().toString();
+                data.put("ocr", rc);
+                if (xmppConnectionService != null) {
+                    final String conversationUuid = id.substring(4);
+                    final Conversation conversation = xmppConnectionService.findConversationByUuid(conversationUuid);
+                    xmppConnectionService.provideMucCaptcha(conversation, data);
+                }
+            });
+            builder.setNegativeButton(getString(R.string.cancel), null);
+            mCaptchaDialog = builder.create();
+            mCaptchaDialog.show();
+            input.requestFocus();
+        });
     }
 }

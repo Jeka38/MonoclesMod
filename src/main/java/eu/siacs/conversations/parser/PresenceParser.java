@@ -1,9 +1,15 @@
 package eu.siacs.conversations.parser;
 
+import android.graphics.Bitmap;
+import android.graphics.BitmapFactory;
+import android.util.Base64;
 import android.util.Log;
 
 import org.openintents.openpgp.util.OpenPgpUtils;
 
+import java.io.ByteArrayInputStream;
+import java.io.IOException;
+import java.io.InputStream;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Locale;
@@ -20,6 +26,7 @@ import eu.siacs.conversations.R;
 import eu.siacs.conversations.entities.Presence;
 import eu.siacs.conversations.generator.IqGenerator;
 import eu.siacs.conversations.generator.PresenceGenerator;
+import eu.siacs.conversations.http.HttpConnectionManager;
 import eu.siacs.conversations.services.XmppConnectionService;
 import eu.siacs.conversations.utils.XmppUri;
 import eu.siacs.conversations.xml.Element;
@@ -28,6 +35,7 @@ import eu.siacs.conversations.xmpp.InvalidJid;
 import eu.siacs.conversations.xmpp.Jid;
 import eu.siacs.conversations.xmpp.OnPresencePacketReceived;
 import eu.siacs.conversations.xmpp.pep.Avatar;
+import eu.siacs.conversations.xmpp.forms.Data;
 import eu.siacs.conversations.xmpp.stanzas.PresencePacket;
 
 public class PresenceParser extends AbstractParser implements
@@ -326,7 +334,18 @@ public class PresenceParser extends AbstractParser implements
                         mucOptions.setError(MucOptions.Error.NICK_IN_USE);
                     }
                 } else if (error.hasChild("not-authorized")) {
-                    mucOptions.setError(MucOptions.Error.PASSWORD_REQUIRED);
+                    final Data captchaForm = Data.parse(error.findChild("x", Namespace.DATA));
+                    final Bitmap captcha = extractCaptchaBitmap(account, error, captchaForm);
+                    if (captchaForm != null && captcha != null) {
+                        final String challengeId = "muc:" + conversation.getUuid();
+                        if (mXmppConnectionService.displayCaptchaRequest(account, challengeId, captchaForm, captcha)) {
+                            mucOptions.setError(MucOptions.Error.PASSWORD_REQUIRED);
+                        } else {
+                            mucOptions.setError(MucOptions.Error.UNKNOWN);
+                        }
+                    } else {
+                        mucOptions.setError(MucOptions.Error.PASSWORD_REQUIRED);
+                    }
                 } else if (error.hasChild("forbidden")) {
                     mucOptions.setError(MucOptions.Error.BANNED);
                 } else if (error.hasChild("registration-required")) {
@@ -368,6 +387,41 @@ public class PresenceParser extends AbstractParser implements
             }
         }
         return addedStatusMessage;
+    }
+
+    private Bitmap extractCaptchaBitmap(final Account account, final Element error, final Data data) {
+        if (data == null) {
+            return null;
+        }
+        final Element blob = error.findChild("data", "urn:xmpp:bob");
+        InputStream is;
+        if (blob != null) {
+            try {
+                final String base64Blob = blob.getContent();
+                final byte[] strBlob = Base64.decode(base64Blob, Base64.DEFAULT);
+                is = new ByteArrayInputStream(strBlob);
+            } catch (final Exception e) {
+                is = null;
+            }
+        } else {
+            final boolean useTor = mXmppConnectionService.useTorToConnect() || account.isOnion();
+            final boolean useI2P = mXmppConnectionService.useI2PToConnect() || account.isI2P();
+            try {
+                final String url = data.getValue("url");
+                final String fallbackUrl = data.getValue("captcha-fallback-url");
+                if (url != null) {
+                    is = HttpConnectionManager.open(url, useTor, useI2P);
+                } else if (fallbackUrl != null) {
+                    is = HttpConnectionManager.open(fallbackUrl, useTor, useI2P);
+                } else {
+                    is = null;
+                }
+            } catch (final IOException e) {
+                Log.d(Config.LOGTAG, account.getJid().asBareJid() + ": unable to fetch MUC captcha", e);
+                is = null;
+            }
+        }
+        return is == null ? null : BitmapFactory.decodeStream(is);
     }
 
     private static void invokeRenameListener(final MucOptions options, boolean success) {

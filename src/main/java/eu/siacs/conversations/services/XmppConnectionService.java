@@ -409,6 +409,7 @@ public class XmppConnectionService extends Service {
     private final Set<OnShowErrorToast> mOnShowErrorToasts = Collections.newSetFromMap(new WeakHashMap<OnShowErrorToast, Boolean>());
     private final Set<OnAccountUpdate> mOnAccountUpdates = Collections.newSetFromMap(new WeakHashMap<OnAccountUpdate, Boolean>());
     private final Set<OnCaptchaRequested> mOnCaptchaRequested = Collections.newSetFromMap(new WeakHashMap<OnCaptchaRequested, Boolean>());
+    private final Map<String, Data> pendingMucCaptchaChallenges = Collections.synchronizedMap(new HashMap<>());
     private final Set<OnRosterUpdate> mOnRosterUpdates = Collections.newSetFromMap(new WeakHashMap<OnRosterUpdate, Boolean>());
     private final Set<OnUpdateBlocklist> mOnUpdateBlocklist = Collections.newSetFromMap(new WeakHashMap<OnUpdateBlocklist, Boolean>());
     private final Set<OnMucRosterUpdate> mOnMucRosterUpdate = Collections.newSetFromMap(new WeakHashMap<OnMucRosterUpdate, Boolean>());
@@ -4086,6 +4087,10 @@ public class XmppConnectionService extends Service {
                         // Fallback to muc history
                         x.addChild("history").setAttribute("since", PresenceGenerator.getTimestamp(conversation.getLastMessageTransmitted().getTimestamp()));
                     }
+                    final Data captchaData = pendingMucCaptchaChallenges.remove(conversation.getUuid());
+                    if (captchaData != null) {
+                        packet.addChild(captchaData);
+                    }
                     sendPresencePacket(account, packet);
                     if (onConferenceJoined != null) {
                         onConferenceJoined.onConferenceJoined(conversation);
@@ -5995,6 +6000,15 @@ public class XmppConnectionService extends Service {
             IqPacket request = mIqGenerator.generateCreateAccountWithCaptcha(account, id, data);
             connection.sendUnmodifiedIqPacket(request, connection.registrationResponseListener, true);
         }
+    }
+
+    public void provideMucCaptcha(final Conversation conversation, final Data data) {
+        if (conversation == null || data == null) {
+            return;
+        }
+        data.submit();
+        pendingMucCaptchaChallenges.put(conversation.getUuid(), data);
+        joinMuc(conversation, null, false, null, false);
     }
 
     public void sendIqPacket(final Account account, final IqPacket packet, final OnIqPacketReceived callback) {
