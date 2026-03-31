@@ -1619,7 +1619,14 @@ public class MessageAdapter extends ArrayAdapter<Message> {
         }
 
         resetClickListener(viewHolder.message_box, viewHolder.messageBody);
+        final boolean[] swipeInProgress = {false};
+        final float[] maxSwipeProgress = {0f};
         final View.OnClickListener messageContextClickListener = v -> {
+            if (swipeInProgress[0] || maxSwipeProgress[0] > 0f) {
+                swipeInProgress[0] = false;
+                maxSwipeProgress[0] = 0f;
+                return;
+            }
             if (mConversationFragment != null) {
                 mConversationFragment.showMessageContextMenu(v, message);
             }
@@ -1664,13 +1671,17 @@ public class MessageAdapter extends ArrayAdapter<Message> {
                 swipeLayout.refreshDrawableState();
                 swipeLayout.clearAnimation();
                 swipeArrow.setVisibility(View.GONE);
+                swipeInProgress[0] = false;
+                maxSwipeProgress[0] = 0f;
             }
 
             @Override
             public void onUpdate(SwipeLayout layout, int leftOffset, int topOffset) {
                 layout.setClickToClose(true);
                 swipeArrow.setVisibility(View.VISIBLE);
-                float progress = Math.abs((float) leftOffset / layout.getWidth());
+                float progress = Math.abs((float) leftOffset / Math.max(1, layout.getWidth()));
+                swipeInProgress[0] = progress > 0.03f;
+                maxSwipeProgress[0] = Math.max(maxSwipeProgress[0], progress);
                 swipeArrow.setAlpha(progress);
             }
 
@@ -1679,15 +1690,13 @@ public class MessageAdapter extends ArrayAdapter<Message> {
                 swipeLayout.setClickToClose(true);
                 swipeArrow.setVisibility(View.VISIBLE);
                 swipeArrow.setAlpha(0.5f);
+                swipeInProgress[0] = true;
             }
 
             @Override
             public void onOpen(SwipeLayout layout) {
                 swipeLayout.refreshDrawableState();
                 swipeArrow.setAlpha(1f);
-                if (mOnMessageBoxSwipedListener != null) {
-                    mOnMessageBoxSwipedListener.onContactPictureClicked(message);
-                }
                 swipeLayout.close(true);
                 swipeLayout.setClickToClose(true);
             }
@@ -1702,8 +1711,13 @@ public class MessageAdapter extends ArrayAdapter<Message> {
             @Override
             public void onHandRelease(SwipeLayout layout, float xvel, float yvel) {
                 swipeLayout.refreshDrawableState();
+                if (maxSwipeProgress[0] >= 0.35f && mOnMessageBoxSwipedListener != null) {
+                    mOnMessageBoxSwipedListener.onContactPictureClicked(message);
+                }
                 swipeLayout.close(true);
                 swipeArrow.setVisibility(View.GONE);
+                swipeInProgress[0] = false;
+                maxSwipeProgress[0] = 0f;
             }
         });
 
