@@ -89,7 +89,6 @@ public class ReadMoreTextView extends AppCompatTextView {
         super.setText(text, bufferType);
         super.setText(getDisplayableText(), bufferType);
         setMovementMethod(LinkMovementMethod.getInstance());
-        setHighlightColor(Color.TRANSPARENT);
     }
 
     private CharSequence getDisplayableText() {

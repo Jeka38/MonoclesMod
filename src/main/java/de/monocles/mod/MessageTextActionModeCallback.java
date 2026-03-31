@@ -7,6 +7,7 @@ import android.view.MenuItem;
 import android.widget.TextView;
 
 import eu.siacs.conversations.R;
+import eu.siacs.conversations.entities.Message;
 import eu.siacs.conversations.ui.adapter.MessageAdapter;
 
 public class MessageTextActionModeCallback implements ActionMode.Callback {
@@ -37,8 +38,16 @@ public class MessageTextActionModeCallback implements ActionMode.Callback {
             int end = text.getSelectionEnd();
             if (start < 0 || end < 0) return false;
             adapter.quoteText(text.getText().subSequence(start, end).toString(), null);
+            mode.finish();
 			return true;
-		}
+		} else if (item.getItemId() == R.id.message_options) {
+            final Object tag = text.getTag();
+            if (tag instanceof Message) {
+                adapter.showContextMenu(text, (Message) tag);
+            }
+            mode.finish();
+            return true;
+        }
 		return false;
 	}
 

@@ -496,7 +496,6 @@ public class MessageAdapter extends ArrayAdapter<Message> {
         } else {
             viewHolder.messageBody.setTextAppearance(getContext(), R.style.TextAppearance_Conversations_Body1_Secondary);
         }
-        viewHolder.messageBody.setTextIsSelectable(false);
     }
 
     private void showProgress(final ViewHolder viewHolder, final Transferable transferable, final Message message) {
@@ -741,7 +740,6 @@ public class MessageAdapter extends ArrayAdapter<Message> {
         viewHolder.messageBody.setTypeface(null, Typeface.NORMAL);
 
         if (message.getBody() != null && !message.getBody().equals("")) {
-            viewHolder.messageBody.setTextIsSelectable(false);
             viewHolder.messageBody.setVisibility(View.VISIBLE);
 
             String trimmedBody = message.getBody().trim();
@@ -849,7 +847,6 @@ public class MessageAdapter extends ArrayAdapter<Message> {
         } else {
             Log.d("ChatDebug", "Message is empty");
             viewHolder.messageBody.setText("");
-            viewHolder.messageBody.setTextIsSelectable(false);
             toggleWhisperInfo(viewHolder, message, false, darkBackground);
             viewHolder.images.setVisibility(View.GONE);
         }
@@ -1355,7 +1352,6 @@ public class MessageAdapter extends ArrayAdapter<Message> {
             MyLinkify.addLinks(body, false);
             viewHolder.messageBody.setText(body);
             viewHolder.messageBody.setAutoLinkMask(0);
-            viewHolder.messageBody.setTextIsSelectable(false);
             viewHolder.messageBody.setMovementMethod(ClickableMovementMethod.getInstance());
         } else {
             if (includeBody) {
@@ -1364,7 +1360,6 @@ public class MessageAdapter extends ArrayAdapter<Message> {
                 MyLinkify.addLinks(body, false);
                 viewHolder.messageBody.setText(body);
                 viewHolder.messageBody.setAutoLinkMask(0);
-                viewHolder.messageBody.setTextIsSelectable(false);
                 viewHolder.messageBody.setMovementMethod(ClickableMovementMethod.getInstance());
             } else {
                 viewHolder.messageBody.setVisibility(GONE);
@@ -1503,6 +1498,7 @@ public class MessageAdapter extends ArrayAdapter<Message> {
 
         if (viewHolder.messageBody != null) {
             viewHolder.messageBody.setCustomSelectionActionModeCallback(new MessageTextActionModeCallback(this, viewHolder.messageBody));
+            viewHolder.messageBody.setTag(message);
         }
 
         boolean darkBackground = activity.isDarkTheme();
@@ -2016,6 +2012,12 @@ public class MessageAdapter extends ArrayAdapter<Message> {
 
     public void quoteText(String text, String user) {
         if (mConversationFragment != null) mConversationFragment.quoteText(text, null);
+    }
+
+    public void showContextMenu(View v, Message message) {
+        if (mConversationFragment != null) {
+            mConversationFragment.showMessageContextMenu(v, message);
+        }
     }
 
     public interface OnContactPictureClicked {

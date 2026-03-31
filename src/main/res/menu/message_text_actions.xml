@@ -6,4 +6,9 @@
         android:title="@string/quote"
         android:orderInCategory="1"/>
 
+    <item
+        android:id="@+id/message_options"
+        android:title="@string/message_options"
+        android:orderInCategory="2"/>
+
 </menu>
