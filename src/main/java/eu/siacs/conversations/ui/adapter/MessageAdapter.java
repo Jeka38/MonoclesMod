@@ -1619,27 +1619,14 @@ public class MessageAdapter extends ArrayAdapter<Message> {
         }
 
         resetClickListener(viewHolder.message_box, viewHolder.messageBody);
-        if (activity != null && activity.xmppConnectionService != null && activity.xmppConnectionService.getBooleanPreference("show_thread_feature", R.bool.show_thread_feature)) {
-            viewHolder.message_box.setOnClickListener(v -> {
-                if (MessageAdapter.this.mOnMessageBoxClickedListener != null) {
-                    MessageAdapter.this.mOnMessageBoxClickedListener
-                            .onContactPictureClicked(message);
-                }
-            });
-            viewHolder.messageBody.setOnClickListener(v -> {
-                if (MessageAdapter.this.mOnMessageBoxClickedListener != null) {
-                    MessageAdapter.this.mOnMessageBoxClickedListener
-                            .onContactPictureClicked(message);
-                }
-            });
-        }
-
-        viewHolder.messageBody.setOnClickListener(v -> {
-            if (MessageAdapter.this.mOnMessageBoxClickedListener != null) {
-                MessageAdapter.this.mOnMessageBoxClickedListener
-                        .onContactPictureClicked(message);
+        final View.OnClickListener messageContextClickListener = v -> {
+            if (mConversationFragment != null) {
+                mConversationFragment.showMessageContextMenu(v, message);
             }
-        });
+        };
+        view.setOnClickListener(messageContextClickListener);
+        viewHolder.message_box.setOnClickListener(messageContextClickListener);
+        viewHolder.messageBody.setOnClickListener(messageContextClickListener);
 
         final View.OnLongClickListener messageContextLongClickListener = v -> {
             if (mConversationFragment != null) {
@@ -1661,6 +1648,7 @@ public class MessageAdapter extends ArrayAdapter<Message> {
 
 
         SwipeLayout swipeLayout = view.findViewById(R.id.layout_swipe);
+        swipeLayout.setOnClickListener(messageContextClickListener);
         swipeLayout.setOnLongClickListener(messageContextLongClickListener);
 
         ViewGroup bottomWrapper = view.findViewById(R.id.bottom_wrapper);
@@ -1717,18 +1705,6 @@ public class MessageAdapter extends ArrayAdapter<Message> {
                 swipeLayout.close(true);
                 swipeArrow.setVisibility(View.GONE);
             }
-        });
-
-        // Treat touch-up as click so we don't have to touch twice
-        // (touch twice is because it's waiting to see if you double-touch for text selection)
-        viewHolder.messageBody.setOnTouchListener((v, event) -> {
-            if (event.getAction() == MotionEvent.ACTION_UP) {
-                if (MessageAdapter.this.mOnMessageBoxClickedListener != null) {
-                    MessageAdapter.this.mOnMessageBoxClickedListener
-                            .onContactPictureClicked(message);
-                }
-            }
-            return false;
         });
 
         viewHolder.contact_picture.setOnLongClickListener(v -> {

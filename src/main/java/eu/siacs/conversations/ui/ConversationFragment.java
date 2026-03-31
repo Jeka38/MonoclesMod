@@ -2000,11 +2000,6 @@ public class ConversationFragment extends XmppFragment
         messageListAdapter.setOnMessageBoxSwiped(message -> {
             quoteMessage(message, null);
         });
-        messageListAdapter.setOnMessageBoxClicked(message -> {
-            conversation.setUserSelectedThread(true);
-        });
-
-
         if (activity.xmppConnectionService != null && activity.xmppConnectionService.getBooleanPreference("message_autocomplete", R.bool.message_autocomplete)) {
             Autocomplete.<MucOptions.User>on(binding.textinput)
                     .with(activity.getDrawable(R.drawable.input_bubble_light))
