@@ -1641,6 +1641,15 @@ public class MessageAdapter extends ArrayAdapter<Message> {
             }
         });
 
+        final View.OnLongClickListener messageContextLongClickListener = v -> {
+            if (mConversationFragment != null) {
+                mConversationFragment.showMessageContextMenu(v, message);
+                return true;
+            }
+            return false;
+        };
+        viewHolder.message_box.setOnLongClickListener(messageContextLongClickListener);
+        viewHolder.messageBody.setOnLongClickListener(messageContextLongClickListener);
 
         viewHolder.contact_picture.setOnClickListener(v -> {
             if (MessageAdapter.this.mOnContactPictureClickedListener != null) {

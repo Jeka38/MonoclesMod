@@ -2382,7 +2382,18 @@ public class ConversationFragment extends XmppFragment
         }
     }
 
-    private void populateContextMenu(ContextMenu menu) {
+    public void showMessageContextMenu(@NonNull final View anchor, @NonNull final Message message) {
+        if (activity == null) {
+            return;
+        }
+        this.selectedMessage = message;
+        final PopupMenu popupMenu = new PopupMenu(activity, anchor);
+        populateContextMenu(popupMenu.getMenu());
+        popupMenu.setOnMenuItemClickListener(this::onContextItemSelected);
+        popupMenu.show();
+    }
+
+    private void populateContextMenu(Menu menu) {
         final Message m = this.selectedMessage;
         final Transferable t = m.getTransferable();
         Message relevantForCorrection = m;
