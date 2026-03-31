@@ -1989,6 +1989,16 @@ public class ConversationFragment extends XmppFragment
         messageListAdapter.setOnInlineImageLongClicked(this);
         messageListAdapter.setConversationFragment(this);
         binding.messagesView.setAdapter(messageListAdapter);
+        binding.messagesView.setOnItemLongClickListener((parent, view, position, id) -> {
+            synchronized (this.messageList) {
+                if (position < 0 || position >= this.messageList.size()) {
+                    return false;
+                }
+                final Message message = this.messageList.get(position);
+                showMessageContextMenu(view, message);
+                return true;
+            }
+        });
 
         binding.textinput.addTextChangedListener(
                 new StylingHelper.MessageEditorStyler(binding.textinput, messageListAdapter));

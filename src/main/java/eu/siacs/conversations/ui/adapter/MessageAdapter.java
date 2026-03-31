@@ -1648,6 +1648,7 @@ public class MessageAdapter extends ArrayAdapter<Message> {
             }
             return false;
         };
+        view.setOnLongClickListener(messageContextLongClickListener);
         viewHolder.message_box.setOnLongClickListener(messageContextLongClickListener);
         viewHolder.messageBody.setOnLongClickListener(messageContextLongClickListener);
 
