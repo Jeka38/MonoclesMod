@@ -137,6 +137,7 @@ public class NotificationService {
     public static final int IMPORT_BACKUP_NOTIFICATION_ID = NOTIFICATION_ID_MULTIPLIER * 16;
     public static final int EXPORT_BACKUP_NOTIFICATION_ID = NOTIFICATION_ID_MULTIPLIER * 18;
     public static final int UPDATE_NOTIFICATION_ID = NOTIFICATION_ID_MULTIPLIER * 20;
+    public static final int SUBSCRIPTION_REQUEST_NOTIFICATION_ID = NOTIFICATION_ID_MULTIPLIER * 22;
     private final XmppConnectionService mXmppConnectionService;
     private final LinkedHashMap<String, ArrayList<Message>> notifications = new LinkedHashMap<>();
     private final LinkedHashMap<Conversational, MissedCallsInfo> mMissedCalls =
@@ -663,6 +664,23 @@ public class NotificationService {
         }
     }
 
+    public void pushSubscriptionRequest(final Conversation conversation) {
+        final Account account = conversation.getAccount();
+        final Contact contact = conversation.getContact();
+        final Jid jid = contact.getJid();
+        final String title = mXmppConnectionService.getString(R.string.contact_asks_for_presence_subscription);
+        final String channelId = MESSAGES_CHANNEL_ID + "_" + DEFAULT;
+        final Builder builder = new Builder(mXmppConnectionService, channelId);
+        builder.setContentTitle(title);
+        builder.setContentText(jid.asBareJid().toString());
+        builder.setAutoCancel(true);
+        builder.setSmallIcon(R.drawable.ic_notification);
+        builder.setGroup("subscription_requests");
+        builder.setContentIntent(createContentIntent(conversation));
+        setNotificationColor(builder, account);
+        notify(conversation.getUuid(), SUBSCRIPTION_REQUEST_NOTIFICATION_ID, builder.build());
+    }
+
     public void push(final Message message) {
         synchronized (CATCHUP_LOCK) {
             final XmppConnection connection = message.getConversation().getAccount().getXmppConnection();
@@ -1076,6 +1094,7 @@ public class NotificationService {
     public void clear(final Conversation conversation) {
         clearMessages(conversation);
         clearMissedCalls(conversation);
+        cancel(conversation.getUuid(), SUBSCRIPTION_REQUEST_NOTIFICATION_ID);
     }
 
     public void clearMessages() {
