@@ -13,8 +13,10 @@
     <string name="account_registrations_are_not_supported">Регистрация учетной записи не поддерживается</string>
     <string name="account_settings_example_jabber_id">username@monocles.eu</string>
     <string name="account_settings_hostname">Имя хоста</string>
+    <string name="account_settings_proxy_hostname">Имя прокси-сервера</string>
     <string name="account_settings_jabber_id">Аккаунт</string>
     <string name="account_settings_port">Порт</string>
+    <string name="account_settings_proxy_port">Порт прокси</string>
     <string name="account_status_bind_failure">Неудачная связка</string>
     <string name="account_status_connecting">Подключение…</string>
     <string name="account_status_disabled">Временно отключено</string>
@@ -923,6 +925,8 @@
     <string name="pref_use_colored_names_to_indicate_status_summary">Раскрасить имена контактов для индикации статуса контакта</string>
     <string name="pref_use_i2p">Соединение через I2P</string>
     <string name="pref_use_i2p_summary">Направить все соединения через сеть I2P. Требуется I2P клиент</string>
+    <string name="pref_use_proxy65">Использовать Proxy65 для передачи файлов</string>
+    <string name="pref_use_proxy65_summary">Если включено, исходящая передача файлов будет предпочитать Jingle + SOCKS5 Bytestreams (S5B).</string>
     <string name="pref_use_indicate_received">Уведомления о доставке сообщений</string>
     <string name="pref_use_indicate_received_summary">Если поддерживается, полученные сообщения будут помечены галочкой</string>
     <string name="pref_use_inner_storage">Использование внутреннего хранилища для хранения медиа</string>

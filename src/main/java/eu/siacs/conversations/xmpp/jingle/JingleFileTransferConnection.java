@@ -515,17 +515,12 @@ public class JingleFileTransferConnection extends AbstractJingleConnection
     private Transport setupTransport() {
         final XmppConnection xmppConnection = id.account.getXmppConnection();
         final boolean useTor = id.account.isOnion() || xmppConnectionService.useTorToConnect();
-        if (!useTor && remoteHasFeature(Namespace.JINGLE_TRANSPORT_WEBRTC_DATA_CHANNEL)) {
-            return new WebRTCDataChannelTransport(
-                    xmppConnectionService.getApplicationContext(),
-                    xmppConnection,
-                    id.account,
-                    isInitiator());
-        }
-        if (remoteHasFeature(Namespace.JINGLE_TRANSPORTS_S5B)) {
-            return new SocksByteStreamsTransport(xmppConnection, id, isInitiator(), useTor);
-        }
-        return setupLastResortTransport();
+        return new SocksByteStreamsTransport(xmppConnection, id, isInitiator(), useTor);
+        /*
+         * We intentionally initiate outgoing file transfers via Jingle S5B first.
+         * If S5B cannot be established, onTransportSetupFailed() falls back to IBB
+         * by issuing a transport-replace.
+         */
     }
 
     private Transport setupLastResortTransport() {

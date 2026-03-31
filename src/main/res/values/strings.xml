@@ -495,6 +495,8 @@
     <string name="changelog">Changes</string>
     <string name="account_settings_hostname">Hostname</string>
     <string name="account_settings_port">Port</string>
+    <string name="account_settings_proxy_hostname">Proxy hostname</string>
+    <string name="account_settings_proxy_port">Proxy port</string>
     <string name="hostname_or_onion">Hostname or .onion address</string>
     <string name="not_a_valid_port">This is not a valid port number</string>
     <string name="not_valid_hostname">This is not a valid hostname</string>
@@ -688,6 +690,8 @@
     <string name="pref_use_tor_summary">Tunnel all connections through the Tor network.</string>
     <string name="pref_use_i2p">Connect via I2P</string>
     <string name="pref_use_i2p_summary">Tunnel all connections through the I2P network. Requires I2P client</string>
+    <string name="pref_use_proxy65">Use Proxy65 for file transfers</string>
+    <string name="pref_use_proxy65_summary">When enabled, outgoing file transfers prefer Jingle + SOCKS5 Bytestreams (S5B).</string>
     <string name="pref_connection_options">Connection options</string>
     <string name="image_low">Low (720p)</string>
     <string name="image_mid">Medium (1920p)</string>

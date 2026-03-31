@@ -1993,7 +1993,6 @@ public class ConversationFragment extends XmppFragment
         binding.textinput.addTextChangedListener(
                 new StylingHelper.MessageEditorStyler(binding.textinput, messageListAdapter));
 
-        registerForContextMenu(binding.messagesView);
         registerForContextMenu(binding.textSendButton);
 
         this.binding.textinput.setCustomInsertionActionModeCallback(new EditMessageActionModeCallback(this.binding.textinput));
@@ -2001,11 +2000,6 @@ public class ConversationFragment extends XmppFragment
         messageListAdapter.setOnMessageBoxSwiped(message -> {
             quoteMessage(message, null);
         });
-        messageListAdapter.setOnMessageBoxClicked(message -> {
-            conversation.setUserSelectedThread(true);
-        });
-
-
         if (activity.xmppConnectionService != null && activity.xmppConnectionService.getBooleanPreference("message_autocomplete", R.bool.message_autocomplete)) {
             Autocomplete.<MucOptions.User>on(binding.textinput)
                     .with(activity.getDrawable(R.drawable.input_bubble_light))
@@ -2382,7 +2376,22 @@ public class ConversationFragment extends XmppFragment
         }
     }
 
-    private void populateContextMenu(ContextMenu menu) {
+    public boolean showMessageContextMenu(@NonNull final View anchor, @NonNull final Message message) {
+        if (activity == null) {
+            return false;
+        }
+        this.selectedMessage = message;
+        final PopupMenu popupMenu = new PopupMenu(activity, anchor);
+        populateContextMenu(popupMenu.getMenu());
+        if (popupMenu.getMenu().size() == 0) {
+            return false;
+        }
+        popupMenu.setOnMenuItemClickListener(this::onContextItemSelected);
+        popupMenu.show();
+        return true;
+    }
+
+    private void populateContextMenu(Menu menu) {
         final Message m = this.selectedMessage;
         final Transferable t = m.getTransferable();
         Message relevantForCorrection = m;

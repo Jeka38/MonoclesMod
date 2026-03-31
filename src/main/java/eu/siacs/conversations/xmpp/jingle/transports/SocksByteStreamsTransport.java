@@ -24,6 +24,7 @@ import com.google.common.util.concurrent.MoreExecutors;
 import com.google.common.util.concurrent.SettableFuture;
 
 import eu.siacs.conversations.Config;
+import eu.siacs.conversations.entities.Account;
 import eu.siacs.conversations.utils.SocksSocketFactory;
 import eu.siacs.conversations.xml.Element;
 import eu.siacs.conversations.xml.Namespace;
@@ -305,6 +306,28 @@ public class SocksByteStreamsTransport implements Transport {
     }
 
     private ListenableFuture<Candidate> getProxyCandidate() {
+        final String configuredProxyHost =
+                Strings.nullToEmpty(id.account.getKey(Account.KEY_PROXY65_HOST)).trim();
+        if (!configuredProxyHost.isEmpty()) {
+            final int configuredProxyPort = id.account.getKeyAsInt(Account.KEY_PROXY65_PORT, -1);
+            if (configuredProxyPort > 0 && configuredProxyPort <= 65535) {
+                try {
+                    final Jid configuredProxyJid = Jid.ofEscaped(configuredProxyHost);
+                    return Futures.immediateFuture(
+                            new Candidate(
+                                    UUID.randomUUID().toString(),
+                                    configuredProxyHost,
+                                    configuredProxyJid,
+                                    configuredProxyPort,
+                                    655360 + (initiator ? 0 : 15),
+                                    CandidateType.PROXY));
+                } catch (final IllegalArgumentException e) {
+                    Log.d(Config.LOGTAG, "configured proxy host is not a valid JID", e);
+                }
+            } else {
+                Log.d(Config.LOGTAG, "configured proxy port is invalid");
+            }
+        }
         if (Config.DISABLE_PROXY_LOOKUP) {
             return Futures.immediateFailedFuture(
                     new IllegalStateException("Proxy look up is disabled"));

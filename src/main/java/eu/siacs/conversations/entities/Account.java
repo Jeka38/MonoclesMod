@@ -86,6 +86,8 @@ public class Account extends AbstractEntity implements AvatarService.Avatarable 
     private static final String KEY_PGP_ID = "pgp_id";
     private static final String KEY_PINNED_MECHANISM = "pinned_mechanism";
     public static final String KEY_PRE_AUTH_REGISTRATION_TOKEN = "pre_auth_registration";
+    public static final String KEY_PROXY65_HOST = "proxy65_host";
+    public static final String KEY_PROXY65_PORT = "proxy65_port";
 
 
     protected final JSONObject keys;
