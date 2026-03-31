@@ -17,7 +17,7 @@
 
     <RelativeLayout
         android:id="@+id/bottom_wrapper"
-        android:layout_width="100dp"
+        android:layout_width="120dp"
         android:weightSum="1"
         android:layout_height="wrap_content"
         android:orientation="vertical"

@@ -1680,12 +1680,14 @@ public class MessageAdapter extends ArrayAdapter<Message> {
 
             @Override
             public void onUpdate(SwipeLayout layout, int leftOffset, int topOffset) {
-                layout.setClickToClose(true);
-                swipeArrow.setVisibility(View.VISIBLE);
                 float absOffset = Math.abs((float) leftOffset);
                 float progress = absOffset / Math.max(1, layout.getWidth());
                 swipeInProgress[0] = progress > 0.03f;
                 maxSwipeProgress[0] = Math.max(maxSwipeProgress[0], progress);
+
+                if (swipeInProgress[0] && swipeArrow.getVisibility() != View.VISIBLE) {
+                    swipeArrow.setVisibility(View.VISIBLE);
+                }
 
                 float threshold = 64 * layout.getContext().getResources().getDisplayMetrics().density;
                 if (absOffset >= threshold) {
@@ -1716,24 +1718,16 @@ public class MessageAdapter extends ArrayAdapter<Message> {
             public void onOpen(SwipeLayout layout) {
                 swipeLayout.refreshDrawableState();
                 swipeArrow.setAlpha(1f);
-                swipeLayout.close(true);
-                swipeLayout.setClickToClose(true);
             }
 
             @Override
             public void onStartClose(SwipeLayout layout) {
-                swipeLayout.close(true);
-                swipeLayout.setClickToClose(true);
-                swipeArrow.setVisibility(View.GONE);
             }
 
             @Override
             public void onHandRelease(SwipeLayout layout, float xvel, float yvel) {
                 swipeLayout.refreshDrawableState();
-                float thresholdPx = 64 * layout.getContext().getResources().getDisplayMetrics().density;
-                float progressThreshold = thresholdPx / Math.max(1, layout.getWidth());
-
-                if (maxSwipeProgress[0] >= progressThreshold && mOnMessageBoxSwipedListener != null) {
+                if (thresholdReached[0] && mOnMessageBoxSwipedListener != null) {
                     mOnMessageBoxSwipedListener.onContactPictureClicked(message);
                 }
                 swipeLayout.close(true);
