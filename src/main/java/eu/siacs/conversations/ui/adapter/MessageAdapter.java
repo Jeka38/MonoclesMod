@@ -1643,8 +1643,7 @@ public class MessageAdapter extends ArrayAdapter<Message> {
 
         final View.OnLongClickListener messageContextLongClickListener = v -> {
             if (mConversationFragment != null) {
-                mConversationFragment.showMessageContextMenu(v, message);
-                return true;
+                return mConversationFragment.showMessageContextMenu(v, message);
             }
             return false;
         };
@@ -1662,6 +1661,7 @@ public class MessageAdapter extends ArrayAdapter<Message> {
 
 
         SwipeLayout swipeLayout = view.findViewById(R.id.layout_swipe);
+        swipeLayout.setOnLongClickListener(messageContextLongClickListener);
 
         ViewGroup bottomWrapper = view.findViewById(R.id.bottom_wrapper);
         ImageView swipeArrow = view.findViewById(R.id.swipe_arrow);

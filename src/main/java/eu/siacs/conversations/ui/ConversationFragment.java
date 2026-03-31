@@ -1989,21 +1989,10 @@ public class ConversationFragment extends XmppFragment
         messageListAdapter.setOnInlineImageLongClicked(this);
         messageListAdapter.setConversationFragment(this);
         binding.messagesView.setAdapter(messageListAdapter);
-        binding.messagesView.setOnItemLongClickListener((parent, view, position, id) -> {
-            synchronized (this.messageList) {
-                if (position < 0 || position >= this.messageList.size()) {
-                    return false;
-                }
-                final Message message = this.messageList.get(position);
-                showMessageContextMenu(view, message);
-                return true;
-            }
-        });
 
         binding.textinput.addTextChangedListener(
                 new StylingHelper.MessageEditorStyler(binding.textinput, messageListAdapter));
 
-        registerForContextMenu(binding.messagesView);
         registerForContextMenu(binding.textSendButton);
 
         this.binding.textinput.setCustomInsertionActionModeCallback(new EditMessageActionModeCallback(this.binding.textinput));
@@ -2392,15 +2381,19 @@ public class ConversationFragment extends XmppFragment
         }
     }
 
-    public void showMessageContextMenu(@NonNull final View anchor, @NonNull final Message message) {
+    public boolean showMessageContextMenu(@NonNull final View anchor, @NonNull final Message message) {
         if (activity == null) {
-            return;
+            return false;
         }
         this.selectedMessage = message;
         final PopupMenu popupMenu = new PopupMenu(activity, anchor);
         populateContextMenu(popupMenu.getMenu());
+        if (popupMenu.getMenu().size() == 0) {
+            return false;
+        }
         popupMenu.setOnMenuItemClickListener(this::onContextItemSelected);
         popupMenu.show();
+        return true;
     }
 
     private void populateContextMenu(Menu menu) {
