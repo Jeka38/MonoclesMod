@@ -137,6 +137,7 @@ public class NotificationService {
     public static final int IMPORT_BACKUP_NOTIFICATION_ID = NOTIFICATION_ID_MULTIPLIER * 16;
     public static final int EXPORT_BACKUP_NOTIFICATION_ID = NOTIFICATION_ID_MULTIPLIER * 18;
     public static final int UPDATE_NOTIFICATION_ID = NOTIFICATION_ID_MULTIPLIER * 20;
+    public static final int SUBSCRIPTION_REQUEST_NOTIFICATION_ID = NOTIFICATION_ID_MULTIPLIER * 22;
     private final XmppConnectionService mXmppConnectionService;
     private final LinkedHashMap<String, ArrayList<Message>> notifications = new LinkedHashMap<>();
     private final LinkedHashMap<Conversational, MissedCallsInfo> mMissedCalls =
@@ -675,6 +676,19 @@ public class NotificationService {
         }
     }
 
+    public void pushSubscriptionRequest(final Conversation conversation) {
+        final PendingIntent pendingIntent = createContentIntent(conversation);
+        final int notificationId = generateRequestCode(conversation, 0) + SUBSCRIPTION_REQUEST_NOTIFICATION_ID;
+        final Notification notification =
+                new Builder(mXmppConnectionService, MESSAGES_CHANNEL_ID + "_" + DEFAULT)
+                        .setContentTitle(conversation.getName())
+                        .setContentText(mXmppConnectionService.getString(R.string.contact_added_you))
+                        .setAutoCancel(true)
+                        .setSmallIcon(R.drawable.ic_person_add_white_24dp)
+                        .setContentIntent(pendingIntent).build();
+        notify(notificationId, notification);
+    }
+
     public void pushFailedDelivery(final Message message) {
         final Conversation conversation = (Conversation) message.getConversation();
         final boolean isScreenLocked = !mXmppConnectionService.isScreenLocked();
@@ -1076,6 +1090,7 @@ public class NotificationService {
     public void clear(final Conversation conversation) {
         clearMessages(conversation);
         clearMissedCalls(conversation);
+        cancel(conversation.getUuid(), SUBSCRIPTION_REQUEST_NOTIFICATION_ID);
     }
 
     public void clearMessages() {

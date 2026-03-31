@@ -1501,6 +1501,9 @@ public class MessageAdapter extends ArrayAdapter<Message> {
             }
         }
 
+        view.setVisibility(View.VISIBLE);
+        view.setLayoutParams(new ListView.LayoutParams(ListView.LayoutParams.MATCH_PARENT, ListView.LayoutParams.WRAP_CONTENT));
+
         if (viewHolder.messageBody != null) {
             viewHolder.messageBody.setCustomSelectionActionModeCallback(new MessageTextActionModeCallback(this, viewHolder.messageBody));
         }
