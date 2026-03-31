@@ -5144,6 +5144,9 @@ public class ConversationFragment extends XmppFragment
                 status = Presence.Status.OFFLINE;
             } else if (c.getMode() == Conversation.MODE_SINGLE) {
                 status = c.getContact().getShownStatus();
+            } else if (isPrivateMessage()) {
+                final MucOptions.User user = c.getMucOptions().findUserByFullJid(c.getNextCounterpart());
+                status = user != null ? user.getStatus() : Presence.Status.OFFLINE;
             } else {
                 status = c.getMucOptions().online() ? Presence.Status.ONLINE : Presence.Status.OFFLINE;
             }
@@ -5153,8 +5156,8 @@ public class ConversationFragment extends XmppFragment
         this.binding.textSendButton.setTag(action);
         final Activity activity = getActivity();
         if (activity != null) {
-            this.binding.textSendButton.setImageResource(
-                    SendButtonTool.getSendButtonImageResource(activity, action, status)); // || (c.getThread() != null && binding.textinputSubject.getText().length() > 0))); https://issues.prosody.im/1838
+            this.binding.textSendButton.setImageDrawable(
+                    SendButtonTool.getSendButtonDrawable(activity, action, status)); // || (c.getThread() != null && binding.textinputSubject.getText().length() > 0))); https://issues.prosody.im/1838
         }
         if (hasAttachments || binding.textinput.getText().toString().replaceFirst("^(\\w|[, ])+:\\s*", "").length() > 0) {
             binding.conversationViewPager.setCurrentItem(0);

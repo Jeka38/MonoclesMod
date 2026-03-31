@@ -885,6 +885,7 @@ public class MucOptions {
         protected Set<Hat> hats;
         protected String occupantId;
         protected boolean online = true;
+        private Presence.Status status = Presence.Status.ONLINE;
 
         public User(MucOptions options, Jid fullJid, final String occupantId, final String nick, final Set<Hat> hats) {
             this.options = options;
@@ -1106,6 +1107,14 @@ public class MucOptions {
 
         public boolean isOnline() {
             return fullJid != null && online;
+        }
+
+        public Presence.Status getStatus() {
+            return status;
+        }
+
+        public void setStatus(Presence.Status status) {
+            this.status = status;
         }
     }
 }

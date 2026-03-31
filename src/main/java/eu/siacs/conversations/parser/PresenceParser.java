@@ -85,6 +85,8 @@ public class PresenceParser extends AbstractParser implements
                         if (itemNick != null) {
                             user.setNick(itemNick);
                         }
+                        final String show = packet.findChildContent("show");
+                        user.setStatus(Presence.Status.fromShowString(show));
                         final boolean isSelf = codes.contains(MucOptions.STATUS_CODE_SELF_PRESENCE) || (codes.contains(MucOptions.STATUS_CODE_ROOM_CREATED) && jid.equals(InvalidJid.getNullForInvalid(item.getAttributeAsJid("jid"))));
                         if (isSelf) {
                             final boolean justWentOnline = mucOptions.setOnline();
@@ -273,6 +275,7 @@ public class PresenceParser extends AbstractParser implements
                         if (itemNick != null) {
                             user.setNick(itemNick);
                         }
+                        user.setStatus(Presence.Status.OFFLINE);
                         if (codes.contains(MucOptions.STATUS_CODE_CHANGED_NICK)) {
                             String newNick = item.getAttribute("nick");
                             if (newNick != null) {
