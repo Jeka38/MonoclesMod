@@ -17,7 +17,7 @@
 
     <RelativeLayout
         android:id="@+id/bottom_wrapper"
-        android:layout_width="100dp"
+        android:layout_width="120dp"
         android:weightSum="1"
         android:layout_height="wrap_content"
         android:orientation="vertical"
@@ -27,11 +27,12 @@
         <!-- Arrow ImageView -->
         <ImageView
             android:id="@+id/swipe_arrow"
-            android:layout_width="32dp"
-            android:layout_height="32dp"
-            android:layout_marginTop="30dp"
-            android:src="@drawable/ic_arrow_left"
-            android:visibility="gone" />
+            android:layout_width="24dp"
+            android:layout_height="24dp"
+            android:layout_centerInParent="true"
+            android:src="@drawable/ic_reply_black"
+            android:visibility="gone"
+            app:tint="?attr/colorAccent" />
 
     </RelativeLayout>
 
