@@ -44,20 +44,21 @@ public class PresenceParser extends AbstractParser implements
             boolean before = mucOptions.online();
             int count = mucOptions.getUserCount();
             final List<MucOptions.User> tileUserBefore = mucOptions.getUsers(5);
-            boolean addedStatusMessage = processConferencePresence(packet, conversation);
+            processConferencePresence(packet, conversation);
             final List<MucOptions.User> tileUserAfter = mucOptions.getUsers(5);
             if (!tileUserAfter.equals(tileUserBefore)) {
                 mXmppConnectionService.getAvatarService().clear(mucOptions);
             }
-            if (before != mucOptions.online() || (mucOptions.online() && count != mucOptions.getUserCount()) || addedStatusMessage) {
+            if (before != mucOptions.online() || (mucOptions.online() && count != mucOptions.getUserCount())) {
                 mXmppConnectionService.updateConversationUi();
             } else if (mucOptions.online()) {
                 mXmppConnectionService.updateMucRosterUi();
+                mXmppConnectionService.updateConversationUi();
             }
         }
     }
 
-    private boolean processConferencePresence(PresencePacket packet, Conversation conversation) {
+    private void processConferencePresence(PresencePacket packet, Conversation conversation) {
         final Account account = conversation.getAccount();
         final MucOptions mucOptions = conversation.getMucOptions();
         final Jid jid = conversation.getAccount().getJid();
@@ -86,7 +87,9 @@ public class PresenceParser extends AbstractParser implements
                             user.setNick(itemNick);
                         }
                         final String show = packet.findChildContent("show");
-                        user.setStatus(Presence.Status.fromShowString(show));
+                        final Presence.Status newStatus = Presence.Status.fromShowString(show);
+                        final boolean statusChanged = user.getStatus() != newStatus;
+                        user.setStatus(newStatus);
                         final boolean isSelf = codes.contains(MucOptions.STATUS_CODE_SELF_PRESENCE) || (codes.contains(MucOptions.STATUS_CODE_ROOM_CREATED) && jid.equals(InvalidJid.getNullForInvalid(item.getAttributeAsJid("jid"))));
                         if (isSelf) {
                             final boolean justWentOnline = mucOptions.setOnline();
@@ -320,7 +323,7 @@ public class PresenceParser extends AbstractParser implements
             } else if (type.equals("error")) {
                 final Element error = packet.findChild("error");
                 if (error == null) {
-                    return addedStatusMessage;
+                    return;
                 }
                 if (error.hasChild("conflict")) {
                     if (mucOptions.online()) {
@@ -370,7 +373,6 @@ public class PresenceParser extends AbstractParser implements
                 }
             }
         }
-        return addedStatusMessage;
     }
 
     private static void invokeRenameListener(final MucOptions options, boolean success) {

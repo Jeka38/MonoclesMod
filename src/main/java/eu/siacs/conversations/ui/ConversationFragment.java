@@ -5145,7 +5145,8 @@ public class ConversationFragment extends XmppFragment
             } else if (c.getMode() == Conversation.MODE_SINGLE) {
                 status = c.getContact().getShownStatus();
             } else if (isPrivateMessage()) {
-                final MucOptions.User user = c.getMucOptions().findUserByFullJid(c.getNextCounterpart());
+                final Conversation main = activity.xmppConnectionService.find(c.getAccount(), c.getJid().asBareJid());
+                final MucOptions.User user = main == null ? null : main.getMucOptions().findUserByFullJid(c.getNextCounterpart());
                 status = user != null ? user.getStatus() : Presence.Status.OFFLINE;
             } else {
                 status = c.getMucOptions().online() ? Presence.Status.ONLINE : Presence.Status.OFFLINE;

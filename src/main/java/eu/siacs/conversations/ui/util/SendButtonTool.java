@@ -101,114 +101,48 @@ public class SendButtonTool {
     }
 
     public static Drawable getSendButtonDrawable(Activity activity, SendButtonAction action, Presence.Status status) {
+        final int attrId;
+        final int defaultResId;
         switch (action) {
             case TEXT:
-                switch (status) {
-                    case CHAT:
-                    case ONLINE:
-                        return AppCompatResources.getDrawable(activity, R.drawable.ic_send_text_online);
-                    case AWAY:
-                        return AppCompatResources.getDrawable(activity, R.drawable.ic_send_text_away);
-                    case XA:
-                    case DND:
-                        return AppCompatResources.getDrawable(activity, R.drawable.ic_send_text_dnd);
-                    default:
-                        return getSendButtonColor(activity, R.drawable.ic_send_text_offline_white);
-                }
+                attrId = R.attr.ic_send_text_offline;
+                defaultResId = R.drawable.ic_send_text_offline_white;
+                break;
             case RECORD_VIDEO:
-                switch (status) {
-                    case CHAT:
-                    case ONLINE:
-                        return AppCompatResources.getDrawable(activity, R.drawable.ic_send_videocam_online);
-                    case AWAY:
-                        return AppCompatResources.getDrawable(activity, R.drawable.ic_send_videocam_away);
-                    case XA:
-                    case DND:
-                        return AppCompatResources.getDrawable(activity, R.drawable.ic_send_videocam_dnd);
-                    default:
-                        return getSendButtonColor(activity, R.drawable.ic_send_videocam_offline_white);
-                }
+                attrId = R.attr.ic_send_videocam_offline;
+                defaultResId = R.drawable.ic_send_videocam_offline_white;
+                break;
             case TAKE_PHOTO:
-                switch (status) {
-                    case CHAT:
-                    case ONLINE:
-                        return AppCompatResources.getDrawable(activity, R.drawable.ic_send_photo_online);
-                    case AWAY:
-                        return AppCompatResources.getDrawable(activity, R.drawable.ic_send_photo_away);
-                    case XA:
-                    case DND:
-                        return AppCompatResources.getDrawable(activity, R.drawable.ic_send_photo_dnd);
-                    default:
-                        return getSendButtonColor(activity, R.drawable.ic_send_photo_offline_white);
-                }
+                attrId = R.attr.ic_send_photo_offline;
+                defaultResId = R.drawable.ic_send_photo_offline_white;
+                break;
             case RECORD_VOICE:
-                switch (status) {
-                    case CHAT:
-                    case ONLINE:
-                        return AppCompatResources.getDrawable(activity, R.drawable.ic_send_voice_online);
-                    case AWAY:
-                        return AppCompatResources.getDrawable(activity, R.drawable.ic_send_voice_away);
-                    case XA:
-                    case DND:
-                        return AppCompatResources.getDrawable(activity, R.drawable.ic_send_voice_dnd);
-                    default:
-                        return getSendButtonColor(activity, R.drawable.ic_send_voice_offline_white);
-                }
+                attrId = R.attr.ic_send_voice_offline;
+                defaultResId = R.drawable.ic_send_voice_offline_white;
+                break;
             case SEND_LOCATION:
-                switch (status) {
-                    case CHAT:
-                    case ONLINE:
-                        return AppCompatResources.getDrawable(activity, R.drawable.ic_send_location_online);
-                    case AWAY:
-                        return AppCompatResources.getDrawable(activity, R.drawable.ic_send_location_away);
-                    case XA:
-                    case DND:
-                        return AppCompatResources.getDrawable(activity, R.drawable.ic_send_location_dnd);
-                    default:
-                        return getSendButtonColor(activity, R.drawable.ic_send_location_offline_white);
-                }
+                attrId = R.attr.ic_send_location_offline;
+                defaultResId = R.drawable.ic_send_location_offline_white;
+                break;
             case CANCEL:
-                switch (status) {
-                    case CHAT:
-                    case ONLINE:
-                        return AppCompatResources.getDrawable(activity, R.drawable.ic_send_cancel_online);
-                    case AWAY:
-                        return AppCompatResources.getDrawable(activity, R.drawable.ic_send_cancel_away);
-                    case XA:
-                    case DND:
-                        return AppCompatResources.getDrawable(activity, R.drawable.ic_send_cancel_dnd);
-                    default:
-                        return getSendButtonColor(activity, R.drawable.ic_send_cancel_offline_white);
-                }
+                attrId = R.attr.ic_send_cancel_offline;
+                defaultResId = R.drawable.ic_send_cancel_offline_white;
+                break;
             case CHOOSE_PICTURE:
-                switch (status) {
-                    case CHAT:
-                    case ONLINE:
-                        return AppCompatResources.getDrawable(activity, R.drawable.ic_send_picture_online);
-                    case AWAY:
-                        return AppCompatResources.getDrawable(activity, R.drawable.ic_send_picture_away);
-                    case XA:
-                    case DND:
-                        return AppCompatResources.getDrawable(activity, R.drawable.ic_send_picture_dnd);
-                    default:
-                        return getSendButtonColor(activity, R.drawable.ic_send_picture_offline_white);
-                }
-
+                attrId = R.attr.ic_send_picture_offline;
+                defaultResId = R.drawable.ic_send_picture_offline_white;
+                break;
             case CHOOSE_ATTACHMENT:
-                switch (status) {
-                    case CHAT:
-                    case ONLINE:
-                        return AppCompatResources.getDrawable(activity, R.drawable.ic_send_attachment_online);
-                    case AWAY:
-                        return AppCompatResources.getDrawable(activity, R.drawable.ic_send_attachment_away);
-                    case XA:
-                    case DND:
-                        return AppCompatResources.getDrawable(activity, R.drawable.ic_send_attachment_dnd);
-                    default:
-                        return getSendButtonColor(activity, R.drawable.ic_send_attachment_offline_white);
-                }
+                attrId = R.attr.ic_send_attachment_offline;
+                defaultResId = R.drawable.ic_send_attachment_offline_white;
+                break;
+            default:
+                attrId = R.attr.ic_send_text_offline;
+                defaultResId = R.drawable.ic_send_text_offline_white;
+                break;
         }
-        return AppCompatResources.getDrawable(activity, getThemeResource(activity, R.attr.ic_send_text_offline, R.drawable.ic_send_text_offline));
+        int resourceId = getThemeResource(activity, attrId, defaultResId);
+        return getSendButtonColor(activity, resourceId, status);
     }
 
     private static int getThemeResource(Activity activity, int r_attr_name, int r_drawable_def) {
@@ -221,15 +155,30 @@ public class SendButtonTool {
         return res;
     }
 
-    private static Drawable getSendButtonColor(Activity activity, int ic_send_button_offline_white)
-    {
-        // takes a white drawable, and fills accent color in it
-        Drawable unwrappedDrawable = AppCompatResources.getDrawable(activity.getBaseContext(), ic_send_button_offline_white);
+    private static Drawable getSendButtonColor(Activity activity, int ic_send_button, Presence.Status status) {
+        Drawable unwrappedDrawable = AppCompatResources.getDrawable(activity, ic_send_button);
         if (unwrappedDrawable == null) {
             return null;
         }
         Drawable wrappedDrawable = DrawableCompat.wrap(unwrappedDrawable.mutate());
-        DrawableCompat.setTint(wrappedDrawable, StyledAttributes.getColor(activity, R.attr.colorAccent));
+        final int color;
+        switch (status) {
+            case CHAT:
+            case ONLINE:
+                color = Color.parseColor("#008000");
+                break;
+            case AWAY:
+                color = Color.parseColor("#D99839");
+                break;
+            case XA:
+            case DND:
+                color = Color.parseColor("#E10808");
+                break;
+            default:
+                color = StyledAttributes.getColor(activity, R.attr.colorAccent);
+                break;
+        }
+        DrawableCompat.setTint(wrappedDrawable, color);
         return wrappedDrawable;
     }
 
