@@ -105,7 +105,7 @@
     <bool name="dialler_integration_incoming">true</bool>
     <string name="collapse_message_signs">230</string>
     <bool name="large_font_for_muc_status">false</bool>
-    <bool name="show_muc_status_messages">true</bool>
+    <bool name="show_muc_status_messages">false</bool>
     <bool name="show_join_leave">false</bool>
 
 
