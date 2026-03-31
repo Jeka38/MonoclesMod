@@ -741,7 +741,7 @@ public class MessageAdapter extends ArrayAdapter<Message> {
         viewHolder.messageBody.setTypeface(null, Typeface.NORMAL);
 
         if (message.getBody() != null && !message.getBody().equals("")) {
-            viewHolder.messageBody.setTextIsSelectable(true);
+            viewHolder.messageBody.setTextIsSelectable(false);
             viewHolder.messageBody.setVisibility(View.VISIBLE);
 
             String trimmedBody = message.getBody().trim();
@@ -1355,7 +1355,7 @@ public class MessageAdapter extends ArrayAdapter<Message> {
             MyLinkify.addLinks(body, false);
             viewHolder.messageBody.setText(body);
             viewHolder.messageBody.setAutoLinkMask(0);
-            viewHolder.messageBody.setTextIsSelectable(true);
+            viewHolder.messageBody.setTextIsSelectable(false);
             viewHolder.messageBody.setMovementMethod(ClickableMovementMethod.getInstance());
         } else {
             if (includeBody) {
@@ -1364,7 +1364,7 @@ public class MessageAdapter extends ArrayAdapter<Message> {
                 MyLinkify.addLinks(body, false);
                 viewHolder.messageBody.setText(body);
                 viewHolder.messageBody.setAutoLinkMask(0);
-                viewHolder.messageBody.setTextIsSelectable(true);
+                viewHolder.messageBody.setTextIsSelectable(false);
                 viewHolder.messageBody.setMovementMethod(ClickableMovementMethod.getInstance());
             } else {
                 viewHolder.messageBody.setVisibility(GONE);
