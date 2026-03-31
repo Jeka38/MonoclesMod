@@ -47,6 +47,7 @@ import android.util.Base64;
 import android.util.DisplayMetrics;
 import android.util.Log;
 import android.util.LruCache;
+import android.view.HapticFeedbackConstants;
 import android.view.MotionEvent;
 import android.view.View;
 import android.view.ViewGroup;
@@ -1621,6 +1622,7 @@ public class MessageAdapter extends ArrayAdapter<Message> {
         resetClickListener(viewHolder.message_box, viewHolder.messageBody);
         final boolean[] swipeInProgress = {false};
         final float[] maxSwipeProgress = {0f};
+        final boolean[] thresholdReached = {false};
         final View.OnClickListener messageContextClickListener = v -> {
             if (swipeInProgress[0] || maxSwipeProgress[0] > 0f) {
                 swipeInProgress[0] = false;
@@ -1673,16 +1675,33 @@ public class MessageAdapter extends ArrayAdapter<Message> {
                 swipeArrow.setVisibility(View.GONE);
                 swipeInProgress[0] = false;
                 maxSwipeProgress[0] = 0f;
+                thresholdReached[0] = false;
             }
 
             @Override
             public void onUpdate(SwipeLayout layout, int leftOffset, int topOffset) {
                 layout.setClickToClose(true);
                 swipeArrow.setVisibility(View.VISIBLE);
-                float progress = Math.abs((float) leftOffset / Math.max(1, layout.getWidth()));
+                float absOffset = Math.abs((float) leftOffset);
+                float progress = absOffset / Math.max(1, layout.getWidth());
                 swipeInProgress[0] = progress > 0.03f;
                 maxSwipeProgress[0] = Math.max(maxSwipeProgress[0], progress);
-                swipeArrow.setAlpha(progress);
+
+                float threshold = 64 * layout.getContext().getResources().getDisplayMetrics().density;
+                if (absOffset >= threshold) {
+                    if (!thresholdReached[0]) {
+                        swipeLayout.performHapticFeedback(HapticFeedbackConstants.LONG_PRESS);
+                        thresholdReached[0] = true;
+                    }
+                    swipeArrow.setAlpha(1.0f);
+                    swipeArrow.setScaleX(1.2f);
+                    swipeArrow.setScaleY(1.2f);
+                } else {
+                    thresholdReached[0] = false;
+                    swipeArrow.setAlpha(Math.min(1.0f, absOffset / threshold));
+                    swipeArrow.setScaleX(1.0f);
+                    swipeArrow.setScaleY(1.0f);
+                }
             }
 
             @Override
@@ -1711,13 +1730,17 @@ public class MessageAdapter extends ArrayAdapter<Message> {
             @Override
             public void onHandRelease(SwipeLayout layout, float xvel, float yvel) {
                 swipeLayout.refreshDrawableState();
-                if (maxSwipeProgress[0] >= 0.35f && mOnMessageBoxSwipedListener != null) {
+                float thresholdPx = 64 * layout.getContext().getResources().getDisplayMetrics().density;
+                float progressThreshold = thresholdPx / Math.max(1, layout.getWidth());
+
+                if (maxSwipeProgress[0] >= progressThreshold && mOnMessageBoxSwipedListener != null) {
                     mOnMessageBoxSwipedListener.onContactPictureClicked(message);
                 }
                 swipeLayout.close(true);
                 swipeArrow.setVisibility(View.GONE);
                 swipeInProgress[0] = false;
                 maxSwipeProgress[0] = 0f;
+                thresholdReached[0] = false;
             }
         });
 
