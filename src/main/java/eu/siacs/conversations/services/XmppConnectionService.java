@@ -3778,6 +3778,8 @@ public class XmppConnectionService extends Service {
             remainingListeners = checkListeners();
             if (!this.mOnCaptchaRequested.add(listener)) {
                 Log.w(Config.LOGTAG, listener.getClass().getName() + " is already registered as OnCaptchaRequestListener");
+            } else {
+                Log.d(Config.LOGTAG, listener.getClass().getName() + " registered as OnCaptchaRequestListener (total=" + mOnCaptchaRequested.size() + ")");
             }
         }
         if (remainingListeners) {
@@ -3789,6 +3791,7 @@ public class XmppConnectionService extends Service {
         final boolean remainingListeners;
         synchronized (LISTENER_LOCK) {
             this.mOnCaptchaRequested.remove(listener);
+            Log.d(Config.LOGTAG, listener.getClass().getName() + " removed from OnCaptchaRequestListeners (remaining=" + mOnCaptchaRequested.size() + ")");
             remainingListeners = checkListeners();
         }
         if (remainingListeners) {
@@ -5710,6 +5713,7 @@ public class XmppConnectionService extends Service {
     }
 
     public boolean displayCaptchaRequest(Account account, String id, Data data, Bitmap captcha) {
+        Log.d(Config.LOGTAG, account.getJid().asBareJid() + ": dispatching captcha request id=" + id + " to " + mOnCaptchaRequested.size() + " listeners");
         if (mOnCaptchaRequested.size() > 0) {
             DisplayMetrics metrics = getApplicationContext().getResources().getDisplayMetrics();
             Bitmap scaled = Bitmap.createScaledBitmap(captcha, (int) (captcha.getWidth() * metrics.scaledDensity),

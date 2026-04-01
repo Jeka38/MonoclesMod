@@ -98,6 +98,7 @@ import eu.siacs.conversations.utils.EasyOnboardingInvite;
 import eu.siacs.conversations.utils.ExceptionHelper;
 import eu.siacs.conversations.utils.MenuDoubleTabUtil;
 import eu.siacs.conversations.utils.ThemeHelper;
+import eu.siacs.conversations.xmpp.forms.Data;
 import eu.siacs.conversations.xmpp.Jid;
 import eu.siacs.conversations.xmpp.OnKeyStatusUpdated;
 import eu.siacs.conversations.xmpp.OnUpdateBlocklist;
@@ -118,7 +119,7 @@ import java.util.concurrent.RejectedExecutionException;
 
 import static eu.siacs.conversations.ui.SettingsActivity.ENABLE_OTR_ENCRYPTION;
 
-public abstract class XmppActivity extends ActionBarActivity {
+public abstract class XmppActivity extends ActionBarActivity implements XmppConnectionService.OnCaptchaRequested {
 
     protected static final int REQUEST_ANNOUNCE_PGP = 0x0101;
     protected static final int REQUEST_INVITE_TO_CONVERSATION = 0x0102;
@@ -1596,6 +1597,42 @@ public abstract class XmppActivity extends ActionBarActivity {
         if (AvatarPopup != null && AvatarPopup.isShowing()) {
             AvatarPopup.cancel();
         }
+    }
+
+    @Override
+    public void onCaptchaRequested(final Account account, final String id, final Data data, final Bitmap captcha) {
+        runOnUiThread(() -> {
+            final AlertDialog.Builder builder = new AlertDialog.Builder(this);
+            final View view = getLayoutInflater().inflate(R.layout.captcha, null);
+            final ImageView imageView = view.findViewById(R.id.captcha);
+            final eu.siacs.conversations.ui.widget.TextInputEditText input = view.findViewById(R.id.input);
+            imageView.setImageBitmap(captcha);
+            builder.setTitle(R.string.captcha_dialog_title);
+            builder.setView(view);
+            builder.setPositiveButton(R.string.ok, (dialog, which) -> {
+                String rc = input.getText().toString();
+                if (id.startsWith("reg:")) {
+                    data.put("username", account.getUsername());
+                    data.put("password", account.getPassword());
+                }
+                data.put("ocr", rc);
+                data.submit();
+                if (xmppConnectionServiceBound) {
+                    xmppConnectionService.sendCaptchaResponse(account, id, data);
+                }
+            });
+            builder.setNegativeButton(R.string.cancel, (dialog, which) -> {
+                if (id.startsWith("reg:") && xmppConnectionServiceBound) {
+                    xmppConnectionService.sendCaptchaResponse(account, id, null);
+                }
+            });
+            builder.setOnCancelListener(dialog -> {
+                if (id.startsWith("reg:") && xmppConnectionServiceBound) {
+                    xmppConnectionService.sendCaptchaResponse(account, id, null);
+                }
+            });
+            builder.show();
+        });
     }
 
     public void ShowStatusImagePopup(final Activity activity, final String imageUrl) {

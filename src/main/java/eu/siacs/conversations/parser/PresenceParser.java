@@ -72,6 +72,7 @@ public class PresenceParser extends AbstractParser implements
                 if (captcha != null) {
                     final Data data = Data.parse(captcha.findChild("x", Namespace.DATA));
                     if (data != null) {
+                        Log.d(Config.LOGTAG, account.getJid().asBareJid() + ": CAPTCHA challenge received in conference " + from.asBareJid());
                         mucOptions.setError(MucOptions.Error.CAPTCHA_REQUIRED);
                         final Message statusMessage = Message.createStatusMessage(conversation, mXmppConnectionService.getString(R.string.captcha_required));
                         conversation.add(statusMessage);

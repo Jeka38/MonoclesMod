@@ -59,7 +59,6 @@ import eu.siacs.conversations.services.NotificationService;
 import eu.siacs.conversations.services.XmppConnectionService;
 import eu.siacs.conversations.services.XmppConnectionService.OnConversationUpdate;
 import eu.siacs.conversations.services.XmppConnectionService.OnMucRosterUpdate;
-import eu.siacs.conversations.services.XmppConnectionService.OnCaptchaRequested;
 import android.graphics.Bitmap;
 import eu.siacs.conversations.xmpp.forms.Data;
 import android.widget.ImageView;
@@ -85,7 +84,7 @@ import eu.siacs.conversations.xmpp.Jid;
 import eu.siacs.conversations.xmpp.XmppConnection;
 import me.drakeet.support.toast.ToastCompat;
 
-public class ConferenceDetailsActivity extends XmppActivity implements OnConversationUpdate, OnMucRosterUpdate, XmppConnectionService.OnAffiliationChanged, XmppConnectionService.OnConfigurationPushed, TextWatcher, OnMediaLoaded, OnCaptchaRequested {
+public class ConferenceDetailsActivity extends XmppActivity implements OnConversationUpdate, OnMucRosterUpdate, XmppConnectionService.OnAffiliationChanged, XmppConnectionService.OnConfigurationPushed, TextWatcher, OnMediaLoaded {
     public static final String ACTION_VIEW_MUC = "view_muc";
     private Conversation mConversation;
     private OnClickListener destroyListener = new OnClickListener() {
@@ -885,33 +884,6 @@ public class ConferenceDetailsActivity extends XmppActivity implements OnConvers
     @Override
     public void onTextChanged(CharSequence s, int start, int before, int count) {
 
-    }
-
-    @Override
-    public void onCaptchaRequested(final Account account, final String id, final Data data, final Bitmap captcha) {
-        runOnUiThread(() -> {
-            final AlertDialog.Builder builder = new AlertDialog.Builder(this);
-            final View view = getLayoutInflater().inflate(R.layout.captcha, null);
-            final ImageView imageView = view.findViewById(R.id.captcha);
-            final eu.siacs.conversations.ui.widget.TextInputEditText input = view.findViewById(R.id.input);
-            imageView.setImageBitmap(captcha);
-            builder.setTitle(R.string.captcha_dialog_title);
-            builder.setView(view);
-            builder.setPositiveButton(R.string.ok, (dialog, which) -> {
-                String rc = input.getText().toString();
-                if (id.startsWith("reg:")) {
-                    data.put("username", account.getUsername());
-                    data.put("password", account.getPassword());
-                }
-                data.put("ocr", rc);
-                data.submit();
-                if (xmppConnectionServiceBound) {
-                    xmppConnectionService.sendCaptchaResponse(account, id, data);
-                }
-            });
-            builder.setNegativeButton(R.string.cancel, null);
-            builder.show();
-        });
     }
 
     @Override
