@@ -485,6 +485,7 @@
     <string name="fetching_mam_prefs">Fetching archiving preferences. Please wait…</string>
     <string name="unable_to_fetch_mam_prefs">Unable to fetch archiving preferences</string>
     <string name="captcha_required">Captcha required</string>
+    <string name="solve">Solve</string>
     <string name="captcha_dialog_title">Captcha</string>
     <string name="captcha_hint">Enter the seen text</string>
     <string name="certificate_chain_is_not_trusted">Certificate chain is not trusted</string>

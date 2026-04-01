@@ -232,6 +232,7 @@ import eu.siacs.conversations.xmpp.OnUpdateBlocklist;
 import eu.siacs.conversations.xmpp.XmppConnection;
 import eu.siacs.conversations.xmpp.chatstate.ChatState;
 import eu.siacs.conversations.xmpp.forms.Data;
+import eu.siacs.conversations.xmpp.forms.Field;
 import eu.siacs.conversations.xmpp.jingle.AbstractJingleConnection;
 import eu.siacs.conversations.xmpp.jingle.JingleConnectionManager;
 import eu.siacs.conversations.xmpp.jingle.JingleRtpConnection;
@@ -411,6 +412,21 @@ public class XmppConnectionService extends Service {
     private final Set<OnShowErrorToast> mOnShowErrorToasts = Collections.newSetFromMap(new WeakHashMap<OnShowErrorToast, Boolean>());
     private final Set<OnAccountUpdate> mOnAccountUpdates = Collections.newSetFromMap(new WeakHashMap<OnAccountUpdate, Boolean>());
     private final Set<OnCaptchaRequested> mOnCaptchaRequested = Collections.newSetFromMap(new WeakHashMap<OnCaptchaRequested, Boolean>());
+    private final Map<String, CaptchaRequest> mPendingCaptchas = new HashMap<>();
+
+    public static class CaptchaRequest {
+        public final Account account;
+        public final String id;
+        public final Data data;
+        public final Element container;
+
+        public CaptchaRequest(Account account, String id, Data data, Element container) {
+            this.account = account;
+            this.id = id;
+            this.data = data;
+            this.container = container;
+        }
+    }
     private final Set<OnRosterUpdate> mOnRosterUpdates = Collections.newSetFromMap(new WeakHashMap<OnRosterUpdate, Boolean>());
     private final Set<OnUpdateBlocklist> mOnUpdateBlocklist = Collections.newSetFromMap(new WeakHashMap<OnUpdateBlocklist, Boolean>());
     private final Set<OnMucRosterUpdate> mOnMucRosterUpdate = Collections.newSetFromMap(new WeakHashMap<OnMucRosterUpdate, Boolean>());
@@ -5715,9 +5731,14 @@ public class XmppConnectionService extends Service {
     public boolean displayCaptchaRequest(Account account, String id, Data data, Bitmap captcha) {
         Log.d(Config.LOGTAG, account.getJid().asBareJid() + ": dispatching captcha request id=" + id + " to " + mOnCaptchaRequested.size() + " listeners");
         if (mOnCaptchaRequested.size() > 0) {
-            DisplayMetrics metrics = getApplicationContext().getResources().getDisplayMetrics();
-            Bitmap scaled = Bitmap.createScaledBitmap(captcha, (int) (captcha.getWidth() * metrics.scaledDensity),
-                    (int) (captcha.getHeight() * metrics.scaledDensity), false);
+            final Bitmap scaled;
+            if (captcha != null) {
+                DisplayMetrics metrics = getApplicationContext().getResources().getDisplayMetrics();
+                scaled = Bitmap.createScaledBitmap(captcha, (int) (captcha.getWidth() * metrics.scaledDensity),
+                        (int) (captcha.getHeight() * metrics.scaledDensity), false);
+            } else {
+                scaled = null;
+            }
             for (OnCaptchaRequested listener : threadSafeList(this.mOnCaptchaRequested)) {
                 listener.onCaptchaRequested(account, id, data, scaled);
             }
@@ -6016,36 +6037,95 @@ public class XmppConnectionService extends Service {
     }
 
     public void fetchCaptchaAndDisplay(final Account account, final String id, final Data data, final Element container) {
-        final String url = data.getValue("url");
+        mPendingCaptchas.put(id, new CaptchaRequest(account, id, data, container));
+        String url = data.getValue("url");
         final String fallbackUrl = data.getValue("captcha-fallback-url");
-        final Element finalBob = findBobData(container);
+        Element finalBob = findBobData(container);
+
+        if (url == null && finalBob == null) {
+            for (Field field : data.getFields()) {
+                Element media = field.findChild("media", "urn:xmpp:media-element");
+                if (media != null) {
+                    for (Element uriEl : media.getChildren()) {
+                        if ("uri".equals(uriEl.getName()) && "urn:xmpp:media-element".equals(uriEl.getNamespace())) {
+                            String content = uriEl.getContent();
+                            if (content != null && content.startsWith("cid:")) {
+                                finalBob = findBobData(container, content.substring(4));
+                            } else if (content != null && (content.startsWith("http://") || content.startsWith("https://"))) {
+                                url = content;
+                            }
+                        }
+                        if (url != null || finalBob != null) {
+                            break;
+                        }
+                    }
+                }
+                if (url != null || finalBob != null) {
+                    break;
+                }
+            }
+        }
+
+        final String finalUrl = url;
+        final Element bob = finalBob;
         final boolean useTor = useTorToConnect() || account.isOnion();
         final boolean useI2P = useI2PToConnect() || account.isI2P();
-        Log.d(Config.LOGTAG, account.getJid().asBareJid() + ": fetch captcha id=" + id + " bob=" + (finalBob != null) + " url=" + url);
+        Log.d(Config.LOGTAG, account.getJid().asBareJid() + ": fetch captcha id=" + id + " bob=" + (bob != null) + " url=" + finalUrl);
         new Thread(() -> {
             InputStream is = null;
-            if (finalBob != null) {
+            if (bob != null) {
                 try {
-                    final String base64Blob = finalBob.getContent();
+                    final String base64Blob = bob.getContent();
                     final byte[] strBlob = android.util.Base64.decode(base64Blob, android.util.Base64.DEFAULT);
                     is = new java.io.ByteArrayInputStream(strBlob);
                 } catch (Exception e) {
                     is = null;
                 }
-            } else if (url != null || fallbackUrl != null) {
+            } else if (finalUrl != null || fallbackUrl != null) {
                 try {
-                    is = HttpConnectionManager.open(url != null ? url : fallbackUrl, useTor, useI2P);
+                    is = HttpConnectionManager.open(finalUrl != null ? finalUrl : fallbackUrl, useTor, useI2P);
                 } catch (IOException e) {
                     is = null;
                 }
             }
             if (is != null) {
                 Bitmap captcha = BitmapFactory.decodeStream(is);
-                if (captcha != null) {
-                    displayCaptchaRequest(account, id, data, captcha);
-                }
+                displayCaptchaRequest(account, id, data, captcha);
+            } else {
+                displayCaptchaRequest(account, id, data, null);
             }
         }).start();
+    }
+
+    private Element findBobData(Element element, String cid) {
+        if (element == null) {
+            return null;
+        }
+        if (element.getName().equals("data") && "urn:xmpp:bob".equals(element.getAttribute("xmlns")) && cid.equals(element.getAttribute("cid"))) {
+            return element;
+        }
+        for (Element child : element.getChildren()) {
+            Element result = findBobData(child, cid);
+            if (result != null) {
+                return result;
+            }
+        }
+        return null;
+    }
+
+    public void retryCaptcha(String id) {
+        CaptchaRequest request = mPendingCaptchas.get(id);
+        if (request == null) {
+            for (CaptchaRequest r : mPendingCaptchas.values()) {
+                if (r.id.startsWith(id)) {
+                    request = r;
+                    break;
+                }
+            }
+        }
+        if (request != null) {
+            fetchCaptchaAndDisplay(request.account, request.id, request.data, request.container);
+        }
     }
 
     public void sendCaptchaResponse(Account account, String id, Data data) {

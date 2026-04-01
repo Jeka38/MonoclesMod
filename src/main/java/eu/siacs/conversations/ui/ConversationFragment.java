@@ -4962,6 +4962,10 @@ public class ConversationFragment extends XmppFragment
                 }
             } else if (error == MucOptions.Error.PASSWORD_REQUIRED) {
                 showSnackbar(R.string.conference_requires_password, R.string.enter_password, enterPassword);
+            } else if (error == MucOptions.Error.CAPTCHA_REQUIRED) {
+                showSnackbar(R.string.captcha_required, R.string.solve, v -> {
+                    activity.xmppConnectionService.retryCaptcha("muc:" + conversation.getJid().asBareJid().toString());
+                });
             } else if (error == MucOptions.Error.BANNED) {
                 showSnackbar(R.string.conference_banned, R.string.leave, leaveMuc);
             } else if (error == MucOptions.Error.MEMBERS_ONLY) {

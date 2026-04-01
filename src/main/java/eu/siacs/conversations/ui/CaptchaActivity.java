@@ -54,6 +54,8 @@ public class CaptchaActivity extends XmppActivity {
 
         if (captchaBitmap != null) {
             binding.captchaImage.setImageBitmap(captchaBitmap);
+        } else {
+            binding.captchaImage.setVisibility(View.GONE);
         }
 
         if (data != null) {
