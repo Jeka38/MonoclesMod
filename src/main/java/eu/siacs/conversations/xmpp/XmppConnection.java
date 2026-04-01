@@ -1857,7 +1857,7 @@ public class XmppConnection implements Runnable {
                     } else if (query.hasChild("x", Namespace.DATA)) {
                         final Data data = Data.parse(query.findChild("x", Namespace.DATA));
                         final String id = packet.getId();
-                        mXmppConnectionService.fetchCaptchaAndDisplay(account, "reg:" + id, data);
+                        mXmppConnectionService.fetchCaptchaAndDisplay(account, "reg:" + id, data, query);
                         return;
                     } else if (query.hasChild("instructions")
                             || query.hasChild("x", Namespace.OOB)) {

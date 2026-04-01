@@ -5995,17 +5995,34 @@ public class XmppConnectionService extends Service {
         }
     }
 
-    public void fetchCaptchaAndDisplay(final Account account, final String id, final Data data) {
+    public void fetchCaptchaAndDisplay(final Account account, final String id, final Data data, final Element container) {
         final String url = data.getValue("url");
         final String fallbackUrl = data.getValue("captcha-fallback-url");
-        final Element bob = data.findChild("data", "urn:xmpp:bob");
+        Element bob = container != null ? container.findChild("data", "urn:xmpp:bob") : null;
+        if (bob == null && container != null) {
+            bob = container.findChild("query", Namespace.REGISTER) != null ? container.findChild("query", Namespace.REGISTER).findChild("data", "urn:xmpp:bob") : null;
+        }
+        if (bob == null && container != null) {
+            Element error = container.findChild("error");
+            if (error != null) {
+                bob = error.findChild("data", "urn:xmpp:bob");
+                if (bob == null) {
+                    Element captcha = error.findChild("captcha", "urn:xmpp:captcha");
+                    if (captcha != null) {
+                        bob = captcha.findChild("data", "urn:xmpp:bob");
+                    }
+                }
+            }
+        }
+        final Element finalBob = bob;
         final boolean useTor = useTorToConnect() || account.isOnion();
         final boolean useI2P = useI2PToConnect() || account.isI2P();
+        Log.d(Config.LOGTAG, account.getJid().asBareJid() + ": fetch captcha id=" + id + " bob=" + (finalBob != null) + " url=" + url);
         new Thread(() -> {
             InputStream is = null;
-            if (bob != null) {
+            if (finalBob != null) {
                 try {
-                    final String base64Blob = bob.getContent();
+                    final String base64Blob = finalBob.getContent();
                     final byte[] strBlob = android.util.Base64.decode(base64Blob, android.util.Base64.DEFAULT);
                     is = new java.io.ByteArrayInputStream(strBlob);
                 } catch (Exception e) {
@@ -6034,6 +6051,7 @@ public class XmppConnectionService extends Service {
             if (conversation != null && conversation.getMode() == Conversation.MODE_MULTI) {
                 PresencePacket packet = mPresenceGenerator.selfPresence(account, Presence.Status.ONLINE, false, conversation.getMucOptions().getActualNick());
                 packet.setTo(conversation.getJid());
+                packet.addChild("x", "http://jabber.org/protocol/muc");
                 if (data != null) {
                     packet.addChild(data);
                 }

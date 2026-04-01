@@ -64,8 +64,22 @@ public class PresenceParser extends AbstractParser implements
         final Jid jid = conversation.getAccount().getJid();
         final Jid from = packet.getFrom();
         boolean addedStatusMessage = false;
+        final String type = packet.getAttribute("type");
+        if (type != null && type.equals("error")) {
+            final Element error = packet.findChild("error");
+            if (error != null) {
+                final Element captcha = error.findChild("captcha", "urn:xmpp:captcha");
+                if (captcha != null) {
+                    final Data data = Data.parse(captcha.findChild("x", Namespace.DATA));
+                    if (data != null) {
+                        mucOptions.setError(MucOptions.Error.CAPTCHA_REQUIRED);
+                        mXmppConnectionService.fetchCaptchaAndDisplay(account, "muc:" + from.asBareJid().toString(), data, packet);
+                        return false;
+                    }
+                }
+            }
+        }
         if (!from.isBareJid()) {
-            final String type = packet.getAttribute("type");
             final Element x = packet.findChild("x", Namespace.MUC_USER);
             final Element nick = packet.findChild("nick", Namespace.NICK);
             Element hats = packet.findChild("hats", "urn:xmpp:hats:0");
@@ -319,15 +333,6 @@ public class PresenceParser extends AbstractParser implements
                 final Element error = packet.findChild("error");
                 if (error == null) {
                     return addedStatusMessage;
-                }
-                final Element captcha = error.findChild("captcha", "urn:xmpp:captcha");
-                if (captcha != null) {
-                    final Data data = Data.parse(captcha.findChild("x", Namespace.DATA));
-                    if (data != null) {
-                        mucOptions.setError(MucOptions.Error.CAPTCHA_REQUIRED);
-                        mXmppConnectionService.fetchCaptchaAndDisplay(account, "muc:" + from.asBareJid().toString(), data);
-                        return addedStatusMessage;
-                    }
                 }
                 if (error.hasChild("conflict")) {
                     if (mucOptions.online()) {
