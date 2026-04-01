@@ -606,5 +606,11 @@
             android:launchMode="singleInstance"
             android:exported="false"
             android:supportsPictureInPicture="true" />
+
+        <activity
+            android:name=".ui.CaptchaActivity"
+            android:label="@string/captcha_dialog_title"
+            android:exported="false"
+            android:windowSoftInputMode="adjustResize|stateVisible" />
     </application>
 </manifest>

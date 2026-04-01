@@ -1603,53 +1603,12 @@ public abstract class XmppActivity extends ActionBarActivity implements XmppConn
     @Override
     public void onCaptchaRequested(final Account account, final String id, final Data data, final Bitmap captcha) {
         runOnUiThread(() -> {
-            final AlertDialog.Builder builder = new AlertDialog.Builder(this);
-            final View view = getLayoutInflater().inflate(R.layout.captcha, null);
-            final ImageView imageView = view.findViewById(R.id.captcha);
-            final eu.siacs.conversations.ui.widget.TextInputEditText input = view.findViewById(R.id.input);
-            imageView.setImageBitmap(captcha);
-            final String instructions = data.findChildContent("instructions", Namespace.DATA);
-            if (instructions != null) {
-                builder.setMessage(instructions);
-            }
-            builder.setTitle(R.string.captcha_dialog_title);
-            builder.setView(view);
-            builder.setPositiveButton(R.string.ok, (dialog, which) -> {
-                String rc = input.getText().toString();
-                if (id.startsWith("reg:")) {
-                    data.put("username", account.getUsername());
-                    data.put("password", account.getPassword());
-                }
-                String captchaField = "ocr";
-                if (data.getFieldByName("ocr") != null) {
-                    captchaField = "ocr";
-                } else if (data.getFieldByName("answers") != null) {
-                    captchaField = "answers";
-                } else {
-                    for (eu.siacs.conversations.xmpp.forms.Field field : data.getFields()) {
-                        if ("text-single".equals(field.getType())) {
-                            captchaField = field.getFieldName();
-                            break;
-                        }
-                    }
-                }
-                data.put(captchaField, rc);
-                data.submit();
-                if (xmppConnectionServiceBound) {
-                    xmppConnectionService.sendCaptchaResponse(account, id, data);
-                }
-            });
-            builder.setNegativeButton(R.string.cancel, (dialog, which) -> {
-                if (id.startsWith("reg:") && xmppConnectionServiceBound) {
-                    xmppConnectionService.sendCaptchaResponse(account, id, null);
-                }
-            });
-            builder.setOnCancelListener(dialog -> {
-                if (id.startsWith("reg:") && xmppConnectionServiceBound) {
-                    xmppConnectionService.sendCaptchaResponse(account, id, null);
-                }
-            });
-            builder.show();
+            CaptchaActivity.captchaBitmap = captcha;
+            Intent intent = new Intent(this, CaptchaActivity.class);
+            intent.putExtra(CaptchaActivity.EXTRA_ID, id);
+            intent.putExtra(CaptchaActivity.EXTRA_ACCOUNT, account.getJid().asBareJid().toEscapedString());
+            intent.putExtra(CaptchaActivity.EXTRA_DATA, data.toString());
+            startActivity(intent);
         });
     }
 

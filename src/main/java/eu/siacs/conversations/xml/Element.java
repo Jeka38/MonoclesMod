@@ -7,6 +7,9 @@ import com.google.common.collect.ImmutableList;
 import com.google.common.collect.ImmutableMap;
 import com.google.common.primitives.Ints;
 
+import java.io.ByteArrayInputStream;
+import java.io.IOException;
+import java.nio.charset.StandardCharsets;
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.Hashtable;
@@ -290,5 +293,15 @@ public class Element implements Node {
 
 	public String getNamespace() {
 		return getAttribute("xmlns");
+	}
+
+	public static Element parse(String xml) throws IOException {
+		XmlReader reader = new XmlReader();
+		reader.setInputStream(new ByteArrayInputStream(xml.getBytes(StandardCharsets.UTF_8)));
+		Tag tag = reader.readTag();
+		if (tag != null && tag.isStart()) {
+			return reader.readElement(tag);
+		}
+		throw new IOException("Invalid XML: " + xml);
 	}
 }

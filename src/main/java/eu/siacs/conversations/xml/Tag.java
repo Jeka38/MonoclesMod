@@ -80,6 +80,10 @@ public class Tag {
         return (this.type == NO);
     }
 
+    public boolean isStart() {
+        return (this.type == START);
+    }
+
     @NonNull
     public String toString() {
         final StringBuilder tagOutput = new StringBuilder();
