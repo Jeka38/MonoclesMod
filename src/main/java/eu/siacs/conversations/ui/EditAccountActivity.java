@@ -108,7 +108,6 @@ public class EditAccountActivity extends OmemoActivity implements OnAccountUpdat
     private static final int REQUEST_ORBOT = 0xff22;
     private static final int REQUEST_UNLOCK = 0xff23;
     private static final int REQUEST_IMPORT_BACKUP = 0x63fb;
-    private AlertDialog mCaptchaDialog = null;
     private final AtomicBoolean mPendingReconnect = new AtomicBoolean(false);
     private final AtomicBoolean redirectInProgress = new AtomicBoolean(false);
     private Jid jidToEdit;

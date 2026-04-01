@@ -1841,6 +1841,20 @@ public class XmppConnection implements Runnable {
                         return;
                     }
                     if (packet.getType() == IqPacket.TYPE.ERROR) {
+                        Element captcha = packet.findChild("captcha", "urn:xmpp:captcha");
+                        if (captcha == null) {
+                            Element error = packet.findChild("error");
+                            if (error != null) {
+                                captcha = error.findChild("captcha", "urn:xmpp:captcha");
+                            }
+                        }
+                        if (captcha != null) {
+                            final Data data = Data.parse(captcha.findChild("x", Namespace.DATA));
+                            if (data != null) {
+                                mXmppConnectionService.fetchCaptchaAndDisplay(account, "reg:" + packet.getId(), data, packet);
+                                return;
+                            }
+                        }
                         throw new StateChangingError(Account.State.REGISTRATION_FAILED);
                     }
                     final Element query = packet.query(Namespace.REGISTER);
@@ -1857,8 +1871,16 @@ public class XmppConnection implements Runnable {
                     } else if (query.hasChild("x", Namespace.DATA)) {
                         final Data data = Data.parse(query.findChild("x", Namespace.DATA));
                         final String id = packet.getId();
-                        mXmppConnectionService.fetchCaptchaAndDisplay(account, "reg:" + id, data, query);
+                        mXmppConnectionService.fetchCaptchaAndDisplay(account, "reg:" + id, data, packet);
                         return;
+                    } else if (packet.hasChild("captcha", "urn:xmpp:captcha")) {
+                        final Element captcha = packet.findChild("captcha", "urn:xmpp:captcha");
+                        final Data data = Data.parse(captcha.findChild("x", Namespace.DATA));
+                        if (data != null) {
+                            mXmppConnectionService.fetchCaptchaAndDisplay(account, "reg:" + packet.getId(), data, packet);
+                            return;
+                        }
+                        throw new StateChangingError(Account.State.REGISTRATION_FAILED);
                     } else if (query.hasChild("instructions")
                             || query.hasChild("x", Namespace.OOB)) {
                         final String instructions = query.findChildContent("instructions");

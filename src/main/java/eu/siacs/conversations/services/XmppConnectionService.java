@@ -232,6 +232,7 @@ import eu.siacs.conversations.xmpp.OnUpdateBlocklist;
 import eu.siacs.conversations.xmpp.XmppConnection;
 import eu.siacs.conversations.xmpp.chatstate.ChatState;
 import eu.siacs.conversations.xmpp.forms.Data;
+import eu.siacs.conversations.xmpp.forms.Field;
 import eu.siacs.conversations.xmpp.jingle.AbstractJingleConnection;
 import eu.siacs.conversations.xmpp.jingle.JingleConnectionManager;
 import eu.siacs.conversations.xmpp.jingle.JingleRtpConnection;
@@ -6016,12 +6017,30 @@ public class XmppConnectionService extends Service {
     }
 
     public void fetchCaptchaAndDisplay(final Account account, final String id, final Data data, final Element container) {
-        final String url = data.getValue("url");
+        String url = data.getValue("url");
         final String fallbackUrl = data.getValue("captcha-fallback-url");
         final Element finalBob = findBobData(container);
+        if (url == null && finalBob == null) {
+            for (Field field : data.getFields()) {
+                Element media = field.findChild("media", "urn:xmpp:media-element");
+                if (media != null) {
+                    for (Element uriEl : media.getChildren()) {
+                        if (uriEl.getName().equals("uri")) {
+                            String content = uriEl.getContent();
+                            if (content != null && (content.startsWith("http") || content.startsWith("cid:"))) {
+                                url = content;
+                                break;
+                            }
+                        }
+                    }
+                }
+                if (url != null) break;
+            }
+        }
+        final String finalUrl = url;
         final boolean useTor = useTorToConnect() || account.isOnion();
         final boolean useI2P = useI2PToConnect() || account.isI2P();
-        Log.d(Config.LOGTAG, account.getJid().asBareJid() + ": fetch captcha id=" + id + " bob=" + (finalBob != null) + " url=" + url);
+        Log.d(Config.LOGTAG, account.getJid().asBareJid() + ": fetch captcha id=" + id + " bob=" + (finalBob != null) + " url=" + finalUrl);
         new Thread(() -> {
             InputStream is = null;
             if (finalBob != null) {
@@ -6032,9 +6051,39 @@ public class XmppConnectionService extends Service {
                 } catch (Exception e) {
                     is = null;
                 }
-            } else if (url != null || fallbackUrl != null) {
+            } else if (finalUrl != null && finalUrl.startsWith("cid:")) {
                 try {
-                    is = HttpConnectionManager.open(url != null ? url : fallbackUrl, useTor, useI2P);
+                    final Jid to;
+                    if (id.startsWith("muc:")) {
+                        to = Jid.of(id.substring(4));
+                    } else {
+                        to = account.getDomain();
+                    }
+                    IqPacket request = new IqPacket(IqPacket.TYPE.GET);
+                    request.setTo(to);
+                    final Element dataq = request.addChild("data", "urn:xmpp:bob");
+                    dataq.setAttribute("cid", finalUrl.substring(4));
+                    final CountDownLatch latch = new CountDownLatch(1);
+                    final AtomicReference<InputStream> isRef = new AtomicReference<>(null);
+                    sendIqPacket(account, request, (acct, packet) -> {
+                        final Element bobData = packet.findChild("data", "urn:xmpp:bob");
+                        if (packet.getType() == IqPacket.TYPE.RESULT && bobData != null) {
+                            try {
+                                final byte[] bytes = android.util.Base64.decode(bobData.getContent(), android.util.Base64.DEFAULT);
+                                isRef.set(new java.io.ByteArrayInputStream(bytes));
+                            } catch (Exception ignored) {
+                            }
+                        }
+                        latch.countDown();
+                    });
+                    latch.await(10, TimeUnit.SECONDS);
+                    is = isRef.get();
+                } catch (Exception e) {
+                    is = null;
+                }
+            } else if (finalUrl != null || fallbackUrl != null) {
+                try {
+                    is = HttpConnectionManager.open(finalUrl != null ? finalUrl : fallbackUrl, useTor, useI2P);
                 } catch (IOException e) {
                     is = null;
                 }
@@ -6043,23 +6092,33 @@ public class XmppConnectionService extends Service {
                 Bitmap captcha = BitmapFactory.decodeStream(is);
                 if (captcha != null) {
                     displayCaptchaRequest(account, id, data, captcha);
+                } else {
+                    Log.d(Config.LOGTAG, "failed to decode captcha bitmap");
                 }
+            } else {
+                Log.d(Config.LOGTAG, "failed to fetch captcha input stream");
             }
         }).start();
     }
 
     public void sendCaptchaResponse(Account account, String id, Data data) {
         if (id.startsWith("muc:")) {
-            Jid jid = Jid.of(id.substring(4));
-            Conversation conversation = find(account, jid);
-            if (conversation != null && conversation.getMode() == Conversation.MODE_MULTI) {
-                PresencePacket packet = mPresenceGenerator.selfPresence(account, Presence.Status.ONLINE, false, conversation.getMucOptions().getActualNick());
-                packet.setTo(conversation.getJid());
-                packet.addChild("x", "http://jabber.org/protocol/muc");
-                if (data != null) {
-                    packet.addChild(data);
+            try {
+                Jid jid = Jid.of(id.substring(4));
+                Conversation conversation = find(account, jid);
+                if (conversation != null && conversation.getMode() == Conversation.MODE_MULTI) {
+                    final String nick = conversation.getMucOptions().getActualNick();
+                    final Jid roomJid = conversation.getJid().asBareJid();
+                    PresencePacket packet = mPresenceGenerator.selfPresence(account, Presence.Status.ONLINE, false, nick);
+                    packet.setTo(roomJid.withResource(nick));
+                    packet.addChild("x", "http://jabber.org/protocol/muc");
+                    if (data != null) {
+                        packet.addChild(data);
+                    }
+                    sendPresencePacket(account, packet);
                 }
-                sendPresencePacket(account, packet);
+            } catch (IllegalArgumentException e) {
+                Log.e(Config.LOGTAG, "invalid jid in captcha response id=" + id);
             }
         } else if (id.startsWith("reg:")) {
             sendCreateAccountWithCaptchaPacket(account, id.substring(4), data);

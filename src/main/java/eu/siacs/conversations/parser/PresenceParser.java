@@ -66,19 +66,22 @@ public class PresenceParser extends AbstractParser implements
         boolean addedStatusMessage = false;
         final String type = packet.getAttribute("type");
         if (type != null && type.equals("error")) {
-            final Element error = packet.findChild("error");
-            if (error != null) {
-                final Element captcha = error.findChild("captcha", "urn:xmpp:captcha");
-                if (captcha != null) {
-                    final Data data = Data.parse(captcha.findChild("x", Namespace.DATA));
-                    if (data != null) {
-                        Log.d(Config.LOGTAG, account.getJid().asBareJid() + ": CAPTCHA challenge received in conference " + from.asBareJid());
-                        mucOptions.setError(MucOptions.Error.CAPTCHA_REQUIRED);
-                        final Message statusMessage = Message.createStatusMessage(conversation, mXmppConnectionService.getString(R.string.captcha_required));
-                        conversation.add(statusMessage);
-                        mXmppConnectionService.fetchCaptchaAndDisplay(account, "muc:" + from.asBareJid().toString(), data, packet);
-                        return true;
-                    }
+            Element captcha = packet.findChild("captcha", "urn:xmpp:captcha");
+            if (captcha == null) {
+                Element error = packet.findChild("error");
+                if (error != null) {
+                    captcha = error.findChild("captcha", "urn:xmpp:captcha");
+                }
+            }
+            if (captcha != null) {
+                final Data data = Data.parse(captcha.findChild("x", Namespace.DATA));
+                if (data != null) {
+                    Log.d(Config.LOGTAG, account.getJid().asBareJid() + ": CAPTCHA challenge received in conference " + from.asBareJid());
+                    mucOptions.setError(MucOptions.Error.CAPTCHA_REQUIRED);
+                    final Message statusMessage = Message.createStatusMessage(conversation, mXmppConnectionService.getString(R.string.captcha_required));
+                    conversation.add(statusMessage);
+                    mXmppConnectionService.fetchCaptchaAndDisplay(account, "muc:" + from.asBareJid().toString(), data, packet);
+                    return true;
                 }
             }
         }

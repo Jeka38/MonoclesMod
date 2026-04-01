@@ -4984,6 +4984,8 @@ public class ConversationFragment extends XmppFragment
                 showSnackbar(R.string.conference_destroyed, R.string.leave, leaveMuc);
             } else if (error == MucOptions.Error.NON_ANONYMOUS) {
                 showSnackbar(R.string.group_chat_will_make_your_jabber_id_public, R.string.join, acceptJoin);
+            } else if (error == MucOptions.Error.CAPTCHA_REQUIRED) {
+                showSnackbar(R.string.captcha_required, R.string.try_again, joinMuc);
             } else {
                 hideSnackbar();
             }
