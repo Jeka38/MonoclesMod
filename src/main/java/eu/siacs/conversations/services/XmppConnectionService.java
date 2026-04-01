@@ -4897,7 +4897,7 @@ public class XmppConnectionService extends Service {
         contact.resetOption(Contact.Options.DIRTY_DELETE);
         contact.setOption(Contact.Options.DIRTY_PUSH);
         final Account account = contact.getAccount();
-        if (account.getStatus() == Account.State.ONLINE) {
+        if (account.getStatus() == Account.State.ONLINE || (account.getXmppConnection() != null && account.getXmppConnection().isBound())) {
             final boolean ask = contact.getOption(Contact.Options.ASKING);
             final boolean sendUpdates = contact
                     .getOption(Contact.Options.PENDING_SUBSCRIPTION_REQUEST)

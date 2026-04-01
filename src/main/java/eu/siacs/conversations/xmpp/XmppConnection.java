@@ -300,6 +300,10 @@ public class XmppConnection implements Runnable {
         }
     }
 
+    public boolean isBound() {
+        return isBound;
+    }
+
     public void prepareNewConnection() {
         this.lastConnect = SystemClock.elapsedRealtime();
         this.lastPingSent = SystemClock.elapsedRealtime();
