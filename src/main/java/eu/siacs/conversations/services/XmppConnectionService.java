@@ -55,6 +55,7 @@ import android.content.SharedPreferences;
 import android.content.pm.PackageManager;
 import android.database.ContentObserver;
 import android.graphics.Bitmap;
+import android.graphics.BitmapFactory;
 import android.graphics.drawable.BitmapDrawable;
 import android.graphics.drawable.Drawable;
 import android.media.AudioManager;
@@ -63,6 +64,7 @@ import android.net.Network;
 import android.net.NetworkCapabilities;
 import android.net.NetworkInfo;
 import android.net.Uri;
+import java.io.InputStream;
 import java.security.SecureRandom;
 import android.os.Binder;
 import android.os.Build;
@@ -5990,6 +5992,55 @@ public class XmppConnectionService extends Service {
         XmppConnection connection = account.getXmppConnection();
         if (connection != null) {
             connection.sendPresencePacket(packet);
+        }
+    }
+
+    public void fetchCaptchaAndDisplay(final Account account, final String id, final Data data) {
+        final String url = data.getValue("url");
+        final String fallbackUrl = data.getValue("captcha-fallback-url");
+        final Element bob = data.findChild("data", "urn:xmpp:bob");
+        final boolean useTor = useTorToConnect() || account.isOnion();
+        final boolean useI2P = useI2PToConnect() || account.isI2P();
+        new Thread(() -> {
+            InputStream is = null;
+            if (bob != null) {
+                try {
+                    final String base64Blob = bob.getContent();
+                    final byte[] strBlob = android.util.Base64.decode(base64Blob, android.util.Base64.DEFAULT);
+                    is = new java.io.ByteArrayInputStream(strBlob);
+                } catch (Exception e) {
+                    is = null;
+                }
+            } else if (url != null || fallbackUrl != null) {
+                try {
+                    is = HttpConnectionManager.open(url != null ? url : fallbackUrl, useTor, useI2P);
+                } catch (IOException e) {
+                    is = null;
+                }
+            }
+            if (is != null) {
+                Bitmap captcha = BitmapFactory.decodeStream(is);
+                if (captcha != null) {
+                    displayCaptchaRequest(account, id, data, captcha);
+                }
+            }
+        }).start();
+    }
+
+    public void sendCaptchaResponse(Account account, String id, Data data) {
+        if (id.startsWith("muc:")) {
+            Jid jid = Jid.of(id.substring(4));
+            Conversation conversation = find(account, jid);
+            if (conversation != null && conversation.getMode() == Conversation.MODE_MULTI) {
+                PresencePacket packet = mPresenceGenerator.selfPresence(account, Presence.Status.ONLINE, false, conversation.getMucOptions().getActualNick());
+                packet.setTo(conversation.getJid());
+                if (data != null) {
+                    packet.addChild(data);
+                }
+                sendPresencePacket(account, packet);
+            }
+        } else if (id.startsWith("reg:")) {
+            sendCreateAccountWithCaptchaPacket(account, id.substring(4), data);
         }
     }
 

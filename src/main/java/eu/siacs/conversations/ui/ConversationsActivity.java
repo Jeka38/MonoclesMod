@@ -137,8 +137,11 @@ import p32929.easypasscodelock.Utils.EasyLock;
 
 import com.google.android.material.bottomnavigation.BottomNavigationView;
 
+import android.graphics.Bitmap;
+import eu.siacs.conversations.xmpp.forms.Data;
 
-public class ConversationsActivity extends XmppActivity implements OnConversationSelected, OnConversationArchived, OnConversationsListItemUpdated, OnConversationRead, XmppConnectionService.OnAccountUpdate, XmppConnectionService.OnConversationUpdate, XmppConnectionService.OnRosterUpdate, OnUpdateBlocklist, XmppConnectionService.OnShowErrorToast, XmppConnectionService.OnAffiliationChanged, XmppConnectionService.OnRoomDestroy {
+
+public class ConversationsActivity extends XmppActivity implements OnConversationSelected, OnConversationArchived, OnConversationsListItemUpdated, OnConversationRead, XmppConnectionService.OnAccountUpdate, XmppConnectionService.OnConversationUpdate, XmppConnectionService.OnRosterUpdate, OnUpdateBlocklist, XmppConnectionService.OnShowErrorToast, XmppConnectionService.OnAffiliationChanged, XmppConnectionService.OnRoomDestroy, XmppConnectionService.OnCaptchaRequested {
 
     public static final String ACTION_VIEW_CONVERSATION = "eu.siacs.conversations.VIEW";
     public static final String EXTRA_CONVERSATION = "conversationUuid";
@@ -1387,5 +1390,32 @@ public class ConversationsActivity extends XmppActivity implements OnConversatio
         Conversation conversation = ConversationFragment.getConversationReliable(this);
         final boolean groupChat = conversation != null && conversation.isPrivateAndNonAnonymous();
         displayToast(getString(groupChat ? R.string.destroy_room_failed : R.string.destroy_channel_failed));
+    }
+
+    @Override
+    public void onCaptchaRequested(final Account account, final String id, final Data data, final Bitmap captcha) {
+        runOnUiThread(() -> {
+            final AlertDialog.Builder builder = new AlertDialog.Builder(this);
+            final View view = getLayoutInflater().inflate(R.layout.captcha, null);
+            final ImageView imageView = view.findViewById(R.id.captcha);
+            final eu.siacs.conversations.ui.widget.TextInputEditText input = view.findViewById(R.id.input);
+            imageView.setImageBitmap(captcha);
+            builder.setTitle(R.string.captcha_required);
+            builder.setView(view);
+            builder.setPositiveButton(R.string.ok, (dialog, which) -> {
+                String rc = input.getText().toString();
+                if (id.startsWith("reg:")) {
+                    data.put("username", account.getUsername());
+                    data.put("password", account.getPassword());
+                }
+                data.put("ocr", rc);
+                data.submit();
+                if (xmppConnectionServiceBound) {
+                    xmppConnectionService.sendCaptchaResponse(account, id, data);
+                }
+            });
+            builder.setNegativeButton(R.string.cancel, null);
+            builder.show();
+        });
     }
 }

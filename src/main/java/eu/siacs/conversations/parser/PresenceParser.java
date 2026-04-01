@@ -24,6 +24,7 @@ import eu.siacs.conversations.services.XmppConnectionService;
 import eu.siacs.conversations.utils.XmppUri;
 import eu.siacs.conversations.xml.Element;
 import eu.siacs.conversations.xml.Namespace;
+import eu.siacs.conversations.xmpp.forms.Data;
 import eu.siacs.conversations.xmpp.InvalidJid;
 import eu.siacs.conversations.xmpp.Jid;
 import eu.siacs.conversations.xmpp.OnPresencePacketReceived;
@@ -318,6 +319,15 @@ public class PresenceParser extends AbstractParser implements
                 final Element error = packet.findChild("error");
                 if (error == null) {
                     return addedStatusMessage;
+                }
+                final Element captcha = error.findChild("captcha", "urn:xmpp:captcha");
+                if (captcha != null) {
+                    final Data data = Data.parse(captcha.findChild("x", Namespace.DATA));
+                    if (data != null) {
+                        mucOptions.setError(MucOptions.Error.CAPTCHA_REQUIRED);
+                        mXmppConnectionService.fetchCaptchaAndDisplay(account, "muc:" + from.asBareJid().toString(), data);
+                        return addedStatusMessage;
+                    }
                 }
                 if (error.hasChild("conflict")) {
                     if (mucOptions.online()) {
