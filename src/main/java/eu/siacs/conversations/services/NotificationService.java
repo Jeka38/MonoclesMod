@@ -679,6 +679,15 @@ public class NotificationService {
         builder.setContentIntent(createContentIntent(conversation));
         setNotificationColor(builder, account);
         notify(conversation.getUuid(), SUBSCRIPTION_REQUEST_NOTIFICATION_ID, builder.build());
+
+        final Notification summary = new Builder(mXmppConnectionService, channelId)
+                .setContentTitle(title)
+                .setSmallIcon(R.drawable.ic_notification)
+                .setGroup("subscription_requests")
+                .setGroupSummary(true)
+                .setAutoCancel(true)
+                .build();
+        notify(SUBSCRIPTION_REQUEST_NOTIFICATION_ID, summary);
     }
 
     public void push(final Message message) {
