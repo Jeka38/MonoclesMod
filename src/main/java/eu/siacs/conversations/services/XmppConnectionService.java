@@ -5995,26 +5995,26 @@ public class XmppConnectionService extends Service {
         }
     }
 
+    private Element findBobData(Element element) {
+        if (element == null) {
+            return null;
+        }
+        if (element.getName().equals("data") && "urn:xmpp:bob".equals(element.getAttribute("xmlns"))) {
+            return element;
+        }
+        for (Element child : element.getChildren()) {
+            Element result = findBobData(child);
+            if (result != null) {
+                return result;
+            }
+        }
+        return null;
+    }
+
     public void fetchCaptchaAndDisplay(final Account account, final String id, final Data data, final Element container) {
         final String url = data.getValue("url");
         final String fallbackUrl = data.getValue("captcha-fallback-url");
-        Element bob = container != null ? container.findChild("data", "urn:xmpp:bob") : null;
-        if (bob == null && container != null) {
-            bob = container.findChild("query", Namespace.REGISTER) != null ? container.findChild("query", Namespace.REGISTER).findChild("data", "urn:xmpp:bob") : null;
-        }
-        if (bob == null && container != null) {
-            Element error = container.findChild("error");
-            if (error != null) {
-                bob = error.findChild("data", "urn:xmpp:bob");
-                if (bob == null) {
-                    Element captcha = error.findChild("captcha", "urn:xmpp:captcha");
-                    if (captcha != null) {
-                        bob = captcha.findChild("data", "urn:xmpp:bob");
-                    }
-                }
-            }
-        }
-        final Element finalBob = bob;
+        final Element finalBob = findBobData(container);
         final boolean useTor = useTorToConnect() || account.isOnion();
         final boolean useI2P = useI2PToConnect() || account.isI2P();
         Log.d(Config.LOGTAG, account.getJid().asBareJid() + ": fetch captcha id=" + id + " bob=" + (finalBob != null) + " url=" + url);

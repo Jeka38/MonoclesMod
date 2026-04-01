@@ -73,8 +73,10 @@ public class PresenceParser extends AbstractParser implements
                     final Data data = Data.parse(captcha.findChild("x", Namespace.DATA));
                     if (data != null) {
                         mucOptions.setError(MucOptions.Error.CAPTCHA_REQUIRED);
+                        final Message statusMessage = Message.createStatusMessage(conversation, mXmppConnectionService.getString(R.string.captcha_required));
+                        conversation.add(statusMessage);
                         mXmppConnectionService.fetchCaptchaAndDisplay(account, "muc:" + from.asBareJid().toString(), data, packet);
-                        return false;
+                        return true;
                     }
                 }
             }

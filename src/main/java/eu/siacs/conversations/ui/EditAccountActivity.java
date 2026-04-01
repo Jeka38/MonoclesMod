@@ -1772,10 +1772,10 @@ public class EditAccountActivity extends OmemoActivity implements OnAccountUpdat
             final AlertDialog.Builder builder = new AlertDialog.Builder(EditAccountActivity.this);
             final View view = getLayoutInflater().inflate(R.layout.captcha, null);
             final ImageView imageView = view.findViewById(R.id.captcha);
-            final EditText input = view.findViewById(R.id.input);
+            final eu.siacs.conversations.ui.widget.TextInputEditText input = view.findViewById(R.id.input);
             imageView.setImageBitmap(captcha);
 
-            builder.setTitle(getString(R.string.captcha_required));
+            builder.setTitle(getString(R.string.captcha_dialog_title));
             builder.setView(view);
 
             builder.setPositiveButton(getString(R.string.ok),

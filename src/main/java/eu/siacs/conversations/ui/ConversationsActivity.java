@@ -1400,7 +1400,7 @@ public class ConversationsActivity extends XmppActivity implements OnConversatio
             final ImageView imageView = view.findViewById(R.id.captcha);
             final eu.siacs.conversations.ui.widget.TextInputEditText input = view.findViewById(R.id.input);
             imageView.setImageBitmap(captcha);
-            builder.setTitle(R.string.captcha_required);
+            builder.setTitle(R.string.captcha_dialog_title);
             builder.setView(view);
             builder.setPositiveButton(R.string.ok, (dialog, which) -> {
                 String rc = input.getText().toString();
