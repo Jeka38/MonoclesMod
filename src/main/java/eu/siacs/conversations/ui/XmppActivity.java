@@ -98,6 +98,7 @@ import eu.siacs.conversations.utils.EasyOnboardingInvite;
 import eu.siacs.conversations.utils.ExceptionHelper;
 import eu.siacs.conversations.utils.MenuDoubleTabUtil;
 import eu.siacs.conversations.utils.ThemeHelper;
+import eu.siacs.conversations.xml.Namespace;
 import eu.siacs.conversations.xmpp.forms.Data;
 import eu.siacs.conversations.xmpp.Jid;
 import eu.siacs.conversations.xmpp.OnKeyStatusUpdated;
@@ -1607,6 +1608,10 @@ public abstract class XmppActivity extends ActionBarActivity implements XmppConn
             final ImageView imageView = view.findViewById(R.id.captcha);
             final eu.siacs.conversations.ui.widget.TextInputEditText input = view.findViewById(R.id.input);
             imageView.setImageBitmap(captcha);
+            final String instructions = data.findChildContent("instructions", Namespace.DATA);
+            if (instructions != null) {
+                builder.setMessage(instructions);
+            }
             builder.setTitle(R.string.captcha_dialog_title);
             builder.setView(view);
             builder.setPositiveButton(R.string.ok, (dialog, which) -> {
@@ -1615,7 +1620,20 @@ public abstract class XmppActivity extends ActionBarActivity implements XmppConn
                     data.put("username", account.getUsername());
                     data.put("password", account.getPassword());
                 }
-                data.put("ocr", rc);
+                String captchaField = "ocr";
+                if (data.getFieldByName("ocr") != null) {
+                    captchaField = "ocr";
+                } else if (data.getFieldByName("answers") != null) {
+                    captchaField = "answers";
+                } else {
+                    for (eu.siacs.conversations.xmpp.forms.Field field : data.getFields()) {
+                        if ("text-single".equals(field.getType())) {
+                            captchaField = field.getFieldName();
+                            break;
+                        }
+                    }
+                }
+                data.put(captchaField, rc);
                 data.submit();
                 if (xmppConnectionServiceBound) {
                     xmppConnectionService.sendCaptchaResponse(account, id, data);

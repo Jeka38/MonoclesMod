@@ -6049,19 +6049,46 @@ public class XmppConnectionService extends Service {
     }
 
     public void sendCaptchaResponse(Account account, String id, Data data) {
-        if (id.startsWith("muc:")) {
-            Jid jid = Jid.of(id.substring(4));
+        final String[] parts = id.split(" ", 2);
+        final String typePrefix = parts[0];
+        final String captchaId = parts.length > 1 ? parts[1] : null;
+        if (typePrefix.startsWith("muc:")) {
+            Jid jid = Jid.of(typePrefix.substring(4));
             Conversation conversation = find(account, jid);
             if (conversation != null && conversation.getMode() == Conversation.MODE_MULTI) {
-                PresencePacket packet = mPresenceGenerator.selfPresence(account, Presence.Status.ONLINE, false, conversation.getMucOptions().getActualNick());
-                packet.setTo(conversation.getJid());
-                packet.addChild("x", "http://jabber.org/protocol/muc");
+                final MucOptions mucOptions = conversation.getMucOptions();
+                final String nick = mucOptions.getActualNick();
+                PresencePacket packet = mPresenceGenerator.selfPresence(account, Presence.Status.ONLINE, false, nick);
+                packet.setTo(mucOptions.createJoinJid(nick));
+                Element x = packet.addChild("x", "http://jabber.org/protocol/muc");
+                if (conversation.getMucOptions().getPassword() != null) {
+                    x.addChild("password").setContent(conversation.getMucOptions().getPassword());
+                }
                 if (data != null) {
-                    packet.addChild(data);
+                    Element captcha = packet.addChild("captcha", "urn:xmpp:captcha");
+                    if (captchaId != null) {
+                        captcha.setAttribute("id", captchaId);
+                    }
+                    captcha.addChild(data);
                 }
                 sendPresencePacket(account, packet);
             }
-        } else if (id.startsWith("reg:")) {
+        } else if (typePrefix.startsWith("msg:")) {
+            Jid jid = Jid.of(typePrefix.substring(4));
+            Conversation conversation = find(account, jid);
+            if (conversation != null && data != null) {
+                MessagePacket packet = new MessagePacket();
+                packet.setFrom(account.getJid());
+                packet.setType(conversation.getMode() == Conversation.MODE_MULTI ? MessagePacket.TYPE_GROUPCHAT : MessagePacket.TYPE_CHAT);
+                packet.setTo(conversation.getJid());
+                Element captcha = packet.addChild("captcha", "urn:xmpp:captcha");
+                if (captchaId != null) {
+                    captcha.setAttribute("id", captchaId);
+                }
+                captcha.addChild(data);
+                sendMessagePacket(account, packet);
+            }
+        } else if (typePrefix.startsWith("reg:")) {
             sendCreateAccountWithCaptchaPacket(account, id.substring(4), data);
         }
     }

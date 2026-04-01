@@ -1854,12 +1854,19 @@ public class XmppConnection implements Runnable {
                         register1.query().addChild(password);
                         register1.setFrom(account.getJid().asBareJid());
                         sendUnmodifiedIqPacket(register1, registrationResponseListener, true);
-                    } else if (query.hasChild("x", Namespace.DATA)) {
-                        final Data data = Data.parse(query.findChild("x", Namespace.DATA));
-                        final String id = packet.getId();
-                        mXmppConnectionService.fetchCaptchaAndDisplay(account, "reg:" + id, data, query);
-                        return;
-                    } else if (query.hasChild("instructions")
+                    } else {
+                        final Element captchaElement = query.findChild("captcha", "urn:xmpp:captcha");
+                        final Element dataElement = captchaElement != null ? captchaElement.findChild("x", Namespace.DATA) : query.findChild("x", Namespace.DATA);
+                        if (dataElement != null) {
+                            final Data data = Data.parse(dataElement);
+                            final String id = packet.getId();
+                            if ("urn:xmpp:captcha".equals(data.getFormType()) || captchaElement != null) {
+                                mXmppConnectionService.fetchCaptchaAndDisplay(account, "reg:" + id, data, query);
+                                return;
+                            }
+                        }
+                    }
+                    if (query.hasChild("instructions")
                             || query.hasChild("x", Namespace.OOB)) {
                         final String instructions = query.findChildContent("instructions");
                         final Element oob = query.findChild("x", Namespace.OOB);

@@ -60,6 +60,7 @@ import eu.siacs.conversations.utils.CryptoHelper;
 import eu.siacs.conversations.xml.Namespace;
 import eu.siacs.conversations.xml.Element;
 import eu.siacs.conversations.xml.LocalizedContent;
+import eu.siacs.conversations.xmpp.forms.Data;
 import eu.siacs.conversations.xmpp.InvalidJid;
 import eu.siacs.conversations.xmpp.Jid;
 import eu.siacs.conversations.xmpp.OnMessagePacketReceived;
@@ -464,8 +465,21 @@ public class MessageParser extends AbstractParser implements OnMessagePacketRece
                         id,
                         Message.STATUS_SEND_FAILED,
                         extractErrorMessage(packet));
-                final Element error = packet.findChild("error");
-                final boolean pingWorthyError = error != null && (error.hasChild("not-acceptable") || error.hasChild("remote-server-timeout") || error.hasChild("remote-server-not-found"));
+                final Element errorElement = packet.findChild("error");
+                Element captchaElement = errorElement != null ? errorElement.findChild("captcha", "urn:xmpp:captcha") : null;
+                if (captchaElement == null) {
+                    captchaElement = packet.findChild("captcha", "urn:xmpp:captcha");
+                }
+                if (captchaElement != null) {
+                    final Data data = Data.parse(captchaElement.findChild("x", Namespace.DATA));
+                    if (data != null && "urn:xmpp:captcha".equals(data.getFormType())) {
+                        Log.d(Config.LOGTAG, account.getJid().asBareJid() + ": CAPTCHA challenge received in message from " + from.asBareJid());
+                        final String captchaId = captchaElement.getAttribute("id");
+                        final String requestId = "msg:" + from.asBareJid().toString() + (captchaId != null ? " " + captchaId : "");
+                        mXmppConnectionService.fetchCaptchaAndDisplay(account, requestId, data, packet);
+                    }
+                }
+                final boolean pingWorthyError = errorElement != null && (errorElement.hasChild("not-acceptable") || errorElement.hasChild("remote-server-timeout") || errorElement.hasChild("remote-server-not-found"));
                 if (pingWorthyError) {
                     Conversation conversation = mXmppConnectionService.find(account, from);
                     if (conversation != null && conversation.getMode() == Conversational.MODE_MULTI) {
