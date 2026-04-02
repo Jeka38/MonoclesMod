@@ -294,14 +294,4 @@ public class Element implements Node {
 	public String getNamespace() {
 		return getAttribute("xmlns");
 	}
-
-	public static Element parse(String xml) throws IOException {
-		XmlReader reader = new XmlReader();
-		reader.setInputStream(new ByteArrayInputStream(xml.getBytes(StandardCharsets.UTF_8)));
-		Tag tag = reader.readTag();
-		if (tag != null && tag.isStart()) {
-			return reader.readElement(tag);
-		}
-		throw new IOException("Invalid XML: " + xml);
-	}
 }

@@ -1606,9 +1606,6 @@ public abstract class XmppActivity extends ActionBarActivity implements XmppConn
             Intent intent = new Intent(this, CaptchaActivity.class);
             intent.putExtra(CaptchaActivity.EXTRA_ID, id);
             intent.putExtra(CaptchaActivity.EXTRA_ACCOUNT, account.getJid().asBareJid().toEscapedString());
-            if (data != null) {
-                intent.putExtra(CaptchaActivity.EXTRA_DATA, data.toString());
-            }
             startActivity(intent);
         });
     }

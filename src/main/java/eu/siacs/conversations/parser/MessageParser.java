@@ -476,11 +476,15 @@ public class MessageParser extends AbstractParser implements OnMessagePacketRece
                         Log.d(Config.LOGTAG, account.getJid().asBareJid() + ": CAPTCHA challenge received in message from " + from.asBareJid());
                         final Conversation conversation = mXmppConnectionService.find(account, from.asBareJid());
                         if (conversation != null && conversation.getMode() == Conversational.MODE_MULTI) {
-                            conversation.getMucOptions().setError(MucOptions.Error.CAPTCHA_REQUIRED);
+                            if (conversation.getMucOptions().getError() != MucOptions.Error.CAPTCHA_REQUIRED) {
+                                conversation.getMucOptions().setError(MucOptions.Error.CAPTCHA_REQUIRED);
+                            }
                         }
                         final String captchaId = captchaElement.getAttribute("id");
                         final String requestId = (mXmppConnectionService.isMuc(account, from) ? "muc:" : "msg:") + from.asBareJid().toString() + (captchaId != null ? " " + captchaId : "");
-                        mXmppConnectionService.fetchCaptchaAndDisplay(account, requestId, data, packet);
+                        if (mXmppConnectionService.getCaptchaRequest(requestId) == null) {
+                            mXmppConnectionService.fetchCaptchaAndDisplay(account, requestId, data, packet);
+                        }
                     }
                 }
                 final boolean pingWorthyError = errorElement != null && (errorElement.hasChild("not-acceptable") || errorElement.hasChild("remote-server-timeout") || errorElement.hasChild("remote-server-not-found"));
@@ -846,8 +850,12 @@ public class MessageParser extends AbstractParser implements OnMessagePacketRece
             } else if (body == null && !attachments.isEmpty()) {
                 message = new Message(conversation, "", Message.ENCRYPTION_NONE, status);
             } else if (body == null && packet.hasChild("captcha", "urn:xmpp:captcha")) {
-                message = Message.createStatusMessage(conversation, mXmppConnectionService.getString(R.string.captcha_required));
-                message.setStatus(status);
+                if (conversation.getMucOptions().getError() != MucOptions.Error.CAPTCHA_REQUIRED) {
+                    message = Message.createStatusMessage(conversation, mXmppConnectionService.getString(R.string.captcha_required));
+                    message.setStatus(status);
+                } else {
+                    message = null;
+                }
             } else {
                 message = new Message(conversation, body == null ? null : body.content, Message.ENCRYPTION_NONE, status);
                 if (body != null && body.count > 1) {
@@ -1176,11 +1184,15 @@ public class MessageParser extends AbstractParser implements OnMessagePacketRece
                 if (data != null && "urn:xmpp:captcha".equals(data.getFormType())) {
                     Log.d(Config.LOGTAG, account.getJid().asBareJid() + ": CAPTCHA challenge received in message from " + counterpart.asBareJid());
                     if (conversation != null && conversation.getMode() == Conversational.MODE_MULTI) {
-                        conversation.getMucOptions().setError(MucOptions.Error.CAPTCHA_REQUIRED);
+                        if (conversation.getMucOptions().getError() != MucOptions.Error.CAPTCHA_REQUIRED) {
+                            conversation.getMucOptions().setError(MucOptions.Error.CAPTCHA_REQUIRED);
+                        }
                     }
                     final String captchaId = captchaElement.getAttribute("id");
                     final String requestId = (mXmppConnectionService.isMuc(account, counterpart) ? "muc:" : "msg:") + counterpart.asBareJid().toString() + (captchaId != null ? " " + captchaId : "");
-                    mXmppConnectionService.fetchCaptchaAndDisplay(account, requestId, data, packet);
+                    if (mXmppConnectionService.getCaptchaRequest(requestId) == null) {
+                        mXmppConnectionService.fetchCaptchaAndDisplay(account, requestId, data, packet);
+                    }
                 }
             }
 

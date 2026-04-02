@@ -74,12 +74,16 @@ public class PresenceParser extends AbstractParser implements
             final Data data = Data.parse(captchaElement.findChild("x", Namespace.DATA));
             if (data != null && "urn:xmpp:captcha".equals(data.getFormType())) {
                 Log.d(Config.LOGTAG, account.getJid().asBareJid() + ": CAPTCHA challenge received in conference " + from.asBareJid());
-                mucOptions.setError(MucOptions.Error.CAPTCHA_REQUIRED);
-                final Message statusMessage = Message.createStatusMessage(conversation, mXmppConnectionService.getString(R.string.captcha_required));
-                conversation.add(statusMessage);
+                if (mucOptions.getError() != MucOptions.Error.CAPTCHA_REQUIRED) {
+                    mucOptions.setError(MucOptions.Error.CAPTCHA_REQUIRED);
+                    final Message statusMessage = Message.createStatusMessage(conversation, mXmppConnectionService.getString(R.string.captcha_required));
+                    conversation.add(statusMessage);
+                }
                 final String captchaId = captchaElement.getAttribute("id");
                 final String requestId = "muc:" + from.asBareJid().toString() + (captchaId != null ? " " + captchaId : "");
-                mXmppConnectionService.fetchCaptchaAndDisplay(account, requestId, data, packet);
+                if (mXmppConnectionService.getCaptchaRequest(requestId) == null) {
+                    mXmppConnectionService.fetchCaptchaAndDisplay(account, requestId, data, packet);
+                }
                 return true;
             }
         }

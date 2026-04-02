@@ -1,5 +1,6 @@
 package eu.siacs.conversations.ui;
 
+import android.content.Intent;
 import android.graphics.Bitmap;
 import android.os.Bundle;
 import android.util.Log;
@@ -22,7 +23,7 @@ import eu.siacs.conversations.xmpp.forms.Field;
 public class CaptchaActivity extends XmppActivity {
 
     public static final String EXTRA_ID = "id";
-    public static final String EXTRA_DATA = "data";
+    public static final String EXTRA_ACCOUNT = "account";
 
     private ActivityCaptchaBinding binding;
     private String id;
@@ -41,6 +42,16 @@ public class CaptchaActivity extends XmppActivity {
 
         binding.submitButton.setOnClickListener(v -> submit());
         binding.cancelButton.setOnClickListener(v -> cancel());
+    }
+
+    @Override
+    protected void onNewIntent(Intent intent) {
+        super.onNewIntent(intent);
+        setIntent(intent);
+        id = intent.getStringExtra(EXTRA_ID);
+        if (xmppConnectionServiceBound) {
+            onBackendConnected();
+        }
     }
 
     private void submit() {

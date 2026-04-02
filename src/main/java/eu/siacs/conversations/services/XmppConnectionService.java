@@ -5759,7 +5759,7 @@ public class XmppConnectionService extends Service {
         CaptchaRequest request = mPendingCaptchas.get(id);
         if (request != null) {
             request.setCaptcha(scaled);
-            request.setInstructions(data.findChildContent("instructions", Namespace.DATA));
+            request.setInstructions(data.findChildContent("instructions"));
         }
         if (mOnCaptchaRequested.size() > 0) {
             for (OnCaptchaRequested listener : threadSafeList(this.mOnCaptchaRequested)) {
@@ -6068,8 +6068,12 @@ public class XmppConnectionService extends Service {
     }
 
     public void fetchCaptchaAndDisplay(final Account account, final String id, final Data data, final Element container) {
+        if (mPendingCaptchas.containsKey(id)) {
+            Log.d(Config.LOGTAG, account.getJid().asBareJid() + ": CAPTCHA request " + id + " already pending. skipping fetch.");
+            return;
+        }
         mPendingCaptchas.put(id, new CaptchaRequest(account, id, data, container));
-        if (data.findChild("instructions", Namespace.DATA) == null && container != null) {
+        if (data.findChild("instructions") == null && container != null) {
             String instructions = container.findChildContent("body");
             if (instructions == null) {
                 Element error = container.findChild("error");
@@ -6078,7 +6082,7 @@ public class XmppConnectionService extends Service {
                 }
             }
             if (instructions != null) {
-                data.addChild("instructions", Namespace.DATA).setContent(instructions);
+                data.addChild("instructions").setContent(instructions);
             }
         }
         String url = data.getValue("url");
