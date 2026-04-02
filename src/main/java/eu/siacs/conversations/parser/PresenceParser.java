@@ -441,7 +441,7 @@ public class PresenceParser extends AbstractParser implements
                 final Message statusMessage = Message.createStatusMessage(conversation, mXmppConnectionService.getString(R.string.captcha_required));
                 conversation.add(statusMessage);
                 final String captchaId = captchaElement.getAttribute("id");
-                final String requestId = "msg:" + from.asBareJid().toString() + (captchaId != null ? " " + captchaId : "");
+                final String requestId = "sub:" + from.asBareJid().toString() + (captchaId != null ? " " + captchaId : "");
                 mXmppConnectionService.fetchCaptchaAndDisplay(account, requestId, data, packet);
                 return;
             }
