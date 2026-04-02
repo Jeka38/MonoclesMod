@@ -487,6 +487,7 @@
     <string name="pass_verification">You need to pass verification</string>
     <string name="account_registration">Account registration</string>
     <string name="captcha_required">Captcha required</string>
+    <string name="captcha_sending">Sending answer…</string>
     <string name="solve">Solve</string>
     <string name="captcha_dialog_title">Captcha</string>
     <string name="captcha_hint">Enter the seen text</string>

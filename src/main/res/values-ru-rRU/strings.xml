@@ -149,6 +149,7 @@
     <string name="account_registration">Регистрация аккаунта</string>
     <string name="captcha_hint">Введите увиденный текст:</string>
     <string name="captcha_required">Требуется CAPTCHA</string>
+    <string name="captcha_sending">Отправка ответа…</string>
     <string name="captcha_dialog_title">Диалог</string>
     <string name="certificate_chain_is_not_trusted">Связь сертификата не является доверенной</string>
     <string name="certificate_does_not_contain_jid">Сертификат не содержит JID</string>

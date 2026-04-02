@@ -5786,7 +5786,7 @@ public class XmppConnectionService extends Service {
             for (String key : mSolvedCaptchas.snapshot().keySet()) {
                 if (key.startsWith(target)) {
                     final Long solvedAt = mSolvedCaptchas.get(key);
-                    if (solvedAt != null && (SystemClock.elapsedRealtime() - solvedAt) < 30000) {
+                    if (solvedAt != null && (SystemClock.elapsedRealtime() - solvedAt) < 15000) {
                         return true;
                     }
                 }
@@ -6277,9 +6277,14 @@ public class XmppConnectionService extends Service {
         if (data != null) {
             mSolvedCaptchas.put(id, SystemClock.elapsedRealtime());
         }
-        final String[] parts = id.split(" ", 2);
+        final String[] parts = id.split(" ");
+        if (parts.length < 1) {
+            return;
+        }
         final String typePrefix = parts[0];
-        final String captchaId = parts.length > 1 ? parts[1] : null;
+        final String captchaId = parts.length > 1 && !"none".equals(parts[1]) ? parts[1] : null;
+        final String stanzaId = parts.length > 2 && !"none".equals(parts[2]) ? parts[2] : null;
+
         if (typePrefix.startsWith("muc:")) {
             Jid jid = Jid.of(typePrefix.substring(4));
             Conversation conversation = findOrCreateConversation(account, jid, true, false);
@@ -6295,6 +6300,9 @@ public class XmppConnectionService extends Service {
                 packet.setFrom(account.getJid());
                 packet.setType(MessagePacket.TYPE_CHAT);
                 packet.setTo(jid);
+                if (stanzaId != null) {
+                    packet.setAttribute("id", stanzaId);
+                }
                 Element captcha = packet.addChild("captcha", "urn:xmpp:captcha");
                 if (captchaId != null) {
                     captcha.setAttribute("id", captchaId);
@@ -6308,7 +6316,7 @@ public class XmppConnectionService extends Service {
                 sendSubscriptionCaptchaResponse(account, jid, captchaId, data);
             }
         } else if (typePrefix.startsWith("reg:")) {
-            sendCreateAccountWithCaptchaPacket(account, id.substring(4), data);
+            sendCreateAccountWithCaptchaPacket(account, typePrefix.substring(4), data);
         }
     }
 

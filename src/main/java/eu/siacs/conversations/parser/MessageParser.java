@@ -481,7 +481,8 @@ public class MessageParser extends AbstractParser implements OnMessagePacketRece
                             }
                         }
                         final String captchaId = captchaElement.getAttribute("id");
-                        final String requestId = (mXmppConnectionService.isMuc(account, from) ? "muc:" : "msg:") + from.asBareJid().toString() + (captchaId != null ? " " + captchaId : "");
+                        final String stanzaId = packet.getId();
+                        final String requestId = (mXmppConnectionService.isMuc(account, from) ? "muc:" : "msg:") + from.asBareJid().toString() + " " + (captchaId != null ? captchaId : "none") + " " + (stanzaId != null ? stanzaId : "none");
                         if (mXmppConnectionService.getCaptchaRequest(requestId) == null && !mXmppConnectionService.isCaptchaSolvedRecently(requestId)) {
                             if (conversation != null && conversation.getMode() == Conversational.MODE_MULTI) {
                                 final Message statusMessage = Message.createStatusMessage(conversation, mXmppConnectionService.getString(R.string.captcha_required));
@@ -1193,7 +1194,8 @@ public class MessageParser extends AbstractParser implements OnMessagePacketRece
                         }
                     }
                     final String captchaId = captchaElement.getAttribute("id");
-                    final String requestId = (mXmppConnectionService.isMuc(account, counterpart) ? "muc:" : "msg:") + counterpart.asBareJid().toString() + (captchaId != null ? " " + captchaId : "");
+                    final String stanzaId = packet.getId();
+                    final String requestId = (mXmppConnectionService.isMuc(account, counterpart) ? "muc:" : "msg:") + counterpart.asBareJid().toString() + " " + (captchaId != null ? captchaId : "none") + " " + (stanzaId != null ? stanzaId : "none");
                     if (mXmppConnectionService.getCaptchaRequest(requestId) == null) {
                         mXmppConnectionService.fetchCaptchaAndDisplay(account, requestId, data, packet);
                     }

@@ -66,29 +66,41 @@ public class CaptchaActivity extends XmppActivity {
             return;
         }
 
-        String rc = binding.inputEditText.getText().toString();
+        String rc = binding.inputEditText.getText().toString().trim();
         if (id.startsWith("reg:")) {
             data.put("username", account.getUsername());
             data.put("password", account.getPassword());
         }
 
-        String captchaField = "ocr";
-        if (data.getFieldByName("ocr") != null) {
-            captchaField = "ocr";
-        } else if (data.getFieldByName("answers") != null) {
-            captchaField = "answers";
-        } else {
-            for (Field field : data.getFields()) {
-                if ("text-single".equals(field.getType())) {
-                    captchaField = field.getFieldName();
-                    break;
+        String captchaField = null;
+        for (Field field : data.getFields()) {
+            if (field.hasChild("media", "urn:xmpp:media-element")) {
+                captchaField = field.getFieldName();
+                break;
+            }
+        }
+        if (captchaField == null) {
+            if (data.getFieldByName("ocr") != null) {
+                captchaField = "ocr";
+            } else if (data.getFieldByName("answers") != null) {
+                captchaField = "answers";
+            } else {
+                for (Field field : data.getFields()) {
+                    if ("text-single".equals(field.getType())) {
+                        captchaField = field.getFieldName();
+                        break;
+                    }
                 }
             }
         }
-        data.put(captchaField, rc);
+
+        if (captchaField != null) {
+            data.put(captchaField, rc);
+        }
         data.submit();
 
         if (xmppConnectionServiceBound) {
+            replaceToast(getString(R.string.captcha_sending));
             xmppConnectionService.sendCaptchaResponse(account, id, data);
         }
         finish();
