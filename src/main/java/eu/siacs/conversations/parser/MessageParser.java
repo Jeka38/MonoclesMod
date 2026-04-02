@@ -474,8 +474,12 @@ public class MessageParser extends AbstractParser implements OnMessagePacketRece
                     final Data data = Data.parse(captchaElement.findChild("x", Namespace.DATA));
                     if (data != null && "urn:xmpp:captcha".equals(data.getFormType())) {
                         Log.d(Config.LOGTAG, account.getJid().asBareJid() + ": CAPTCHA challenge received in message from " + from.asBareJid());
+                        final Conversation conversation = mXmppConnectionService.find(account, from.asBareJid());
+                        if (conversation != null && conversation.getMode() == Conversational.MODE_MULTI) {
+                            conversation.getMucOptions().setError(MucOptions.Error.CAPTCHA_REQUIRED);
+                        }
                         final String captchaId = captchaElement.getAttribute("id");
-                        final String requestId = "msg:" + from.asBareJid().toString() + (captchaId != null ? " " + captchaId : "");
+                        final String requestId = (mXmppConnectionService.isMuc(account, from) ? "muc:" : "msg:") + from.asBareJid().toString() + (captchaId != null ? " " + captchaId : "");
                         mXmppConnectionService.fetchCaptchaAndDisplay(account, requestId, data, packet);
                     }
                 }
@@ -1171,8 +1175,11 @@ public class MessageParser extends AbstractParser implements OnMessagePacketRece
                 final Data data = Data.parse(captchaElement.findChild("x", Namespace.DATA));
                 if (data != null && "urn:xmpp:captcha".equals(data.getFormType())) {
                     Log.d(Config.LOGTAG, account.getJid().asBareJid() + ": CAPTCHA challenge received in message from " + counterpart.asBareJid());
+                    if (conversation != null && conversation.getMode() == Conversational.MODE_MULTI) {
+                        conversation.getMucOptions().setError(MucOptions.Error.CAPTCHA_REQUIRED);
+                    }
                     final String captchaId = captchaElement.getAttribute("id");
-                    final String requestId = "msg:" + counterpart.asBareJid().toString() + (captchaId != null ? " " + captchaId : "");
+                    final String requestId = (mXmppConnectionService.isMuc(account, counterpart) ? "muc:" : "msg:") + counterpart.asBareJid().toString() + (captchaId != null ? " " + captchaId : "");
                     mXmppConnectionService.fetchCaptchaAndDisplay(account, requestId, data, packet);
                 }
             }
