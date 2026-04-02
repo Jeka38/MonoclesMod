@@ -413,7 +413,8 @@ public class XmppConnectionService extends Service {
     private final Set<OnShowErrorToast> mOnShowErrorToasts = Collections.newSetFromMap(new WeakHashMap<OnShowErrorToast, Boolean>());
     private final Set<OnAccountUpdate> mOnAccountUpdates = Collections.newSetFromMap(new WeakHashMap<OnAccountUpdate, Boolean>());
     private final Set<OnCaptchaRequested> mOnCaptchaRequested = Collections.newSetFromMap(new WeakHashMap<OnCaptchaRequested, Boolean>());
-    private final Map<String, CaptchaRequest> mPendingCaptchas = new HashMap<>();
+    private final Map<String, CaptchaRequest> mPendingCaptchas = Collections.synchronizedMap(new HashMap<>());
+    private final LruCache<String, Long> mSolvedCaptchas = new LruCache<>(20);
 
     public static class CaptchaRequest {
         public final Account account;
@@ -5779,6 +5780,36 @@ public class XmppConnectionService extends Service {
         mPendingCaptchas.remove(id);
     }
 
+    public boolean isCaptchaSolvedRecently(String id) {
+        final String target = id.split(" ", 2)[0];
+        synchronized (mSolvedCaptchas) {
+            for (String key : mSolvedCaptchas.snapshot().keySet()) {
+                if (key.startsWith(target)) {
+                    final Long solvedAt = mSolvedCaptchas.get(key);
+                    if (solvedAt != null && (SystemClock.elapsedRealtime() - solvedAt) < 30000) {
+                        return true;
+                    }
+                }
+            }
+        }
+        return false;
+    }
+
+    public boolean isCaptchaPending(String id) {
+        if (mPendingCaptchas.containsKey(id)) {
+            return true;
+        }
+        final String target = id.split(" ", 2)[0];
+        synchronized (mPendingCaptchas) {
+            for (String pendingId : mPendingCaptchas.keySet()) {
+                if (pendingId.startsWith(target)) {
+                    return true;
+                }
+            }
+        }
+        return false;
+    }
+
     public void updateBlocklistUi(final OnUpdateBlocklist.Status status) {
         for (OnUpdateBlocklist listener : threadSafeList(this.mOnUpdateBlocklist)) {
             listener.OnUpdateBlocklist(status);
@@ -6069,8 +6100,12 @@ public class XmppConnectionService extends Service {
     }
 
     public void fetchCaptchaAndDisplay(final Account account, final String id, final Data data, final Element container) {
-        if (mPendingCaptchas.containsKey(id)) {
-            Log.d(Config.LOGTAG, account.getJid().asBareJid() + ": CAPTCHA request " + id + " already pending. skipping fetch.");
+        if (isCaptchaPending(id)) {
+            Log.d(Config.LOGTAG, account.getJid().asBareJid() + ": CAPTCHA request for target " + id.split(" ", 2)[0] + " already pending. skipping fetch.");
+            return;
+        }
+        if (isCaptchaSolvedRecently(id)) {
+            Log.d(Config.LOGTAG, account.getJid().asBareJid() + ": CAPTCHA request for target " + id.split(" ", 2)[0] + " was solved recently. skipping fetch.");
             return;
         }
         mPendingCaptchas.put(id, new CaptchaRequest(account, id, data, container));
@@ -6239,6 +6274,9 @@ public class XmppConnectionService extends Service {
 
     public void sendCaptchaResponse(Account account, String id, Data data) {
         removeCaptchaRequest(id);
+        if (data != null) {
+            mSolvedCaptchas.put(id, SystemClock.elapsedRealtime());
+        }
         final String[] parts = id.split(" ", 2);
         final String typePrefix = parts[0];
         final String captchaId = parts.length > 1 ? parts[1] : null;

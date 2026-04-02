@@ -74,14 +74,14 @@ public class PresenceParser extends AbstractParser implements
             final Data data = Data.parse(captchaElement.findChild("x", Namespace.DATA));
             if (data != null && "urn:xmpp:captcha".equals(data.getFormType())) {
                 Log.d(Config.LOGTAG, account.getJid().asBareJid() + ": CAPTCHA challenge received in conference " + from.asBareJid());
-                if (mucOptions.getError() != MucOptions.Error.CAPTCHA_REQUIRED) {
-                    mucOptions.setError(MucOptions.Error.CAPTCHA_REQUIRED);
-                    final Message statusMessage = Message.createStatusMessage(conversation, mXmppConnectionService.getString(R.string.captcha_required));
-                    conversation.add(statusMessage);
-                }
                 final String captchaId = captchaElement.getAttribute("id");
                 final String requestId = "muc:" + from.asBareJid().toString() + (captchaId != null ? " " + captchaId : "");
-                if (mXmppConnectionService.getCaptchaRequest(requestId) == null) {
+                if (mXmppConnectionService.getCaptchaRequest(requestId) == null && !mXmppConnectionService.isCaptchaSolvedRecently(requestId)) {
+                    if (mucOptions.getError() != MucOptions.Error.CAPTCHA_REQUIRED) {
+                        mucOptions.setError(MucOptions.Error.CAPTCHA_REQUIRED);
+                        final Message statusMessage = Message.createStatusMessage(conversation, mXmppConnectionService.getString(R.string.captcha_required));
+                        conversation.add(statusMessage);
+                    }
                     mXmppConnectionService.fetchCaptchaAndDisplay(account, requestId, data, packet);
                 }
                 return true;
@@ -438,11 +438,13 @@ public class PresenceParser extends AbstractParser implements
             if (data != null && "urn:xmpp:captcha".equals(data.getFormType())) {
                 Log.d(Config.LOGTAG, account.getJid().asBareJid() + ": CAPTCHA challenge received from contact " + from.asBareJid());
                 final Conversation conversation = mXmppConnectionService.findOrCreateConversation(account, from.asBareJid(), false, false);
-                final Message statusMessage = Message.createStatusMessage(conversation, mXmppConnectionService.getString(R.string.captcha_required));
-                conversation.add(statusMessage);
                 final String captchaId = captchaElement.getAttribute("id");
                 final String requestId = "sub:" + from.asBareJid().toString() + (captchaId != null ? " " + captchaId : "");
-                mXmppConnectionService.fetchCaptchaAndDisplay(account, requestId, data, packet);
+                if (mXmppConnectionService.getCaptchaRequest(requestId) == null && !mXmppConnectionService.isCaptchaSolvedRecently(requestId)) {
+                    final Message statusMessage = Message.createStatusMessage(conversation, mXmppConnectionService.getString(R.string.captcha_required));
+                    conversation.add(statusMessage);
+                    mXmppConnectionService.fetchCaptchaAndDisplay(account, requestId, data, packet);
+                }
                 return;
             }
         }

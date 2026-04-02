@@ -48,9 +48,15 @@ public class CaptchaActivity extends XmppActivity {
     protected void onNewIntent(Intent intent) {
         super.onNewIntent(intent);
         setIntent(intent);
-        id = intent.getStringExtra(EXTRA_ID);
-        if (xmppConnectionServiceBound) {
-            onBackendConnected();
+        final String newId = intent.getStringExtra(EXTRA_ID);
+        if (newId != null && !newId.equals(id)) {
+            Log.d(Config.LOGTAG, "CaptchaActivity: challenge changed from " + id + " to " + newId);
+            id = newId;
+            if (xmppConnectionServiceBound) {
+                onBackendConnected();
+            }
+        } else {
+            Log.d(Config.LOGTAG, "CaptchaActivity: challenge ID " + id + " is still current or new ID is null");
         }
     }
 

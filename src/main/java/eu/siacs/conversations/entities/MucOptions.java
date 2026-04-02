@@ -394,6 +394,9 @@ public class MucOptions {
     public boolean setOnline() {
         boolean before = this.isOnline;
         this.isOnline = true;
+        if (!before) {
+            this.error = Error.NONE;
+        }
         return !before;
     }
 

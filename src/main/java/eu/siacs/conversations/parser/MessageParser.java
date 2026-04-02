@@ -482,7 +482,11 @@ public class MessageParser extends AbstractParser implements OnMessagePacketRece
                         }
                         final String captchaId = captchaElement.getAttribute("id");
                         final String requestId = (mXmppConnectionService.isMuc(account, from) ? "muc:" : "msg:") + from.asBareJid().toString() + (captchaId != null ? " " + captchaId : "");
-                        if (mXmppConnectionService.getCaptchaRequest(requestId) == null) {
+                        if (mXmppConnectionService.getCaptchaRequest(requestId) == null && !mXmppConnectionService.isCaptchaSolvedRecently(requestId)) {
+                            if (conversation != null && conversation.getMode() == Conversational.MODE_MULTI) {
+                                final Message statusMessage = Message.createStatusMessage(conversation, mXmppConnectionService.getString(R.string.captcha_required));
+                                conversation.add(statusMessage);
+                            }
                             mXmppConnectionService.fetchCaptchaAndDisplay(account, requestId, data, packet);
                         }
                     }
