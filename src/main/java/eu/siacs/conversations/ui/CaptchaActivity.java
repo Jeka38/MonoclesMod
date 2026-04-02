@@ -14,6 +14,7 @@ import eu.siacs.conversations.R;
 import eu.siacs.conversations.databinding.ActivityCaptchaBinding;
 import eu.siacs.conversations.entities.Account;
 import eu.siacs.conversations.xml.Element;
+import eu.siacs.conversations.services.XmppConnectionService.CaptchaRequest;
 import eu.siacs.conversations.xml.Namespace;
 import eu.siacs.conversations.xmpp.forms.Data;
 import eu.siacs.conversations.xmpp.forms.Field;
@@ -22,7 +23,6 @@ public class CaptchaActivity extends XmppActivity {
 
     public static final String EXTRA_ID = "id";
     public static final String EXTRA_DATA = "data";
-    public static Bitmap captchaBitmap;
 
     private ActivityCaptchaBinding binding;
     private String id;
@@ -38,55 +38,6 @@ public class CaptchaActivity extends XmppActivity {
         getSupportActionBar().setTitle(R.string.pass_verification);
 
         id = getIntent().getStringExtra(EXTRA_ID);
-        String accountUuid = getIntent().getStringExtra(EXTRA_ACCOUNT);
-        String dataXml = getIntent().getStringExtra(EXTRA_DATA);
-
-        if (dataXml != null) {
-            try {
-                data = Data.parse(Element.parse(dataXml));
-            } catch (Exception e) {
-                Log.e(Config.LOGTAG, "Failed to parse CAPTCHA data form", e);
-            }
-        }
-
-        if (accountUuid != null) {
-            account = extractAccount(getIntent());
-        }
-
-        if (account != null) {
-            binding.accountInfo.setText(String.format("%s (%s)", account.getJid().getDomain(), account.getJid().asBareJid().toString()));
-        } else {
-            binding.accountInfo.setVisibility(View.GONE);
-        }
-
-        if (id != null) {
-            final String[] parts = id.split(" ", 2);
-            final String typePrefix = parts[0];
-            if (typePrefix.startsWith("muc:") || typePrefix.startsWith("msg:")) {
-                binding.targetInfo.setText(typePrefix.substring(4));
-            } else if (typePrefix.startsWith("reg:")) {
-                binding.targetInfo.setText(R.string.account_registration);
-            } else {
-                binding.targetInfo.setVisibility(View.GONE);
-            }
-        } else {
-            binding.targetInfo.setVisibility(View.GONE);
-        }
-
-        if (captchaBitmap != null) {
-            binding.captchaImage.setImageBitmap(captchaBitmap);
-        } else {
-            binding.captchaImage.setVisibility(View.GONE);
-        }
-
-        if (data != null) {
-            String instructions = data.findChildContent("instructions", Namespace.DATA);
-            if (instructions != null) {
-                binding.instructions.setText(instructions);
-            } else {
-                binding.instructions.setVisibility(View.GONE);
-            }
-        }
 
         binding.submitButton.setOnClickListener(v -> submit());
         binding.cancelButton.setOnClickListener(v -> cancel());
@@ -123,7 +74,6 @@ public class CaptchaActivity extends XmppActivity {
         if (xmppConnectionServiceBound) {
             xmppConnectionService.sendCaptchaResponse(account, id, data);
         }
-        captchaBitmap = null;
         finish();
     }
 
@@ -142,10 +92,13 @@ public class CaptchaActivity extends XmppActivity {
     }
 
     private void cancel() {
-        if (id != null && id.startsWith("reg:") && xmppConnectionServiceBound) {
-            xmppConnectionService.sendCaptchaResponse(account, id, null);
+        if (id != null && xmppConnectionServiceBound) {
+            if (id.startsWith("reg:")) {
+                xmppConnectionService.sendCaptchaResponse(account, id, null);
+            } else {
+                xmppConnectionService.removeCaptchaRequest(id);
+            }
         }
-        captchaBitmap = null;
         finish();
     }
 
@@ -155,8 +108,51 @@ public class CaptchaActivity extends XmppActivity {
 
     @Override
     protected void onBackendConnected() {
-        if (account == null) {
-            account = extractAccount(getIntent());
+        CaptchaRequest request = xmppConnectionService.getCaptchaRequest(id);
+        if (request == null) {
+            Log.d(Config.LOGTAG, "CAPTCHA request with id " + id + " not found in service");
+            finish();
+            return;
+        }
+        this.account = request.account;
+        this.data = request.data;
+
+        if (account != null) {
+            binding.accountInfo.setText(String.format("%s (%s)", account.getJid().getDomain(), account.getJid().asBareJid().toString()));
+            binding.accountInfo.setVisibility(View.VISIBLE);
+        } else {
+            binding.accountInfo.setVisibility(View.GONE);
+        }
+
+        if (id != null) {
+            final String[] parts = id.split(" ", 2);
+            final String typePrefix = parts[0];
+            if (typePrefix.startsWith("muc:") || typePrefix.startsWith("msg:")) {
+                binding.targetInfo.setText(typePrefix.substring(4));
+                binding.targetInfo.setVisibility(View.VISIBLE);
+            } else if (typePrefix.startsWith("reg:")) {
+                binding.targetInfo.setText(R.string.account_registration);
+                binding.targetInfo.setVisibility(View.VISIBLE);
+            } else {
+                binding.targetInfo.setVisibility(View.GONE);
+            }
+        } else {
+            binding.targetInfo.setVisibility(View.GONE);
+        }
+
+        if (request.getCaptcha() != null) {
+            binding.captchaImage.setImageBitmap(request.getCaptcha());
+            binding.captchaImage.setVisibility(View.VISIBLE);
+        } else {
+            binding.captchaImage.setVisibility(View.GONE);
+        }
+
+        String instructions = request.getInstructions();
+        if (instructions != null) {
+            binding.instructions.setText(instructions);
+            binding.instructions.setVisibility(View.VISIBLE);
+        } else {
+            binding.instructions.setVisibility(View.GONE);
         }
     }
 }

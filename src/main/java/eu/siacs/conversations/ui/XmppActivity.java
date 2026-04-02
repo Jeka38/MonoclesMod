@@ -1603,7 +1603,6 @@ public abstract class XmppActivity extends ActionBarActivity implements XmppConn
     @Override
     public void onCaptchaRequested(final Account account, final String id, final Data data, final Bitmap captcha) {
         runOnUiThread(() -> {
-            CaptchaActivity.captchaBitmap = captcha;
             Intent intent = new Intent(this, CaptchaActivity.class);
             intent.putExtra(CaptchaActivity.EXTRA_ID, id);
             intent.putExtra(CaptchaActivity.EXTRA_ACCOUNT, account.getJid().asBareJid().toEscapedString());

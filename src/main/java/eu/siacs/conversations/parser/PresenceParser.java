@@ -423,6 +423,26 @@ public class PresenceParser extends AbstractParser implements
         }
         final String type = packet.getAttribute("type");
         final Contact contact = account.getRoster().getContact(from);
+
+        final Element errorElement = packet.findChild("error");
+        Element captchaElement = errorElement != null ? errorElement.findChild("captcha", "urn:xmpp:captcha") : null;
+        if (captchaElement == null) {
+            captchaElement = packet.findChild("captcha", "urn:xmpp:captcha");
+        }
+        if (captchaElement != null) {
+            final Data data = Data.parse(captchaElement.findChild("x", Namespace.DATA));
+            if (data != null && "urn:xmpp:captcha".equals(data.getFormType())) {
+                Log.d(Config.LOGTAG, account.getJid().asBareJid() + ": CAPTCHA challenge received from contact " + from.asBareJid());
+                final Conversation conversation = mXmppConnectionService.findOrCreateConversation(account, from.asBareJid(), false, false);
+                final Message statusMessage = Message.createStatusMessage(conversation, mXmppConnectionService.getString(R.string.captcha_required));
+                conversation.add(statusMessage);
+                final String captchaId = captchaElement.getAttribute("id");
+                final String requestId = "msg:" + from.asBareJid().toString() + (captchaId != null ? " " + captchaId : "");
+                mXmppConnectionService.fetchCaptchaAndDisplay(account, requestId, data, packet);
+                return;
+            }
+        }
+
         if (type == null) {
             final String resource = from.isBareJid() ? "" : from.getResource();
             Avatar avatar = Avatar.parsePresence(packet.findChild("x", "vcard-temp:x:update"));
@@ -542,17 +562,8 @@ public class PresenceParser extends AbstractParser implements
 
     @Override
     public void onPresencePacketReceived(Account account, PresencePacket packet) {
-        if (packet.hasChild("x", Namespace.MUC_USER)) {
+        if (packet.hasChild("x", Namespace.MUC_USER) || packet.hasChild("x", "http://jabber.org/protocol/muc") || mXmppConnectionService.isMuc(account, packet.getFrom())) {
             this.parseConferencePresence(packet, account);
-        } else if (packet.hasChild("x", "http://jabber.org/protocol/muc")) {
-            this.parseConferencePresence(packet, account);
-        } else if ("error".equals(packet.getAttribute("type")) || packet.hasChild("captcha", "urn:xmpp:captcha")) {
-            if (mXmppConnectionService.isMuc(account, packet.getFrom()) || mXmppConnectionService.find(account, packet.getFrom().asBareJid()) != null) {
-                Log.d(Config.LOGTAG, account.getJid().asBareJid() + ": routing presence (" + packet.getAttribute("type") + ") from " + packet.getFrom() + " to conference parser");
-                this.parseConferencePresence(packet, account);
-            } else {
-                this.parseContactPresence(packet, account);
-            }
         } else {
             this.parseContactPresence(packet, account);
         }

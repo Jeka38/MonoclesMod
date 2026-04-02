@@ -419,12 +419,30 @@ public class XmppConnectionService extends Service {
         public final String id;
         public final Data data;
         public final Element container;
+        private Bitmap captcha;
+        private String instructions;
 
         public CaptchaRequest(Account account, String id, Data data, Element container) {
             this.account = account;
             this.id = id;
             this.data = data;
             this.container = container;
+        }
+
+        public void setCaptcha(Bitmap captcha) {
+            this.captcha = captcha;
+        }
+
+        public Bitmap getCaptcha() {
+            return captcha;
+        }
+
+        public void setInstructions(String instructions) {
+            this.instructions = instructions;
+        }
+
+        public String getInstructions() {
+            return instructions;
         }
     }
     private final Set<OnRosterUpdate> mOnRosterUpdates = Collections.newSetFromMap(new WeakHashMap<OnRosterUpdate, Boolean>());
@@ -5730,21 +5748,34 @@ public class XmppConnectionService extends Service {
 
     public boolean displayCaptchaRequest(Account account, String id, Data data, Bitmap captcha) {
         Log.d(Config.LOGTAG, account.getJid().asBareJid() + ": dispatching captcha request id=" + id + " to " + mOnCaptchaRequested.size() + " listeners");
+        final Bitmap scaled;
+        if (captcha != null) {
+            DisplayMetrics metrics = getApplicationContext().getResources().getDisplayMetrics();
+            scaled = Bitmap.createScaledBitmap(captcha, (int) (captcha.getWidth() * metrics.scaledDensity),
+                    (int) (captcha.getHeight() * metrics.scaledDensity), false);
+        } else {
+            scaled = null;
+        }
+        CaptchaRequest request = mPendingCaptchas.get(id);
+        if (request != null) {
+            request.setCaptcha(scaled);
+            request.setInstructions(data.findChildContent("instructions", Namespace.DATA));
+        }
         if (mOnCaptchaRequested.size() > 0) {
-            final Bitmap scaled;
-            if (captcha != null) {
-                DisplayMetrics metrics = getApplicationContext().getResources().getDisplayMetrics();
-                scaled = Bitmap.createScaledBitmap(captcha, (int) (captcha.getWidth() * metrics.scaledDensity),
-                        (int) (captcha.getHeight() * metrics.scaledDensity), false);
-            } else {
-                scaled = null;
-            }
             for (OnCaptchaRequested listener : threadSafeList(this.mOnCaptchaRequested)) {
                 listener.onCaptchaRequested(account, id, data, scaled);
             }
             return true;
         }
         return false;
+    }
+
+    public CaptchaRequest getCaptchaRequest(String id) {
+        return mPendingCaptchas.get(id);
+    }
+
+    public void removeCaptchaRequest(String id) {
+        mPendingCaptchas.remove(id);
     }
 
     public void updateBlocklistUi(final OnUpdateBlocklist.Status status) {
@@ -6038,6 +6069,18 @@ public class XmppConnectionService extends Service {
 
     public void fetchCaptchaAndDisplay(final Account account, final String id, final Data data, final Element container) {
         mPendingCaptchas.put(id, new CaptchaRequest(account, id, data, container));
+        if (data.findChild("instructions", Namespace.DATA) == null && container != null) {
+            String instructions = container.findChildContent("body");
+            if (instructions == null) {
+                Element error = container.findChild("error");
+                if (error != null) {
+                    instructions = error.findChildContent("text");
+                }
+            }
+            if (instructions != null) {
+                data.addChild("instructions", Namespace.DATA).setContent(instructions);
+            }
+        }
         String url = data.getValue("url");
         final String fallbackUrl = data.getValue("captcha-fallback-url");
         Element finalBob = findBobData(container);
@@ -6129,6 +6172,7 @@ public class XmppConnectionService extends Service {
     }
 
     public void sendCaptchaResponse(Account account, String id, Data data) {
+        removeCaptchaRequest(id);
         final String[] parts = id.split(" ", 2);
         final String typePrefix = parts[0];
         final String captchaId = parts.length > 1 ? parts[1] : null;
