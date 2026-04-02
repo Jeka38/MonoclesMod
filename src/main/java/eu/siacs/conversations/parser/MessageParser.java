@@ -725,7 +725,7 @@ public class MessageParser extends AbstractParser implements OnMessagePacketRece
             mXmppConnectionService.updateConversationUi();
         }
 
-        if ((body != null || pgpEncrypted != null || (axolotlEncrypted != null && axolotlEncrypted.hasChild("payload")) || !attachments.isEmpty() || html != null || (packet.hasChild("subject") && packet.hasChild("thread"))) && !isMucStatusMessage) {
+        if ((body != null || pgpEncrypted != null || (axolotlEncrypted != null && axolotlEncrypted.hasChild("payload")) || !attachments.isEmpty() || html != null || packet.hasChild("captcha", "urn:xmpp:captcha") || (packet.hasChild("subject") && packet.hasChild("thread"))) && !isMucStatusMessage) {
             final Conversation conversation;
             if (isPrivateMucMessage) {
                 conversation = mXmppConnectionService.findOrCreateConversation(account, counterpart.asBareJid(), counterpart, true, false, query, false, null);
@@ -841,6 +841,9 @@ public class MessageParser extends AbstractParser implements OnMessagePacketRece
                 }
             } else if (body == null && !attachments.isEmpty()) {
                 message = new Message(conversation, "", Message.ENCRYPTION_NONE, status);
+            } else if (body == null && packet.hasChild("captcha", "urn:xmpp:captcha")) {
+                message = Message.createStatusMessage(conversation, mXmppConnectionService.getString(R.string.captcha_required));
+                message.setStatus(status);
             } else {
                 message = new Message(conversation, body == null ? null : body.content, Message.ENCRYPTION_NONE, status);
                 if (body != null && body.count > 1) {
@@ -1162,6 +1165,17 @@ public class MessageParser extends AbstractParser implements OnMessagePacketRece
                 conversation.endOtrIfNeeded();
             }
 
+
+            if (packet.hasChild("captcha", "urn:xmpp:captcha")) {
+                final Element captchaElement = packet.findChild("captcha", "urn:xmpp:captcha");
+                final Data data = Data.parse(captchaElement.findChild("x", Namespace.DATA));
+                if (data != null && "urn:xmpp:captcha".equals(data.getFormType())) {
+                    Log.d(Config.LOGTAG, account.getJid().asBareJid() + ": CAPTCHA challenge received in message from " + counterpart.asBareJid());
+                    final String captchaId = captchaElement.getAttribute("id");
+                    final String requestId = "msg:" + counterpart.asBareJid().toString() + (captchaId != null ? " " + captchaId : "");
+                    mXmppConnectionService.fetchCaptchaAndDisplay(account, requestId, data, packet);
+                }
+            }
 
             if (message.getFileParams() != null) {
                 for (Cid cid : message.getFileParams().getCids()) {
