@@ -35,6 +35,7 @@ public class CaptchaActivity extends XmppActivity {
         binding = DataBindingUtil.setContentView(this, R.layout.activity_captcha);
         setSupportActionBar((Toolbar) binding.toolbar.getRoot());
         configureActionBar(getSupportActionBar());
+        getSupportActionBar().setTitle(R.string.pass_verification);
 
         id = getIntent().getStringExtra(EXTRA_ID);
         String accountUuid = getIntent().getStringExtra(EXTRA_ACCOUNT);
@@ -50,6 +51,26 @@ public class CaptchaActivity extends XmppActivity {
 
         if (accountUuid != null) {
             account = extractAccount(getIntent());
+        }
+
+        if (account != null) {
+            binding.accountInfo.setText(String.format("%s (%s)", account.getJid().getDomain(), account.getJid().asBareJid().toString()));
+        } else {
+            binding.accountInfo.setVisibility(View.GONE);
+        }
+
+        if (id != null) {
+            final String[] parts = id.split(" ", 2);
+            final String typePrefix = parts[0];
+            if (typePrefix.startsWith("muc:") || typePrefix.startsWith("msg:")) {
+                binding.targetInfo.setText(typePrefix.substring(4));
+            } else if (typePrefix.startsWith("reg:")) {
+                binding.targetInfo.setText(R.string.account_registration);
+            } else {
+                binding.targetInfo.setVisibility(View.GONE);
+            }
+        } else {
+            binding.targetInfo.setVisibility(View.GONE);
         }
 
         if (captchaBitmap != null) {
@@ -68,6 +89,7 @@ public class CaptchaActivity extends XmppActivity {
         }
 
         binding.submitButton.setOnClickListener(v -> submit());
+        binding.cancelButton.setOnClickListener(v -> cancel());
     }
 
     private void submit() {
