@@ -495,6 +495,11 @@ public class MessageParser extends AbstractParser implements OnMessagePacketRece
         if (handleErrorMessage(account, original)) {
             return;
         }
+        final Element captchaChallenge = original.findChild("captcha", Namespace.CAPTCHA);
+        if (captchaChallenge != null && original.getType() != MessagePacket.TYPE_ERROR) {
+            mXmppConnectionService.processCaptchaMessage(account, original);
+            return;
+        }
         final MessagePacket packet;
         Long timestamp = null;
         final boolean isForwarded;

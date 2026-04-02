@@ -337,6 +337,11 @@
             android:exported="false"
             android:launchMode="singleTask" />
         <activity
+            android:name=".ui.CaptchaActivity"
+            android:label="@string/captcha_required"
+            android:exported="false"
+            android:windowSoftInputMode="adjustResize" />
+        <activity
             android:name=".ui.MagicCreateActivity"
             android:label="@string/create_account"
             android:exported="false"

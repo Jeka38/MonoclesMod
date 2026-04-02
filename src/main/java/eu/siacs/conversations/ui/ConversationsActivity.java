@@ -47,6 +47,7 @@ import android.content.ComponentName;
 import android.content.Context;
 import android.content.Intent;
 import android.content.SharedPreferences;
+import android.graphics.Bitmap;
 import android.content.pm.PackageManager;
 import android.graphics.Typeface;
 import android.graphics.drawable.ColorDrawable;
@@ -130,6 +131,7 @@ import eu.siacs.conversations.utils.XmppUri;
 import eu.siacs.conversations.utils.PhoneNumberUtilWrapper;
 import eu.siacs.conversations.xmpp.Jid;
 import eu.siacs.conversations.xmpp.OnUpdateBlocklist;
+import eu.siacs.conversations.xmpp.forms.Data;
 import eu.siacs.conversations.xmpp.chatstate.ChatState;
 import me.drakeet.support.toast.ToastCompat;
 import eu.siacs.conversations.utils.ThemeHelper;
@@ -138,7 +140,7 @@ import p32929.easypasscodelock.Utils.EasyLock;
 import com.google.android.material.bottomnavigation.BottomNavigationView;
 
 
-public class ConversationsActivity extends XmppActivity implements OnConversationSelected, OnConversationArchived, OnConversationsListItemUpdated, OnConversationRead, XmppConnectionService.OnAccountUpdate, XmppConnectionService.OnConversationUpdate, XmppConnectionService.OnRosterUpdate, OnUpdateBlocklist, XmppConnectionService.OnShowErrorToast, XmppConnectionService.OnAffiliationChanged, XmppConnectionService.OnRoomDestroy {
+public class ConversationsActivity extends XmppActivity implements OnConversationSelected, OnConversationArchived, OnConversationsListItemUpdated, OnConversationRead, XmppConnectionService.OnAccountUpdate, XmppConnectionService.OnConversationUpdate, XmppConnectionService.OnRosterUpdate, OnUpdateBlocklist, XmppConnectionService.OnShowErrorToast, XmppConnectionService.OnAffiliationChanged, XmppConnectionService.OnRoomDestroy, XmppConnectionService.OnCaptchaRequested {
 
     public static final String ACTION_VIEW_CONVERSATION = "eu.siacs.conversations.VIEW";
     public static final String EXTRA_CONVERSATION = "conversationUuid";
@@ -1356,6 +1358,16 @@ public class ConversationsActivity extends XmppActivity implements OnConversatio
     @Override
     public void onShowErrorToast(int resId) {
         runOnUiThread(() -> ToastCompat.makeText(this, resId, ToastCompat.LENGTH_SHORT).show());
+    }
+
+    @Override
+    public void onCaptchaRequested(final Account account, final String id, final Data data, final Bitmap captcha) {
+        runOnUiThread(() -> {
+            Intent intent = new Intent(ConversationsActivity.this, CaptchaActivity.class);
+            intent.putExtra("id", id);
+            intent.putExtra("account", account.getUuid());
+            startActivity(intent);
+        });
     }
 
     protected void AppUpdate(String Store) {

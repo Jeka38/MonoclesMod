@@ -241,6 +241,8 @@ import eu.siacs.conversations.xmpp.pep.PublishOptions;
 import eu.siacs.conversations.xmpp.stanzas.IqPacket;
 import eu.siacs.conversations.xmpp.stanzas.MessagePacket;
 import eu.siacs.conversations.xmpp.stanzas.PresencePacket;
+import android.graphics.BitmapFactory;
+import android.util.Base64;
 import io.ipfs.cid.Cid;
 import me.leolin.shortcutbadger.ShortcutBadger;
 import okhttp3.HttpUrl;
@@ -408,6 +410,7 @@ public class XmppConnectionService extends Service {
     private final Set<OnConversationUpdate> mOnConversationUpdates = Collections.newSetFromMap(new WeakHashMap<OnConversationUpdate, Boolean>());
     private final Set<OnShowErrorToast> mOnShowErrorToasts = Collections.newSetFromMap(new WeakHashMap<OnShowErrorToast, Boolean>());
     private final Set<OnAccountUpdate> mOnAccountUpdates = Collections.newSetFromMap(new WeakHashMap<OnAccountUpdate, Boolean>());
+    private final Map<String, CaptchaRequest> mPendingCaptchas = new HashMap<>();
     private final Set<OnCaptchaRequested> mOnCaptchaRequested = Collections.newSetFromMap(new WeakHashMap<OnCaptchaRequested, Boolean>());
     private final Set<OnRosterUpdate> mOnRosterUpdates = Collections.newSetFromMap(new WeakHashMap<OnRosterUpdate, Boolean>());
     private final Set<OnUpdateBlocklist> mOnUpdateBlocklist = Collections.newSetFromMap(new WeakHashMap<OnUpdateBlocklist, Boolean>());
@@ -5709,15 +5712,80 @@ public class XmppConnectionService extends Service {
 
     public boolean displayCaptchaRequest(Account account, String id, Data data, Bitmap captcha) {
         if (mOnCaptchaRequested.size() > 0) {
-            DisplayMetrics metrics = getApplicationContext().getResources().getDisplayMetrics();
-            Bitmap scaled = Bitmap.createScaledBitmap(captcha, (int) (captcha.getWidth() * metrics.scaledDensity),
-                    (int) (captcha.getHeight() * metrics.scaledDensity), false);
+            Bitmap scaled;
+            if (captcha != null) {
+                DisplayMetrics metrics = getApplicationContext().getResources().getDisplayMetrics();
+                scaled = Bitmap.createScaledBitmap(captcha, (int) (captcha.getWidth() * metrics.scaledDensity),
+                        (int) (captcha.getHeight() * metrics.scaledDensity), false);
+            } else {
+                scaled = null;
+            }
             for (OnCaptchaRequested listener : threadSafeList(this.mOnCaptchaRequested)) {
                 listener.onCaptchaRequested(account, id, data, scaled);
             }
             return true;
         }
         return false;
+    }
+
+    public void processCaptchaMessage(Account account, MessagePacket packet) {
+        Element captcha = packet.findChild("captcha", Namespace.CAPTCHA);
+        if (captcha == null) return;
+        Element x = captcha.findChild("x", Namespace.DATA);
+        if (x == null) return;
+        Data data = Data.parse(x);
+        String id = "msg:" + packet.getFrom().toString() + " " + packet.getId();
+
+        // BoB handling
+        Element bob = captcha.findChild("data", Namespace.BOB);
+        Bitmap bitmap = null;
+        if (bob != null) {
+            try {
+                byte[] bytes = Base64.decode(bob.getContent(), Base64.DEFAULT);
+                bitmap = BitmapFactory.decodeByteArray(bytes, 0, bytes.length);
+            } catch (Exception e) {
+                Log.w(Config.LOGTAG, "failed to decode BoB captcha", e);
+            }
+        }
+
+        synchronized (mPendingCaptchas) {
+            mPendingCaptchas.put(id, new CaptchaRequest(account, packet.getFrom(), data, packet.getType()));
+        }
+
+        displayCaptchaRequest(account, id, data, bitmap);
+    }
+
+    public CaptchaRequest getPendingCaptchaRequest(String id) {
+        synchronized (mPendingCaptchas) {
+            return mPendingCaptchas.get(id);
+        }
+    }
+
+    public void removePendingCaptchaRequest(String id) {
+        synchronized (mPendingCaptchas) {
+            mPendingCaptchas.remove(id);
+        }
+    }
+
+    public void sendCaptchaResponse(Account account, String id, Data data) {
+        CaptchaRequest request;
+        synchronized (mPendingCaptchas) {
+            request = mPendingCaptchas.remove(id);
+        }
+        if (request == null) return;
+
+        MessagePacket response = new MessagePacket();
+        if (request.type == MessagePacket.TYPE_GROUPCHAT) {
+            response.setTo(request.from.asBareJid());
+            response.setType(MessagePacket.TYPE_GROUPCHAT);
+        } else {
+            response.setTo(request.from);
+            response.setType(MessagePacket.TYPE_CHAT);
+        }
+        Element captcha = response.addChild("captcha", Namespace.CAPTCHA);
+        data.submit();
+        captcha.addChild(data);
+        sendMessagePacket(account, response);
     }
 
     public void updateBlocklistUi(final OnUpdateBlocklist.Status status) {
@@ -6730,6 +6798,20 @@ public class XmppConnectionService extends Service {
 
     public interface OnCaptchaRequested {
         void onCaptchaRequested(Account account, String id, Data data, Bitmap captcha);
+    }
+
+    public static class CaptchaRequest {
+        public final Account account;
+        public final Jid from;
+        public final Data data;
+        public final int type;
+
+        public CaptchaRequest(Account account, Jid from, Data data, int type) {
+            this.account = account;
+            this.from = from;
+            this.data = data;
+            this.type = type;
+        }
     }
 
     public interface OnRosterUpdate {
