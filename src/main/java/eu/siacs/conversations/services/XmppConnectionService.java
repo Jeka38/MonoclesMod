@@ -6323,7 +6323,7 @@ public class XmppConnectionService extends Service {
     public void sendCreateAccountWithCaptchaPacket(Account account, String id, Data data) {
         final XmppConnection connection = account.getXmppConnection();
         if (connection != null) {
-            IqPacket request = mIqGenerator.generateCreateAccountWithCaptcha(account, id, data);
+            IqPacket request = mIqGenerator.generateCreateAccountWithCaptcha(account, data);
             connection.sendUnmodifiedIqPacket(request, connection.registrationResponseListener, true);
         }
     }

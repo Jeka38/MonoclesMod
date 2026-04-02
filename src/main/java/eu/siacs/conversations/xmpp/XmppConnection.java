@@ -124,8 +124,38 @@ public class XmppConnection implements Runnable {
     private static final int PACKET_IQ = 0;
     private static final int PACKET_MESSAGE = 1;
     private static final int PACKET_PRESENCE = 2;
+    private void deleteAccount(Account account) {
+        mXmppConnectionService.deleteAccount(account);
+    }
+
+    protected final Account account;
+    private final Features features = new Features(this);
+    private final HashMap<Jid, ServiceDiscoveryResult> disco = new HashMap<>();
+    private final HashMap<String, Jid> commands = new HashMap<>();
+    private final SparseArray<AbstractAcknowledgeableStanza> mStanzaQueue = new SparseArray<>();
+    private final Hashtable<String, Pair<IqPacket, Pair<OnIqPacketReceived, ScheduledFuture>>> packetCallbacks =
+            new Hashtable<>();
+    private final Set<OnAdvancedStreamFeaturesLoaded> advancedStreamFeaturesLoadedListeners =
+            new HashSet<>();
+    private final XmppConnectionService mXmppConnectionService;
+
     public final OnIqPacketReceived registrationResponseListener =
             (account, packet) -> {
+                final Element query = packet.query(Namespace.REGISTER);
+                final Element errorElement = packet.findChild("error");
+                Element captchaElement = query != null ? query.findChild("captcha", "urn:xmpp:captcha") : null;
+                if (captchaElement == null && errorElement != null) {
+                    captchaElement = errorElement.findChild("captcha", "urn:xmpp:captcha");
+                }
+                final Element dataElement = captchaElement != null ? captchaElement.findChild("x", Namespace.DATA) : (query != null ? query.findChild("x", Namespace.DATA) : null);
+                if (dataElement != null) {
+                    final Data data = Data.parse(dataElement);
+                    final String id = packet.getId();
+                    if ("urn:xmpp:captcha".equals(data.getFormType()) || captchaElement != null) {
+                        getXmppConnectionService().fetchCaptchaAndDisplay(account, "reg:" + id, data, query != null ? query : errorElement);
+                        return;
+                    }
+                }
                 if (packet.getType() == IqPacket.TYPE.RESULT) {
                     account.setOption(Account.OPTION_REGISTER, false);
                     Log.d(
@@ -161,20 +191,6 @@ public class XmppConnection implements Runnable {
                 }
             };
 
-    private void deleteAccount(Account account) {
-        mXmppConnectionService.deleteAccount(account);
-    }
-
-    protected final Account account;
-    private final Features features = new Features(this);
-    private final HashMap<Jid, ServiceDiscoveryResult> disco = new HashMap<>();
-    private final HashMap<String, Jid> commands = new HashMap<>();
-    private final SparseArray<AbstractAcknowledgeableStanza> mStanzaQueue = new SparseArray<>();
-    private final Hashtable<String, Pair<IqPacket, Pair<OnIqPacketReceived, ScheduledFuture>>> packetCallbacks =
-            new Hashtable<>();
-    private final Set<OnAdvancedStreamFeaturesLoaded> advancedStreamFeaturesLoadedListeners =
-            new HashSet<>();
-    private final XmppConnectionService mXmppConnectionService;
     private Socket socket;
     private XmlReader tagReader;
     private TagWriter tagWriter = new TagWriter();
