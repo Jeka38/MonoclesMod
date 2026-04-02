@@ -525,7 +525,6 @@ public class IqGenerator extends AbstractGenerator {
         final IqPacket register = new IqPacket(IqPacket.TYPE.SET);
         register.setFrom(account.getJid().asBareJid());
         register.setTo(account.getDomain());
-        register.setId(id);
         Element query = register.query(Namespace.REGISTER);
         if (data != null) {
             query.addChild(data);

@@ -121,11 +121,31 @@ import okhttp3.HttpUrl;
 
 public class XmppConnection implements Runnable {
 
+    private final XmppConnectionService mXmppConnectionService;
+
     private static final int PACKET_IQ = 0;
     private static final int PACKET_MESSAGE = 1;
     private static final int PACKET_PRESENCE = 2;
     public final OnIqPacketReceived registrationResponseListener =
             (account, packet) -> {
+                final Element query = packet.findChild("query", Namespace.REGISTER);
+                final Element errorElement = packet.findChild("error");
+                Element captchaElement = query != null ? query.findChild("captcha", "urn:xmpp:captcha") : null;
+                if (captchaElement == null && errorElement != null) {
+                    captchaElement = errorElement.findChild("captcha", "urn:xmpp:captcha");
+                }
+                if (captchaElement == null) {
+                    captchaElement = packet.findChild("captcha", "urn:xmpp:captcha");
+                }
+                final Element dataElement = captchaElement != null ? captchaElement.findChild("x", Namespace.DATA) : (query != null ? query.findChild("x", Namespace.DATA) : null);
+                if (dataElement != null) {
+                    final Data data = Data.parse(dataElement);
+                    final String id = packet.getId();
+                    if ("urn:xmpp:captcha".equals(data.getFormType()) || captchaElement != null) {
+                        getXmppConnectionService().fetchCaptchaAndDisplay(account, "reg:" + id, data, query != null ? query : packet);
+                        return;
+                    }
+                }
                 if (packet.getType() == IqPacket.TYPE.RESULT) {
                     account.setOption(Account.OPTION_REGISTER, false);
                     Log.d(
@@ -139,7 +159,6 @@ public class XmppConnection implements Runnable {
                                     "The password is too weak", "Please use a longer password.");
                     Element error = packet.findChild("error");
                     Account.State state = Account.State.REGISTRATION_FAILED;
-                    deleteAccount(account);
                     if (error != null) {
                         if (error.hasChild("text")) {
                             errorMessage = error.findChildContent("text");
@@ -157,6 +176,7 @@ public class XmppConnection implements Runnable {
                         }
                     }
                     Log.d(Config.LOGTAG, "Delete account because of error " + error);
+                    deleteAccount(account);
                     throw new StateChangingError(state);
                 }
             };
@@ -174,7 +194,6 @@ public class XmppConnection implements Runnable {
             new Hashtable<>();
     private final Set<OnAdvancedStreamFeaturesLoaded> advancedStreamFeaturesLoadedListeners =
             new HashSet<>();
-    private final XmppConnectionService mXmppConnectionService;
     private Socket socket;
     private XmlReader tagReader;
     private TagWriter tagWriter = new TagWriter();
@@ -1840,11 +1859,28 @@ public class XmppConnection implements Runnable {
                     if (packet.getType() == IqPacket.TYPE.TIMEOUT) {
                         return;
                     }
+                    final Element query = packet.findChild("query", Namespace.REGISTER);
+                    final Element errorElement = packet.findChild("error");
+                    Element captchaElement = query != null ? query.findChild("captcha", "urn:xmpp:captcha") : null;
+                    if (captchaElement == null && errorElement != null) {
+                        captchaElement = errorElement.findChild("captcha", "urn:xmpp:captcha");
+                    }
+                    if (captchaElement == null) {
+                        captchaElement = packet.findChild("captcha", "urn:xmpp:captcha");
+                    }
+                    final Element dataElement = captchaElement != null ? captchaElement.findChild("x", Namespace.DATA) : (query != null ? query.findChild("x", Namespace.DATA) : null);
+                    if (dataElement != null) {
+                        final Data data = Data.parse(dataElement);
+                        final String id = packet.getId();
+                        if ("urn:xmpp:captcha".equals(data.getFormType()) || captchaElement != null) {
+                            getXmppConnectionService().fetchCaptchaAndDisplay(account, "reg:" + id, data, query != null ? query : packet);
+                            return;
+                        }
+                    }
                     if (packet.getType() == IqPacket.TYPE.ERROR) {
                         throw new StateChangingError(Account.State.REGISTRATION_FAILED);
                     }
-                    final Element query = packet.query(Namespace.REGISTER);
-                    if (query.hasChild("username") && (query.hasChild("password"))) {
+                    if (query != null && query.hasChild("username") && query.hasChild("password")) {
                         final IqPacket register1 = new IqPacket(IqPacket.TYPE.SET);
                         final Element username =
                                 new Element("username").setContent(account.getUsername());
@@ -1854,20 +1890,10 @@ public class XmppConnection implements Runnable {
                         register1.query().addChild(password);
                         register1.setFrom(account.getJid().asBareJid());
                         sendUnmodifiedIqPacket(register1, registrationResponseListener, true);
-                    } else {
-                        final Element captchaElement = query.findChild("captcha", "urn:xmpp:captcha");
-                        final Element dataElement = captchaElement != null ? captchaElement.findChild("x", Namespace.DATA) : query.findChild("x", Namespace.DATA);
-                        if (dataElement != null) {
-                            final Data data = Data.parse(dataElement);
-                            final String id = packet.getId();
-                            if ("urn:xmpp:captcha".equals(data.getFormType()) || captchaElement != null) {
-                                mXmppConnectionService.fetchCaptchaAndDisplay(account, "reg:" + id, data, query);
-                                return;
-                            }
-                        }
+                        return;
                     }
-                    if (query.hasChild("instructions")
-                            || query.hasChild("x", Namespace.OOB)) {
+                    if (query != null && (query.hasChild("instructions")
+                            || query.hasChild("x", Namespace.OOB))) {
                         final String instructions = query.findChildContent("instructions");
                         final Element oob = query.findChild("x", Namespace.OOB);
                         final String url = oob == null ? null : oob.findChildContent("url");
