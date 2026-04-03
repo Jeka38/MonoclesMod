@@ -1335,7 +1335,7 @@ public class XmppConnection implements Runnable {
         if (Config.BACKGROUND_STANZA_LOGGING && mXmppConnectionService.checkListeners()) {
             Log.d(Config.LOGTAG, "[background stanza] " + element);
         }
-        if (getXmppConnectionService().xmlIqLogging() && element instanceof IqPacket) {
+        if (getXmppConnectionService().xmlIqLogging()) {
             mXmppConnectionService.logStanza(account.getJid().asBareJid().toString(), element.toString(), true);
         }
         if (element instanceof IqPacket
@@ -2628,7 +2628,7 @@ public class XmppConnection implements Runnable {
             disconnect(true);
             return;
         }
-        if (getXmppConnectionService().xmlIqLogging() && packet instanceof IqPacket) {
+        if (getXmppConnectionService().xmlIqLogging()) {
             mXmppConnectionService.logStanza(account.getJid().asBareJid().toString(), packet.toString(), false);
         }
         synchronized (this.mStanzaQueue) {
