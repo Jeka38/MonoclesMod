@@ -5871,12 +5871,6 @@ public class XmppConnectionService extends Service {
             if (pending != null) {
                 return pending.getCaptcha() != null;
             }
-            final String target = id.split(" ", 2)[0];
-            for (String pendingId : mPendingCaptchas.keySet()) {
-                if (pendingId.startsWith(target)) {
-                    return true;
-                }
-            }
         }
         return false;
     }
@@ -6370,6 +6364,7 @@ public class XmppConnectionService extends Service {
                 final MucOptions mucOptions = conversation.getMucOptions();
                 final String nick = mucOptions.getActualNick();
                 sendMUCJoinWithCaptcha(account, jid, nick, captchaId, data, stanzaId);
+                internalPingExecutor.schedule(() -> joinMuc(conversation), 500, TimeUnit.MILLISECONDS);
             }
         } else if (typePrefix.startsWith("msg:")) {
             Jid jid = Jid.of(typePrefix.substring(4));
@@ -6387,6 +6382,10 @@ public class XmppConnectionService extends Service {
                 }
                 captcha.addChild(data);
                 sendMessagePacket(account, packet);
+                Conversation conversation = find(account, jid);
+                if (conversation != null && conversation.getMode() == Conversational.MODE_MULTI) {
+                    internalPingExecutor.schedule(() -> joinMuc(conversation), 500, TimeUnit.MILLISECONDS);
+                }
             }
         } else if (typePrefix.startsWith("sub:")) {
             Jid jid = Jid.of(typePrefix.substring(4));

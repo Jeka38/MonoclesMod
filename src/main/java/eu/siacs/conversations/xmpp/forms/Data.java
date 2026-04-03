@@ -22,8 +22,7 @@ public class Data extends Element {
     public List<Field> getFields() {
         ArrayList<Field> fields = new ArrayList<Field>();
         for (Element child : getChildren()) {
-            if (child.getName().equals("field")
-                    && !FORM_TYPE.equals(child.getAttribute("var"))) {
+            if (child.getName().equals("field")) {
                 fields.add(Field.parse(child));
             }
         }
@@ -77,7 +76,7 @@ public class Data extends Element {
     }
 
     private void removeUnnecessaryChildren() {
-        replaceChildren(getChildren().stream().filter(element -> element.getName().equals("field") || element.getName().equals("title")).collect(Collectors.toList()));
+        replaceChildren(getChildren().stream().filter(element -> element.getName().equals("field")).collect(Collectors.toList()));
     }
 
     public static Data parse(Element element) {

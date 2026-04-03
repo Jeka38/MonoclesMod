@@ -82,11 +82,14 @@ public class CaptchaActivity extends XmppActivity {
         if (captchaField == null) {
             if (data.getFieldByName("ocr") != null) {
                 captchaField = "ocr";
+            } else if (data.getFieldByName("captcha") != null) {
+                captchaField = "captcha";
             } else if (data.getFieldByName("answers") != null) {
                 captchaField = "answers";
             } else {
                 for (Field field : data.getFields()) {
-                    if ("text-single".equals(field.getType())) {
+                    final String type = field.getType();
+                    if ("text-single".equals(type) || "text-private".equals(type)) {
                         captchaField = field.getFieldName();
                         break;
                     }
