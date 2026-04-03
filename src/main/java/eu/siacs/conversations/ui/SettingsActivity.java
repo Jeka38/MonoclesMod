@@ -746,6 +746,14 @@ public class SettingsActivity extends XmppActivity implements OnSharedPreference
             }
         }
 
+        final Preference openXmlConsole = mSettingsFragment.findPreference("open_xml_console");
+        if (openXmlConsole != null) {
+            openXmlConsole.setOnPreferenceClickListener(preference -> {
+                startActivity(new Intent(this, XmlConsoleActivity.class));
+                return true;
+            });
+        }
+
         final Preference removeCertsPreference = mSettingsFragment.findPreference("remove_trusted_certificates");
         if (removeCertsPreference != null) {
             removeCertsPreference.setOnPreferenceClickListener(

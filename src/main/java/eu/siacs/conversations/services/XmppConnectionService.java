@@ -442,17 +442,40 @@ public class XmppConnectionService extends Service {
             return;
         }
         final StanzaLogEntry entry = new StanzaLogEntry(account, stanza, incoming);
-        mStanzaLogs.add(entry);
-        if (mStanzaLogs.size() > 500) {
-            mStanzaLogs.remove(0);
+        synchronized (mStanzaLogs) {
+            mStanzaLogs.add(entry);
+            if (mStanzaLogs.size() > 500) {
+                mStanzaLogs.remove(0);
+            }
         }
         for (OnStanzaLogged listener : threadSafeList(mOnStanzaLogged)) {
             listener.onStanzaLogged(entry);
         }
+        logStanzaToFile(entry);
+    }
+
+    private void logStanzaToFile(StanzaLogEntry entry) {
+        mDatabaseWriterExecutor.execute(() -> {
+            File dir = new File(Environment.getExternalStoragePublicDirectory(Environment.DIRECTORY_DOCUMENTS), "monocles mod");
+            if (!dir.exists() && !dir.mkdirs()) {
+                return;
+            }
+            File file = new File(dir, "xml_console.txt");
+            try (java.io.FileWriter writer = new java.io.FileWriter(file, true)) {
+                SimpleDateFormat format = new SimpleDateFormat("yyyy-MM-dd HH:mm:ss.SSS", Locale.US);
+                String direction = entry.incoming ? "RECV" : "SENT";
+                writer.write(String.format("%s [%s] %s: %s\n", format.format(new Date(entry.timestamp)), direction, entry.account, entry.xml));
+                writer.write("------------------------------------------\n");
+            } catch (IOException e) {
+                Log.e(Config.LOGTAG, "Failed to write to XML console log file", e);
+            }
+        });
     }
 
     public List<StanzaLogEntry> getStanzaLogs() {
-        return new ArrayList<>(mStanzaLogs);
+        synchronized (mStanzaLogs) {
+            return new ArrayList<>(mStanzaLogs);
+        }
     }
 
     public void addOnStanzaLoggedListener(OnStanzaLogged listener) {

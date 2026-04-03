@@ -41,6 +41,14 @@ public class XmlConsoleActivity extends XmppActivity implements XmppConnectionSe
     }
 
     @Override
+    public void onResume() {
+        super.onResume();
+        if (xmppConnectionService != null) {
+            xmppConnectionService.addOnStanzaLoggedListener(this);
+        }
+    }
+
+    @Override
     public void onPause() {
         super.onPause();
         if (xmppConnectionService != null) {
