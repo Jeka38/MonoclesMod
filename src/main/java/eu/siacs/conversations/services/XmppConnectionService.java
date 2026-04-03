@@ -6316,11 +6316,11 @@ public class XmppConnectionService extends Service {
                 sendSubscriptionCaptchaResponse(account, jid, captchaId, data);
             }
         } else if (typePrefix.startsWith("reg:")) {
-            sendCreateAccountWithCaptchaPacket(account, typePrefix.substring(4), data);
+            sendCreateAccountWithCaptchaPacket(account, data);
         }
     }
 
-    public void sendCreateAccountWithCaptchaPacket(Account account, String id, Data data) {
+    public void sendCreateAccountWithCaptchaPacket(Account account, Data data) {
         final XmppConnection connection = account.getXmppConnection();
         if (connection != null) {
             IqPacket request = mIqGenerator.generateCreateAccountWithCaptcha(account, data);

@@ -124,21 +124,6 @@ public class XmppConnection implements Runnable {
     private static final int PACKET_IQ = 0;
     private static final int PACKET_MESSAGE = 1;
     private static final int PACKET_PRESENCE = 2;
-    private void deleteAccount(Account account) {
-        mXmppConnectionService.deleteAccount(account);
-    }
-
-    protected final Account account;
-    private final Features features = new Features(this);
-    private final HashMap<Jid, ServiceDiscoveryResult> disco = new HashMap<>();
-    private final HashMap<String, Jid> commands = new HashMap<>();
-    private final SparseArray<AbstractAcknowledgeableStanza> mStanzaQueue = new SparseArray<>();
-    private final Hashtable<String, Pair<IqPacket, Pair<OnIqPacketReceived, ScheduledFuture>>> packetCallbacks =
-            new Hashtable<>();
-    private final Set<OnAdvancedStreamFeaturesLoaded> advancedStreamFeaturesLoadedListeners =
-            new HashSet<>();
-    private final XmppConnectionService mXmppConnectionService;
-
     public final OnIqPacketReceived registrationResponseListener =
             (account, packet) -> {
                 final Element query = packet.query(Namespace.REGISTER);
@@ -191,6 +176,20 @@ public class XmppConnection implements Runnable {
                 }
             };
 
+    private void deleteAccount(Account account) {
+        mXmppConnectionService.deleteAccount(account);
+    }
+
+    protected final Account account;
+    private final Features features = new Features(this);
+    private final HashMap<Jid, ServiceDiscoveryResult> disco = new HashMap<>();
+    private final HashMap<String, Jid> commands = new HashMap<>();
+    private final SparseArray<AbstractAcknowledgeableStanza> mStanzaQueue = new SparseArray<>();
+    private final Hashtable<String, Pair<IqPacket, Pair<OnIqPacketReceived, ScheduledFuture>>> packetCallbacks =
+            new Hashtable<>();
+    private final Set<OnAdvancedStreamFeaturesLoaded> advancedStreamFeaturesLoadedListeners =
+            new HashSet<>();
+    private final XmppConnectionService mXmppConnectionService;
     private Socket socket;
     private XmlReader tagReader;
     private TagWriter tagWriter = new TagWriter();
@@ -1333,6 +1332,9 @@ public class XmppConnection implements Runnable {
         lastPacketReceived = SystemClock.elapsedRealtime();
         if (Config.BACKGROUND_STANZA_LOGGING && mXmppConnectionService.checkListeners()) {
             Log.d(Config.LOGTAG, "[background stanza] " + element);
+        }
+        if (Config.XML_IQ_LOGGING && element instanceof IqPacket) {
+            Log.d(Config.LOGTAG, account.getJid().asBareJid() + ": [incoming IQ] " + element);
         }
         if (element instanceof IqPacket
                 && (((IqPacket) element).getType() == IqPacket.TYPE.SET)
@@ -2621,6 +2623,9 @@ public class XmppConnection implements Runnable {
             resetStreamId();
             disconnect(true);
             return;
+        }
+        if (Config.XML_IQ_LOGGING && packet instanceof IqPacket) {
+            Log.d(Config.LOGTAG, account.getJid().asBareJid() + ": [outgoing IQ] " + packet);
         }
         synchronized (this.mStanzaQueue) {
             if (force || isBound) {
