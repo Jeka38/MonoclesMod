@@ -152,6 +152,11 @@
         </PreferenceCategory>
         <PreferenceCategory android:title="@string/pref_expert_options_other">
         <SwitchPreference
+            android:defaultValue="false"
+            android:key="xml_iq_logging"
+            android:summary="@string/pref_xml_iq_logging_summary"
+            android:title="@string/pref_xml_iq_logging" />
+        <SwitchPreference
             android:defaultValue="@bool/show_muc_status_messages"
             android:key="show_muc_status_messages"
             android:summary="@string/show_muc_status_messages_summary"

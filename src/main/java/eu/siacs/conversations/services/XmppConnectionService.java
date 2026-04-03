@@ -5598,6 +5598,10 @@ public class XmppConnectionService extends Service {
         return getBooleanPreference(CONFIRM_MESSAGES, R.bool.confirm_messages);
     }
 
+    public boolean xmlIqLogging() {
+        return getPreferences().getBoolean(SettingsActivity.XML_IQ_LOGGING, false);
+    }
+
     public boolean usingInnerStorage() {
         return getBooleanPreference(USE_INNER_STORAGE, R.bool.use_inner_storage);
     }
