@@ -149,6 +149,7 @@
     <string name="account_registration">Регистрация аккаунта</string>
     <string name="captcha_hint">Введите увиденный текст:</string>
     <string name="refresh">Обновить</string>
+    <string name="open_in_browser">Браузер</string>
     <string name="captcha_required">Требуется CAPTCHA</string>
     <string name="captcha_sending">Отправка ответа…</string>
     <string name="captcha_dialog_title">Диалог</string>

@@ -2,6 +2,7 @@ package eu.siacs.conversations.ui;
 
 import android.content.Intent;
 import android.graphics.Bitmap;
+import android.net.Uri;
 import android.os.Bundle;
 import android.util.Log;
 import android.view.MenuItem;
@@ -43,6 +44,15 @@ public class CaptchaActivity extends XmppActivity {
         binding.submitButton.setOnClickListener(v -> submit());
         binding.cancelButton.setOnClickListener(v -> cancel());
         binding.refreshButton.setOnClickListener(v -> refresh());
+        binding.openBrowserButton.setOnClickListener(v -> openBrowser());
+    }
+
+    private void openBrowser() {
+        CaptchaRequest request = xmppConnectionService.getCaptchaRequest(id);
+        if (request != null && request.getUrl() != null) {
+            Intent intent = new Intent(Intent.ACTION_VIEW, Uri.parse(request.getUrl()));
+            startActivity(intent);
+        }
     }
 
     private void refresh() {
@@ -194,6 +204,12 @@ public class CaptchaActivity extends XmppActivity {
             binding.instructions.setVisibility(View.VISIBLE);
         } else {
             binding.instructions.setVisibility(View.GONE);
+        }
+
+        if (request.getUrl() != null) {
+            binding.openBrowserButton.setVisibility(View.VISIBLE);
+        } else {
+            binding.openBrowserButton.setVisibility(View.GONE);
         }
     }
 }

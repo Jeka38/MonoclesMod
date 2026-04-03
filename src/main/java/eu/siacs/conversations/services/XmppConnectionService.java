@@ -497,6 +497,7 @@ public class XmppConnectionService extends Service {
         public final Element container;
         private Bitmap captcha;
         private String instructions;
+        private String url;
 
         public CaptchaRequest(Account account, String id, Data data, Element container) {
             this.account = account;
@@ -519,6 +520,14 @@ public class XmppConnectionService extends Service {
 
         public String getInstructions() {
             return instructions;
+        }
+
+        public void setUrl(String url) {
+            this.url = url;
+        }
+
+        public String getUrl() {
+            return url;
         }
     }
     private final Set<OnRosterUpdate> mOnRosterUpdates = Collections.newSetFromMap(new WeakHashMap<OnRosterUpdate, Boolean>());
@@ -6195,10 +6204,23 @@ public class XmppConnectionService extends Service {
             }
         }
         String url = data.getValue("url");
-        final String fallbackUrl = data.getValue("captcha-fallback-url");
+        if (url == null) {
+            url = data.getValue("captcha-fallback-url");
+        }
+        if (url == null && instructionsElement != null) {
+            String content = instructionsElement.getContent();
+            if (content != null) {
+                java.util.regex.Matcher matcher = eu.siacs.conversations.utils.Patterns.AUTOLINK_WEB_URL.matcher(content);
+                if (matcher.find()) {
+                    url = content.substring(matcher.start(), matcher.end());
+                }
+            }
+        }
+        final String finalUrl = url;
+        mPendingCaptchas.get(id).setUrl(finalUrl);
         Element finalBob = findBobData(container);
 
-        if (url == null && finalBob == null) {
+        if (finalUrl == null && finalBob == null) {
             for (Field field : data.getFields()) {
                 Element media = field.findChild("media", "urn:xmpp:media-element");
                 if (media != null) {
@@ -6211,18 +6233,17 @@ public class XmppConnectionService extends Service {
                                 url = content;
                             }
                         }
-                        if (url != null || finalBob != null) {
+                        if (finalBob != null) {
                             break;
                         }
                     }
                 }
-                if (url != null || finalBob != null) {
+                if (finalBob != null) {
                     break;
                 }
             }
         }
 
-        final String finalUrl = url;
         final Element bob = finalBob;
         final boolean useTor = useTorToConnect() || account.isOnion();
         final boolean useI2P = useI2PToConnect() || account.isI2P();
@@ -6237,9 +6258,9 @@ public class XmppConnectionService extends Service {
                 } catch (Exception e) {
                     is = null;
                 }
-            } else if (finalUrl != null || fallbackUrl != null) {
+            } else if (finalUrl != null) {
                 try {
-                    is = HttpConnectionManager.open(finalUrl != null ? finalUrl : fallbackUrl, useTor, useI2P);
+                    is = HttpConnectionManager.open(finalUrl, useTor, useI2P);
                 } catch (IOException e) {
                     is = null;
                 }

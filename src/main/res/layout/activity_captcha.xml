@@ -97,6 +97,14 @@
                         android:text="@string/refresh"
                         android:visibility="gone" />
 
+                    <Button
+                        android:id="@+id/open_browser_button"
+                        style="@style/Widget.Material3.Button.TextButton"
+                        android:layout_width="wrap_content"
+                        android:layout_height="wrap_content"
+                        android:text="@string/open_in_browser"
+                        android:visibility="gone" />
+
                     <View
                         android:layout_width="0dp"
                         android:layout_height="0dp"
