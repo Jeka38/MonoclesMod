@@ -5867,8 +5867,9 @@ public class XmppConnectionService extends Service {
 
     public boolean isCaptchaPending(String id) {
         synchronized (mPendingCaptchas) {
-            if (mPendingCaptchas.containsKey(id)) {
-                return true;
+            final CaptchaRequest pending = mPendingCaptchas.get(id);
+            if (pending != null) {
+                return pending.getCaptcha() != null;
             }
             final String target = id.split(" ", 2)[0];
             for (String pendingId : mPendingCaptchas.keySet()) {
@@ -6277,7 +6278,11 @@ public class XmppConnectionService extends Service {
             }
         }
         if (request != null) {
-            fetchCaptchaAndDisplay(request.account, request.id, request.data, request.container);
+            if (request.getCaptcha() != null) {
+                displayCaptchaRequest(request.account, request.id, request.data, request.getCaptcha());
+            } else {
+                fetchCaptchaAndDisplay(request.account, request.id, request.data, request.container);
+            }
         }
     }
 
@@ -6389,14 +6394,14 @@ public class XmppConnectionService extends Service {
                 sendSubscriptionCaptchaResponse(account, jid, captchaId, data, stanzaId);
             }
         } else if (typePrefix.startsWith("reg:")) {
-            sendCreateAccountWithCaptchaPacket(account, captchaId, data);
+            sendCreateAccountWithCaptchaPacket(account, captchaId, data, stanzaId);
         }
     }
 
-    public void sendCreateAccountWithCaptchaPacket(Account account, String captchaId, Data data) {
+    public void sendCreateAccountWithCaptchaPacket(Account account, String captchaId, Data data, String stanzaId) {
         final XmppConnection connection = account.getXmppConnection();
         if (connection != null) {
-            IqPacket request = mIqGenerator.generateCreateAccountWithCaptcha(account, captchaId, data);
+            IqPacket request = mIqGenerator.generateCreateAccountWithCaptcha(account, captchaId, data, stanzaId);
             connection.sendUnmodifiedIqPacket(request, connection.registrationResponseListener, true);
         }
     }

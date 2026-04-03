@@ -521,8 +521,11 @@ public class IqGenerator extends AbstractGenerator {
         }
     }
 
-    public IqPacket generateCreateAccountWithCaptcha(Account account, String captchaId, Data data) {
+    public IqPacket generateCreateAccountWithCaptcha(Account account, String captchaId, Data data, String stanzaId) {
         final IqPacket register = new IqPacket(IqPacket.TYPE.SET);
+        if (stanzaId != null) {
+            register.setId(stanzaId);
+        }
         register.setFrom(account.getJid().asBareJid());
         register.setTo(account.getDomain());
         Element query = register.query(Namespace.REGISTER);
