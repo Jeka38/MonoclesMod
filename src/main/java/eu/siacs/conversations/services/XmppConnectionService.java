@@ -5859,26 +5859,18 @@ public class XmppConnectionService extends Service {
     }
 
     public boolean isCaptchaSolvedRecently(String id) {
-        final String target = id.split(" ", 2)[0];
         synchronized (mSolvedCaptchas) {
-            for (String key : mSolvedCaptchas.snapshot().keySet()) {
-                if (key.startsWith(target)) {
-                    final Long solvedAt = mSolvedCaptchas.get(key);
-                    if (solvedAt != null && (SystemClock.elapsedRealtime() - solvedAt) < 15000) {
-                        return true;
-                    }
-                }
-            }
+            final Long solvedAt = mSolvedCaptchas.get(id);
+            return solvedAt != null && (SystemClock.elapsedRealtime() - solvedAt) < 15000;
         }
-        return false;
     }
 
     public boolean isCaptchaPending(String id) {
-        if (mPendingCaptchas.containsKey(id)) {
-            return true;
-        }
-        final String target = id.split(" ", 2)[0];
         synchronized (mPendingCaptchas) {
+            if (mPendingCaptchas.containsKey(id)) {
+                return true;
+            }
+            final String target = id.split(" ", 2)[0];
             for (String pendingId : mPendingCaptchas.keySet()) {
                 if (pendingId.startsWith(target)) {
                     return true;
@@ -6289,7 +6281,7 @@ public class XmppConnectionService extends Service {
         }
     }
 
-    public void sendMUCJoinWithCaptcha(Account account, Jid room, String nickname, String captchaId, Data data) {
+    public void sendMUCJoinWithCaptcha(Account account, Jid room, String nickname, String captchaId, Data data, String stanzaId) {
         Conversation conversation = find(account, room);
         if (conversation == null) {
             return;
@@ -6301,7 +6293,7 @@ public class XmppConnectionService extends Service {
         final Jid joinJid = room.withResource(nickname);
         final PresencePacket packet = mPresenceGenerator.selfPresence(account, Presence.Status.ONLINE, options.nonanonymous(), nickname);
         packet.setTo(joinJid);
-        packet.setAttribute("id", UUID.randomUUID().toString());
+        packet.setAttribute("id", stanzaId != null ? stanzaId : UUID.randomUUID().toString());
         Element x = packet.addChild("x", "http://jabber.org/protocol/muc");
         if (options.getPassword() != null) {
             x.addChild("password").setContent(options.getPassword());
@@ -6339,9 +6331,12 @@ public class XmppConnectionService extends Service {
         updateConversationUi();
     }
 
-    public void sendSubscriptionCaptchaResponse(Account account, Jid contact, String captchaId, Data data) {
+    public void sendSubscriptionCaptchaResponse(Account account, Jid contact, String captchaId, Data data, String stanzaId) {
         Contact c = account.getRoster().getContact(contact);
         PresencePacket packet = mPresenceGenerator.sendPresenceUpdatesTo(c);
+        if (stanzaId != null) {
+            packet.setAttribute("id", stanzaId);
+        }
         Element captcha = packet.addChild("captcha", "urn:xmpp:captcha");
         if (captchaId != null) {
             captcha.setAttribute("id", captchaId);
@@ -6369,7 +6364,7 @@ public class XmppConnectionService extends Service {
             if (conversation != null && conversation.getMode() == Conversational.MODE_MULTI) {
                 final MucOptions mucOptions = conversation.getMucOptions();
                 final String nick = mucOptions.getActualNick();
-                sendMUCJoinWithCaptcha(account, jid, nick, captchaId, data);
+                sendMUCJoinWithCaptcha(account, jid, nick, captchaId, data, stanzaId);
             }
         } else if (typePrefix.startsWith("msg:")) {
             Jid jid = Jid.of(typePrefix.substring(4));
@@ -6391,17 +6386,17 @@ public class XmppConnectionService extends Service {
         } else if (typePrefix.startsWith("sub:")) {
             Jid jid = Jid.of(typePrefix.substring(4));
             if (data != null) {
-                sendSubscriptionCaptchaResponse(account, jid, captchaId, data);
+                sendSubscriptionCaptchaResponse(account, jid, captchaId, data, stanzaId);
             }
         } else if (typePrefix.startsWith("reg:")) {
-            sendCreateAccountWithCaptchaPacket(account, data);
+            sendCreateAccountWithCaptchaPacket(account, captchaId, data);
         }
     }
 
-    public void sendCreateAccountWithCaptchaPacket(Account account, Data data) {
+    public void sendCreateAccountWithCaptchaPacket(Account account, String captchaId, Data data) {
         final XmppConnection connection = account.getXmppConnection();
         if (connection != null) {
-            IqPacket request = mIqGenerator.generateCreateAccountWithCaptcha(account, data);
+            IqPacket request = mIqGenerator.generateCreateAccountWithCaptcha(account, captchaId, data);
             connection.sendUnmodifiedIqPacket(request, connection.registrationResponseListener, true);
         }
     }

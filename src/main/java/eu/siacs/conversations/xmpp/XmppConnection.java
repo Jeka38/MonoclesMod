@@ -135,9 +135,11 @@ public class XmppConnection implements Runnable {
                 final Element dataElement = captchaElement != null ? captchaElement.findChild("x", Namespace.DATA) : (query != null ? query.findChild("x", Namespace.DATA) : null);
                 if (dataElement != null) {
                     final Data data = Data.parse(dataElement);
-                    final String id = packet.getId();
                     if ("urn:xmpp:captcha".equals(data.getFormType()) || captchaElement != null) {
-                        getXmppConnectionService().fetchCaptchaAndDisplay(account, "reg:" + id, data, query != null ? query : errorElement);
+                        final String captchaId = captchaElement != null ? captchaElement.getAttribute("id") : null;
+                        final String stanzaId = packet.getId();
+                        final String requestId = "reg:" + account.getDomain() + " " + (captchaId != null ? captchaId : "none") + " " + (stanzaId != null ? stanzaId : "none");
+                        getXmppConnectionService().fetchCaptchaAndDisplay(account, requestId, data, query != null ? query : errorElement);
                         return;
                     }
                 }
@@ -1878,9 +1880,11 @@ public class XmppConnection implements Runnable {
                         final Element dataElement = captchaElement != null ? captchaElement.findChild("x", Namespace.DATA) : query.findChild("x", Namespace.DATA);
                         if (dataElement != null) {
                             final Data data = Data.parse(dataElement);
-                            final String id = packet.getId();
                             if ("urn:xmpp:captcha".equals(data.getFormType()) || captchaElement != null) {
-                                mXmppConnectionService.fetchCaptchaAndDisplay(account, "reg:" + id, data, query);
+                                final String captchaId = captchaElement != null ? captchaElement.getAttribute("id") : null;
+                                final String stanzaId = packet.getId();
+                                final String requestId = "reg:" + account.getDomain() + " " + (captchaId != null ? captchaId : "none") + " " + (stanzaId != null ? stanzaId : "none");
+                                mXmppConnectionService.fetchCaptchaAndDisplay(account, requestId, data, query);
                                 return;
                             }
                         }
