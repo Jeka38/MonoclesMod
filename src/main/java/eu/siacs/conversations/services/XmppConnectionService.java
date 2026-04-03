@@ -6174,7 +6174,8 @@ public class XmppConnectionService extends Service {
             return;
         }
         mPendingCaptchas.put(id, new CaptchaRequest(account, id, data, container));
-        if (data.findChild("instructions") == null && container != null) {
+        Element instructionsElement = data.findChild("instructions");
+        if (instructionsElement == null && container != null) {
             String instructions = container.findChildContent("body");
             if (instructions == null) {
                 Element error = container.findChild("error");
@@ -6183,7 +6184,14 @@ public class XmppConnectionService extends Service {
                 }
             }
             if (instructions != null) {
-                data.addChild("instructions").setContent(instructions);
+                instructionsElement = data.addChild("instructions");
+                instructionsElement.setContent(instructions);
+            }
+        }
+        if (instructionsElement != null) {
+            String content = instructionsElement.getContent();
+            if (content != null && content.contains("/captcha//")) {
+                instructionsElement.setContent(content.replace("/captcha//", "/captcha/"));
             }
         }
         String url = data.getValue("url");
