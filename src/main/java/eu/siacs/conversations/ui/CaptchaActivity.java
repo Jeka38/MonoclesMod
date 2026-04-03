@@ -42,6 +42,13 @@ public class CaptchaActivity extends XmppActivity {
 
         binding.submitButton.setOnClickListener(v -> submit());
         binding.cancelButton.setOnClickListener(v -> cancel());
+        binding.refreshButton.setOnClickListener(v -> refresh());
+    }
+
+    private void refresh() {
+        if (id != null && xmppConnectionServiceBound) {
+            xmppConnectionService.requestNewCaptcha(account, id);
+        }
     }
 
     @Override
@@ -175,8 +182,10 @@ public class CaptchaActivity extends XmppActivity {
         if (request.getCaptcha() != null) {
             binding.captchaImage.setImageBitmap(request.getCaptcha());
             binding.captchaImage.setVisibility(View.VISIBLE);
+            binding.refreshButton.setVisibility(View.VISIBLE);
         } else {
             binding.captchaImage.setVisibility(View.GONE);
+            binding.refreshButton.setVisibility(View.GONE);
         }
 
         String instructions = request.getInstructions();
