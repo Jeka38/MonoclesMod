@@ -1632,6 +1632,7 @@
     <string name="webxdc_store_hint_summary">Чтобы использовать приложения WebXDC с обновлениями статуса, вам необходимо отключить шифрование при отправке WebXDC. Пожалуйста, включите шифрование позже снова.</string>
     <string name="send_encrypted">Отправить зашифрованное</string>
     <string name="choose_webxdc">Выберите WebXDC</string>
-    <string name="pref_xml_iq_logging">XML консоль</string>
+    <string name="pref_xml_iq_logging">Включить логирование XML</string>
     <string name="pref_xml_iq_logging_summary">Журналирование входящих и исходящих IQ станз</string>
+    <string name="title_activity_xml_console">XML консоль</string>
 </resources>

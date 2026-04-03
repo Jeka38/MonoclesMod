@@ -1219,6 +1219,12 @@ public class SettingsActivity extends XmppActivity implements OnSharedPreference
 
     @Override
     public void onSharedPreferenceChanged(SharedPreferences preferences, String name) {
+        if (XML_IQ_LOGGING.equals(name)) {
+            if (preferences.getBoolean(name, false)) {
+                startActivity(new Intent(this, XmlConsoleActivity.class));
+            }
+            return;
+        }
         final List<String> resendPresence = Arrays.asList(
                 CONFIRM_MESSAGES,
                 DND_ON_SILENT_MODE,

@@ -613,5 +613,11 @@
             android:exported="false"
             android:launchMode="singleTop"
             android:windowSoftInputMode="adjustResize|stateVisible" />
+
+        <activity
+            android:name=".ui.XmlConsoleActivity"
+            android:label="@string/title_activity_xml_console"
+            android:exported="false"
+            android:launchMode="singleTop" />
     </application>
 </manifest>

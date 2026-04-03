@@ -1335,6 +1335,7 @@ public class XmppConnection implements Runnable {
         }
         if (getXmppConnectionService().xmlIqLogging() && element instanceof IqPacket) {
             Log.d(Config.LOGTAG, account.getJid().asBareJid() + ": [incoming IQ] " + element);
+            mXmppConnectionService.logStanza(account.getJid().asBareJid().toString(), element.toString(), true);
         }
         if (element instanceof IqPacket
                 && (((IqPacket) element).getType() == IqPacket.TYPE.SET)
@@ -2626,6 +2627,7 @@ public class XmppConnection implements Runnable {
         }
         if (getXmppConnectionService().xmlIqLogging() && packet instanceof IqPacket) {
             Log.d(Config.LOGTAG, account.getJid().asBareJid() + ": [outgoing IQ] " + packet);
+            mXmppConnectionService.logStanza(account.getJid().asBareJid().toString(), packet.toString(), false);
         }
         synchronized (this.mStanzaQueue) {
             if (force || isBound) {

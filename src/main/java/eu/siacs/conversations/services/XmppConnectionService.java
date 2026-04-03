@@ -416,6 +416,57 @@ public class XmppConnectionService extends Service {
     private final Map<String, CaptchaRequest> mPendingCaptchas = Collections.synchronizedMap(new HashMap<>());
     private final LruCache<String, Long> mSolvedCaptchas = new LruCache<>(20);
 
+    private final Set<OnStanzaLogged> mOnStanzaLogged = Collections.newSetFromMap(new WeakHashMap<OnStanzaLogged, Boolean>());
+    private final List<StanzaLogEntry> mStanzaLogs = Collections.synchronizedList(new ArrayList<>());
+
+    public interface OnStanzaLogged {
+        void onStanzaLogged(StanzaLogEntry entry);
+    }
+
+    public static class StanzaLogEntry {
+        public final String account;
+        public final String xml;
+        public final long timestamp;
+        public final boolean incoming;
+
+        public StanzaLogEntry(String account, String stanza, boolean incoming) {
+            this.account = account;
+            this.xml = stanza;
+            this.timestamp = System.currentTimeMillis();
+            this.incoming = incoming;
+        }
+    }
+
+    public void logStanza(String account, String stanza, boolean incoming) {
+        if (!xmlIqLogging()) {
+            return;
+        }
+        final StanzaLogEntry entry = new StanzaLogEntry(account, stanza, incoming);
+        mStanzaLogs.add(entry);
+        if (mStanzaLogs.size() > 500) {
+            mStanzaLogs.remove(0);
+        }
+        for (OnStanzaLogged listener : threadSafeList(mOnStanzaLogged)) {
+            listener.onStanzaLogged(entry);
+        }
+    }
+
+    public List<StanzaLogEntry> getStanzaLogs() {
+        return new ArrayList<>(mStanzaLogs);
+    }
+
+    public void addOnStanzaLoggedListener(OnStanzaLogged listener) {
+        synchronized (LISTENER_LOCK) {
+            mOnStanzaLogged.add(listener);
+        }
+    }
+
+    public void removeOnStanzaLoggedListener(OnStanzaLogged listener) {
+        synchronized (LISTENER_LOCK) {
+            mOnStanzaLogged.remove(listener);
+        }
+    }
+
     public static class CaptchaRequest {
         public final Account account;
         public final String id;
