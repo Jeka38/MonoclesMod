@@ -6402,9 +6402,6 @@ public class XmppConnectionService extends Service {
 
     public void sendCaptchaResponse(Account account, String id, Data data) {
         removeCaptchaRequest(id);
-        if (data != null) {
-            mSolvedCaptchas.put(id, SystemClock.elapsedRealtime());
-        }
         final String[] parts = id.split(" ");
         if (parts.length < 1) {
             return;
