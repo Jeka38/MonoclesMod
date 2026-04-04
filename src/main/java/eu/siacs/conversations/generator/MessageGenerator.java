@@ -20,6 +20,7 @@ import eu.siacs.conversations.services.XmppConnectionService;
 import eu.siacs.conversations.xml.Namespace;
 import eu.siacs.conversations.xml.Element;
 import eu.siacs.conversations.xmpp.Jid;
+import eu.siacs.conversations.xmpp.forms.Data;
 import eu.siacs.conversations.xmpp.chatstate.ChatState;
 import eu.siacs.conversations.xmpp.jingle.JingleConnectionManager;
 import eu.siacs.conversations.xmpp.jingle.JingleRtpConnection;
@@ -383,6 +384,19 @@ public class MessageGenerator extends AbstractGenerator {
         propose.setAttribute("id", sessionId);
         propose.addChild("description", Namespace.JINGLE_APPS_RTP);
         packet.addChild("store", "urn:xmpp:hints");
+        return packet;
+    }
+
+    public MessagePacket generateCaptchaResponse(Jid to, String id, Data data, String fieldName, String solution) {
+        final MessagePacket packet = new MessagePacket();
+        packet.setTo(to);
+        if (id != null) {
+            packet.setId(id);
+        }
+        final Element captcha = packet.addChild("captcha", Namespace.CAPTCHA);
+        data.put(fieldName, solution);
+        data.submit();
+        captcha.addChild(data);
         return packet;
     }
 }

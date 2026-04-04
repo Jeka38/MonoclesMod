@@ -127,6 +127,13 @@ public class XmppConnection implements Runnable {
     public final OnIqPacketReceived registrationResponseListener =
             (account, packet) -> {
                 if (packet.getType() == IqPacket.TYPE.RESULT) {
+                    final Element query = packet.query(Namespace.REGISTER);
+                    if (query != null && (query.hasChild("x", Namespace.DATA) || query.hasChild("captcha", Namespace.CAPTCHA))) {
+                        final Element x = query.findChild("x", Namespace.DATA);
+                        final Data data = Data.parse(x != null ? x : query.findChild("captcha", Namespace.CAPTCHA).findChild("x", Namespace.DATA));
+                        service().fetchCaptchaAndDisplay(account, account.getDomain(), data, packet.getId(), "reg:");
+                        return;
+                    }
                     account.setOption(Account.OPTION_REGISTER, false);
                     Log.d(
                             Config.LOGTAG,
@@ -134,10 +141,18 @@ public class XmppConnection implements Runnable {
                                     + ": successfully registered new account on server");
                     throw new StateChangingError(Account.State.REGISTRATION_SUCCESSFUL);
                 } else {
+                    final Element error = packet.findChild("error");
+                    if (error != null && (error.hasChild("captcha", Namespace.CAPTCHA) || (packet.query() != null && packet.query().hasChild("captcha", Namespace.CAPTCHA)))) {
+                        final Element captcha = error.hasChild("captcha", Namespace.CAPTCHA) ? error.findChild("captcha", Namespace.CAPTCHA) : packet.query().findChild("captcha", Namespace.CAPTCHA);
+                        final Element x_captcha = captcha.findChild("x", Namespace.DATA);
+                        if (x_captcha != null) {
+                            service().fetchCaptchaAndDisplay(account, account.getDomain(), Data.parse(x_captcha), packet.getId(), "reg:");
+                            return;
+                        }
+                    }
                     final List<String> PASSWORD_TOO_WEAK_MSGS =
                             Arrays.asList(
                                     "The password is too weak", "Please use a longer password.");
-                    Element error = packet.findChild("error");
                     Account.State state = Account.State.REGISTRATION_FAILED;
                     deleteAccount(account);
                     if (error != null) {
@@ -226,6 +241,10 @@ public class XmppConnection implements Runnable {
     }
 
     public XmppConnectionService getXmppConnectionService() {
+        return mXmppConnectionService;
+    }
+
+    private XmppConnectionService service() {
         return mXmppConnectionService;
     }
 
@@ -1845,63 +1864,12 @@ public class XmppConnection implements Runnable {
                     }
                     final Element query = packet.query(Namespace.REGISTER);
                     if (query.hasChild("username") && (query.hasChild("password"))) {
-                        final IqPacket register1 = new IqPacket(IqPacket.TYPE.SET);
-                        final Element username =
-                                new Element("username").setContent(account.getUsername());
-                        final Element password =
-                                new Element("password").setContent(account.getPassword());
-                        register1.query(Namespace.REGISTER).addChild(username);
-                        register1.query().addChild(password);
-                        register1.setFrom(account.getJid().asBareJid());
+                        final IqPacket register1 = getIqGenerator().register(account);
                         sendUnmodifiedIqPacket(register1, registrationResponseListener, true);
-                    } else if (query.hasChild("x", Namespace.DATA)) {
-                        final Data data = Data.parse(query.findChild("x", Namespace.DATA));
-                        final Element blob = query.findChild("data", "urn:xmpp:bob");
-                        final String id = packet.getId();
-                        InputStream is;
-                        if (blob != null) {
-                            try {
-                                final String base64Blob = blob.getContent();
-                                final byte[] strBlob = Base64.decode(base64Blob, Base64.DEFAULT);
-                                is = new ByteArrayInputStream(strBlob);
-                            } catch (Exception e) {
-                                is = null;
-                            }
-                        } else {
-                            final boolean useTor =
-                                    mXmppConnectionService.useTorToConnect() || account.isOnion();
-                            final boolean useI2P =
-                                    mXmppConnectionService.useI2PToConnect() || account.isI2P();
-                            try {
-                                final String url = data.getValue("url");
-                                final String fallbackUrl = data.getValue("captcha-fallback-url");
-                                if (url != null) {
-                                    is = HttpConnectionManager.open(url, useTor, useI2P);
-                                } else if (fallbackUrl != null) {
-                                    is = HttpConnectionManager.open(fallbackUrl, useTor, useI2P);
-                                } else {
-                                    is = null;
-                                }
-                            } catch (final IOException e) {
-                                Log.d(
-                                        Config.LOGTAG,
-                                        account.getJid().asBareJid() + ": unable to fetch captcha",
-                                        e);
-                                is = null;
-                            }
-                        }
-                        if (is != null) {
-                            Bitmap captcha = BitmapFactory.decodeStream(is);
-                            try {
-                                if (mXmppConnectionService.displayCaptchaRequest(
-                                        account, id, data, captcha)) {
-                                    return;
-                                }
-                            } catch (Exception e) {
-                                throw new StateChangingError(Account.State.REGISTRATION_FAILED);
-                            }
-                        }
-                        throw new StateChangingError(Account.State.REGISTRATION_FAILED);
+                    } else if (query.hasChild("x", Namespace.DATA) || packet.hasChild("captcha", Namespace.CAPTCHA)) {
+                        final Element x_reg = query.findChild("x", Namespace.DATA);
+                        final Data data = Data.parse(x_reg != null ? x_reg : packet.findChild("captcha", Namespace.CAPTCHA).findChild("x", Namespace.DATA));
+                        service().fetchCaptchaAndDisplay(account, account.getDomain(), data, packet.getId(), "reg:");
                     } else if (query.hasChild("instructions")
                             || query.hasChild("x", Namespace.OOB)) {
                         final String instructions = query.findChildContent("instructions");

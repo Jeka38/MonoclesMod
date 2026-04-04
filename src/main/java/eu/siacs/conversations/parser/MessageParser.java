@@ -59,6 +59,7 @@ import eu.siacs.conversations.services.XmppConnectionService;
 import eu.siacs.conversations.utils.CryptoHelper;
 import eu.siacs.conversations.xml.Namespace;
 import eu.siacs.conversations.xml.Element;
+import eu.siacs.conversations.xmpp.forms.Data;
 import eu.siacs.conversations.xml.LocalizedContent;
 import eu.siacs.conversations.xmpp.InvalidJid;
 import eu.siacs.conversations.xmpp.Jid;
@@ -648,6 +649,12 @@ public class MessageParser extends AbstractParser implements OnMessagePacketRece
         }
 
         final Element reactions = packet.findChild("reactions", "urn:xmpp:reactions:0");
+        final Element captcha = packet.findChild("captcha", Namespace.CAPTCHA);
+        if (captcha != null && captcha.hasChild("x", Namespace.DATA)) {
+            final Data data = Data.parse(captcha.findChild("x", Namespace.DATA));
+            mXmppConnectionService.fetchCaptchaAndDisplay(account, from, data, packet.getId(), "msg:");
+            return;
+        }
         if (body == null && html == null) {
             if (reactions != null && reactions.getAttribute("id") != null) {
                 final Conversation conversation = mXmppConnectionService.find(account, counterpart.asBareJid());

@@ -198,6 +198,10 @@ import eu.siacs.conversations.ui.interfaces.OnSearchResultsAvailable;
 import eu.siacs.conversations.utils.Compatibility;
 import eu.siacs.conversations.utils.ConversationsFileObserver;
 import eu.siacs.conversations.utils.CryptoHelper;
+import android.graphics.BitmapFactory;
+import android.util.Base64;
+import java.io.ByteArrayInputStream;
+import java.io.InputStream;
 import eu.siacs.conversations.utils.EasyOnboardingInvite;
 import eu.siacs.conversations.utils.ExceptionHelper;
 import eu.siacs.conversations.utils.MimeUtils;
@@ -239,6 +243,7 @@ import eu.siacs.conversations.xmpp.mam.MamReference;
 import eu.siacs.conversations.xmpp.pep.Avatar;
 import eu.siacs.conversations.xmpp.pep.PublishOptions;
 import eu.siacs.conversations.xmpp.stanzas.IqPacket;
+import eu.siacs.conversations.ui.CaptchaActivity;
 import eu.siacs.conversations.xmpp.stanzas.MessagePacket;
 import eu.siacs.conversations.xmpp.stanzas.PresencePacket;
 import io.ipfs.cid.Cid;
@@ -414,6 +419,9 @@ public class XmppConnectionService extends Service {
     private final Set<OnMucRosterUpdate> mOnMucRosterUpdate = Collections.newSetFromMap(new WeakHashMap<OnMucRosterUpdate, Boolean>());
     private final Set<OnKeyStatusUpdated> mOnKeyStatusUpdated = Collections.newSetFromMap(new WeakHashMap<OnKeyStatusUpdated, Boolean>());
     private final Set<OnJingleRtpConnectionUpdate> onJingleRtpConnectionUpdate = Collections.newSetFromMap(new WeakHashMap<OnJingleRtpConnectionUpdate, Boolean>());
+
+    private final Map<String, CaptchaRequest> mPendingCaptchas = new HashMap<>();
+    private final LruCache<String, Long> mSolvedCaptchas = new LruCache<>(100);
 
     private final Object LISTENER_LOCK = new Object();
     public final Set<String> FILENAMES_TO_IGNORE_DELETION = new HashSet<>();
@@ -5707,7 +5715,78 @@ public class XmppConnectionService extends Service {
         }
     }
 
+    private boolean isCaptchaSolvedRecently(String id) {
+        synchronized (mSolvedCaptchas) {
+            Long solvedAt = mSolvedCaptchas.get(id);
+            return solvedAt != null && SystemClock.elapsedRealtime() - solvedAt < 15000;
+        }
+    }
+
+    private void markCaptchaAsSolved(String id) {
+        synchronized (mSolvedCaptchas) {
+            mSolvedCaptchas.put(id, SystemClock.elapsedRealtime());
+        }
+    }
+
+    private boolean isCaptchaPending(String id) {
+        synchronized (mPendingCaptchas) {
+            return mPendingCaptchas.containsKey(id);
+        }
+    }
+
+    public void fetchCaptchaAndDisplay(final Account account, final Jid from, final Data data, final String stanzaId) {
+        fetchCaptchaAndDisplay(account, from, data, stanzaId, from.isDomainJid() ? "reg:" : "msg:");
+    }
+
+    public void fetchCaptchaAndDisplay(final Account account, final Jid from, final Data data, final String stanzaId, final String prefix) {
+        final String requestId = prefix + from.asBareJid() + " " + stanzaId;
+        if (isCaptchaSolvedRecently(requestId) || isCaptchaPending(requestId)) {
+            return;
+        }
+        final boolean useTor = useTorToConnect() || account.isOnion();
+        final boolean useI2P = useI2PToConnect() || account.isI2P();
+        FILE_ATTACHMENT_EXECUTOR.execute(() -> {
+            InputStream is = null;
+            final Element blob = data.getFieldByName("answers") != null ? data.findChild("data", "urn:xmpp:bob") : null;
+            if (blob != null) {
+                try {
+                    final String base64Blob = blob.getContent();
+                    final byte[] strBlob = Base64.decode(base64Blob, Base64.DEFAULT);
+                    is = new ByteArrayInputStream(strBlob);
+                } catch (Exception e) {
+                    is = null;
+                }
+            } else {
+                try {
+                    final String url = data.getValue("url");
+                    final String fallbackUrl = data.getValue("captcha-fallback-url");
+                    if (url != null) {
+                        is = HttpConnectionManager.open(url, useTor, useI2P);
+                    } else if (fallbackUrl != null) {
+                        is = HttpConnectionManager.open(fallbackUrl, useTor, useI2P);
+                    }
+                } catch (final IOException e) {
+                    Log.d(Config.LOGTAG, account.getJid().asBareJid() + ": unable to fetch captcha", e);
+                }
+            }
+            if (is != null) {
+                Bitmap captcha = BitmapFactory.decodeStream(is);
+                if (captcha != null) {
+                    displayCaptchaRequest(account, requestId, data, captcha);
+                }
+            }
+        });
+    }
+
     public boolean displayCaptchaRequest(Account account, String id, Data data, Bitmap captcha) {
+        final String instructions = data.getInstructions();
+        if (instructions != null) {
+            data.setInstructions(instructions.replace("://", ":\1").replace("//", "/").replace(":\1", "://"));
+        }
+        final CaptchaRequest request = new CaptchaRequest(account, id, data, captcha);
+        synchronized (mPendingCaptchas) {
+            mPendingCaptchas.put(id, request);
+        }
         if (mOnCaptchaRequested.size() > 0) {
             DisplayMetrics metrics = getApplicationContext().getResources().getDisplayMetrics();
             Bitmap scaled = Bitmap.createScaledBitmap(captcha, (int) (captcha.getWidth() * metrics.scaledDensity),
@@ -5716,8 +5795,82 @@ public class XmppConnectionService extends Service {
                 listener.onCaptchaRequested(account, id, data, scaled);
             }
             return true;
+        } else {
+            CaptchaActivity.launch(this, id);
+            return true;
         }
-        return false;
+    }
+
+    public CaptchaRequest getPendingCaptchaRequest(String id) {
+        synchronized (mPendingCaptchas) {
+            return mPendingCaptchas.get(id);
+        }
+    }
+
+    public String getPendingCaptchaForJid(Jid jid) {
+        synchronized (mPendingCaptchas) {
+            final String prefix = jid.asBareJid().toString() + " ";
+            for (String id : mPendingCaptchas.keySet()) {
+                if (id.startsWith(prefix)) {
+                    return id;
+                }
+            }
+        }
+        return null;
+    }
+
+    public void retryCaptcha(String id) {
+        final CaptchaRequest request = getPendingCaptchaRequest(id);
+        if (request != null) {
+            displayCaptchaRequest(request.account, request.id, request.data, request.captcha);
+        }
+    }
+
+    public void sendCaptchaResponse(String requestId, String solution) {
+        final CaptchaRequest request;
+        synchronized (mPendingCaptchas) {
+            request = mPendingCaptchas.remove(requestId);
+        }
+        if (request == null) {
+            return;
+        }
+        if (requestId.startsWith("reg:")) {
+            if (solution != null) {
+                markCaptchaAsSolved(requestId);
+                final String fieldName = request.data.getCaptchaFieldName();
+                request.data.put(fieldName, solution.trim());
+                request.data.submit();
+                final String stanzaId = requestId.substring(requestId.lastIndexOf(' ') + 1);
+                sendCreateAccountWithCaptchaPacket(request.account, stanzaId, request.data);
+            } else {
+                final XmppConnection connection = request.account.getXmppConnection();
+                if (connection != null && connection.registrationResponseListener != null) {
+                    IqPacket error = new IqPacket(IqPacket.TYPE.ERROR);
+                    final String stanzaId = requestId.substring(requestId.lastIndexOf(' ') + 1);
+                    error.setId(stanzaId);
+                    try {
+                        connection.registrationResponseListener.onIqPacketReceived(request.account, error);
+                    } catch (Exception e) {
+                        // ignore
+                    }
+                }
+            }
+        } else {
+            final int prefixEnd = requestId.indexOf(':');
+            final int jidEnd = requestId.lastIndexOf(' ');
+            final Jid to = Jid.of(requestId.substring(prefixEnd + 1, jidEnd));
+            final String stanzaId = requestId.substring(jidEnd + 1);
+            if (solution != null) {
+                markCaptchaAsSolved(requestId);
+                final String fieldName = request.data.getCaptchaFieldName();
+                final MessagePacket response = mMessageGenerator.generateCaptchaResponse(to, stanzaId, request.data, fieldName, solution.trim());
+                sendMessagePacket(request.account, response);
+                final Conversation conversation = find(request.account, to.asBareJid());
+                if (conversation != null) {
+                    internalPingExecutor.schedule(() -> joinMuc(conversation), 500, TimeUnit.MILLISECONDS);
+                }
+            }
+        }
     }
 
     public void updateBlocklistUi(final OnUpdateBlocklist.Status status) {
@@ -6867,6 +7020,20 @@ public class XmppConnectionService extends Service {
             return;
         }
         toggleForegroundService(activity.xmppConnectionService);
+    }
+
+    public static class CaptchaRequest {
+        public final Account account;
+        public final String id;
+        public final Data data;
+        public final Bitmap captcha;
+
+        public CaptchaRequest(Account account, String id, Data data, Bitmap captcha) {
+            this.account = account;
+            this.id = id;
+            this.data = data;
+            this.captcha = captcha;
+        }
     }
 
     public static enum UpdateRosterReason {

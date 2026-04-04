@@ -606,5 +606,10 @@
             android:launchMode="singleInstance"
             android:exported="false"
             android:supportsPictureInPicture="true" />
+        <activity
+            android:name=".ui.CaptchaActivity"
+            android:exported="false"
+            android:launchMode="singleTop"
+            android:windowSoftInputMode="stateVisible" />
     </application>
 </manifest>

@@ -27,6 +27,7 @@ import eu.siacs.conversations.xml.Namespace;
 import eu.siacs.conversations.xmpp.InvalidJid;
 import eu.siacs.conversations.xmpp.Jid;
 import eu.siacs.conversations.xmpp.OnPresencePacketReceived;
+import eu.siacs.conversations.xmpp.forms.Data;
 import eu.siacs.conversations.xmpp.pep.Avatar;
 import eu.siacs.conversations.xmpp.stanzas.PresencePacket;
 
@@ -331,6 +332,13 @@ public class PresenceParser extends AbstractParser implements
                     mucOptions.setError(MucOptions.Error.BANNED);
                 } else if (error.hasChild("registration-required")) {
                     mucOptions.setError(MucOptions.Error.MEMBERS_ONLY);
+                } else if (error.hasChild("captcha", Namespace.CAPTCHA)) {
+                    mucOptions.setError(MucOptions.Error.CAPTCHA_REQUIRED);
+                    final Element captcha_element = error.findChild("captcha", Namespace.CAPTCHA);
+                    final Element x_captcha = captcha_element == null ? null : captcha_element.findChild("x", Namespace.DATA);
+                    if (x_captcha != null) {
+                        mXmppConnectionService.fetchCaptchaAndDisplay(account, packet.getFrom(), Data.parse(x_captcha), packet.getId(), "pres:");
+                    }
                 } else if (error.hasChild("resource-constraint")) {
                     mucOptions.setError(MucOptions.Error.RESOURCE_CONSTRAINT);
                 } else if (error.hasChild("remote-server-timeout")) {

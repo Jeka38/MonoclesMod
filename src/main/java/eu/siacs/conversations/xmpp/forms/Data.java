@@ -107,6 +107,38 @@ public class Data extends Element {
         return findChildContent("title", "jabber:x:data");
     }
 
+    public String getInstructions() {
+        return findChildContent("instructions", "jabber:x:data");
+    }
+
+    public void setInstructions(String instructions) {
+        Element element = findChild("instructions", "jabber:x:data");
+        if (element != null) {
+            element.setContent(instructions);
+        } else {
+            addChild("instructions", "jabber:x:data").setContent(instructions);
+        }
+    }
+
+    public String getCaptchaFieldName() {
+        for (Field field : getFields()) {
+            if (field.hasChild("media", "urn:xmpp:media-element")) {
+                return field.getFieldName();
+            }
+        }
+        for (String name : java.util.Arrays.asList("answers", "captcha", "ocr")) {
+            if (getFieldByName(name) != null) {
+                return name;
+            }
+        }
+        for (Field field : getFields()) {
+            if ("text-single".equals(field.getType())) {
+                return field.getFieldName();
+            }
+        }
+        return "answers";
+    }
+
     public static Data create(String type, Bundle bundle) {
         Data data = new Data();
         data.setFormType(type);
