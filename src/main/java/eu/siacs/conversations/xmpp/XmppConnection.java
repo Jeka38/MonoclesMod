@@ -138,6 +138,10 @@ public class XmppConnection implements Runnable {
                             Arrays.asList(
                                     "The password is too weak", "Please use a longer password.");
                     Element error = packet.findChild("error");
+                    if (error != null && error.hasChild("captcha", Namespace.CAPTCHA)) {
+                        getXmppConnectionService().fetchCaptchaAndDisplay(account, error.findChild("captcha", Namespace.CAPTCHA), account.getDomain(), "reg:" + packet.getId());
+                        return;
+                    }
                     Account.State state = Account.State.REGISTRATION_FAILED;
                     deleteAccount(account);
                     if (error != null) {
@@ -1856,52 +1860,12 @@ public class XmppConnection implements Runnable {
                         sendUnmodifiedIqPacket(register1, registrationResponseListener, true);
                     } else if (query.hasChild("x", Namespace.DATA)) {
                         final Data data = Data.parse(query.findChild("x", Namespace.DATA));
-                        final Element blob = query.findChild("data", "urn:xmpp:bob");
-                        final String id = packet.getId();
-                        InputStream is;
-                        if (blob != null) {
-                            try {
-                                final String base64Blob = blob.getContent();
-                                final byte[] strBlob = Base64.decode(base64Blob, Base64.DEFAULT);
-                                is = new ByteArrayInputStream(strBlob);
-                            } catch (Exception e) {
-                                is = null;
-                            }
+                        if (data.getFieldByName("captcha") != null || query.hasChild("captcha", Namespace.CAPTCHA)) {
+                            getXmppConnectionService().fetchCaptchaAndDisplay(account, query, account.getDomain(), "reg:" + packet.getId());
                         } else {
-                            final boolean useTor =
-                                    mXmppConnectionService.useTorToConnect() || account.isOnion();
-                            final boolean useI2P =
-                                    mXmppConnectionService.useI2PToConnect() || account.isI2P();
-                            try {
-                                final String url = data.getValue("url");
-                                final String fallbackUrl = data.getValue("captcha-fallback-url");
-                                if (url != null) {
-                                    is = HttpConnectionManager.open(url, useTor, useI2P);
-                                } else if (fallbackUrl != null) {
-                                    is = HttpConnectionManager.open(fallbackUrl, useTor, useI2P);
-                                } else {
-                                    is = null;
-                                }
-                            } catch (final IOException e) {
-                                Log.d(
-                                        Config.LOGTAG,
-                                        account.getJid().asBareJid() + ": unable to fetch captcha",
-                                        e);
-                                is = null;
-                            }
+                            getXmppConnectionService().displayCaptchaRequest(account, "reg:" + packet.getId(), data, null);
                         }
-                        if (is != null) {
-                            Bitmap captcha = BitmapFactory.decodeStream(is);
-                            try {
-                                if (mXmppConnectionService.displayCaptchaRequest(
-                                        account, id, data, captcha)) {
-                                    return;
-                                }
-                            } catch (Exception e) {
-                                throw new StateChangingError(Account.State.REGISTRATION_FAILED);
-                            }
-                        }
-                        throw new StateChangingError(Account.State.REGISTRATION_FAILED);
+                        return;
                     } else if (query.hasChild("instructions")
                             || query.hasChild("x", Namespace.OOB)) {
                         final String instructions = query.findChildContent("instructions");

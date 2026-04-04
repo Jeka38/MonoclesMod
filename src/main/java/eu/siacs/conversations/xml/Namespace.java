@@ -80,4 +80,7 @@ public final class Namespace {
     public static final String REPORTING_REASON_SPAM = "urn:xmpp:reporting:spam";
     public static final String MDS_DISPLAYED = "urn:xmpp:mds:displayed:0";
     public static final String MDS_SERVER_ASSIST = "urn:xmpp:mds:server-assist:0";
+    public static final String CAPTCHA = "urn:xmpp:captcha";
+    public static final String MEDIA_ELEMENT = "urn:xmpp:media-element";
+    public static final String BOB = "urn:xmpp:bob";
 }

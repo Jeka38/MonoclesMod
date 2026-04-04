@@ -319,6 +319,9 @@ public class PresenceParser extends AbstractParser implements
                 if (error == null) {
                     return addedStatusMessage;
                 }
+                if (error.hasChild("captcha", Namespace.CAPTCHA)) {
+                    mXmppConnectionService.fetchCaptchaAndDisplay(account, error.findChild("captcha", Namespace.CAPTCHA), packet.getFrom(), "pres:" + packet.getId());
+                }
                 if (error.hasChild("conflict")) {
                     if (mucOptions.online()) {
                         invokeRenameListener(mucOptions, false);

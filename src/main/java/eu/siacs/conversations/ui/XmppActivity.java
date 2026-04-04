@@ -99,6 +99,7 @@ import eu.siacs.conversations.utils.ExceptionHelper;
 import eu.siacs.conversations.utils.MenuDoubleTabUtil;
 import eu.siacs.conversations.utils.ThemeHelper;
 import eu.siacs.conversations.xmpp.Jid;
+import eu.siacs.conversations.xmpp.forms.Data;
 import eu.siacs.conversations.xmpp.OnKeyStatusUpdated;
 import eu.siacs.conversations.xmpp.OnUpdateBlocklist;
 import eu.siacs.conversations.xmpp.XmppConnection;
@@ -359,9 +360,6 @@ public abstract class XmppActivity extends ActionBarActivity {
         if (this instanceof XmppConnectionService.OnAccountUpdate) {
             this.xmppConnectionService.setOnAccountListChangedListener((XmppConnectionService.OnAccountUpdate) this);
         }
-        if (this instanceof XmppConnectionService.OnCaptchaRequested) {
-            this.xmppConnectionService.setOnCaptchaRequestedListener((XmppConnectionService.OnCaptchaRequested) this);
-        }
         if (this instanceof XmppConnectionService.OnRosterUpdate) {
             this.xmppConnectionService.setOnRosterUpdateListener((XmppConnectionService.OnRosterUpdate) this);
         }
@@ -388,9 +386,6 @@ public abstract class XmppActivity extends ActionBarActivity {
         }
         if (this instanceof XmppConnectionService.OnAccountUpdate) {
             this.xmppConnectionService.removeOnAccountListChangedListener((XmppConnectionService.OnAccountUpdate) this);
-        }
-        if (this instanceof XmppConnectionService.OnCaptchaRequested) {
-            this.xmppConnectionService.removeOnCaptchaRequestedListener((XmppConnectionService.OnCaptchaRequested) this);
         }
         if (this instanceof XmppConnectionService.OnRosterUpdate) {
             this.xmppConnectionService.removeOnRosterUpdateListener((XmppConnectionService.OnRosterUpdate) this);
@@ -441,6 +436,7 @@ public abstract class XmppActivity extends ActionBarActivity {
         }
         return super.onOptionsItemSelected(item);
     }
+
 
     public void selectPresence(final Conversation conversation, final PresenceSelector.OnPresenceSelected listener) {
         final Contact contact = conversation.getContact();

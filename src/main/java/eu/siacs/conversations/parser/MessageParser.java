@@ -465,6 +465,9 @@ public class MessageParser extends AbstractParser implements OnMessagePacketRece
                         Message.STATUS_SEND_FAILED,
                         extractErrorMessage(packet));
                 final Element error = packet.findChild("error");
+                if (error != null && error.hasChild("captcha", Namespace.CAPTCHA)) {
+                    mXmppConnectionService.fetchCaptchaAndDisplay(account, error.findChild("captcha", Namespace.CAPTCHA), packet.getFrom(), "msg:" + packet.getId());
+                }
                 final boolean pingWorthyError = error != null && (error.hasChild("not-acceptable") || error.hasChild("remote-server-timeout") || error.hasChild("remote-server-not-found"));
                 if (pingWorthyError) {
                     Conversation conversation = mXmppConnectionService.find(account, from);
