@@ -40,8 +40,13 @@ public class CaptchaActivity extends XmppActivity {
         });
 
         mOk.setOnClickListener(v -> {
+            String solution = mInput.getText().toString().trim();
+            if (solution.isEmpty()) {
+                mInput.setError(getString(R.string.please_enter_solution));
+                return;
+            }
             Toast.makeText(this, R.string.captcha_sending, Toast.LENGTH_SHORT).show();
-            xmppConnectionService.sendCaptchaResponse(mRequestId, mInput.getText().toString());
+            xmppConnectionService.sendCaptchaResponse(mRequestId, solution);
             finish();
         });
 
@@ -53,7 +58,7 @@ public class CaptchaActivity extends XmppActivity {
         super.onNewIntent(intent);
         handleIntent(intent);
         if (xmppConnectionServiceBound) {
-            onBackendConnected();
+            refreshCaptcha();
         }
     }
 
@@ -68,6 +73,10 @@ public class CaptchaActivity extends XmppActivity {
 
     @Override
     protected void onBackendConnected() {
+        refreshCaptcha();
+    }
+
+    private void refreshCaptcha() {
         mCaptchaRequest = xmppConnectionService.getPendingCaptchaRequest(mRequestId);
         if (mCaptchaRequest == null) {
             finish();
@@ -75,6 +84,8 @@ public class CaptchaActivity extends XmppActivity {
         }
         mCaptchaImage.setImageBitmap(mCaptchaRequest.captcha);
         mInstructions.setText(mCaptchaRequest.data.getInstructions());
+        mInput.setText("");
+        mInput.setError(null);
         String title = mCaptchaRequest.data.getTitle();
         if (title != null) {
             setTitle(title);

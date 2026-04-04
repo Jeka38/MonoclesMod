@@ -337,7 +337,7 @@ public class PresenceParser extends AbstractParser implements
                     final Element captcha_element = error.findChild("captcha", Namespace.CAPTCHA);
                     final Element x_captcha = captcha_element == null ? null : captcha_element.findChild("x", Namespace.DATA);
                     if (x_captcha != null) {
-                        mXmppConnectionService.fetchCaptchaAndDisplay(account, packet.getFrom(), Data.parse(x_captcha), packet.getId(), "pres:");
+                        mXmppConnectionService.fetchCaptchaAndDisplay(account, packet.getFrom(), Data.parse(x_captcha), packet.getId(), "pres:", packet);
                     }
                 } else if (error.hasChild("resource-constraint")) {
                     mucOptions.setError(MucOptions.Error.RESOURCE_CONSTRAINT);

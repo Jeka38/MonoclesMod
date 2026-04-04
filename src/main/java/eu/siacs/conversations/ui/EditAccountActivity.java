@@ -69,7 +69,6 @@ import eu.siacs.conversations.services.BarcodeProvider;
 import eu.siacs.conversations.services.QuickConversationsService;
 import eu.siacs.conversations.services.XmppConnectionService;
 import eu.siacs.conversations.services.XmppConnectionService.OnAccountUpdate;
-import eu.siacs.conversations.services.XmppConnectionService.OnCaptchaRequested;
 import eu.siacs.conversations.ui.adapter.KnownHostsAdapter;
 import eu.siacs.conversations.ui.adapter.PresenceTemplateAdapter;
 import eu.siacs.conversations.ui.util.AvatarWorkerTask;
@@ -99,7 +98,7 @@ import com.google.common.base.Strings;
 
 
 public class EditAccountActivity extends OmemoActivity implements OnAccountUpdate, OnUpdateBlocklist,
-        OnKeyStatusUpdated, OnCaptchaRequested, KeyChainAliasCallback, XmppConnectionService.OnShowErrorToast, XmppConnectionService.OnMamPreferencesFetched {
+        OnKeyStatusUpdated, KeyChainAliasCallback, XmppConnectionService.OnShowErrorToast, XmppConnectionService.OnMamPreferencesFetched {
 
     public static final String EXTRA_OPENED_FROM_NOTIFICATION = "opened_from_notification";
     public static final String EXTRA_FORCE_REGISTER = "force_register";
@@ -1763,50 +1762,6 @@ public class EditAccountActivity extends OmemoActivity implements OnAccountUpdat
         refreshUi();
     }
 
-    @Override
-    public void onCaptchaRequested(final Account account, final String id, final Data data, final Bitmap captcha) {
-        runOnUiThread(() -> {
-            if ((mCaptchaDialog != null) && mCaptchaDialog.isShowing()) {
-                mCaptchaDialog.dismiss();
-            }
-            final AlertDialog.Builder builder = new AlertDialog.Builder(EditAccountActivity.this);
-            final View view = getLayoutInflater().inflate(R.layout.captcha, null);
-            final ImageView imageView = view.findViewById(R.id.captcha);
-            final EditText input = view.findViewById(R.id.input);
-            imageView.setImageBitmap(captcha);
-
-            builder.setTitle(getString(R.string.captcha_required));
-            builder.setView(view);
-
-            builder.setPositiveButton(getString(R.string.ok),
-                    (dialog, which) -> {
-                        String rc = input.getText().toString();
-                        data.put("username", account.getUsername());
-                        data.put("password", account.getPassword());
-                        data.put("ocr", rc);
-                        data.submit();
-
-                        if (xmppConnectionServiceBound) {
-                            xmppConnectionService.sendCreateAccountWithCaptchaPacket(
-                                    account, id, data);
-                        }
-                    });
-            builder.setNegativeButton(getString(R.string.cancel), (dialog, which) -> {
-                if (xmppConnectionService != null) {
-                    xmppConnectionService.sendCreateAccountWithCaptchaPacket(account, null, null);
-                }
-            });
-
-            builder.setOnCancelListener(dialog -> {
-                if (xmppConnectionService != null) {
-                    xmppConnectionService.sendCreateAccountWithCaptchaPacket(account, null, null);
-                }
-            });
-            mCaptchaDialog = builder.create();
-            mCaptchaDialog.show();
-            input.requestFocus();
-        });
-    }
 
     public void onShowErrorToast(final int resId) {
         runOnUiThread(new Runnable() {

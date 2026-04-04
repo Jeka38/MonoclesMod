@@ -28,6 +28,7 @@ import com.kedia.ogparser.OpenGraphParser;
 import com.kedia.ogparser.OpenGraphResult;
 import java.util.HashMap;
 
+import de.monocles.mod.BobTransfer;
 import de.monocles.mod.EmojiSearch;
 import eu.siacs.conversations.ui.ConversationsActivity;
 import eu.siacs.conversations.persistance.UnifiedPushDatabase;
@@ -420,7 +421,7 @@ public class XmppConnectionService extends Service {
     private final Set<OnKeyStatusUpdated> mOnKeyStatusUpdated = Collections.newSetFromMap(new WeakHashMap<OnKeyStatusUpdated, Boolean>());
     private final Set<OnJingleRtpConnectionUpdate> onJingleRtpConnectionUpdate = Collections.newSetFromMap(new WeakHashMap<OnJingleRtpConnectionUpdate, Boolean>());
 
-    private final Map<String, CaptchaRequest> mPendingCaptchas = new HashMap<>();
+    private final LruCache<String, CaptchaRequest> mPendingCaptchas = new LruCache<>(20);
     private final LruCache<String, Long> mSolvedCaptchas = new LruCache<>(100);
 
     private final Object LISTENER_LOCK = new Object();
@@ -5729,50 +5730,80 @@ public class XmppConnectionService extends Service {
     }
 
     private boolean isCaptchaPending(String id) {
-        synchronized (mPendingCaptchas) {
-            return mPendingCaptchas.containsKey(id);
-        }
+        return mPendingCaptchas.get(id) != null;
     }
 
     public void fetchCaptchaAndDisplay(final Account account, final Jid from, final Data data, final String stanzaId) {
-        fetchCaptchaAndDisplay(account, from, data, stanzaId, from.isDomainJid() ? "reg:" : "msg:");
+        fetchCaptchaAndDisplay(account, from, data, stanzaId, from.isDomainJid() ? "reg:" : "msg:", null);
     }
 
-    public void fetchCaptchaAndDisplay(final Account account, final Jid from, final Data data, final String stanzaId, final String prefix) {
-        final String requestId = prefix + from.asBareJid() + " " + stanzaId;
-        if (isCaptchaSolvedRecently(requestId) || isCaptchaPending(requestId)) {
+    public void fetchCaptchaAndDisplay(final Account account, final Jid from, final Data data, final String stanzaId, final String prefix, final Element stanza) {
+        final String id = (stanzaId != null ? stanzaId : "id" + SECURE_RANDOM.nextInt(10000));
+        final String requestId;
+        if ("reg:".equals(prefix)) {
+            requestId = prefix + account.getUsername() + ":" + account.getServer() + ":" + id;
+        } else {
+            requestId = prefix + from.asBareJid() + ":" + id;
+        }
+        if (isCaptchaSolvedRecently(requestId)) {
+            Log.d(Config.LOGTAG, account.getJid().asBareJid() + ": captcha solved recently (" + requestId + ")");
             return;
         }
         final boolean useTor = useTorToConnect() || account.isOnion();
         final boolean useI2P = useI2PToConnect() || account.isI2P();
         FILE_ATTACHMENT_EXECUTOR.execute(() -> {
             InputStream is = null;
-            final Element blob = data.getFieldByName("answers") != null ? data.findChild("data", "urn:xmpp:bob") : null;
+            Element blob = null;
+            final String captchaUri = data.getCaptchaUri();
+            Log.d(Config.LOGTAG, account.getJid().asBareJid() + ": fetching captcha. URI=" + captchaUri);
+            if (captchaUri != null && captchaUri.startsWith("cid:")) {
+                try {
+                    final Cid cid = BobTransfer.cid(Uri.parse(captchaUri));
+                    blob = findBobData(stanza, cid.toString());
+                    if (blob != null) {
+                        Log.d(Config.LOGTAG, account.getJid().asBareJid() + ": found BoB data in stanza");
+                    }
+                } catch (Exception e) {
+                    Log.d(Config.LOGTAG, account.getJid().asBareJid() + ": failed to parse CID or find BoB data", e);
+                }
+            }
+
             if (blob != null) {
                 try {
                     final String base64Blob = blob.getContent();
                     final byte[] strBlob = Base64.decode(base64Blob, Base64.DEFAULT);
                     is = new ByteArrayInputStream(strBlob);
                 } catch (Exception e) {
-                    is = null;
+                    Log.d(Config.LOGTAG, account.getJid().asBareJid() + ": failed to decode BoB data", e);
                 }
             } else {
                 try {
-                    final String url = data.getValue("url");
+                    final String url = captchaUri != null && captchaUri.startsWith("http") ? captchaUri : data.getValue("url");
                     final String fallbackUrl = data.getValue("captcha-fallback-url");
                     if (url != null) {
+                        Log.d(Config.LOGTAG, account.getJid().asBareJid() + ": opening captcha URL: " + url);
                         is = HttpConnectionManager.open(url, useTor, useI2P);
                     } else if (fallbackUrl != null) {
+                        Log.d(Config.LOGTAG, account.getJid().asBareJid() + ": opening captcha fallback URL: " + fallbackUrl);
                         is = HttpConnectionManager.open(fallbackUrl, useTor, useI2P);
+                    } else {
+                        Log.d(Config.LOGTAG, account.getJid().asBareJid() + ": no captcha URL or BoB data found");
                     }
                 } catch (final IOException e) {
-                    Log.d(Config.LOGTAG, account.getJid().asBareJid() + ": unable to fetch captcha", e);
+                    Log.d(Config.LOGTAG, account.getJid().asBareJid() + ": unable to fetch captcha via HTTP", e);
                 }
             }
             if (is != null) {
-                Bitmap captcha = BitmapFactory.decodeStream(is);
-                if (captcha != null) {
-                    displayCaptchaRequest(account, requestId, data, captcha);
+                try {
+                    Bitmap captcha = BitmapFactory.decodeStream(is);
+                    if (captcha != null) {
+                        Log.d(Config.LOGTAG, account.getJid().asBareJid() + ": captcha image decoded successfully");
+                        displayCaptchaRequest(account, requestId, data, captcha);
+                    } else {
+                        Log.d(Config.LOGTAG, account.getJid().asBareJid() + ": failed to decode captcha image");
+                    }
+                } finally {
+                    FileBackend.close(is);
                 }
             }
         });
@@ -5784,9 +5815,8 @@ public class XmppConnectionService extends Service {
             data.setInstructions(instructions.replace("://", ":\1").replace("//", "/").replace(":\1", "://"));
         }
         final CaptchaRequest request = new CaptchaRequest(account, id, data, captcha);
-        synchronized (mPendingCaptchas) {
-            mPendingCaptchas.put(id, request);
-        }
+        mPendingCaptchas.put(id, request);
+        Log.d(Config.LOGTAG, account.getJid().asBareJid() + ": displaying captcha request " + id + ". Listeners=" + mOnCaptchaRequested.size());
         if (mOnCaptchaRequested.size() > 0) {
             DisplayMetrics metrics = getApplicationContext().getResources().getDisplayMetrics();
             Bitmap scaled = Bitmap.createScaledBitmap(captcha, (int) (captcha.getWidth() * metrics.scaledDensity),
@@ -5802,18 +5832,14 @@ public class XmppConnectionService extends Service {
     }
 
     public CaptchaRequest getPendingCaptchaRequest(String id) {
-        synchronized (mPendingCaptchas) {
-            return mPendingCaptchas.get(id);
-        }
+        return mPendingCaptchas.get(id);
     }
 
     public String getPendingCaptchaForJid(Jid jid) {
-        synchronized (mPendingCaptchas) {
-            final String prefix = jid.asBareJid().toString() + " ";
-            for (String id : mPendingCaptchas.keySet()) {
-                if (id.startsWith(prefix)) {
-                    return id;
-                }
+        final String needle = ":" + jid.asBareJid().toString() + ":";
+        for (String id : mPendingCaptchas.snapshot().keySet()) {
+            if (id.contains(needle)) {
+                return id;
             }
         }
         return null;
@@ -5827,26 +5853,23 @@ public class XmppConnectionService extends Service {
     }
 
     public void sendCaptchaResponse(String requestId, String solution) {
-        final CaptchaRequest request;
-        synchronized (mPendingCaptchas) {
-            request = mPendingCaptchas.remove(requestId);
-        }
+        final CaptchaRequest request = mPendingCaptchas.remove(requestId);
         if (request == null) {
+            Log.d(Config.LOGTAG, "sendCaptchaResponse: request not found: " + requestId);
             return;
         }
         if (requestId.startsWith("reg:")) {
+            final String stanzaId = requestId.substring(requestId.lastIndexOf(':') + 1);
             if (solution != null) {
                 markCaptchaAsSolved(requestId);
                 final String fieldName = request.data.getCaptchaFieldName();
                 request.data.put(fieldName, solution.trim());
                 request.data.submit();
-                final String stanzaId = requestId.substring(requestId.lastIndexOf(' ') + 1);
                 sendCreateAccountWithCaptchaPacket(request.account, stanzaId, request.data);
             } else {
                 final XmppConnection connection = request.account.getXmppConnection();
                 if (connection != null && connection.registrationResponseListener != null) {
                     IqPacket error = new IqPacket(IqPacket.TYPE.ERROR);
-                    final String stanzaId = requestId.substring(requestId.lastIndexOf(' ') + 1);
                     error.setId(stanzaId);
                     try {
                         connection.registrationResponseListener.onIqPacketReceived(request.account, error);
@@ -5857,16 +5880,16 @@ public class XmppConnectionService extends Service {
             }
         } else {
             final int prefixEnd = requestId.indexOf(':');
-            final int jidEnd = requestId.lastIndexOf(' ');
-            final Jid to = Jid.of(requestId.substring(prefixEnd + 1, jidEnd));
-            final String stanzaId = requestId.substring(jidEnd + 1);
+            final int stanzaEnd = requestId.lastIndexOf(':');
+            final Jid to = Jid.of(requestId.substring(prefixEnd + 1, stanzaEnd));
+            final String stanzaId = requestId.substring(stanzaEnd + 1);
             if (solution != null) {
                 markCaptchaAsSolved(requestId);
                 final String fieldName = request.data.getCaptchaFieldName();
                 final MessagePacket response = mMessageGenerator.generateCaptchaResponse(to, stanzaId, request.data, fieldName, solution.trim());
                 sendMessagePacket(request.account, response);
                 final Conversation conversation = find(request.account, to.asBareJid());
-                if (conversation != null) {
+                if (conversation != null && (requestId.startsWith("pres:") || (requestId.startsWith("msg:") && conversation.getMode() == Conversation.MODE_MULTI))) {
                     internalPingExecutor.schedule(() -> joinMuc(conversation), 500, TimeUnit.MILLISECONDS);
                 }
             }
@@ -7083,5 +7106,21 @@ public class XmppConnectionService extends Service {
 
     public EmojiSearch emojiSearch() {
         return emojiSearch;
+    }
+
+    private Element findBobData(Element element, String cid) {
+        if (element == null) {
+            return null;
+        }
+        if (element.getName().equals("data") && "urn:xmpp:bob".equals(element.getNamespace()) && cid.equals(element.getAttribute("cid"))) {
+            return element;
+        }
+        for (Element child : element.getChildren()) {
+            Element found = findBobData(child, cid);
+            if (found != null) {
+                return found;
+            }
+        }
+        return null;
     }
 }

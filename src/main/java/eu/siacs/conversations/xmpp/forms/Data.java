@@ -104,19 +104,19 @@ public class Data extends Element {
     }
 
     public String getTitle() {
-        return findChildContent("title", "jabber:x:data");
+        return findChildContent("title");
     }
 
     public String getInstructions() {
-        return findChildContent("instructions", "jabber:x:data");
+        return findChildContent("instructions");
     }
 
     public void setInstructions(String instructions) {
-        Element element = findChild("instructions", "jabber:x:data");
+        Element element = findChild("instructions");
         if (element != null) {
             element.setContent(instructions);
         } else {
-            addChild("instructions", "jabber:x:data").setContent(instructions);
+            addChild("instructions").setContent(instructions);
         }
     }
 
@@ -132,11 +132,34 @@ public class Data extends Element {
             }
         }
         for (Field field : getFields()) {
-            if ("text-single".equals(field.getType())) {
+            if ("text-single".equals(field.getType()) || "text-private".equals(field.getType())) {
                 return field.getFieldName();
             }
         }
         return "answers";
+    }
+
+    public String getCaptchaUri() {
+        for (Field field : getFields()) {
+            Element media = field.findChild("media", "urn:xmpp:media-element");
+            if (media == null) {
+                media = field.findChild("media");
+            }
+            if (media != null) {
+                for (Element uri : media.getChildren()) {
+                    if (uri.getName().equals("uri")) {
+                        return uri.getContent();
+                    }
+                }
+            }
+        }
+        for (Field field : getFields()) {
+            String value = field.getValue();
+            if (value != null && value.startsWith("cid:")) {
+                return value;
+            }
+        }
+        return null;
     }
 
     public static Data create(String type, Bundle bundle) {

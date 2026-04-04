@@ -652,7 +652,7 @@ public class MessageParser extends AbstractParser implements OnMessagePacketRece
         final Element captcha = packet.findChild("captcha", Namespace.CAPTCHA);
         if (captcha != null && captcha.hasChild("x", Namespace.DATA)) {
             final Data data = Data.parse(captcha.findChild("x", Namespace.DATA));
-            mXmppConnectionService.fetchCaptchaAndDisplay(account, from, data, packet.getId(), "msg:");
+            mXmppConnectionService.fetchCaptchaAndDisplay(account, from, data, packet.getId(), "msg:", packet);
             return;
         }
         if (body == null && html == null) {

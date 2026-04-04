@@ -131,7 +131,7 @@ public class XmppConnection implements Runnable {
                     if (query != null && (query.hasChild("x", Namespace.DATA) || query.hasChild("captcha", Namespace.CAPTCHA))) {
                         final Element x = query.findChild("x", Namespace.DATA);
                         final Data data = Data.parse(x != null ? x : query.findChild("captcha", Namespace.CAPTCHA).findChild("x", Namespace.DATA));
-                        service().fetchCaptchaAndDisplay(account, account.getDomain(), data, packet.getId(), "reg:");
+                        service().fetchCaptchaAndDisplay(account, account.getDomain(), data, packet.getId(), "reg:", packet);
                         return;
                     }
                     account.setOption(Account.OPTION_REGISTER, false);
@@ -146,7 +146,7 @@ public class XmppConnection implements Runnable {
                         final Element captcha = error.hasChild("captcha", Namespace.CAPTCHA) ? error.findChild("captcha", Namespace.CAPTCHA) : packet.query().findChild("captcha", Namespace.CAPTCHA);
                         final Element x_captcha = captcha.findChild("x", Namespace.DATA);
                         if (x_captcha != null) {
-                            service().fetchCaptchaAndDisplay(account, account.getDomain(), Data.parse(x_captcha), packet.getId(), "reg:");
+                            service().fetchCaptchaAndDisplay(account, account.getDomain(), Data.parse(x_captcha), packet.getId(), "reg:", packet);
                             return;
                         }
                     }
@@ -1869,7 +1869,7 @@ public class XmppConnection implements Runnable {
                     } else if (query.hasChild("x", Namespace.DATA) || packet.hasChild("captcha", Namespace.CAPTCHA)) {
                         final Element x_reg = query.findChild("x", Namespace.DATA);
                         final Data data = Data.parse(x_reg != null ? x_reg : packet.findChild("captcha", Namespace.CAPTCHA).findChild("x", Namespace.DATA));
-                        service().fetchCaptchaAndDisplay(account, account.getDomain(), data, packet.getId(), "reg:");
+                        service().fetchCaptchaAndDisplay(account, account.getDomain(), data, packet.getId(), "reg:", packet);
                     } else if (query.hasChild("instructions")
                             || query.hasChild("x", Namespace.OOB)) {
                         final String instructions = query.findChildContent("instructions");
