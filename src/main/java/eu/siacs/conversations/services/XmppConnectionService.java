@@ -5880,6 +5880,12 @@ public class XmppConnectionService extends Service {
             if (pending != null) {
                 return pending.getCaptcha() != null;
             }
+            final String target = id.split(" ", 2)[0];
+            for (String pendingId : mPendingCaptchas.keySet()) {
+                if (pendingId.startsWith(target)) {
+                    return true;
+                }
+            }
         }
         return false;
     }
@@ -6202,6 +6208,7 @@ public class XmppConnectionService extends Service {
             if (content != null && content.contains("/captcha//")) {
                 instructionsElement.setContent(content.replace("/captcha//", "/captcha/"));
             }
+            mPendingCaptchas.get(id).setInstructions(instructionsElement.getContent());
         }
         String url = data.getValue("url");
         if (url == null) {
@@ -6215,6 +6222,9 @@ public class XmppConnectionService extends Service {
                     url = content.substring(matcher.start(), matcher.end());
                 }
             }
+        }
+        if (url != null && url.contains("/captcha//")) {
+            url = url.replace("/captcha//", "/captcha/");
         }
         final String finalUrl = url;
         mPendingCaptchas.get(id).setUrl(finalUrl);
