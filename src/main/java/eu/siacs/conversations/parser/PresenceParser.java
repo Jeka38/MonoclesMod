@@ -320,11 +320,25 @@ public class PresenceParser extends AbstractParser implements
                 if (error == null) {
                     return addedStatusMessage;
                 }
-                final Data captchaForm = Data.parse(error.findChild("x", Namespace.DATA));
-                if (captchaForm != null
-                        && "urn:xmpp:captcha".equals(captchaForm.getFormType())
-                        && captchaForm.getFieldByName("ocr") != null) {
-                    final String challenge = error.findChildContent("text");
+                Data captchaForm = Data.parse(error.findChild("x", Namespace.DATA));
+                if (captchaForm == null) {
+                    captchaForm = Data.parse(packet.findChild("x", Namespace.DATA));
+                }
+                if (captchaForm != null && captchaForm.getFieldByName("ocr") != null) {
+                    final String challenge;
+                    final String explicitText = error.findChildContent("text");
+                    if (explicitText != null && !explicitText.trim().isEmpty()) {
+                        challenge = explicitText;
+                    } else {
+                        final String challengeValue = captchaForm.getValue("challenge");
+                        if (challengeValue != null && !challengeValue.trim().isEmpty()) {
+                            challenge = challengeValue;
+                        } else if (captchaForm.getFieldByName("ocr").getLabel() != null) {
+                            challenge = captchaForm.getFieldByName("ocr").getLabel();
+                        } else {
+                            challenge = null;
+                        }
+                    }
                     if (mXmppConnectionService.displayMucCaptchaRequest(conversation, captchaForm, challenge)) {
                         return addedStatusMessage;
                     }
