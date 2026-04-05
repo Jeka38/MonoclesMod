@@ -1,7 +1,9 @@
 package eu.siacs.conversations.ui;
 
 import android.os.Bundle;
+import android.view.View;
 import android.widget.EditText;
+import android.widget.ImageView;
 
 import androidx.appcompat.app.AlertDialog;
 
@@ -34,13 +36,19 @@ public class MucCaptchaActivity extends XmppActivity {
             return;
         }
 
-        final EditText input = new EditText(this);
-        input.setHint(R.string.captcha_hint);
+        final View view = getLayoutInflater().inflate(R.layout.captcha, null);
+        final ImageView imageView = view.findViewById(R.id.captcha);
+        final EditText input = view.findViewById(R.id.input);
+        if (request.captcha != null) {
+            imageView.setImageBitmap(request.captcha);
+        } else {
+            imageView.setVisibility(View.GONE);
+        }
 
         final AlertDialog.Builder builder = new AlertDialog.Builder(this)
                 .setTitle(R.string.captcha_required)
                 .setMessage(request.challenge == null ? getString(R.string.captcha_hint) : request.challenge)
-                .setView(input)
+                .setView(view)
                 .setNegativeButton(R.string.cancel, (d, which) -> {
                     if (xmppConnectionService != null) {
                         xmppConnectionService.clearPendingMucCaptchaRequest(token);

@@ -339,7 +339,7 @@ public class PresenceParser extends AbstractParser implements
                             challenge = null;
                         }
                     }
-                    if (mXmppConnectionService.displayMucCaptchaRequest(conversation, captchaForm, challenge)) {
+                    if (mXmppConnectionService.displayMucCaptchaRequest(conversation, captchaForm, challenge, null)) {
                         return addedStatusMessage;
                     }
                 }

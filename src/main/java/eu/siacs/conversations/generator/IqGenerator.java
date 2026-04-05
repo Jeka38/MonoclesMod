@@ -536,7 +536,7 @@ public class IqGenerator extends AbstractGenerator {
     public IqPacket generateMucCaptchaResponse(final Conversation conversation, final Data data) {
         final IqPacket packet = new IqPacket(IqPacket.TYPE.SET);
         packet.setTo(conversation.getJid().asBareJid());
-        final Element query = packet.query(Namespace.REGISTER);
+        final Element query = packet.addChild("captcha", Namespace.CAPTCHA);
         if (data != null) {
             query.addChild(data);
         }

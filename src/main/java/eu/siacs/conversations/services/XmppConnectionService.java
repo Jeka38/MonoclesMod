@@ -5751,9 +5751,9 @@ public class XmppConnectionService extends Service {
         return false;
     }
 
-    public boolean displayMucCaptchaRequest(final Conversation conversation, final Data data, final String challenge) {
+    public boolean displayMucCaptchaRequest(final Conversation conversation, final Data data, final String challenge, final Bitmap captcha) {
         final String token = UUID.randomUUID().toString();
-        pendingMucCaptchaRequests.put(token, new PendingMucCaptchaRequest(conversation.getUuid(), data, challenge));
+        pendingMucCaptchaRequests.put(token, new PendingMucCaptchaRequest(conversation.getUuid(), data, challenge, captcha));
         final Intent intent = new Intent(this, MucCaptchaActivity.class);
         intent.putExtra(EXTRA_MUC_CAPTCHA_TOKEN, token);
         intent.addFlags(Intent.FLAG_ACTIVITY_NEW_TASK);
@@ -6824,11 +6824,13 @@ public class XmppConnectionService extends Service {
         public final String conversationUuid;
         public final Data data;
         public final String challenge;
+        public final Bitmap captcha;
 
-        PendingMucCaptchaRequest(final String conversationUuid, final Data data, final String challenge) {
+        PendingMucCaptchaRequest(final String conversationUuid, final Data data, final String challenge, final Bitmap captcha) {
             this.conversationUuid = conversationUuid;
             this.data = data;
             this.challenge = challenge;
+            this.captcha = captcha;
         }
     }
 
