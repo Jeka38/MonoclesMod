@@ -30,6 +30,7 @@ import java.util.HashMap;
 
 import de.monocles.mod.EmojiSearch;
 import eu.siacs.conversations.ui.ConversationsActivity;
+import eu.siacs.conversations.ui.MucCaptchaActivity;
 import eu.siacs.conversations.persistance.UnifiedPushDatabase;
 import eu.siacs.conversations.xmpp.OnGatewayResult;
 import eu.siacs.conversations.utils.Consumer;
@@ -140,7 +141,9 @@ import java.util.Locale;
 import java.util.Map;
 import java.util.Set;
 import java.util.TimeZone;
+import java.util.UUID;
 import java.util.WeakHashMap;
+import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.CopyOnWriteArrayList;
 import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.Executor;
@@ -250,6 +253,7 @@ import java.util.Timer;
 import java.util.TimerTask;
 
 public class XmppConnectionService extends Service {
+    public static final String EXTRA_MUC_CAPTCHA_TOKEN = "muc_captcha_token";
 
     public static final String ACTION_REPLY_TO_CONVERSATION = "reply_to_conversations";
     public static final String ACTION_MARK_AS_READ = "mark_as_read";
@@ -409,11 +413,13 @@ public class XmppConnectionService extends Service {
     private final Set<OnShowErrorToast> mOnShowErrorToasts = Collections.newSetFromMap(new WeakHashMap<OnShowErrorToast, Boolean>());
     private final Set<OnAccountUpdate> mOnAccountUpdates = Collections.newSetFromMap(new WeakHashMap<OnAccountUpdate, Boolean>());
     private final Set<OnCaptchaRequested> mOnCaptchaRequested = Collections.newSetFromMap(new WeakHashMap<OnCaptchaRequested, Boolean>());
+    private final Set<OnMucCaptchaRequested> mOnMucCaptchaRequested = Collections.newSetFromMap(new WeakHashMap<OnMucCaptchaRequested, Boolean>());
     private final Set<OnRosterUpdate> mOnRosterUpdates = Collections.newSetFromMap(new WeakHashMap<OnRosterUpdate, Boolean>());
     private final Set<OnUpdateBlocklist> mOnUpdateBlocklist = Collections.newSetFromMap(new WeakHashMap<OnUpdateBlocklist, Boolean>());
     private final Set<OnMucRosterUpdate> mOnMucRosterUpdate = Collections.newSetFromMap(new WeakHashMap<OnMucRosterUpdate, Boolean>());
     private final Set<OnKeyStatusUpdated> mOnKeyStatusUpdated = Collections.newSetFromMap(new WeakHashMap<OnKeyStatusUpdated, Boolean>());
     private final Set<OnJingleRtpConnectionUpdate> onJingleRtpConnectionUpdate = Collections.newSetFromMap(new WeakHashMap<OnJingleRtpConnectionUpdate, Boolean>());
+    private final Map<String, PendingMucCaptchaRequest> pendingMucCaptchaRequests = new ConcurrentHashMap<>();
 
     private final Object LISTENER_LOCK = new Object();
     public final Set<String> FILENAMES_TO_IGNORE_DELETION = new HashSet<>();
@@ -3794,6 +3800,30 @@ public class XmppConnectionService extends Service {
         }
     }
 
+    public void setOnMucCaptchaRequestedListener(OnMucCaptchaRequested listener) {
+        final boolean remainingListeners;
+        synchronized (LISTENER_LOCK) {
+            remainingListeners = checkListeners();
+            if (!this.mOnMucCaptchaRequested.add(listener)) {
+                Log.w(Config.LOGTAG, listener.getClass().getName() + " is already registered as OnMucCaptchaRequestedListener");
+            }
+        }
+        if (remainingListeners) {
+            switchToForeground();
+        }
+    }
+
+    public void removeOnMucCaptchaRequestedListener(OnMucCaptchaRequested listener) {
+        final boolean remainingListeners;
+        synchronized (LISTENER_LOCK) {
+            this.mOnMucCaptchaRequested.remove(listener);
+            remainingListeners = checkListeners();
+        }
+        if (remainingListeners) {
+            switchToBackground();
+        }
+    }
+
     public void setOnRosterUpdateListener(final OnRosterUpdate listener) {
         final boolean remainingListeners;
         synchronized (LISTENER_LOCK) {
@@ -3919,6 +3949,7 @@ public class XmppConnectionService extends Service {
                 && this.mOnConversationUpdates.size() == 0
                 && this.mOnRosterUpdates.size() == 0
                 && this.mOnCaptchaRequested.size() == 0
+                && this.mOnMucCaptchaRequested.size() == 0
                 && this.mOnMucRosterUpdate.size() == 0
                 && this.mOnUpdateBlocklist.size() == 0
                 && this.mOnShowErrorToasts.size() == 0
@@ -5720,6 +5751,46 @@ public class XmppConnectionService extends Service {
         return false;
     }
 
+    public boolean displayMucCaptchaRequest(final Conversation conversation, final Data data, final String challenge, final Bitmap captcha) {
+        final String token = UUID.randomUUID().toString();
+        pendingMucCaptchaRequests.put(token, new PendingMucCaptchaRequest(conversation.getUuid(), data, challenge, captcha));
+        final Intent intent = new Intent(this, MucCaptchaActivity.class);
+        intent.putExtra(EXTRA_MUC_CAPTCHA_TOKEN, token);
+        intent.addFlags(Intent.FLAG_ACTIVITY_NEW_TASK);
+        startActivity(intent);
+        if (mOnMucCaptchaRequested.size() > 0) {
+            for (OnMucCaptchaRequested listener : threadSafeList(this.mOnMucCaptchaRequested)) {
+                listener.onMucCaptchaRequested(conversation, data, challenge);
+            }
+        }
+        return true;
+    }
+
+    public PendingMucCaptchaRequest getPendingMucCaptchaRequest(final String token) {
+        return pendingMucCaptchaRequests.get(token);
+    }
+
+    public void clearPendingMucCaptchaRequest(final String token) {
+        if (token != null) {
+            pendingMucCaptchaRequests.remove(token);
+        }
+    }
+
+    public boolean submitPendingMucCaptchaRequest(final String token, final String response) {
+        final PendingMucCaptchaRequest request = pendingMucCaptchaRequests.remove(token);
+        if (request == null) {
+            return false;
+        }
+        final Conversation conversation = findConversationByUuid(request.conversationUuid);
+        if (conversation == null) {
+            return false;
+        }
+        request.data.put("ocr", response);
+        request.data.submit();
+        sendMucCaptchaPacket(conversation, request.data);
+        return true;
+    }
+
     public void updateBlocklistUi(final OnUpdateBlocklist.Status status) {
         for (OnUpdateBlocklist listener : threadSafeList(this.mOnUpdateBlocklist)) {
             listener.OnUpdateBlocklist(status);
@@ -5999,6 +6070,19 @@ public class XmppConnectionService extends Service {
             IqPacket request = mIqGenerator.generateCreateAccountWithCaptcha(account, id, data);
             connection.sendUnmodifiedIqPacket(request, connection.registrationResponseListener, true);
         }
+    }
+
+    public void sendMucCaptchaPacket(final Conversation conversation, final Data data) {
+        final Account account = conversation.getAccount();
+        final IqPacket request = mIqGenerator.generateMucCaptchaResponse(conversation, data);
+        sendIqPacket(account, request, (a, response) -> {
+            if (response.getType() == IqPacket.TYPE.RESULT) {
+                Log.d(Config.LOGTAG, account.getJid().asBareJid() + ": MUC captcha accepted for " + conversation.getJid().asBareJid());
+                joinMuc(conversation);
+            } else {
+                Log.w(Config.LOGTAG, account.getJid().asBareJid() + ": MUC captcha submit failed for " + conversation.getJid().asBareJid() + " " + response);
+            }
+        });
     }
 
     public void sendIqPacket(final Account account, final IqPacket packet, final OnIqPacketReceived callback) {
@@ -6730,6 +6814,24 @@ public class XmppConnectionService extends Service {
 
     public interface OnCaptchaRequested {
         void onCaptchaRequested(Account account, String id, Data data, Bitmap captcha);
+    }
+
+    public interface OnMucCaptchaRequested {
+        void onMucCaptchaRequested(Conversation conversation, Data data, String challenge);
+    }
+
+    public static class PendingMucCaptchaRequest {
+        public final String conversationUuid;
+        public final Data data;
+        public final String challenge;
+        public final Bitmap captcha;
+
+        PendingMucCaptchaRequest(final String conversationUuid, final Data data, final String challenge, final Bitmap captcha) {
+            this.conversationUuid = conversationUuid;
+            this.data = data;
+            this.challenge = challenge;
+            this.captcha = captcha;
+        }
     }
 
     public interface OnRosterUpdate {

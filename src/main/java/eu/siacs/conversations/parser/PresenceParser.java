@@ -27,6 +27,7 @@ import eu.siacs.conversations.xml.Namespace;
 import eu.siacs.conversations.xmpp.InvalidJid;
 import eu.siacs.conversations.xmpp.Jid;
 import eu.siacs.conversations.xmpp.OnPresencePacketReceived;
+import eu.siacs.conversations.xmpp.forms.Data;
 import eu.siacs.conversations.xmpp.pep.Avatar;
 import eu.siacs.conversations.xmpp.stanzas.PresencePacket;
 
@@ -63,7 +64,7 @@ public class PresenceParser extends AbstractParser implements
         final Jid jid = conversation.getAccount().getJid();
         final Jid from = packet.getFrom();
         boolean addedStatusMessage = false;
-        if (!from.isBareJid()) {
+        if (from != null) {
             final String type = packet.getAttribute("type");
             final Element x = packet.findChild("x", Namespace.MUC_USER);
             final Element nick = packet.findChild("nick", Namespace.NICK);
@@ -318,6 +319,29 @@ public class PresenceParser extends AbstractParser implements
                 final Element error = packet.findChild("error");
                 if (error == null) {
                     return addedStatusMessage;
+                }
+                Data captchaForm = Data.parse(error.findChild("x", Namespace.DATA));
+                if (captchaForm == null) {
+                    captchaForm = Data.parse(packet.findChild("x", Namespace.DATA));
+                }
+                if (captchaForm != null && captchaForm.getFieldByName("ocr") != null) {
+                    final String challenge;
+                    final String explicitText = error.findChildContent("text");
+                    if (explicitText != null && !explicitText.trim().isEmpty()) {
+                        challenge = explicitText;
+                    } else {
+                        final String challengeValue = captchaForm.getValue("challenge");
+                        if (challengeValue != null && !challengeValue.trim().isEmpty()) {
+                            challenge = challengeValue;
+                        } else if (captchaForm.getFieldByName("ocr").getLabel() != null) {
+                            challenge = captchaForm.getFieldByName("ocr").getLabel();
+                        } else {
+                            challenge = null;
+                        }
+                    }
+                    if (mXmppConnectionService.displayMucCaptchaRequest(conversation, captchaForm, challenge, null)) {
+                        return addedStatusMessage;
+                    }
                 }
                 if (error.hasChild("conflict")) {
                     if (mucOptions.online()) {

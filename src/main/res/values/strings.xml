@@ -486,6 +486,7 @@
     <string name="unable_to_fetch_mam_prefs">Unable to fetch archiving preferences</string>
     <string name="captcha_required">Captcha required</string>
     <string name="captcha_hint">Enter the text from the image above</string>
+    <string name="invalid_answer">Invalid captcha answer</string>
     <string name="certificate_chain_is_not_trusted">Certificate chain is not trusted</string>
     <string name="jid_does_not_match_certificate">chat address does not match certificate</string>
     <string name="action_renew_certificate">Renew certificate</string>

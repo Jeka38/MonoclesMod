@@ -533,6 +533,16 @@ public class IqGenerator extends AbstractGenerator {
         return register;
     }
 
+    public IqPacket generateMucCaptchaResponse(final Conversation conversation, final Data data) {
+        final IqPacket packet = new IqPacket(IqPacket.TYPE.SET);
+        packet.setTo(conversation.getJid().asBareJid());
+        final Element query = packet.addChild("captcha", Namespace.CAPTCHA);
+        if (data != null) {
+            query.addChild(data);
+        }
+        return packet;
+    }
+
     public IqPacket pushTokenToAppServer(Jid appServer, String token, String deviceId) {
         return pushTokenToAppServer(appServer, token, deviceId, null);
     }

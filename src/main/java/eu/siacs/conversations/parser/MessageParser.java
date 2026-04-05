@@ -1,5 +1,8 @@
 package eu.siacs.conversations.parser;
 
+import android.graphics.Bitmap;
+import android.graphics.BitmapFactory;
+import android.util.Base64;
 import android.util.Log;
 import android.util.Pair;
 import android.net.Uri;
@@ -7,6 +10,7 @@ import android.net.Uri;
 
 import de.monocles.mod.BobTransfer;
 import de.monocles.mod.WebxdcUpdate;
+import java.io.ByteArrayInputStream;
 import java.io.File;
 
 import java.net.URISyntaxException;
@@ -67,6 +71,7 @@ import eu.siacs.conversations.xmpp.chatstate.ChatState;
 import eu.siacs.conversations.xmpp.jingle.JingleConnectionManager;
 import eu.siacs.conversations.xmpp.jingle.JingleRtpConnection;
 import eu.siacs.conversations.xmpp.stanzas.MessagePacket;
+import eu.siacs.conversations.xmpp.forms.Data;
 
 
 
@@ -608,6 +613,9 @@ public class MessageParser extends AbstractParser implements OnMessagePacketRece
         }
         if (from == null || !InvalidJid.isValid(from) || !InvalidJid.isValid(to)) {
             Log.e(Config.LOGTAG, "encountered invalid message from='" + from + "' to='" + to + "'");
+            return;
+        }
+        if (handleMucCaptchaMessage(account, packet)) {
             return;
         }
 
@@ -1507,6 +1515,39 @@ public class MessageParser extends AbstractParser implements OnMessagePacketRece
                 mXmppConnectionService.getAvatarService().clear(contact);
             }
         }
+    }
+
+    private boolean handleMucCaptchaMessage(final Account account, final MessagePacket packet) {
+        final Jid from = packet.getFrom();
+        if (from == null || !from.isBareJid()) {
+            return false;
+        }
+        final Element captcha = packet.findChild("captcha", Namespace.CAPTCHA);
+        if (captcha == null) {
+            return false;
+        }
+        final Data data = Data.parse(captcha.findChild("x", Namespace.DATA));
+        if (data == null || data.getFieldByName("ocr") == null) {
+            return false;
+        }
+        final Conversation conversation =
+                mXmppConnectionService.findOrCreateConversation(account, from.asBareJid(), true, false, false);
+        final String challengeValue = data.getValue("challenge");
+        final String challenge =
+                challengeValue != null && !challengeValue.trim().isEmpty()
+                        ? challengeValue
+                        : data.getFieldByName("ocr").getLabel();
+        Bitmap captchaBitmap = null;
+        final Element bobData = packet.findChild("data", Namespace.BOB);
+        if (bobData != null && bobData.getContent() != null) {
+            try {
+                final byte[] blob = Base64.decode(bobData.getContent(), Base64.DEFAULT);
+                captchaBitmap = BitmapFactory.decodeStream(new ByteArrayInputStream(blob));
+            } catch (final Exception e) {
+                Log.d(Config.LOGTAG, "failed to decode MUC captcha image", e);
+            }
+        }
+        return mXmppConnectionService.displayMucCaptchaRequest(conversation, data, challenge, captchaBitmap);
     }
 
     private void updateReadMarker(Account account, Jid from, String id, boolean selfAddressed, Jid counterpart, MessageArchiveService.Query query) {
