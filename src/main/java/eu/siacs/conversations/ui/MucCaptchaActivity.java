@@ -4,6 +4,8 @@ import android.os.Bundle;
 import android.view.View;
 import android.widget.EditText;
 import android.widget.ImageView;
+import android.util.DisplayMetrics;
+import android.graphics.Bitmap;
 
 import androidx.appcompat.app.AlertDialog;
 
@@ -40,7 +42,15 @@ public class MucCaptchaActivity extends XmppActivity {
         final ImageView imageView = view.findViewById(R.id.captcha);
         final EditText input = view.findViewById(R.id.input);
         if (request.captcha != null) {
-            imageView.setImageBitmap(request.captcha);
+            final DisplayMetrics metrics = getResources().getDisplayMetrics();
+            final int targetWidth = (int) (metrics.widthPixels * 0.8f);
+            Bitmap displayBitmap = request.captcha;
+            if (request.captcha.getWidth() < targetWidth) {
+                final int targetHeight = Math.max(1, (int) ((float) request.captcha.getHeight() * targetWidth / request.captcha.getWidth()));
+                displayBitmap = Bitmap.createScaledBitmap(request.captcha, targetWidth, targetHeight, false);
+            }
+            imageView.setAdjustViewBounds(true);
+            imageView.setImageBitmap(displayBitmap);
         } else {
             imageView.setVisibility(View.GONE);
         }
