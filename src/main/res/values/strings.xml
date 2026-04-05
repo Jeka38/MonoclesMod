@@ -486,6 +486,7 @@
     <string name="unable_to_fetch_mam_prefs">Unable to fetch archiving preferences</string>
     <string name="captcha_required">Captcha required</string>
     <string name="captcha_hint">Enter the text from the image above</string>
+    <string name="solve">Solve</string>
     <string name="certificate_chain_is_not_trusted">Certificate chain is not trusted</string>
     <string name="jid_does_not_match_certificate">chat address does not match certificate</string>
     <string name="action_renew_certificate">Renew certificate</string>
@@ -1517,4 +1518,7 @@
     <string name="schedule_message_title">Schedule message</string>
     <string name="pref_message_autocomplete">Mention autocomplete</string>
     <string name="pref_message_autocomplete_summary">Use \"@\" in a chat room to autocomplete and list users</string>
+    <string name="pass_verification">You need to pass verification</string>
+    <string name="account_registration">Account registration</string>
+    <string name="captcha_sending">Sending response…</string>
 </resources>

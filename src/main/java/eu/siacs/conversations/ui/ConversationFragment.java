@@ -388,6 +388,16 @@ public class ConversationFragment extends XmppFragment
         }
     };
 
+    private final OnClickListener retryCaptcha = new OnClickListener() {
+        @Override
+        public void onClick(View v) {
+            String id = activity.xmppConnectionService.getPendingCaptchaId(conversation.getJid());
+            if (id != null) {
+                activity.xmppConnectionService.retryCaptcha(id);
+            }
+        }
+    };
+
     private final OnClickListener enterPassword = new OnClickListener() {
 
         @Override
@@ -4984,6 +4994,8 @@ public class ConversationFragment extends XmppFragment
                 showSnackbar(R.string.conference_destroyed, R.string.leave, leaveMuc);
             } else if (error == MucOptions.Error.NON_ANONYMOUS) {
                 showSnackbar(R.string.group_chat_will_make_your_jabber_id_public, R.string.join, acceptJoin);
+            } else if (error == MucOptions.Error.CAPTCHA_REQUIRED) {
+                showSnackbar(R.string.captcha_required, R.string.solve, retryCaptcha);
             } else {
                 hideSnackbar();
             }

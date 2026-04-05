@@ -18,6 +18,7 @@ import eu.siacs.conversations.entities.Message;
 import eu.siacs.conversations.entities.MucOptions;
 import eu.siacs.conversations.R;
 import eu.siacs.conversations.entities.Presence;
+import eu.siacs.conversations.xmpp.forms.Data;
 import eu.siacs.conversations.generator.IqGenerator;
 import eu.siacs.conversations.generator.PresenceGenerator;
 import eu.siacs.conversations.services.XmppConnectionService;
@@ -318,6 +319,16 @@ public class PresenceParser extends AbstractParser implements
                 final Element error = packet.findChild("error");
                 if (error == null) {
                     return addedStatusMessage;
+                }
+                final Element captcha = error.findChild("captcha", Namespace.CAPTCHA);
+                if (captcha != null) {
+                    Data data = Data.parse(captcha.findChild("x", Namespace.DATA));
+                    if (data != null) {
+                        mucOptions.setError(MucOptions.Error.CAPTCHA_REQUIRED);
+                        String id = "pres:" + from.toString() + (packet.getId() != null ? ":" + packet.getId() : "");
+                        mXmppConnectionService.fetchCaptchaAndDisplay(account, id, from, data, captcha, packet.getId());
+                        return addedStatusMessage;
+                    }
                 }
                 if (error.hasChild("conflict")) {
                     if (mucOptions.online()) {

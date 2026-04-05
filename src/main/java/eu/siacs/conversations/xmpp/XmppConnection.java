@@ -138,6 +138,15 @@ public class XmppConnection implements Runnable {
                             Arrays.asList(
                                     "The password is too weak", "Please use a longer password.");
                     Element error = packet.findChild("error");
+                    if (error != null && error.hasChild("captcha", Namespace.CAPTCHA)) {
+                        Element captcha = error.findChild("captcha", Namespace.CAPTCHA);
+                        Data data = Data.parse(captcha.findChild("x", Namespace.DATA));
+                        if (data != null) {
+                            String id = "reg:" + account.getUuid();
+                            getXmppConnectionService().fetchCaptchaAndDisplay(account, id, account.getDomain(), data, captcha, packet.getId());
+                            return;
+                        }
+                    }
                     Account.State state = Account.State.REGISTRATION_FAILED;
                     deleteAccount(account);
                     if (error != null) {
@@ -1857,7 +1866,7 @@ public class XmppConnection implements Runnable {
                     } else if (query.hasChild("x", Namespace.DATA)) {
                         final Data data = Data.parse(query.findChild("x", Namespace.DATA));
                         final Element blob = query.findChild("data", "urn:xmpp:bob");
-                        final String id = packet.getId();
+                        final String id = "reg:" + packet.getId();
                         InputStream is;
                         if (blob != null) {
                             try {

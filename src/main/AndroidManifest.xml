@@ -502,6 +502,11 @@
             android:exported="false"
             android:windowSoftInputMode="stateVisible" />
         <activity
+            android:name=".ui.CaptchaActivity"
+            android:label="@string/pass_verification"
+            android:launchMode="singleTop"
+            android:theme="@style/ConversationsTheme" />
+        <activity
             android:name=".ui.MediaViewerActivity"
             android:autoRemoveFromRecents="true"
             android:configChanges="screenSize|smallestScreenSize|screenLayout|orientation"

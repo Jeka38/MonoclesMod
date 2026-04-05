@@ -27,6 +27,7 @@ import com.kedia.ogparser.OpenGraphCallback;
 import com.kedia.ogparser.OpenGraphParser;
 import com.kedia.ogparser.OpenGraphResult;
 import java.util.HashMap;
+import java.util.concurrent.ConcurrentHashMap;
 
 import de.monocles.mod.EmojiSearch;
 import eu.siacs.conversations.ui.ConversationsActivity;
@@ -55,6 +56,7 @@ import android.content.SharedPreferences;
 import android.content.pm.PackageManager;
 import android.database.ContentObserver;
 import android.graphics.Bitmap;
+import android.graphics.BitmapFactory;
 import android.graphics.drawable.BitmapDrawable;
 import android.graphics.drawable.Drawable;
 import android.media.AudioManager;
@@ -119,6 +121,7 @@ import com.google.common.base.Optional;
 
 import eu.siacs.conversations.utils.Emoticons;
 import java.io.FileInputStream;
+import java.io.InputStream;
 import java.io.IOException;
 import java.io.File;
 import java.security.Security;
@@ -409,11 +412,14 @@ public class XmppConnectionService extends Service {
     private final Set<OnShowErrorToast> mOnShowErrorToasts = Collections.newSetFromMap(new WeakHashMap<OnShowErrorToast, Boolean>());
     private final Set<OnAccountUpdate> mOnAccountUpdates = Collections.newSetFromMap(new WeakHashMap<OnAccountUpdate, Boolean>());
     private final Set<OnCaptchaRequested> mOnCaptchaRequested = Collections.newSetFromMap(new WeakHashMap<OnCaptchaRequested, Boolean>());
+    private final Map<String, CaptchaRequest> mPendingCaptchas = new ConcurrentHashMap<>();
     private final Set<OnRosterUpdate> mOnRosterUpdates = Collections.newSetFromMap(new WeakHashMap<OnRosterUpdate, Boolean>());
     private final Set<OnUpdateBlocklist> mOnUpdateBlocklist = Collections.newSetFromMap(new WeakHashMap<OnUpdateBlocklist, Boolean>());
     private final Set<OnMucRosterUpdate> mOnMucRosterUpdate = Collections.newSetFromMap(new WeakHashMap<OnMucRosterUpdate, Boolean>());
     private final Set<OnKeyStatusUpdated> mOnKeyStatusUpdated = Collections.newSetFromMap(new WeakHashMap<OnKeyStatusUpdated, Boolean>());
     private final Set<OnJingleRtpConnectionUpdate> onJingleRtpConnectionUpdate = Collections.newSetFromMap(new WeakHashMap<OnJingleRtpConnectionUpdate, Boolean>());
+
+    private final LruCache<String, Long> mSolvedCaptchas = new LruCache<>(50);
 
     private final Object LISTENER_LOCK = new Object();
     public final Set<String> FILENAMES_TO_IGNORE_DELETION = new HashSet<>();
@@ -6001,6 +6007,119 @@ public class XmppConnectionService extends Service {
         }
     }
 
+    public void sendCaptchaResponse(Account account, String id, Data data) {
+        markCaptchaAsSolved(id);
+        if (id.startsWith("reg:")) {
+            sendCreateAccountWithCaptchaPacket(account, id.substring(4), data);
+        } else {
+            final CaptchaRequest request = mPendingCaptchas.remove(id);
+            if (request != null) {
+                MessagePacket response = new MessagePacket();
+                response.setTo(request.from);
+                response.setFrom(account.getJid());
+                if (request.stanzaId != null) {
+                    response.setId(request.stanzaId);
+                }
+                Element captcha = response.addChild("captcha", Namespace.CAPTCHA);
+                if (data != null) {
+                    data.submit();
+                    captcha.addChild(data);
+                }
+                sendMessagePacket(account, response);
+                if (id.startsWith("pres:") || id.startsWith("msg:")) {
+                    new android.os.Handler(android.os.Looper.getMainLooper()).postDelayed(() -> {
+                        Conversation c = find(account, request.from.asBareJid());
+                        if (c != null) joinMuc(c);
+                    }, 500);
+                }
+            }
+        }
+    }
+
+    public void processCaptchaMessage(Account account, MessagePacket packet) {
+        Element captcha = packet.findChild("captcha", Namespace.CAPTCHA);
+        if (captcha != null) {
+            Data data = Data.parse(captcha.findChild("x", Namespace.DATA));
+            if (data != null) {
+                String id = "msg:" + packet.getFrom().toString() + (packet.getId() != null ? ":" + packet.getId() : "");
+                fetchCaptchaAndDisplay(account, id, packet.getFrom(), data, captcha, packet.getId());
+            }
+        }
+    }
+
+    public void fetchCaptchaAndDisplay(final Account account, final String id, final Jid from, final Data data) {
+        fetchCaptchaAndDisplay(account, id, from, data, null, null);
+    }
+
+    public void fetchCaptchaAndDisplay(final Account account, final String id, final Jid from, final Data data, final Element container, final String stanzaId) {
+        if (isCaptchaSolvedRecently(id) || isCaptchaPending(id)) {
+            return;
+        }
+        FILE_ATTACHMENT_EXECUTOR.execute(() -> {
+            Element bob = data.findChild("data", Namespace.BOB);
+            if (bob == null && container != null) {
+                bob = container.findChild("data", Namespace.BOB);
+            }
+            InputStream is = null;
+            if (bob != null) {
+                try {
+                    is = new java.io.ByteArrayInputStream(android.util.Base64.decode(bob.getContent(), android.util.Base64.DEFAULT));
+                } catch (Exception e) {
+                    is = null;
+                }
+            } else {
+                final String url = data.getValue("url");
+                if (url != null) {
+                    try {
+                        is = HttpConnectionManager.open(url, useTorToConnect() || account.isOnion(), useI2PToConnect() || account.isI2P());
+                    } catch (IOException e) {
+                        is = null;
+                    }
+                }
+            }
+            if (is != null) {
+                Bitmap bitmap = BitmapFactory.decodeStream(is);
+                if (bitmap != null) {
+                    mPendingCaptchas.put(id, new CaptchaRequest(account, from, data, stanzaId, bitmap));
+                    new android.os.Handler(android.os.Looper.getMainLooper()).post(() -> displayCaptchaRequest(account, id, data, bitmap));
+                }
+            }
+        });
+    }
+
+    public CaptchaRequest getPendingCaptchaRequest(String id) {
+        return mPendingCaptchas.get(id);
+    }
+
+    public String getPendingCaptchaId(Jid from) {
+        for (Map.Entry<String, CaptchaRequest> entry : mPendingCaptchas.entrySet()) {
+            if (entry.getValue().from.asBareJid().equals(from.asBareJid())) {
+                return entry.getKey();
+            }
+        }
+        return null;
+    }
+
+    public void retryCaptcha(String id) {
+        CaptchaRequest request = mPendingCaptchas.get(id);
+        if (request != null) {
+            fetchCaptchaAndDisplay(request.account, id, request.from, request.data);
+        }
+    }
+
+    private boolean isCaptchaSolvedRecently(String id) {
+        Long solvedAt = mSolvedCaptchas.get(id);
+        return solvedAt != null && SystemClock.elapsedRealtime() - solvedAt < 15000;
+    }
+
+    private void markCaptchaAsSolved(String id) {
+        mSolvedCaptchas.put(id, SystemClock.elapsedRealtime());
+    }
+
+    private boolean isCaptchaPending(String id) {
+        return mPendingCaptchas.containsKey(id);
+    }
+
     public void sendIqPacket(final Account account, final IqPacket packet, final OnIqPacketReceived callback) {
         sendIqPacket(account, packet, callback, null);
     }
@@ -6874,6 +6993,22 @@ public class XmppConnectionService extends Service {
         AVATAR,
         PUSH,
         PRESENCE
+    }
+
+    public static class CaptchaRequest {
+        public final Account account;
+        public final Jid from;
+        public final Data data;
+        public final String stanzaId;
+        public final Bitmap bitmap;
+
+        public CaptchaRequest(Account account, Jid from, Data data, String stanzaId, Bitmap bitmap) {
+            this.account = account;
+            this.from = from;
+            this.data = data;
+            this.stanzaId = stanzaId;
+            this.bitmap = bitmap;
+        }
     }
 
 

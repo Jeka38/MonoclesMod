@@ -102,6 +102,8 @@ import eu.siacs.conversations.xmpp.Jid;
 import eu.siacs.conversations.xmpp.OnKeyStatusUpdated;
 import eu.siacs.conversations.xmpp.OnUpdateBlocklist;
 import eu.siacs.conversations.xmpp.XmppConnection;
+import eu.siacs.conversations.xmpp.forms.Field;
+import eu.siacs.conversations.xmpp.forms.Data;
 import me.drakeet.support.toast.ToastCompat;
 import p32929.easypasscodelock.Utils.EasylockSP;
 import pl.droidsonroids.gif.GifDrawable;
@@ -118,7 +120,7 @@ import java.util.concurrent.RejectedExecutionException;
 
 import static eu.siacs.conversations.ui.SettingsActivity.ENABLE_OTR_ENCRYPTION;
 
-public abstract class XmppActivity extends ActionBarActivity {
+public abstract class XmppActivity extends ActionBarActivity implements XmppConnectionService.OnCaptchaRequested {
 
     protected static final int REQUEST_ANNOUNCE_PGP = 0x0101;
     protected static final int REQUEST_INVITE_TO_CONVERSATION = 0x0102;
@@ -134,6 +136,8 @@ public abstract class XmppActivity extends ActionBarActivity {
     public boolean xmppConnectionServiceBound = false;
 
     public AlertDialog AvatarPopup;
+
+    private AlertDialog mCaptchaDialog = null;
 
     protected int mColorWarningButton;
     protected int mColorWarningText;
@@ -1596,6 +1600,13 @@ public abstract class XmppActivity extends ActionBarActivity {
         if (AvatarPopup != null && AvatarPopup.isShowing()) {
             AvatarPopup.cancel();
         }
+    }
+
+    @Override
+    public void onCaptchaRequested(final Account account, final String id, final Data data, final Bitmap captcha) {
+        Intent intent = new Intent(this, CaptchaActivity.class);
+        intent.putExtra("id", id);
+        startActivity(intent);
     }
 
     public void ShowStatusImagePopup(final Activity activity, final String imageUrl) {

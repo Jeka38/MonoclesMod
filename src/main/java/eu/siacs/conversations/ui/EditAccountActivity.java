@@ -1765,47 +1765,7 @@ public class EditAccountActivity extends OmemoActivity implements OnAccountUpdat
 
     @Override
     public void onCaptchaRequested(final Account account, final String id, final Data data, final Bitmap captcha) {
-        runOnUiThread(() -> {
-            if ((mCaptchaDialog != null) && mCaptchaDialog.isShowing()) {
-                mCaptchaDialog.dismiss();
-            }
-            final AlertDialog.Builder builder = new AlertDialog.Builder(EditAccountActivity.this);
-            final View view = getLayoutInflater().inflate(R.layout.captcha, null);
-            final ImageView imageView = view.findViewById(R.id.captcha);
-            final EditText input = view.findViewById(R.id.input);
-            imageView.setImageBitmap(captcha);
-
-            builder.setTitle(getString(R.string.captcha_required));
-            builder.setView(view);
-
-            builder.setPositiveButton(getString(R.string.ok),
-                    (dialog, which) -> {
-                        String rc = input.getText().toString();
-                        data.put("username", account.getUsername());
-                        data.put("password", account.getPassword());
-                        data.put("ocr", rc);
-                        data.submit();
-
-                        if (xmppConnectionServiceBound) {
-                            xmppConnectionService.sendCreateAccountWithCaptchaPacket(
-                                    account, id, data);
-                        }
-                    });
-            builder.setNegativeButton(getString(R.string.cancel), (dialog, which) -> {
-                if (xmppConnectionService != null) {
-                    xmppConnectionService.sendCreateAccountWithCaptchaPacket(account, null, null);
-                }
-            });
-
-            builder.setOnCancelListener(dialog -> {
-                if (xmppConnectionService != null) {
-                    xmppConnectionService.sendCreateAccountWithCaptchaPacket(account, null, null);
-                }
-            });
-            mCaptchaDialog = builder.create();
-            mCaptchaDialog.show();
-            input.requestFocus();
-        });
+        super.onCaptchaRequested(account, id, data, captcha);
     }
 
     public void onShowErrorToast(final int resId) {

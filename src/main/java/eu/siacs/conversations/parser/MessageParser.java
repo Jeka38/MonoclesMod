@@ -648,6 +648,11 @@ public class MessageParser extends AbstractParser implements OnMessagePacketRece
         }
 
         final Element reactions = packet.findChild("reactions", "urn:xmpp:reactions:0");
+        final Element captcha = packet.findChild("captcha", Namespace.CAPTCHA);
+        if (captcha != null && query == null) {
+            mXmppConnectionService.processCaptchaMessage(account, packet);
+        }
+
         if (body == null && html == null) {
             if (reactions != null && reactions.getAttribute("id") != null) {
                 final Conversation conversation = mXmppConnectionService.find(account, counterpart.asBareJid());

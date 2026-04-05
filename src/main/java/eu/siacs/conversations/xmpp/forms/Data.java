@@ -103,6 +103,10 @@ public class Data extends Element {
         return field == null ? null : field.getValue();
     }
 
+    public String getInstructions() {
+        return findChildContent("instructions");
+    }
+
     public String getTitle() {
         return findChildContent("title", "jabber:x:data");
     }
