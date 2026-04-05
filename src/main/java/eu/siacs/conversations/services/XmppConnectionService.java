@@ -409,6 +409,7 @@ public class XmppConnectionService extends Service {
     private final Set<OnShowErrorToast> mOnShowErrorToasts = Collections.newSetFromMap(new WeakHashMap<OnShowErrorToast, Boolean>());
     private final Set<OnAccountUpdate> mOnAccountUpdates = Collections.newSetFromMap(new WeakHashMap<OnAccountUpdate, Boolean>());
     private final Set<OnCaptchaRequested> mOnCaptchaRequested = Collections.newSetFromMap(new WeakHashMap<OnCaptchaRequested, Boolean>());
+    private final Set<OnMucCaptchaRequested> mOnMucCaptchaRequested = Collections.newSetFromMap(new WeakHashMap<OnMucCaptchaRequested, Boolean>());
     private final Set<OnRosterUpdate> mOnRosterUpdates = Collections.newSetFromMap(new WeakHashMap<OnRosterUpdate, Boolean>());
     private final Set<OnUpdateBlocklist> mOnUpdateBlocklist = Collections.newSetFromMap(new WeakHashMap<OnUpdateBlocklist, Boolean>());
     private final Set<OnMucRosterUpdate> mOnMucRosterUpdate = Collections.newSetFromMap(new WeakHashMap<OnMucRosterUpdate, Boolean>());
@@ -3794,6 +3795,30 @@ public class XmppConnectionService extends Service {
         }
     }
 
+    public void setOnMucCaptchaRequestedListener(OnMucCaptchaRequested listener) {
+        final boolean remainingListeners;
+        synchronized (LISTENER_LOCK) {
+            remainingListeners = checkListeners();
+            if (!this.mOnMucCaptchaRequested.add(listener)) {
+                Log.w(Config.LOGTAG, listener.getClass().getName() + " is already registered as OnMucCaptchaRequestedListener");
+            }
+        }
+        if (remainingListeners) {
+            switchToForeground();
+        }
+    }
+
+    public void removeOnMucCaptchaRequestedListener(OnMucCaptchaRequested listener) {
+        final boolean remainingListeners;
+        synchronized (LISTENER_LOCK) {
+            this.mOnMucCaptchaRequested.remove(listener);
+            remainingListeners = checkListeners();
+        }
+        if (remainingListeners) {
+            switchToBackground();
+        }
+    }
+
     public void setOnRosterUpdateListener(final OnRosterUpdate listener) {
         final boolean remainingListeners;
         synchronized (LISTENER_LOCK) {
@@ -3919,6 +3944,7 @@ public class XmppConnectionService extends Service {
                 && this.mOnConversationUpdates.size() == 0
                 && this.mOnRosterUpdates.size() == 0
                 && this.mOnCaptchaRequested.size() == 0
+                && this.mOnMucCaptchaRequested.size() == 0
                 && this.mOnMucRosterUpdate.size() == 0
                 && this.mOnUpdateBlocklist.size() == 0
                 && this.mOnShowErrorToasts.size() == 0
@@ -5720,6 +5746,16 @@ public class XmppConnectionService extends Service {
         return false;
     }
 
+    public boolean displayMucCaptchaRequest(final Conversation conversation, final Data data, final String challenge) {
+        if (mOnMucCaptchaRequested.size() > 0) {
+            for (OnMucCaptchaRequested listener : threadSafeList(this.mOnMucCaptchaRequested)) {
+                listener.onMucCaptchaRequested(conversation, data, challenge);
+            }
+            return true;
+        }
+        return false;
+    }
+
     public void updateBlocklistUi(final OnUpdateBlocklist.Status status) {
         for (OnUpdateBlocklist listener : threadSafeList(this.mOnUpdateBlocklist)) {
             listener.OnUpdateBlocklist(status);
@@ -5999,6 +6035,19 @@ public class XmppConnectionService extends Service {
             IqPacket request = mIqGenerator.generateCreateAccountWithCaptcha(account, id, data);
             connection.sendUnmodifiedIqPacket(request, connection.registrationResponseListener, true);
         }
+    }
+
+    public void sendMucCaptchaPacket(final Conversation conversation, final Data data) {
+        final Account account = conversation.getAccount();
+        final IqPacket request = mIqGenerator.generateMucCaptchaResponse(conversation, data);
+        sendIqPacket(account, request, (a, response) -> {
+            if (response.getType() == IqPacket.TYPE.RESULT) {
+                Log.d(Config.LOGTAG, account.getJid().asBareJid() + ": MUC captcha accepted for " + conversation.getJid().asBareJid());
+                joinMuc(conversation);
+            } else {
+                Log.w(Config.LOGTAG, account.getJid().asBareJid() + ": MUC captcha submit failed for " + conversation.getJid().asBareJid() + " " + response);
+            }
+        });
     }
 
     public void sendIqPacket(final Account account, final IqPacket packet, final OnIqPacketReceived callback) {
@@ -6730,6 +6779,10 @@ public class XmppConnectionService extends Service {
 
     public interface OnCaptchaRequested {
         void onCaptchaRequested(Account account, String id, Data data, Bitmap captcha);
+    }
+
+    public interface OnMucCaptchaRequested {
+        void onMucCaptchaRequested(Conversation conversation, Data data, String challenge);
     }
 
     public interface OnRosterUpdate {
