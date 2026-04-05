@@ -30,6 +30,7 @@ import java.util.HashMap;
 
 import de.monocles.mod.EmojiSearch;
 import eu.siacs.conversations.ui.ConversationsActivity;
+import eu.siacs.conversations.ui.MucCaptchaActivity;
 import eu.siacs.conversations.persistance.UnifiedPushDatabase;
 import eu.siacs.conversations.xmpp.OnGatewayResult;
 import eu.siacs.conversations.utils.Consumer;
@@ -140,7 +141,9 @@ import java.util.Locale;
 import java.util.Map;
 import java.util.Set;
 import java.util.TimeZone;
+import java.util.UUID;
 import java.util.WeakHashMap;
+import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.CopyOnWriteArrayList;
 import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.Executor;
@@ -250,6 +253,7 @@ import java.util.Timer;
 import java.util.TimerTask;
 
 public class XmppConnectionService extends Service {
+    public static final String EXTRA_MUC_CAPTCHA_TOKEN = "muc_captcha_token";
 
     public static final String ACTION_REPLY_TO_CONVERSATION = "reply_to_conversations";
     public static final String ACTION_MARK_AS_READ = "mark_as_read";
@@ -415,6 +419,7 @@ public class XmppConnectionService extends Service {
     private final Set<OnMucRosterUpdate> mOnMucRosterUpdate = Collections.newSetFromMap(new WeakHashMap<OnMucRosterUpdate, Boolean>());
     private final Set<OnKeyStatusUpdated> mOnKeyStatusUpdated = Collections.newSetFromMap(new WeakHashMap<OnKeyStatusUpdated, Boolean>());
     private final Set<OnJingleRtpConnectionUpdate> onJingleRtpConnectionUpdate = Collections.newSetFromMap(new WeakHashMap<OnJingleRtpConnectionUpdate, Boolean>());
+    private final Map<String, PendingMucCaptchaRequest> pendingMucCaptchaRequests = new ConcurrentHashMap<>();
 
     private final Object LISTENER_LOCK = new Object();
     public final Set<String> FILENAMES_TO_IGNORE_DELETION = new HashSet<>();
@@ -5747,13 +5752,43 @@ public class XmppConnectionService extends Service {
     }
 
     public boolean displayMucCaptchaRequest(final Conversation conversation, final Data data, final String challenge) {
+        final String token = UUID.randomUUID().toString();
+        pendingMucCaptchaRequests.put(token, new PendingMucCaptchaRequest(conversation.getUuid(), data, challenge));
+        final Intent intent = new Intent(this, MucCaptchaActivity.class);
+        intent.putExtra(EXTRA_MUC_CAPTCHA_TOKEN, token);
+        intent.addFlags(Intent.FLAG_ACTIVITY_NEW_TASK);
+        startActivity(intent);
         if (mOnMucCaptchaRequested.size() > 0) {
             for (OnMucCaptchaRequested listener : threadSafeList(this.mOnMucCaptchaRequested)) {
                 listener.onMucCaptchaRequested(conversation, data, challenge);
             }
-            return true;
         }
-        return false;
+        return true;
+    }
+
+    public PendingMucCaptchaRequest getPendingMucCaptchaRequest(final String token) {
+        return pendingMucCaptchaRequests.get(token);
+    }
+
+    public void clearPendingMucCaptchaRequest(final String token) {
+        if (token != null) {
+            pendingMucCaptchaRequests.remove(token);
+        }
+    }
+
+    public boolean submitPendingMucCaptchaRequest(final String token, final String response) {
+        final PendingMucCaptchaRequest request = pendingMucCaptchaRequests.remove(token);
+        if (request == null) {
+            return false;
+        }
+        final Conversation conversation = findConversationByUuid(request.conversationUuid);
+        if (conversation == null) {
+            return false;
+        }
+        request.data.put("ocr", response);
+        request.data.submit();
+        sendMucCaptchaPacket(conversation, request.data);
+        return true;
     }
 
     public void updateBlocklistUi(final OnUpdateBlocklist.Status status) {
@@ -6783,6 +6818,18 @@ public class XmppConnectionService extends Service {
 
     public interface OnMucCaptchaRequested {
         void onMucCaptchaRequested(Conversation conversation, Data data, String challenge);
+    }
+
+    public static class PendingMucCaptchaRequest {
+        public final String conversationUuid;
+        public final Data data;
+        public final String challenge;
+
+        PendingMucCaptchaRequest(final String conversationUuid, final Data data, final String challenge) {
+            this.conversationUuid = conversationUuid;
+            this.data = data;
+            this.challenge = challenge;
+        }
     }
 
     public interface OnRosterUpdate {

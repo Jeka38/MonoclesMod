@@ -64,7 +64,6 @@ import android.view.KeyEvent;
 import android.view.Menu;
 import android.view.MenuItem;
 import android.view.View;
-import android.widget.EditText;
 import android.widget.ImageView;
 import android.widget.TextView;
 import android.widget.Toast;
@@ -132,7 +131,6 @@ import eu.siacs.conversations.utils.PhoneNumberUtilWrapper;
 import eu.siacs.conversations.xmpp.Jid;
 import eu.siacs.conversations.xmpp.OnUpdateBlocklist;
 import eu.siacs.conversations.xmpp.chatstate.ChatState;
-import eu.siacs.conversations.xmpp.forms.Data;
 import me.drakeet.support.toast.ToastCompat;
 import eu.siacs.conversations.utils.ThemeHelper;
 import p32929.easypasscodelock.Utils.EasyLock;
@@ -140,7 +138,7 @@ import p32929.easypasscodelock.Utils.EasyLock;
 import com.google.android.material.bottomnavigation.BottomNavigationView;
 
 
-public class ConversationsActivity extends XmppActivity implements OnConversationSelected, OnConversationArchived, OnConversationsListItemUpdated, OnConversationRead, XmppConnectionService.OnAccountUpdate, XmppConnectionService.OnConversationUpdate, XmppConnectionService.OnRosterUpdate, OnUpdateBlocklist, XmppConnectionService.OnShowErrorToast, XmppConnectionService.OnAffiliationChanged, XmppConnectionService.OnRoomDestroy, XmppConnectionService.OnMucCaptchaRequested {
+public class ConversationsActivity extends XmppActivity implements OnConversationSelected, OnConversationArchived, OnConversationsListItemUpdated, OnConversationRead, XmppConnectionService.OnAccountUpdate, XmppConnectionService.OnConversationUpdate, XmppConnectionService.OnRosterUpdate, OnUpdateBlocklist, XmppConnectionService.OnShowErrorToast, XmppConnectionService.OnAffiliationChanged, XmppConnectionService.OnRoomDestroy {
 
     public static final String ACTION_VIEW_CONVERSATION = "eu.siacs.conversations.VIEW";
     public static final String EXTRA_CONVERSATION = "conversationUuid";
@@ -191,7 +189,6 @@ public class ConversationsActivity extends XmppActivity implements OnConversatio
     private boolean refreshForNewCaps = false;
     private Set<Jid> newCapsJids = new HashSet<>();
     private int mRequestCode = -1;
-    private AlertDialog mucCaptchaDialog;
 
 
     private static boolean isViewOrShareIntent(Intent i) {
@@ -1359,38 +1356,6 @@ public class ConversationsActivity extends XmppActivity implements OnConversatio
     @Override
     public void onShowErrorToast(int resId) {
         runOnUiThread(() -> ToastCompat.makeText(this, resId, ToastCompat.LENGTH_SHORT).show());
-    }
-
-    @Override
-    public void onMucCaptchaRequested(final Conversation conversation, final Data data, final String challenge) {
-        runOnUiThread(() -> {
-            if (mucCaptchaDialog != null && mucCaptchaDialog.isShowing()) {
-                mucCaptchaDialog.dismiss();
-            }
-            final EditText input = new EditText(this);
-            input.setHint(R.string.captcha_hint);
-            final AlertDialog.Builder builder = new AlertDialog.Builder(this)
-                    .setTitle(R.string.captcha_required)
-                    .setMessage(challenge == null ? getString(R.string.captcha_hint) : challenge)
-                    .setView(input)
-                    .setNegativeButton(R.string.cancel, null)
-                    .setPositiveButton(R.string.ok, (dialog, which) -> {
-                        final String response = input.getText().toString().trim();
-                        final String expected = data.getValue("ocr");
-                        if (expected != null && !expected.trim().isEmpty() && !expected.trim().equals(response)) {
-                            ToastCompat.makeText(this, R.string.invalid_answer, ToastCompat.LENGTH_SHORT).show();
-                            return;
-                        }
-                        data.put("ocr", response);
-                        data.submit();
-                        if (xmppConnectionService != null) {
-                            xmppConnectionService.sendMucCaptchaPacket(conversation, data);
-                        }
-                    });
-            mucCaptchaDialog = builder.create();
-            mucCaptchaDialog.show();
-            input.requestFocus();
-        });
     }
 
     protected void AppUpdate(String Store) {
