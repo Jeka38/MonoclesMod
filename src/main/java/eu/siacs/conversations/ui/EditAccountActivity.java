@@ -86,6 +86,7 @@ import eu.siacs.conversations.utils.TorServiceUtils;
 import eu.siacs.conversations.utils.UIHelper;
 import eu.siacs.conversations.utils.XmppUri;
 import eu.siacs.conversations.xml.Element;
+import eu.siacs.conversations.xml.Namespace;
 import eu.siacs.conversations.xmpp.Jid;
 import eu.siacs.conversations.xmpp.OnKeyStatusUpdated;
 import eu.siacs.conversations.xmpp.OnUpdateBlocklist;
@@ -796,6 +797,88 @@ public class EditAccountActivity extends OmemoActivity implements OnAccountUpdat
         changePresence();
     }
 
+    private void editVcard() {
+        if (mAccount == null) {
+            return;
+        }
+        final View view = getLayoutInflater().inflate(R.layout.dialog_edit_vcard, null);
+        final EditText fn = view.findViewById(R.id.vcard_fn);
+        final EditText org = view.findViewById(R.id.vcard_org);
+        final EditText title = view.findViewById(R.id.vcard_title);
+        final EditText tel = view.findViewById(R.id.vcard_tel);
+        final EditText email = view.findViewById(R.id.vcard_email);
+        final EditText url = view.findViewById(R.id.vcard_url);
+        final EditText note = view.findViewById(R.id.vcard_note);
+
+        xmppConnectionService.fetchOwnVcard4(mAccount, vcard4 -> runOnUiThread(() -> {
+            if (vcard4 != null) {
+                fillVcardField(fn, vcard4, "fn", true);
+                fillVcardField(org, vcard4, "org", false);
+                fillVcardField(title, vcard4, "title", true);
+                fillVcardField(tel, vcard4, "tel", false);
+                fillVcardField(email, vcard4, "email", false);
+                fillVcardField(url, vcard4, "url", false);
+                fillVcardField(note, vcard4, "note", true);
+            }
+            new AlertDialog.Builder(EditAccountActivity.this)
+                    .setTitle(R.string.action_edit_vcard)
+                    .setView(view)
+                    .setNegativeButton(R.string.cancel, null)
+                    .setPositiveButton(R.string.save, (dialog, which) -> {
+                        final Element vcard = new Element("vcard", Namespace.VCARD4);
+                        addVcardTextField(vcard, "fn", fn.getText());
+                        addVcardTextField(vcard, "org", org.getText());
+                        addVcardTextField(vcard, "title", title.getText());
+                        addVcardUriField(vcard, "tel", tel.getText(), "tel:");
+                        addVcardUriField(vcard, "email", email.getText(), "mailto:");
+                        addVcardUriField(vcard, "url", url.getText(), null);
+                        addVcardTextField(vcard, "note", note.getText());
+                        xmppConnectionService.publishVcard4(mAccount, vcard, success -> runOnUiThread(() -> {
+                            final int message = success ? R.string.vcard_saved : R.string.unable_to_save_vcard;
+                            ToastCompat.makeText(EditAccountActivity.this, message, ToastCompat.LENGTH_SHORT).show();
+                        }));
+                    })
+                    .show();
+        }));
+    }
+
+    private void fillVcardField(final EditText field, final Element vcard4, final String name, final boolean textOnly) {
+        final Element el = vcard4.findChild(name, Namespace.VCARD4);
+        if (el == null) {
+            return;
+        }
+        String value = null;
+        if (!textOnly) {
+            value = el.findChildContent("uri", Namespace.VCARD4);
+            if (value != null) {
+                value = value.replaceFirst("^tel:", "").replaceFirst("^mailto:", "");
+            }
+        }
+        if (value == null) {
+            value = el.findChildContent("text", Namespace.VCARD4);
+        }
+        if (!TextUtils.isEmpty(value)) {
+            field.setText(value);
+        }
+    }
+
+    private void addVcardTextField(final Element vcard, final String fieldName, final Editable value) {
+        final String text = value == null ? null : value.toString().trim();
+        if (TextUtils.isEmpty(text)) {
+            return;
+        }
+        vcard.addChild(fieldName, Namespace.VCARD4).addChild("text", Namespace.VCARD4).setContent(text);
+    }
+
+    private void addVcardUriField(final Element vcard, final String fieldName, final Editable value, final String prefix) {
+        final String text = value == null ? null : value.toString().trim();
+        if (TextUtils.isEmpty(text)) {
+            return;
+        }
+        final String uri = prefix == null || text.startsWith(prefix) ? text : prefix + text;
+        vcard.addChild(fieldName, Namespace.VCARD4).addChild("uri", Namespace.VCARD4).setContent(uri);
+    }
+
     private void refreshAvatar() {
         AvatarWorkerTask.loadAvatar(mAccount, binding.avater, R.dimen.avatar_on_details_screen_size, true);
     }
@@ -813,6 +896,7 @@ public class EditAccountActivity extends OmemoActivity implements OnAccountUpdat
         final MenuItem addAccountWithCert = menu.findItem(R.id.action_add_account_with_cert);
         final MenuItem useSnikketServer = menu.findItem(R.id.use_snikket_server);
         final MenuItem mamPrefs = menu.findItem(R.id.action_mam_prefs);
+        final MenuItem editVcard = menu.findItem(R.id.action_edit_vcard);
         final MenuItem actionShare = menu.findItem(R.id.action_share);
         final MenuItem shareBarcode = menu.findItem(R.id.action_share_barcode);
         final MenuItem shareQRCode = menu.findItem(R.id.action_show_qr_code);
@@ -834,6 +918,7 @@ public class EditAccountActivity extends OmemoActivity implements OnAccountUpdat
             announcePGP.setVisible(true);
             forgotPassword.setVisible(true);
             mamPrefs.setVisible(mAccount.getXmppConnection().getFeatures().mam());
+            editVcard.setVisible(mAccount.getXmppConnection().getFeatures().pep());
         } else {
             announcePGP.setVisible(false);
             forgotPassword.setVisible(false);
@@ -842,6 +927,7 @@ public class EditAccountActivity extends OmemoActivity implements OnAccountUpdat
             showMoreInfo.setVisible(false);
             changePassword.setVisible(false);
             mamPrefs.setVisible(false);
+            editVcard.setVisible(false);
             actionShare.setVisible(false);
             shareBarcode.setVisible(false);
             shareQRCode.setVisible(false);
@@ -1108,6 +1194,9 @@ public class EditAccountActivity extends OmemoActivity implements OnAccountUpdat
                 break;
             case R.id.action_mam_prefs:
                 editMamPrefs();
+                break;
+            case R.id.action_edit_vcard:
+                editVcard();
                 break;
             case R.id.action_renew_certificate:
                 renewCertificate();

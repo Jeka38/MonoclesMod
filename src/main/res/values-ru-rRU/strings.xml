@@ -1112,6 +1112,16 @@
     <string name="show_intro_again_failed">Не удалось сбросить ознакомительные экраны. Попробуйте еще раз…</string>
     <string name="show_location">Показать местоположение</string>
     <string name="show_password">Показать пароль</string>
+    <string name="action_edit_vcard">Редактировать vCard</string>
+    <string name="vcard_full_name">Полное имя</string>
+    <string name="vcard_org">Организация</string>
+    <string name="vcard_title">Должность</string>
+    <string name="vcard_phone">Телефон</string>
+    <string name="vcard_email">Эл. почта</string>
+    <string name="vcard_url">Сайт</string>
+    <string name="vcard_note">Заметка</string>
+    <string name="vcard_saved">vCard обновлена</string>
+    <string name="unable_to_save_vcard">Не удалось обновить vCard</string>
     <string name="show_privacy">Политика конфиденциальности</string>
     <string name="show_qr_code">Показать QR код</string>
     <string name="show_termsofuse">Пользовательское соглашение</string>

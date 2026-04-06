@@ -49,6 +49,10 @@
         android:icon="@drawable/ic_cloud_white_24dp"
         android:title="@string/mam_prefs"
         app:showAsAction="never" />
+    <item
+        android:id="@+id/action_edit_vcard"
+        android:title="@string/action_edit_vcard"
+        app:showAsAction="never" />
 
     <item
         android:id="@+id/action_show_password"
