@@ -8,6 +8,7 @@ import java.io.File;
 import java.io.FileOutputStream;
 import java.io.IOException;
 import java.util.ArrayList;
+import java.util.Comparator;
 import java.util.LinkedHashSet;
 import java.util.List;
 import java.util.Locale;
@@ -26,6 +27,7 @@ public class TlgrmStickerSearch {
     private static final String BASE_URL = "https://tlgrm.ru";
     private static final Pattern IMAGE_URL_PATTERN = Pattern.compile("(https?:\\\\?/\\\\?/[^\"'\\\\s>]+\\.(?:webp|png|jpg|jpeg))", Pattern.CASE_INSENSITIVE);
     private static final Pattern RELATIVE_IMAGE_URL_PATTERN = Pattern.compile("(?:src|data-src)=\"(/[^\"\\s>]+\\.(?:webp|png|jpg|jpeg))\"", Pattern.CASE_INSENSITIVE);
+    private static final Pattern PACK_LINK_PATTERN = Pattern.compile("href=\"(/stickers/[^\"]+)\"", Pattern.CASE_INSENSITIVE);
     private static final int MAX_RESULTS = 80;
 
     private final OkHttpClient httpClient = new OkHttpClient();
@@ -39,20 +41,36 @@ public class TlgrmStickerSearch {
     }
 
     public List<StickerItem> search(final String query) throws IOException {
-        final String encoded = Uri.encode(query == null ? "" : query.trim());
-        final String[] urls = new String[] {
-                BASE_URL + "/stickers?query=" + encoded,
-                BASE_URL + "/stickers?search=" + encoded,
-                BASE_URL + "/stickers/" + encoded,
-                BASE_URL + "/stickers"
-        };
+        final String normalizedQuery = query == null ? "" : query.trim().toLowerCase(Locale.ROOT);
+        final String encoded = Uri.encode(normalizedQuery);
+        final List<String> urls = new ArrayList<>();
+        urls.add(BASE_URL + "/stickers?query=" + encoded);
+        urls.add(BASE_URL + "/stickers?search=" + encoded);
+        urls.add(BASE_URL + "/stickers?q=" + encoded);
+        urls.add(BASE_URL + "/search?q=" + encoded);
+        urls.add(BASE_URL + "/search?query=" + encoded);
+        urls.add(BASE_URL + "/stickers/search?q=" + encoded);
+        urls.add(BASE_URL + "/stickers/" + encoded);
+        urls.add(BASE_URL + "/stickers");
 
         IOException firstError = null;
+        List<StickerItem> best = new ArrayList<>();
+        int bestScore = -1;
         for (final String url : urls) {
             try {
                 final String html = fetch(url);
+                final int score = scoreByQuery(html, normalizedQuery);
                 final List<StickerItem> parsed = parse(html);
-                if (!parsed.isEmpty()) {
+                if (!parsed.isEmpty() && score > bestScore) {
+                    bestScore = score;
+                    best = parsed;
+                }
+                if (!normalizedQuery.isEmpty()) {
+                    final List<StickerItem> fromPacks = fetchPackMatches(html, normalizedQuery);
+                    if (!fromPacks.isEmpty()) {
+                        return fromPacks;
+                    }
+                } else if (!parsed.isEmpty()) {
                     return parsed;
                 }
             } catch (final IOException e) {
@@ -61,10 +79,70 @@ public class TlgrmStickerSearch {
                 }
             }
         }
+        if (!best.isEmpty()) {
+            return best;
+        }
         if (firstError != null) {
             throw firstError;
         }
         return new ArrayList<>();
+    }
+
+    private List<StickerItem> fetchPackMatches(final String html, final String normalizedQuery) throws IOException {
+        final Set<String> packLinks = parsePackLinks(html, normalizedQuery);
+        if (packLinks.isEmpty()) {
+            return new ArrayList<>();
+        }
+        final LinkedHashSet<String> imageUrls = new LinkedHashSet<>();
+        for (final String link : packLinks) {
+            if (imageUrls.size() >= MAX_RESULTS) break;
+            final String packHtml = fetch(link);
+            final List<StickerItem> stickers = parse(packHtml);
+            for (final StickerItem sticker : stickers) {
+                imageUrls.add(sticker.imageUrl);
+                if (imageUrls.size() >= MAX_RESULTS) break;
+            }
+        }
+        final List<StickerItem> result = new ArrayList<>();
+        for (final String url : imageUrls) {
+            result.add(new StickerItem(url));
+        }
+        return result;
+    }
+
+    private int scoreByQuery(final String html, final String normalizedQuery) {
+        if (normalizedQuery.isEmpty()) {
+            return 0;
+        }
+        final String lower = html.toLowerCase(Locale.ROOT);
+        int score = 0;
+        int idx = lower.indexOf(normalizedQuery);
+        while (idx >= 0) {
+            score++;
+            idx = lower.indexOf(normalizedQuery, idx + normalizedQuery.length());
+        }
+        return score;
+    }
+
+    private Set<String> parsePackLinks(final String html, final String normalizedQuery) {
+        final List<String> candidates = new ArrayList<>();
+        final Matcher matcher = PACK_LINK_PATTERN.matcher(html);
+        while (matcher.find()) {
+            final String path = matcher.group(1);
+            if (!path.toLowerCase(Locale.ROOT).contains(normalizedQuery)) {
+                continue;
+            }
+            candidates.add(BASE_URL + path);
+        }
+        candidates.sort(Comparator.naturalOrder());
+        final LinkedHashSet<String> result = new LinkedHashSet<>();
+        for (final String url : candidates) {
+            result.add(url);
+            if (result.size() >= 12) {
+                break;
+            }
+        }
+        return result;
     }
 
     private String fetch(final String url) throws IOException {
