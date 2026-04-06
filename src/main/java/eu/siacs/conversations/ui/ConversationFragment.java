@@ -2194,10 +2194,14 @@ public class ConversationFragment extends XmppFragment
         new Thread(() -> {
             try {
                 int downloaded;
-                try {
-                    downloaded = tlgrmStickerSearch.downloadPack(query, dirStickers);
-                } catch (final IOException primaryError) {
-                    downloaded = tlgrmStickerSearch.downloadSearchResultPack(query, dirStickers);
+                if (tlgrmStickerSearch.isDirectStickerUrl(query)) {
+                    downloaded = tlgrmStickerSearch.downloadDirectSticker(query, dirStickers);
+                } else {
+                    try {
+                        downloaded = tlgrmStickerSearch.downloadPack(query, dirStickers);
+                    } catch (final IOException primaryError) {
+                        downloaded = tlgrmStickerSearch.downloadSearchResultPack(query, dirStickers);
+                    }
                 }
                 final int importedCount = downloaded;
                 if (activity != null) {

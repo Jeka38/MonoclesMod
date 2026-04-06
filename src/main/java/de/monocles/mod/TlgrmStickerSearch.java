@@ -30,6 +30,7 @@ public class TlgrmStickerSearch {
     private static final Pattern RELATIVE_IMAGE_URL_PATTERN = Pattern.compile("(?:src|data-src)=\"(/[^\"\\s>]+\\.(?:webp|png|jpg|jpeg))\"", Pattern.CASE_INSENSITIVE);
     private static final Pattern PACK_LINK_PATTERN = Pattern.compile("href=\"(/stickers/[^\"]+)\"", Pattern.CASE_INSENSITIVE);
     private static final Pattern PACK_SLUG_PATTERN = Pattern.compile("/stickers/([^/?#]+)");
+    private static final Pattern DIRECT_STICKER_URL_PATTERN = Pattern.compile("^https?://[^\\s]+/_/stickers/[^\\s]+\\.(?:webp|png|jpg|jpeg)(?:\\?[^\\s]*)?$", Pattern.CASE_INSENSITIVE);
     private static final int MAX_RESULTS = 80;
 
     private final OkHttpClient httpClient = new OkHttpClient();
@@ -308,6 +309,26 @@ public class TlgrmStickerSearch {
             }
         }
         return saved;
+    }
+
+    public boolean isDirectStickerUrl(final String input) {
+        if (input == null) return false;
+        return DIRECT_STICKER_URL_PATTERN.matcher(input.trim()).matches();
+    }
+
+    public int downloadDirectSticker(final String stickerUrl, final File stickersRoot) throws IOException {
+        final File packDir = new File(stickersRoot, "direct_links");
+        if (!packDir.exists() && !packDir.mkdirs()) {
+            throw new IOException("Unable to create direct_links dir " + packDir.getAbsolutePath());
+        }
+        final DownloadResult one = downloadToCache(new StickerItem(stickerUrl.trim()), packDir);
+        final String extension = MimeUtils.guessExtensionFromMimeType(one.mime);
+        final String ext = extension == null || extension.isEmpty() ? "webp" : extension;
+        final File dest = new File(packDir, "sticker_" + System.currentTimeMillis() + "." + ext);
+        if (!one.file.renameTo(dest)) {
+            throw new IOException("Unable to store direct sticker file");
+        }
+        return 1;
     }
 
     public String extractPackSlug(final String queryOrUrl) {
