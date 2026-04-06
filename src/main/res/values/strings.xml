@@ -1467,6 +1467,7 @@
     <string name="gif_deleted">GIF deleted</string>
     <string name="failed_to_delete_gif">Failed to delete GIF</string>
     <string name="failed_to_delete_sticker">Failed to delete sticker</string>
+    <string name="search_stickers_tlgrm">Search stickers on tlgrm.ru</string>
     <string name="import_gif_failed">Failed to import GIFs</string>
     <string name="gif_imported">GIFs imported</string>
     <string name="import_own_gifs">Import own GIFs</string>

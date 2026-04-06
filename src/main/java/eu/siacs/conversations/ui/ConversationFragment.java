@@ -64,6 +64,7 @@ import android.text.Editable;
 import android.text.Html;
 import android.text.Spannable;
 import android.text.SpannableStringBuilder;
+import android.text.TextWatcher;
 import android.text.TextUtils;
 import android.text.method.LinkMovementMethod;
 import android.text.style.ImageSpan;
@@ -167,9 +168,10 @@ import java.util.stream.Collectors;
 import java.util.stream.Stream;
 
 import de.monocles.mod.BobTransfer;
-import de.monocles.mod.EmojiSearch;
 import de.monocles.mod.GifsAdapter;
 import de.monocles.mod.KeyboardHeightProvider;
+import de.monocles.mod.TlgrmStickerSearch;
+import de.monocles.mod.TlgrmStickersAdapter;
 import de.monocles.mod.WebxdcPage;
 import de.monocles.mod.WebxdcStore;
 import eu.siacs.conversations.Config;
@@ -337,7 +339,9 @@ public class ConversationFragment extends XmppFragment
     private String[] filesPaths;
     private String[] filesNames;
     File dirGifs = new File(Environment.getExternalStoragePublicDirectory(Environment.DIRECTORY_DOCUMENTS) + File.separator + APP_DIRECTORY + File.separator + "GIFs");
-    private EmojiSearch emojiSearch = null;
+    private final Handler stickerSearchDebounce = new Handler(Looper.getMainLooper());
+    private TlgrmStickerSearch tlgrmStickerSearch;
+    private TlgrmStickersAdapter tlgrmStickersAdapter;
 
 
     protected OnClickListener clickToVerify = new OnClickListener() {
@@ -809,6 +813,7 @@ public class ConversationFragment extends XmppFragment
         public void onClick(View v) {
             binding.emojiPicker.setVisibility(VISIBLE);
             binding.stickersview.setVisibility(GONE);
+            binding.stickersSearch.setVisibility(GONE);
             binding.gifsview.setVisibility(GONE);
             EmojiPickerView emojiPickerView = binding.emojiPicker;
             backPressedLeaveEmojiPicker.setEnabled(true);
@@ -847,6 +852,7 @@ public class ConversationFragment extends XmppFragment
         public void onClick(View v) {
             binding.emojiPicker.setVisibility(GONE);
             binding.stickersview.setVisibility(VISIBLE);
+            binding.stickersSearch.setVisibility(VISIBLE);
             binding.gifsview.setVisibility(GONE);
             backPressedLeaveEmojiPicker.setEnabled(true);
             binding.textinput.requestFocus();
@@ -897,6 +903,7 @@ public class ConversationFragment extends XmppFragment
         public void onClick(View v) {
             binding.emojiPicker.setVisibility(GONE);
             binding.stickersview.setVisibility(GONE);
+            binding.stickersSearch.setVisibility(GONE);
             binding.gifsview.setVisibility(VISIBLE);
             backPressedLeaveEmojiPicker.setEnabled(true);
             binding.textinput.requestFocus();
@@ -2111,23 +2118,42 @@ public class ConversationFragment extends XmppFragment
 
 
     public void LoadStickers() {
-        final Pattern lastColonPattern = Pattern.compile("");
+        tlgrmStickerSearch = new TlgrmStickerSearch();
+        tlgrmStickersAdapter = new TlgrmStickersAdapter(activity);
+        binding.stickersview.setAdapter(tlgrmStickersAdapter);
         binding.stickersview.setOnItemClickListener((parent, view, position, id) -> {
-            EmojiSearch.EmojiSearchAdapter adapter = ((EmojiSearch.EmojiSearchAdapter) binding.stickersview.getAdapter());
-            Editable toInsert = adapter.getItem(position).toInsert();
-            toInsert.append(" ");
-            Editable s = binding.textinput.getText();
+            if (activity == null || conversation == null || tlgrmStickersAdapter == null) return;
+            final TlgrmStickerSearch.StickerItem item = tlgrmStickersAdapter.getItem(position);
+            new Thread(() -> {
+                try {
+                    final TlgrmStickerSearch.DownloadResult result = tlgrmStickerSearch.downloadToCache(item, activity.getCacheDir());
+                    activity.runOnUiThread(() -> attachFileToConversation(conversation, Uri.fromFile(result.file), result.mime));
+                } catch (final IOException e) {
+                    Log.d(Config.LOGTAG, "Failed to send tlgrm sticker", e);
+                    if (activity != null) {
+                        activity.runOnUiThread(() -> Toast.makeText(activity, R.string.unable_to_connect_to_server, Toast.LENGTH_SHORT).show());
+                    }
+                }
+            }).start();
+        });
 
-            Matcher lastColonMatcher = lastColonPattern.matcher(s);
-            int lastColon = 0;
-            while(lastColonMatcher.find()) lastColon = lastColonMatcher.end();
-            if (lastColon >= 0) {
-                int start = binding.textinput.getSelectionStart(); //this is to get the the cursor position
-                binding.textinput.getText().insert(start, toInsert); //this will get the text and insert the emoji into   the current position
+        binding.stickersSearch.addTextChangedListener(new TextWatcher() {
+            @Override
+            public void beforeTextChanged(final CharSequence s, final int start, final int count, final int after) {
+            }
+
+            @Override
+            public void onTextChanged(final CharSequence s, final int start, final int before, final int count) {
+            }
+
+            @Override
+            public void afterTextChanged(final Editable s) {
+                stickerSearchDebounce.removeCallbacksAndMessages(null);
+                stickerSearchDebounce.postDelayed(() -> searchTlgrmStickers(s.toString()), 400L);
             }
         });
 
-        setupEmojiSearch();
+        searchTlgrmStickers("");
     }
 
     public void LoadGifs() {
@@ -2177,29 +2203,33 @@ public class ConversationFragment extends XmppFragment
             });
     }
 
-    protected void setupEmojiSearch() {
-        if (emojiSearch == null && activity != null && activity.xmppConnectionService != null) {
-            emojiSearch = activity.xmppConnectionService.emojiSearch();
-        }
-        if (emojiSearch == null || binding.stickersview == null) return;
-
-        binding.stickersview.setAdapter(emojiSearch.makeAdapter(activity));
-
-        final Pattern lastColonPattern = Pattern.compile("");
-        Editable s = binding.textinput.getText();
-        Handler emojiDebounce = new Handler(Looper.getMainLooper());
-        emojiDebounce.removeCallbacksAndMessages(null);
-        emojiDebounce.postDelayed(() -> {
-            Matcher lastColonMatcher = lastColonPattern.matcher(s);
-            int lastColon = 0;
-            while(lastColonMatcher.find()) lastColon = lastColonMatcher.end();
-
-            final String q = s.toString().substring(lastColon);
-            EmojiSearch.EmojiSearchAdapter adapter = ((EmojiSearch.EmojiSearchAdapter) binding.stickersview.getAdapter());
-            if (adapter != null) {
-                adapter.search(q);
+    private void searchTlgrmStickers(final String query) {
+        if (activity == null || tlgrmStickerSearch == null || tlgrmStickersAdapter == null) return;
+        new Thread(() -> {
+            try {
+                final List<TlgrmStickerSearch.StickerItem> results = tlgrmStickerSearch.search(query);
+                if (activity != null) {
+                    activity.runOnUiThread(() -> {
+                        if (tlgrmStickersAdapter != null) {
+                            tlgrmStickersAdapter.setItems(results);
+                        }
+                    });
+                }
+            } catch (final IOException e) {
+                Log.d(Config.LOGTAG, "Failed to search tlgrm stickers", e);
+                if (activity != null) {
+                    activity.runOnUiThread(() -> {
+                        if (tlgrmStickersAdapter != null) {
+                            tlgrmStickersAdapter.setItems(Collections.emptyList());
+                        }
+                    });
+                }
             }
-        }, 400L);
+        }).start();
+    }
+
+    protected void setupEmojiSearch() {
+        // Sticker tab now uses tlgrm.ru search and direct file upload flow.
     }
 
     protected void newThreadTutorialToast(String s) {
@@ -2216,6 +2246,7 @@ public class ConversationFragment extends XmppFragment
     public void onDestroyView() {
         super.onDestroyView();
         Log.d(Config.LOGTAG, "ConversationFragment.onDestroyView()");
+        stickerSearchDebounce.removeCallbacksAndMessages(null);
         if (activity != null &&
                 activity.getWindow() != null &&
                 activity.getWindow().getDecorView() != null) {

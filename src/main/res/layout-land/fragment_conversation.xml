@@ -378,6 +378,20 @@
                                 android:layout_weight="1"
                                 android:visibility="visible" />
 
+                            <EditText
+                                android:id="@+id/stickers_search"
+                                android:layout_width="match_parent"
+                                android:layout_height="wrap_content"
+                                android:layout_marginStart="8dp"
+                                android:layout_marginTop="4dp"
+                                android:layout_marginEnd="8dp"
+                                android:background="@drawable/edit_text"
+                                android:hint="@string/search_stickers_tlgrm"
+                                android:imeOptions="actionSearch"
+                                android:inputType="text"
+                                android:padding="8dp"
+                                android:visibility="gone" />
+
                             <de.monocles.mod.GridView
                                 android:id="@+id/stickersview"
                                 android:layout_width="match_parent"

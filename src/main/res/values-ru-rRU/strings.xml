@@ -1591,6 +1591,7 @@
     <string name="sticker_deleted">Стикер удален</string>
     <string name="gif_deleted">GIF удален</string>
     <string name="failed_to_delete_sticker">Не удалось удалить стикер</string>
+    <string name="search_stickers_tlgrm">Поиск стикеров на tlgrm.ru</string>
     <string name="import_gif_failed">Не удалось импортировать GIF-файлы</string>
     <string name="gif_imported">GIF-файлы импортированы</string>
     <string name="import_own_gifs">Импортировать собственные GIF-файлы</string>
