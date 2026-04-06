@@ -64,7 +64,6 @@ import android.text.Editable;
 import android.text.Html;
 import android.text.Spannable;
 import android.text.SpannableStringBuilder;
-import android.text.TextWatcher;
 import android.text.TextUtils;
 import android.text.method.LinkMovementMethod;
 import android.text.style.ImageSpan;
@@ -170,8 +169,8 @@ import java.util.stream.Stream;
 import de.monocles.mod.BobTransfer;
 import de.monocles.mod.GifsAdapter;
 import de.monocles.mod.KeyboardHeightProvider;
+import de.monocles.mod.StickerAdapter;
 import de.monocles.mod.TlgrmStickerSearch;
-import de.monocles.mod.TlgrmStickersAdapter;
 import de.monocles.mod.WebxdcPage;
 import de.monocles.mod.WebxdcStore;
 import eu.siacs.conversations.Config;
@@ -341,7 +340,6 @@ public class ConversationFragment extends XmppFragment
     File dirGifs = new File(Environment.getExternalStoragePublicDirectory(Environment.DIRECTORY_DOCUMENTS) + File.separator + APP_DIRECTORY + File.separator + "GIFs");
     private final Handler stickerSearchDebounce = new Handler(Looper.getMainLooper());
     private TlgrmStickerSearch tlgrmStickerSearch;
-    private TlgrmStickersAdapter tlgrmStickersAdapter;
 
 
     protected OnClickListener clickToVerify = new OnClickListener() {
@@ -2119,41 +2117,29 @@ public class ConversationFragment extends XmppFragment
 
     public void LoadStickers() {
         tlgrmStickerSearch = new TlgrmStickerSearch();
-        tlgrmStickersAdapter = new TlgrmStickersAdapter(activity);
-        binding.stickersview.setAdapter(tlgrmStickersAdapter);
+        if (!hasStoragePermission(activity)) return;
+        if (!dirStickers.exists()) {
+            dirStickers.mkdir();
+        }
+        loadLocalStickersGrid();
         binding.stickersview.setOnItemClickListener((parent, view, position, id) -> {
-            if (activity == null || conversation == null || tlgrmStickersAdapter == null) return;
-            final TlgrmStickerSearch.StickerItem item = tlgrmStickersAdapter.getItem(position);
-            new Thread(() -> {
-                try {
-                    final TlgrmStickerSearch.DownloadResult result = tlgrmStickerSearch.downloadToCache(item, activity.getCacheDir());
-                    activity.runOnUiThread(() -> attachFileToConversation(conversation, Uri.fromFile(result.file), result.mime));
-                } catch (final IOException e) {
-                    Log.d(Config.LOGTAG, "Failed to send tlgrm sticker", e);
-                    if (activity != null) {
-                        activity.runOnUiThread(() -> Toast.makeText(activity, R.string.unable_to_connect_to_server, Toast.LENGTH_SHORT).show());
-                    }
+            if (activity == null || conversation == null || filesPathsStickers == null || position >= filesPathsStickers.length) return;
+            final File file = new File(filesPathsStickers[position]);
+            attachFileToConversation(conversation, Uri.fromFile(file), MimeUtils.guessMimeTypeFromExtension(MimeUtils.extractRelevantExtension(file.getName())));
+        });
+
+        binding.stickersSearch.setOnEditorActionListener((v, actionId, event) -> {
+            if (actionId == EditorInfo.IME_ACTION_SEARCH || actionId == EditorInfo.IME_ACTION_DONE) {
+                final String pack = binding.stickersSearch.getText() == null ? "" : binding.stickersSearch.getText().toString();
+                if (pack.trim().isEmpty()) {
+                    return true;
                 }
-            }).start();
-        });
-
-        binding.stickersSearch.addTextChangedListener(new TextWatcher() {
-            @Override
-            public void beforeTextChanged(final CharSequence s, final int start, final int count, final int after) {
-            }
-
-            @Override
-            public void onTextChanged(final CharSequence s, final int start, final int before, final int count) {
-            }
-
-            @Override
-            public void afterTextChanged(final Editable s) {
                 stickerSearchDebounce.removeCallbacksAndMessages(null);
-                stickerSearchDebounce.postDelayed(() -> searchTlgrmStickers(s.toString()), 400L);
+                stickerSearchDebounce.postDelayed(() -> downloadStickerPack(pack), 200L);
+                return true;
             }
+            return false;
         });
-
-        searchTlgrmStickers("");
     }
 
     public void LoadGifs() {
@@ -2203,29 +2189,59 @@ public class ConversationFragment extends XmppFragment
             });
     }
 
-    private void searchTlgrmStickers(final String query) {
-        if (activity == null || tlgrmStickerSearch == null || tlgrmStickersAdapter == null) return;
+    private void downloadStickerPack(final String query) {
+        if (activity == null || tlgrmStickerSearch == null) return;
         new Thread(() -> {
             try {
-                final List<TlgrmStickerSearch.StickerItem> results = tlgrmStickerSearch.search(query);
+                final int downloaded = tlgrmStickerSearch.downloadPack(query, dirStickers);
                 if (activity != null) {
                     activity.runOnUiThread(() -> {
-                        if (tlgrmStickersAdapter != null) {
-                            tlgrmStickersAdapter.setItems(results);
-                        }
+                        loadLocalStickersGrid();
+                        Toast.makeText(activity, activity.getString(R.string.sticker_imported) + " (" + downloaded + ")", Toast.LENGTH_SHORT).show();
                     });
                 }
             } catch (final IOException e) {
-                Log.d(Config.LOGTAG, "Failed to search tlgrm stickers", e);
+                Log.d(Config.LOGTAG, "Failed to download tlgrm sticker pack", e);
                 if (activity != null) {
-                    activity.runOnUiThread(() -> {
-                        if (tlgrmStickersAdapter != null) {
-                            tlgrmStickersAdapter.setItems(Collections.emptyList());
-                        }
-                    });
+                    activity.runOnUiThread(() -> Toast.makeText(activity, R.string.unable_to_connect_to_server, Toast.LENGTH_SHORT).show());
                 }
             }
         }).start();
+    }
+
+    private void loadLocalStickersGrid() {
+        if (dirStickers.listFiles() == null) {
+            filesStickers = new File[0];
+            filesPathsStickers = new String[0];
+            filesNamesStickers = new String[0];
+            binding.stickersview.setAdapter(new StickerAdapter(activity, filesNamesStickers, filesPathsStickers));
+            return;
+        }
+        final List<File> stickerFiles = new ArrayList<>();
+        final File[] packs = dirStickers.listFiles();
+        if (packs != null) {
+            for (final File pack : packs) {
+                if (pack == null || !pack.isDirectory()) continue;
+                final File[] onePack = pack.listFiles();
+                if (onePack == null) continue;
+                for (final File f : onePack) {
+                    if (f == null || !f.isFile()) continue;
+                    final String name = f.getName().toLowerCase(Locale.ROOT);
+                    if (name.endsWith(".webp") || name.endsWith(".png") || name.endsWith(".jpg") || name.endsWith(".jpeg")) {
+                        stickerFiles.add(f);
+                    }
+                }
+            }
+        }
+        stickerFiles.sort((a, b) -> a.getAbsolutePath().compareToIgnoreCase(b.getAbsolutePath()));
+        filesStickers = stickerFiles.toArray(new File[0]);
+        filesPathsStickers = new String[filesStickers.length];
+        filesNamesStickers = new String[filesStickers.length];
+        for (int i = 0; i < filesStickers.length; i++) {
+            filesPathsStickers[i] = filesStickers[i].getAbsolutePath();
+            filesNamesStickers[i] = filesStickers[i].getName();
+        }
+        binding.stickersview.setAdapter(new StickerAdapter(activity, filesNamesStickers, filesPathsStickers));
     }
 
     protected void setupEmojiSearch() {

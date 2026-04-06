@@ -28,6 +28,7 @@ public class TlgrmStickerSearch {
     private static final Pattern IMAGE_URL_PATTERN = Pattern.compile("(https?:\\\\?/\\\\?/[^\"'\\\\s>]+\\.(?:webp|png|jpg|jpeg))", Pattern.CASE_INSENSITIVE);
     private static final Pattern RELATIVE_IMAGE_URL_PATTERN = Pattern.compile("(?:src|data-src)=\"(/[^\"\\s>]+\\.(?:webp|png|jpg|jpeg))\"", Pattern.CASE_INSENSITIVE);
     private static final Pattern PACK_LINK_PATTERN = Pattern.compile("href=\"(/stickers/[^\"]+)\"", Pattern.CASE_INSENSITIVE);
+    private static final Pattern PACK_SLUG_PATTERN = Pattern.compile("/stickers/([^/?#]+)");
     private static final int MAX_RESULTS = 80;
 
     private final OkHttpClient httpClient = new OkHttpClient();
@@ -249,6 +250,56 @@ public class TlgrmStickerSearch {
             }
             return new DownloadResult(out, mime);
         }
+    }
+
+    public int downloadPack(final String packQueryOrUrl, final File stickersRoot) throws IOException {
+        final String slug = extractPackSlug(packQueryOrUrl);
+        if (slug == null || slug.isEmpty()) {
+            throw new IOException("Sticker pack slug is empty");
+        }
+        final String html = fetch(BASE_URL + "/stickers/" + Uri.encode(slug));
+        final List<StickerItem> stickers = parse(html);
+        if (stickers.isEmpty()) {
+            throw new IOException("No stickers found in pack " + slug);
+        }
+        final File packDir = new File(stickersRoot, slug);
+        if (!packDir.exists() && !packDir.mkdirs()) {
+            throw new IOException("Unable to create pack dir " + packDir.getAbsolutePath());
+        }
+        int saved = 0;
+        for (final StickerItem sticker : stickers) {
+            final DownloadResult one = downloadToCache(sticker, packDir);
+            final String extension = MimeUtils.guessExtensionFromMimeType(one.mime);
+            final File dest = new File(packDir, String.format(Locale.ROOT, "%03d.%s", saved + 1, extension == null ? "webp" : extension));
+            if (one.file.renameTo(dest)) {
+                saved++;
+            } else {
+                saved++;
+            }
+        }
+        return saved;
+    }
+
+    public String extractPackSlug(final String queryOrUrl) {
+        if (queryOrUrl == null) {
+            return null;
+        }
+        final String trimmed = queryOrUrl.trim();
+        if (trimmed.isEmpty()) {
+            return null;
+        }
+        final Matcher matcher = PACK_SLUG_PATTERN.matcher(trimmed);
+        if (matcher.find()) {
+            return matcher.group(1);
+        }
+        String slug = trimmed;
+        if (slug.startsWith("@")) {
+            slug = slug.substring(1);
+        }
+        if (slug.contains("/")) {
+            slug = slug.substring(slug.lastIndexOf('/') + 1);
+        }
+        return slug;
     }
 
     public static class DownloadResult {
