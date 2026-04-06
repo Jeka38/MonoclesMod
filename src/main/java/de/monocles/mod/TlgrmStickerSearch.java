@@ -82,6 +82,15 @@ public class TlgrmStickerSearch {
         if (!best.isEmpty()) {
             return best;
         }
+        if (!normalizedQuery.isEmpty()) {
+            try {
+                final List<StickerItem> fallback = parse(fetch(BASE_URL + "/stickers"));
+                if (!fallback.isEmpty()) {
+                    return fallback;
+                }
+            } catch (final IOException ignored) {
+            }
+        }
         if (firstError != null) {
             throw firstError;
         }
@@ -126,13 +135,34 @@ public class TlgrmStickerSearch {
 
     private Set<String> parsePackLinks(final String html, final String normalizedQuery) {
         final List<String> candidates = new ArrayList<>();
+        final List<String> fallback = new ArrayList<>();
+        final String underscored = normalizedQuery.replace(' ', '_');
+        final String dashed = normalizedQuery.replace(' ', '-');
+        final String[] tokens = normalizedQuery.split("[\\s_\\-]+");
         final Matcher matcher = PACK_LINK_PATTERN.matcher(html);
         while (matcher.find()) {
             final String path = matcher.group(1);
-            if (!path.toLowerCase(Locale.ROOT).contains(normalizedQuery)) {
+            final String pathLower = path.toLowerCase(Locale.ROOT);
+            fallback.add(BASE_URL + path);
+            if (normalizedQuery.isEmpty()) {
                 continue;
             }
-            candidates.add(BASE_URL + path);
+            boolean tokenMatch = true;
+            for (final String token : tokens) {
+                if (token.length() < 2) {
+                    continue;
+                }
+                if (!pathLower.contains(token)) {
+                    tokenMatch = false;
+                    break;
+                }
+            }
+            if (pathLower.contains(normalizedQuery)
+                    || pathLower.contains(underscored)
+                    || pathLower.contains(dashed)
+                    || tokenMatch) {
+                candidates.add(BASE_URL + path);
+            }
         }
         candidates.sort(Comparator.naturalOrder());
         final LinkedHashSet<String> result = new LinkedHashSet<>();
@@ -140,6 +170,14 @@ public class TlgrmStickerSearch {
             result.add(url);
             if (result.size() >= 12) {
                 break;
+            }
+        }
+        if (result.isEmpty()) {
+            for (final String url : fallback) {
+                result.add(url);
+                if (result.size() >= 6) {
+                    break;
+                }
             }
         }
         return result;
