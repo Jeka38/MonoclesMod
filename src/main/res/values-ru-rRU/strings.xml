@@ -1168,6 +1168,7 @@
     <string name="trust_omemo_fingerprints">Доверенные OMEMO Отпечатки</string>
     <string name="try_again">Попробовать снова</string>
     <string name="unable_to_connect_to_keychain">Не удается подключиться к OpenKeychain</string>
+    <string name="unable_to_connect_to_server">Не удается подключиться к серверу</string>
     <string name="unable_to_decrypt_backup">Невозможно расшифровать резервную копию. Пароль верный\?</string>
     <string name="unable_to_enable_video">Не удается включить видео.</string>
     <string name="unable_to_fetch_mam_prefs">Не удалось получить настройки архивации</string>
