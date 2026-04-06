@@ -6,24 +6,25 @@ import android.app.Notification;
 import android.app.NotificationManager;
 import android.app.Service;
 import android.content.Context;
-import android.content.SharedPreferences;
 import android.content.Intent;
+import android.content.SharedPreferences;
 import android.media.MediaScannerConnection;
 import android.net.Uri;
 import android.os.Environment;
 import android.os.IBinder;
-import android.provider.DocumentsContract;
 import android.preference.PreferenceManager;
+import android.provider.DocumentsContract;
 import android.util.Log;
 
 import androidx.core.app.NotificationCompat;
 
 import com.google.common.io.ByteStreams;
 
-import eu.siacs.conversations.services.XmppConnectionService;
-import io.ipfs.cid.Cid;
+import org.json.JSONArray;
+import org.json.JSONObject;
 
 import java.io.File;
+import java.io.FileInputStream;
 import java.io.FileOutputStream;
 import java.io.OutputStream;
 import java.io.OutputStreamWriter;
@@ -32,30 +33,32 @@ import java.util.Locale;
 import java.util.Objects;
 import java.util.Set;
 import java.util.concurrent.atomic.AtomicBoolean;
-
-import org.json.JSONArray;
-import org.json.JSONObject;
-
-import okhttp3.OkHttpClient;
-import okhttp3.Request;
-import okhttp3.Response;
+import java.util.regex.Matcher;
+import java.util.regex.Pattern;
 
 import eu.siacs.conversations.Config;
 import eu.siacs.conversations.R;
 import eu.siacs.conversations.http.HttpConnectionManager;
 import eu.siacs.conversations.persistance.DatabaseBackend;
+import eu.siacs.conversations.services.XmppConnectionService;
+import eu.siacs.conversations.utils.CryptoHelper;
 import eu.siacs.conversations.utils.FileUtils;
 import eu.siacs.conversations.utils.MimeUtils;
+import io.ipfs.cid.Cid;
+import okhttp3.OkHttpClient;
+import okhttp3.Request;
+import okhttp3.Response;
 
 public class DownloadDefaultStickers extends Service {
 
     private static final int NOTIFICATION_ID = 20;
     private static final AtomicBoolean RUNNING = new AtomicBoolean(false);
+    private static final Pattern STICKER_URL_PATTERN = Pattern.compile("(https?://[^\\\"'\\s>]+\\.(?:webp|png|jpg|jpeg))", Pattern.CASE_INSENSITIVE);
     private DatabaseBackend mDatabaseBackend;
     private NotificationManager notificationManager;
     private File mStickerDir;
     private OkHttpClient http = null;
-    private final HashSet<Uri> pendingPacks = new HashSet<Uri>();
+    private final HashSet<Uri> pendingPacks = new HashSet<>();
     public final XmppConnectionService xmppConnectionService = new XmppConnectionService();
 
 
@@ -69,7 +72,7 @@ public class DownloadDefaultStickers extends Service {
     @Override
     public int onStartCommand(Intent intent, int flags, int startId) {
         if (http == null) {
-            http = HttpConnectionManager.newBuilder(intent == null ? getResources().getBoolean(R.bool.use_tor)  : intent.getBooleanExtra("tor", getResources().getBoolean(R.bool.use_tor)), intent != null && intent.getBooleanExtra("i2p", getResources().getBoolean(R.bool.use_i2p))).build();
+            http = HttpConnectionManager.newBuilder(intent == null ? getResources().getBoolean(R.bool.use_tor) : intent.getBooleanExtra("tor", getResources().getBoolean(R.bool.use_tor)), intent != null && intent.getBooleanExtra("i2p", getResources().getBoolean(R.bool.use_i2p))).build();
         }
         final Set<Uri> normalized = normalizeSourceUris(intent == null ? null : intent.getData());
         if (normalized.isEmpty()) {
@@ -77,7 +80,7 @@ public class DownloadDefaultStickers extends Service {
             stopSelf();
             return START_NOT_STICKY;
         }
-        synchronized(pendingPacks) {
+        synchronized (pendingPacks) {
             pendingPacks.addAll(normalized);
         }
         if (RUNNING.compareAndSet(false, true)) {
@@ -117,6 +120,7 @@ public class DownloadDefaultStickers extends Service {
                 result.add(Uri.parse("https://stickers.cheogram.com/telegram/" + slug));
                 result.add(Uri.parse("https://stickers.cheogram.com/telegram/" + slug + ".json"));
                 result.add(Uri.parse("https://stickers.cheogram.com/telegram/" + slug + "/index.json"));
+                result.add(source);
             }
         }
 
@@ -136,7 +140,8 @@ public class DownloadDefaultStickers extends Service {
         Response r = http.newCall(new Request.Builder().url(sticker.getString("url")).build()).execute();
         File file = null;
         try {
-            file = new File(mStickerDir.getAbsolutePath() + "/" + sticker.getString("pack") + "/" + sticker.getString("name") + "." + MimeUtils.guessExtensionFromMimeType(r.headers().get("content-type")));
+            final String ext = MimeUtils.guessExtensionFromMimeType(r.headers().get("content-type"));
+            file = new File(mStickerDir.getAbsolutePath() + "/" + sticker.getString("pack") + "/" + sticker.getString("name") + "." + (ext == null ? "webp" : ext));
             Objects.requireNonNull(file.getParentFile()).mkdirs();
             OutputStream os = new FileOutputStream(file);
             if (r.body() != null) {
@@ -148,23 +153,37 @@ public class DownloadDefaultStickers extends Service {
             Log.d(de.monocles.mod.Config.LOGTAG, Objects.requireNonNull(e.getMessage()));
         }
 
-        JSONArray cids = sticker.getJSONArray("cids");
-        for (int i = 0; i < cids.length(); i++) {
-            Cid cid = Cid.decode(cids.getString(i));
-            mDatabaseBackend.saveCid(cid, file, sticker.getString("url"));
+        JSONArray cids = sticker.optJSONArray("cids");
+        if ((cids == null || cids.length() == 0) && file != null) {
+            try (FileInputStream fis = new FileInputStream(file)) {
+                final Cid[] generated = CryptoHelper.cid(fis, new String[]{"SHA-256", "SHA-1", "SHA-512"});
+                cids = new JSONArray();
+                for (final Cid generatedCid : generated) {
+                    cids.put(generatedCid.toString());
+                }
+            } catch (final Exception ignored) {
+            }
+        }
+        if (cids != null) {
+            for (int i = 0; i < cids.length(); i++) {
+                Cid cid = Cid.decode(cids.getString(i));
+                mDatabaseBackend.saveCid(cid, file, sticker.getString("url"));
+            }
         }
 
         if (file != null) {
             MediaScannerConnection.scanFile(
                     getBaseContext(),
-                    new String[] { file.getAbsolutePath() },
+                    new String[]{file.getAbsolutePath()},
                     null,
                     new MediaScannerConnection.MediaScannerConnectionClient() {
                         @Override
-                        public void onMediaScannerConnected() {}
+                        public void onMediaScannerConnected() {
+                        }
 
                         @Override
-                        public void onScanCompleted(String path, Uri uri) {}
+                        public void onScanCompleted(String path, Uri uri) {
+                        }
                     }
             );
         }
@@ -176,15 +195,57 @@ public class DownloadDefaultStickers extends Service {
             w.write('/');
             w.write(sticker.getString("name"));
             w.write(": ");
-            w.write(sticker.getString("copyright"));
+            w.write(sticker.optString("copyright", "tlgrm.ru"));
             w.write('\n');
             w.close();
-        } catch (final Exception e) { }
+        } catch (final Exception e) {
+        }
+    }
+
+    private JSONArray parseStickersFromResponse(final Uri sourceUri, final String responseBody) {
+        try {
+            return new JSONArray(responseBody);
+        } catch (final Exception ignored) {
+        }
+
+        final String host = sourceUri.getHost() == null ? "" : sourceUri.getHost().toLowerCase(Locale.US);
+        if (!host.contains("tlgrm.ru")) {
+            return null;
+        }
+        final String path = sourceUri.getPath() == null ? "" : sourceUri.getPath();
+        if (!path.startsWith("/stickers/")) {
+            return null;
+        }
+        final String pack = path.substring("/stickers/".length()).split("/")[0];
+        if (pack.isEmpty()) {
+            return null;
+        }
+
+        final JSONArray stickers = new JSONArray();
+        final HashSet<String> seenUrls = new HashSet<>();
+        final Matcher matcher = STICKER_URL_PATTERN.matcher(responseBody);
+        int index = 0;
+        while (matcher.find()) {
+            final String stickerUrl = matcher.group(1);
+            if (stickerUrl == null || !seenUrls.add(stickerUrl)) continue;
+            try {
+                final JSONObject one = new JSONObject();
+                one.put("url", stickerUrl.replace("\\/", "/"));
+                one.put("pack", pack);
+                one.put("name", "sticker_" + (++index));
+                one.put("copyright", "tlgrm.ru");
+                one.put("cids", new JSONArray());
+                stickers.put(one);
+            } catch (final Exception ignored) {
+            }
+        }
+
+        return stickers.length() == 0 ? null : stickers;
     }
 
     private void download() throws Exception {
         Uri jsonUri;
-        synchronized(pendingPacks) {
+        synchronized (pendingPacks) {
             if (pendingPacks.iterator().hasNext()) {
                 jsonUri = pendingPacks.iterator().next();
             } else {
@@ -201,7 +262,8 @@ public class DownloadDefaultStickers extends Service {
         JSONArray stickers = null;
         try {
             Response r = http.newCall(new Request.Builder().url(jsonUri.toString()).build()).execute();
-            stickers = new JSONArray(r.body().string());
+            final String responseBody = r.body() == null ? "" : r.body().string();
+            stickers = parseStickersFromResponse(jsonUri, responseBody);
         } catch (final Exception e) {
             Log.d(Config.LOGTAG, "failed sticker source " + jsonUri + ": " + e.getMessage());
         }
@@ -226,7 +288,7 @@ public class DownloadDefaultStickers extends Service {
             notificationManager.notify(NOTIFICATION_ID, progress.build(percentage));
         }
 
-        synchronized(pendingPacks) {
+        synchronized (pendingPacks) {
             pendingPacks.remove(jsonUri);
         }
         download();
