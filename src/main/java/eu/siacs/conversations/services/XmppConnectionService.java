@@ -5383,7 +5383,7 @@ public class XmppConnectionService extends Service {
 
     public void publishVcard4(final Account account, final Element vcard, final Consumer<Boolean> callback) {
         final IqPacket packet = mIqGenerator.publishElement(
-                Namespace.VCARD4,
+                Namespace.VCARD4_PEP,
                 vcard,
                 "current",
                 PublishOptions.persistentWhitelistAccess()

@@ -75,6 +75,7 @@ public final class Namespace {
     public static final String OMEMO_DTLS_SRTP_VERIFICATION = "http://gultsch.de/xmpp/drafts/omemo/dlts-srtp-verification";
     public static final String JINGLE_TRANSPORT_ICE_OPTION = "http://gultsch.de/xmpp/drafts/jingle/transports/ice-udp/option";
     public static final String UNIFIED_PUSH = "http://gultsch.de/xmpp/drafts/unified-push";
+    public static final String VCARD4_PEP = "urn:xmpp:vcard4";
     public static final String VCARD4 = "urn:ietf:params:xml:ns:vcard-4.0";
     public static final String SDP_OFFER_ANSWER = "urn:ietf:rfc:3264";
     public static final String HASHES = "urn:xmpp:hashes:2";
