@@ -2202,7 +2202,8 @@ public class ConversationFragment extends XmppFragment
                 if (activity != null) {
                     activity.runOnUiThread(() -> {
                         loadLocalStickersGrid();
-                        Toast.makeText(activity, getString(R.string.stickers_imported_count, downloaded), Toast.LENGTH_SHORT).show();
+                        final String message = getResources().getQuantityString(R.plurals.stickers_imported_count, downloaded, downloaded);
+                        Toast.makeText(activity, message, Toast.LENGTH_SHORT).show();
                     });
                 }
             } catch (final IOException e) {
