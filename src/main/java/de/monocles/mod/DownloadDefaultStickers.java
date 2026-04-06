@@ -30,6 +30,7 @@ import java.io.OutputStreamWriter;
 import java.util.HashSet;
 import java.util.Locale;
 import java.util.Objects;
+import java.util.Set;
 import java.util.concurrent.atomic.AtomicBoolean;
 
 import org.json.JSONArray;
@@ -70,14 +71,14 @@ public class DownloadDefaultStickers extends Service {
         if (http == null) {
             http = HttpConnectionManager.newBuilder(intent == null ? getResources().getBoolean(R.bool.use_tor)  : intent.getBooleanExtra("tor", getResources().getBoolean(R.bool.use_tor)), intent != null && intent.getBooleanExtra("i2p", getResources().getBoolean(R.bool.use_i2p))).build();
         }
-        final Uri normalized = normalizeSourceUri(intent == null ? null : intent.getData());
-        if (normalized == null) {
+        final Set<Uri> normalized = normalizeSourceUris(intent == null ? null : intent.getData());
+        if (normalized.isEmpty()) {
             Log.d(Config.LOGTAG, "DownloadDefaultStickers: no sticker source provided");
             stopSelf();
             return START_NOT_STICKY;
         }
         synchronized(pendingPacks) {
-            pendingPacks.add(normalized);
+            pendingPacks.addAll(normalized);
         }
         if (RUNNING.compareAndSet(false, true)) {
             new Thread(() -> {
@@ -98,32 +99,37 @@ public class DownloadDefaultStickers extends Service {
         return START_NOT_STICKY;
     }
 
-    private Uri normalizeSourceUri(final Uri source) {
-        if (source == null) {
-            return null;
-        }
+    private Set<Uri> normalizeSourceUris(final Uri source) {
+        final Set<Uri> result = new HashSet<>();
+        if (source == null) return result;
+
         final String host = source.getHost() == null ? "" : source.getHost().toLowerCase(Locale.US);
         final String path = source.getPath() == null ? "" : source.getPath();
 
         if ("stickers.cheogram.com".equals(host)) {
-            return source;
+            result.add(source);
+            return result;
         }
 
         if (("tlgrm.ru".equals(host) || "www.tlgrm.ru".equals(host)) && path.startsWith("/stickers/")) {
             final String slug = path.substring("/stickers/".length()).split("/")[0];
             if (!slug.isEmpty()) {
-                return Uri.parse("https://stickers.cheogram.com/telegram/" + slug);
+                result.add(Uri.parse("https://stickers.cheogram.com/telegram/" + slug));
+                result.add(Uri.parse("https://stickers.cheogram.com/telegram/" + slug + ".json"));
+                result.add(Uri.parse("https://stickers.cheogram.com/telegram/" + slug + "/index.json"));
             }
         }
 
         if (("t.me".equals(host) || "telegram.me".equals(host)) && path.startsWith("/addstickers/")) {
             final String slug = path.substring("/addstickers/".length()).split("/")[0];
             if (!slug.isEmpty()) {
-                return Uri.parse("https://stickers.cheogram.com/telegram/" + slug);
+                result.add(Uri.parse("https://stickers.cheogram.com/telegram/" + slug));
+                result.add(Uri.parse("https://stickers.cheogram.com/telegram/" + slug + ".json"));
+                result.add(Uri.parse("https://stickers.cheogram.com/telegram/" + slug + "/index.json"));
             }
         }
 
-        return null;
+        return result;
     }
 
     private void oneSticker(JSONObject sticker) throws Exception {
@@ -192,8 +198,21 @@ public class DownloadDefaultStickers extends Service {
                 .setProgress(1, 0, false);
         startForeground(NOTIFICATION_ID, mBuilder.build());
 
-        Response r = http.newCall(new Request.Builder().url(jsonUri.toString()).build()).execute();
-        JSONArray stickers = new JSONArray(r.body().string());
+        JSONArray stickers = null;
+        try {
+            Response r = http.newCall(new Request.Builder().url(jsonUri.toString()).build()).execute();
+            stickers = new JSONArray(r.body().string());
+        } catch (final Exception e) {
+            Log.d(Config.LOGTAG, "failed sticker source " + jsonUri + ": " + e.getMessage());
+        }
+
+        if (stickers == null) {
+            synchronized (pendingPacks) {
+                pendingPacks.remove(jsonUri);
+            }
+            download();
+            return;
+        }
 
         final Progress progress = new Progress(mBuilder, 1, 0);
         for (int i = 0; i < stickers.length(); i++) {

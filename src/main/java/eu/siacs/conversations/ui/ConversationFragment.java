@@ -1481,16 +1481,21 @@ public class ConversationFragment extends XmppFragment
                     SpannableStringBuilder spannable = message.getSpannableBody(null, null);
                     ImageSpan[] imageSpans = spannable.getSpans(0, spannable.length(), ImageSpan.class);
                     if (imageSpans.length == 1) {
-                        String source = imageSpans[0].getSource();
-                        if (source != null && source.length() > 0 && source.substring(0, 4).equals("cid:")) {
+                        final String source = imageSpans[0].getSource();
+                        if (source != null && source.length() > 0) {
                             try {
-                                final Cid cid = BobTransfer.cid(Uri.parse(source));
-                                final String url = activity.xmppConnectionService.getUrlForCid(cid);
+                                final Cid cid;
+                                if (source.startsWith("cid:")) {
+                                    cid = BobTransfer.cid(Uri.parse(source));
+                                } else {
+                                    cid = Cid.decode(source);
+                                }
                                 final File f = activity.xmppConnectionService.getFileForCid(cid);
-                                if (url != null) {
+                                if (f != null) {
                                     message.setBody("");
                                     message.setRelativeFilePath(f.getAbsolutePath());
                                     activity.xmppConnectionService.getFileBackend().updateFileParams(message);
+                                    message.getFileParams().url = null; // force HTTP upload for stickers
                                 }
                             } catch (final Exception e) {
                             }

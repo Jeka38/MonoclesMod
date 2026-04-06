@@ -28,6 +28,7 @@ import com.kedia.ogparser.OpenGraphParser;
 import com.kedia.ogparser.OpenGraphResult;
 import java.util.HashMap;
 
+import de.monocles.mod.BobTransfer;
 import de.monocles.mod.EmojiSearch;
 import eu.siacs.conversations.ui.ConversationsActivity;
 import eu.siacs.conversations.ui.MucCaptchaActivity;
@@ -7003,7 +7004,7 @@ public class XmppConnectionService extends Service {
                                 saveCid(cid, file);
                             }
                             if (file.length() < 129000) {
-                                emojiSearch.addEmoji(new EmojiSearch.CustomEmoji(filename, cids[0].toString(), icon, file.getParentFile().getName()));
+                                emojiSearch.addEmoji(new EmojiSearch.CustomEmoji(filename, BobTransfer.uri(cids[0]).toString(), icon, file.getParentFile().getName()));
                             }
                         }
                     } catch (final Exception e) {
