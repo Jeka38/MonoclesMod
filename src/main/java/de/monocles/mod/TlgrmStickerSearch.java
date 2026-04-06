@@ -316,6 +316,12 @@ public class TlgrmStickerSearch {
         return DIRECT_STICKER_URL_PATTERN.matcher(input.trim()).matches();
     }
 
+    public boolean isTlgrmUrl(final String input) {
+        if (input == null) return false;
+        final String value = input.trim().toLowerCase(Locale.ROOT);
+        return value.startsWith("http://tlgrm.ru/") || value.startsWith("https://tlgrm.ru/");
+    }
+
     public int downloadDirectSticker(final String stickerUrl, final File stickersRoot) throws IOException {
         final File packDir = new File(stickersRoot, "direct_links");
         if (!packDir.exists() && !packDir.mkdirs()) {
@@ -329,6 +335,38 @@ public class TlgrmStickerSearch {
             throw new IOException("Unable to store direct sticker file");
         }
         return 1;
+    }
+
+    public int downloadFromTlgrmPageUrl(final String pageUrl, final File stickersRoot) throws IOException {
+        if (!isTlgrmUrl(pageUrl)) {
+            throw new IOException("Not a tlgrm url");
+        }
+        final List<StickerItem> stickers = parse(fetch(pageUrl.trim()));
+        if (stickers.isEmpty()) {
+            throw new IOException("No stickers on tlgrm page");
+        }
+        String folder = extractPackSlug(pageUrl);
+        if (folder == null || folder.isEmpty() || "stickers".equalsIgnoreCase(folder)) {
+            folder = "page_" + UUID.randomUUID().toString().substring(0, 8);
+        }
+        final File packDir = new File(stickersRoot, folder);
+        if (!packDir.exists() && !packDir.mkdirs()) {
+            throw new IOException("Unable to create page pack dir " + packDir.getAbsolutePath());
+        }
+        int saved = 0;
+        for (final StickerItem sticker : stickers) {
+            if (saved >= MAX_RESULTS) break;
+            final DownloadResult one = downloadToCache(sticker, packDir);
+            final String extension = MimeUtils.guessExtensionFromMimeType(one.mime);
+            final String ext = extension == null || extension.isEmpty() ? "webp" : extension;
+            final File dest = new File(packDir, String.format(Locale.ROOT, "%03d.%s", saved + 1, ext));
+            if (one.file.renameTo(dest)) {
+                saved++;
+            } else {
+                saved++;
+            }
+        }
+        return saved;
     }
 
     public String extractPackSlug(final String queryOrUrl) {
