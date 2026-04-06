@@ -578,6 +578,12 @@
     <string name="vcard_note">Note</string>
     <string name="vcard_saved">vCard was updated</string>
     <string name="unable_to_save_vcard">Unable to update vCard</string>
+    <string name="vcard_full_name_label">Full name:</string>
+    <string name="vcard_nickname_label">Nickname:</string>
+    <string name="vcard_bday_label">Birthday:</string>
+    <string name="vcard_phone_label">Phone:</string>
+    <string name="vcard_url_label">Website:</string>
+    <string name="vcard_email_label">E-Mail:</string>
     <string name="registration_please_wait">Registration failed: Try again later</string>
     <string name="registration_password_too_weak">Registration failed: Password too weak</string>
     <string name="choose_participants">Choose participants</string>

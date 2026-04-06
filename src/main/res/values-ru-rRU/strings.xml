@@ -1122,6 +1122,12 @@
     <string name="vcard_note">Заметка</string>
     <string name="vcard_saved">vCard обновлена</string>
     <string name="unable_to_save_vcard">Не удалось обновить vCard</string>
+    <string name="vcard_full_name_label">ФИО:</string>
+    <string name="vcard_nickname_label">Ник:</string>
+    <string name="vcard_bday_label">Дата рождения:</string>
+    <string name="vcard_phone_label">Телефон:</string>
+    <string name="vcard_url_label">Сайт:</string>
+    <string name="vcard_email_label">E-Mail:</string>
     <string name="show_privacy">Политика конфиденциальности</string>
     <string name="show_qr_code">Показать QR код</string>
     <string name="show_termsofuse">Пользовательское соглашение</string>

@@ -803,22 +803,20 @@ public class EditAccountActivity extends OmemoActivity implements OnAccountUpdat
         }
         final View view = getLayoutInflater().inflate(R.layout.dialog_edit_vcard, null);
         final EditText fn = view.findViewById(R.id.vcard_fn);
-        final EditText org = view.findViewById(R.id.vcard_org);
-        final EditText title = view.findViewById(R.id.vcard_title);
+        final EditText nickname = view.findViewById(R.id.vcard_nickname);
+        final EditText bday = view.findViewById(R.id.vcard_bday);
         final EditText tel = view.findViewById(R.id.vcard_tel);
         final EditText email = view.findViewById(R.id.vcard_email);
         final EditText url = view.findViewById(R.id.vcard_url);
-        final EditText note = view.findViewById(R.id.vcard_note);
 
         xmppConnectionService.fetchOwnVcard4(mAccount, vcard4 -> runOnUiThread(() -> {
             if (vcard4 != null) {
                 fillVcardField(fn, vcard4, "fn", true);
-                fillVcardField(org, vcard4, "org", false);
-                fillVcardField(title, vcard4, "title", true);
+                fillVcardField(nickname, vcard4, "nickname", true);
+                fillVcardField(bday, vcard4, "bday", true);
                 fillVcardField(tel, vcard4, "tel", false);
                 fillVcardField(email, vcard4, "email", false);
                 fillVcardField(url, vcard4, "url", false);
-                fillVcardField(note, vcard4, "note", true);
             }
             new AlertDialog.Builder(EditAccountActivity.this)
                     .setTitle(R.string.action_edit_vcard)
@@ -827,12 +825,11 @@ public class EditAccountActivity extends OmemoActivity implements OnAccountUpdat
                     .setPositiveButton(R.string.save, (dialog, which) -> {
                         final Element vcard = new Element("vcard", Namespace.VCARD4);
                         addVcardTextField(vcard, "fn", fn.getText());
-                        addVcardTextField(vcard, "org", org.getText());
-                        addVcardTextField(vcard, "title", title.getText());
+                        addVcardTextField(vcard, "nickname", nickname.getText());
+                        addVcardTextField(vcard, "bday", bday.getText());
                         addVcardUriField(vcard, "tel", tel.getText(), "tel:");
                         addVcardUriField(vcard, "email", email.getText(), "mailto:");
                         addVcardUriField(vcard, "url", url.getText(), null);
-                        addVcardTextField(vcard, "note", note.getText());
                         xmppConnectionService.publishVcard4(mAccount, vcard, success -> runOnUiThread(() -> {
                             final int message = success ? R.string.vcard_saved : R.string.unable_to_save_vcard;
                             ToastCompat.makeText(EditAccountActivity.this, message, ToastCompat.LENGTH_SHORT).show();

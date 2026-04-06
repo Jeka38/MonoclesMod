@@ -10,89 +10,124 @@
         android:paddingTop="8dp"
         android:paddingBottom="8dp">
 
-        <com.google.android.material.textfield.TextInputLayout
+        <LinearLayout
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
-            android:hint="@string/vcard_full_name">
+            android:orientation="horizontal"
+            android:paddingBottom="8dp">
 
-            <com.google.android.material.textfield.TextInputEditText
+            <TextView
+                android:layout_width="120dp"
+                android:layout_height="wrap_content"
+                android:gravity="center_vertical"
+                android:text="@string/vcard_full_name_label" />
+
+            <EditText
                 android:id="@+id/vcard_fn"
-                android:layout_width="match_parent"
+                android:layout_width="0dp"
                 android:layout_height="wrap_content"
+                android:layout_weight="1"
                 android:inputType="textPersonName" />
-        </com.google.android.material.textfield.TextInputLayout>
+        </LinearLayout>
 
-        <com.google.android.material.textfield.TextInputLayout
+        <LinearLayout
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
-            android:hint="@string/vcard_org">
+            android:orientation="horizontal"
+            android:paddingBottom="8dp">
 
-            <com.google.android.material.textfield.TextInputEditText
-                android:id="@+id/vcard_org"
-                android:layout_width="match_parent"
+            <TextView
+                android:layout_width="120dp"
                 android:layout_height="wrap_content"
-                android:inputType="textCapWords" />
-        </com.google.android.material.textfield.TextInputLayout>
+                android:gravity="center_vertical"
+                android:text="@string/vcard_nickname_label" />
 
-        <com.google.android.material.textfield.TextInputLayout
-            android:layout_width="match_parent"
-            android:layout_height="wrap_content"
-            android:hint="@string/vcard_title">
-
-            <com.google.android.material.textfield.TextInputEditText
-                android:id="@+id/vcard_title"
-                android:layout_width="match_parent"
+            <EditText
+                android:id="@+id/vcard_nickname"
+                android:layout_width="0dp"
                 android:layout_height="wrap_content"
+                android:layout_weight="1"
                 android:inputType="textCapWords" />
-        </com.google.android.material.textfield.TextInputLayout>
+        </LinearLayout>
 
-        <com.google.android.material.textfield.TextInputLayout
+        <LinearLayout
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
-            android:hint="@string/vcard_phone">
+            android:orientation="horizontal"
+            android:paddingBottom="8dp">
 
-            <com.google.android.material.textfield.TextInputEditText
+            <TextView
+                android:layout_width="120dp"
+                android:layout_height="wrap_content"
+                android:gravity="center_vertical"
+                android:text="@string/vcard_bday_label" />
+
+            <EditText
+                android:id="@+id/vcard_bday"
+                android:layout_width="0dp"
+                android:layout_height="wrap_content"
+                android:layout_weight="1"
+                android:hint="YYYY-MM-DD"
+                android:inputType="date" />
+        </LinearLayout>
+
+        <LinearLayout
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:orientation="horizontal"
+            android:paddingBottom="8dp">
+
+            <TextView
+                android:layout_width="120dp"
+                android:layout_height="wrap_content"
+                android:gravity="center_vertical"
+                android:text="@string/vcard_phone_label" />
+
+            <EditText
                 android:id="@+id/vcard_tel"
-                android:layout_width="match_parent"
+                android:layout_width="0dp"
                 android:layout_height="wrap_content"
+                android:layout_weight="1"
                 android:inputType="phone" />
-        </com.google.android.material.textfield.TextInputLayout>
+        </LinearLayout>
 
-        <com.google.android.material.textfield.TextInputLayout
+        <LinearLayout
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
-            android:hint="@string/vcard_email">
+            android:orientation="horizontal"
+            android:paddingBottom="8dp">
 
-            <com.google.android.material.textfield.TextInputEditText
-                android:id="@+id/vcard_email"
-                android:layout_width="match_parent"
+            <TextView
+                android:layout_width="120dp"
                 android:layout_height="wrap_content"
-                android:inputType="textEmailAddress" />
-        </com.google.android.material.textfield.TextInputLayout>
+                android:gravity="center_vertical"
+                android:text="@string/vcard_url_label" />
 
-        <com.google.android.material.textfield.TextInputLayout
-            android:layout_width="match_parent"
-            android:layout_height="wrap_content"
-            android:hint="@string/vcard_url">
-
-            <com.google.android.material.textfield.TextInputEditText
+            <EditText
                 android:id="@+id/vcard_url"
-                android:layout_width="match_parent"
+                android:layout_width="0dp"
                 android:layout_height="wrap_content"
+                android:layout_weight="1"
                 android:inputType="textUri" />
-        </com.google.android.material.textfield.TextInputLayout>
+        </LinearLayout>
 
-        <com.google.android.material.textfield.TextInputLayout
+        <LinearLayout
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
-            android:hint="@string/vcard_note">
+            android:orientation="horizontal">
 
-            <com.google.android.material.textfield.TextInputEditText
-                android:id="@+id/vcard_note"
-                android:layout_width="match_parent"
+            <TextView
+                android:layout_width="120dp"
                 android:layout_height="wrap_content"
-                android:inputType="textMultiLine"
-                android:maxLines="3" />
-        </com.google.android.material.textfield.TextInputLayout>
+                android:gravity="center_vertical"
+                android:text="@string/vcard_email_label" />
+
+            <EditText
+                android:id="@+id/vcard_email"
+                android:layout_width="0dp"
+                android:layout_height="wrap_content"
+                android:layout_weight="1"
+                android:inputType="textEmailAddress" />
+        </LinearLayout>
     </LinearLayout>
 </ScrollView>
