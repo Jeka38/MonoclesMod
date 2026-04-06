@@ -2193,7 +2193,12 @@ public class ConversationFragment extends XmppFragment
         if (activity == null || tlgrmStickerSearch == null) return;
         new Thread(() -> {
             try {
-                final int downloaded = tlgrmStickerSearch.downloadPack(query, dirStickers);
+                int downloaded;
+                try {
+                    downloaded = tlgrmStickerSearch.downloadPack(query, dirStickers);
+                } catch (final IOException primaryError) {
+                    downloaded = tlgrmStickerSearch.downloadSearchResultPack(query, dirStickers);
+                }
                 if (activity != null) {
                     activity.runOnUiThread(() -> {
                         loadLocalStickersGrid();
@@ -2201,9 +2206,9 @@ public class ConversationFragment extends XmppFragment
                     });
                 }
             } catch (final IOException e) {
-                Log.d(Config.LOGTAG, "Failed to download tlgrm sticker pack", e);
+                Log.d(Config.LOGTAG, "Failed to download tlgrm sticker pack/search", e);
                 if (activity != null) {
-                    activity.runOnUiThread(() -> Toast.makeText(activity, R.string.unable_to_connect_to_server, Toast.LENGTH_SHORT).show());
+                    activity.runOnUiThread(() -> Toast.makeText(activity, R.string.import_sticker_failed, Toast.LENGTH_SHORT).show());
                 }
             }
         }).start();

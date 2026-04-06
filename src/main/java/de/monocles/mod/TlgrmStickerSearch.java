@@ -13,6 +13,7 @@ import java.util.LinkedHashSet;
 import java.util.List;
 import java.util.Locale;
 import java.util.Set;
+import java.util.UUID;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
@@ -268,6 +269,35 @@ public class TlgrmStickerSearch {
         }
         int saved = 0;
         for (final StickerItem sticker : stickers) {
+            final DownloadResult one = downloadToCache(sticker, packDir);
+            final String extension = MimeUtils.guessExtensionFromMimeType(one.mime);
+            final File dest = new File(packDir, String.format(Locale.ROOT, "%03d.%s", saved + 1, extension == null ? "webp" : extension));
+            if (one.file.renameTo(dest)) {
+                saved++;
+            } else {
+                saved++;
+            }
+        }
+        return saved;
+    }
+
+    public int downloadSearchResultPack(final String query, final File stickersRoot) throws IOException {
+        final List<StickerItem> results = search(query);
+        if (results.isEmpty()) {
+            throw new IOException("No sticker results for query " + query);
+        }
+        String folder = extractPackSlug(query);
+        if (folder == null || folder.isEmpty()) {
+            folder = "search_" + UUID.randomUUID().toString().substring(0, 8);
+        }
+        folder = folder.replaceAll("[^a-zA-Z0-9_\\-\\.]", "_");
+        final File packDir = new File(stickersRoot, folder);
+        if (!packDir.exists() && !packDir.mkdirs()) {
+            throw new IOException("Unable to create search pack dir " + packDir.getAbsolutePath());
+        }
+        int saved = 0;
+        for (final StickerItem sticker : results) {
+            if (saved >= MAX_RESULTS) break;
             final DownloadResult one = downloadToCache(sticker, packDir);
             final String extension = MimeUtils.guessExtensionFromMimeType(one.mime);
             final File dest = new File(packDir, String.format(Locale.ROOT, "%03d.%s", saved + 1, extension == null ? "webp" : extension));
