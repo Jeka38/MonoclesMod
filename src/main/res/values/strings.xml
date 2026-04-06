@@ -1419,6 +1419,7 @@
     <string name="describe_issue">Please describe your issue in detail. Thanks.</string>
     <string name="sticker_saved">Sticker saved</string>
     <string name="sticker_imported">Sticker imported</string>
+    <string name="stickers_imported_count">%1$d stickers imported</string>
     <string name="import_sticker_failed">Failed to import sticker</string>
     <string name="download_sticker">Download stickers?</string>
     <string name="download_sticker_summary">Would you like to download some default sticker packs?</string>

@@ -1518,6 +1518,7 @@
     <string name="describe_issue">Пожалуйста, опишите вашу проблему подробно. Спасибо.</string>
     <string name="sticker_saved">Стикер сохранен</string>
     <string name="sticker_imported">Стикер импортирован</string>
+    <string name="stickers_imported_count">Импортировано стикеров: %1$d</string>
     <string name="import_sticker_failed">Ошибка импортирования стикера</string>
     <string name="download_sticker">Скачать стикеры?</string>
     <string name="download_sticker_summary">Хотите загрузить несколько наборов наклеек по умолчанию?</string>
