@@ -112,6 +112,29 @@
                                 android:text="@string/using_account"
                                 android:textAppearance="@style/TextAppearance.Conversations.Caption"
                                 android:visibility="visible" />
+
+                            <LinearLayout
+                                android:id="@+id/profile"
+                                android:layout_width="match_parent"
+                                android:layout_height="wrap_content"
+                                android:layout_marginTop="16dp"
+                                android:orientation="vertical"
+                                android:visibility="gone">
+
+                                <TextView
+                                    android:layout_width="wrap_content"
+                                    android:layout_height="wrap_content"
+                                    android:text="@string/vCard"
+                                    android:textAppearance="@style/TextAppearance.Conversations.Caption" />
+
+                                <ListView
+                                    android:id="@+id/profile_items"
+                                    android:layout_width="match_parent"
+                                    android:layout_height="wrap_content"
+                                    android:divider="@android:color/transparent"
+                                    android:dividerHeight="4dp"
+                                    android:transcriptMode="disabled" />
+                            </LinearLayout>
                         </LinearLayout>
                     </LinearLayout>
                 </androidx.cardview.widget.CardView>
