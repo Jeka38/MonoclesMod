@@ -2199,10 +2199,11 @@ public class ConversationFragment extends XmppFragment
                 } catch (final IOException primaryError) {
                     downloaded = tlgrmStickerSearch.downloadSearchResultPack(query, dirStickers);
                 }
+                final int importedCount = downloaded;
                 if (activity != null) {
                     activity.runOnUiThread(() -> {
                         loadLocalStickersGrid();
-                        final String message = getResources().getQuantityString(R.plurals.stickers_imported_count, downloaded, downloaded);
+                        final String message = getResources().getQuantityString(R.plurals.stickers_imported_count, importedCount, importedCount);
                         Toast.makeText(activity, message, Toast.LENGTH_SHORT).show();
                     });
                 }
