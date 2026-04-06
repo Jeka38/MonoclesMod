@@ -28,6 +28,7 @@ import java.io.FileOutputStream;
 import java.io.OutputStream;
 import java.io.OutputStreamWriter;
 import java.util.HashSet;
+import java.util.Locale;
 import java.util.Objects;
 import java.util.concurrent.atomic.AtomicBoolean;
 
@@ -69,8 +70,14 @@ public class DownloadDefaultStickers extends Service {
         if (http == null) {
             http = HttpConnectionManager.newBuilder(intent == null ? getResources().getBoolean(R.bool.use_tor)  : intent.getBooleanExtra("tor", getResources().getBoolean(R.bool.use_tor)), intent != null && intent.getBooleanExtra("i2p", getResources().getBoolean(R.bool.use_i2p))).build();
         }
+        final Uri normalized = normalizeSourceUri(intent == null ? null : intent.getData());
+        if (normalized == null) {
+            Log.d(Config.LOGTAG, "DownloadDefaultStickers: no sticker source provided");
+            stopSelf();
+            return START_NOT_STICKY;
+        }
         synchronized(pendingPacks) {
-            pendingPacks.add(intent == null || intent.getData() == null ? Uri.parse("https://stickers.cheogram.com/index.json") : intent.getData());
+            pendingPacks.add(normalized);
         }
         if (RUNNING.compareAndSet(false, true)) {
             new Thread(() -> {
@@ -89,6 +96,34 @@ public class DownloadDefaultStickers extends Service {
         }
         xmppConnectionService.LoadStickers();
         return START_NOT_STICKY;
+    }
+
+    private Uri normalizeSourceUri(final Uri source) {
+        if (source == null) {
+            return null;
+        }
+        final String host = source.getHost() == null ? "" : source.getHost().toLowerCase(Locale.US);
+        final String path = source.getPath() == null ? "" : source.getPath();
+
+        if ("stickers.cheogram.com".equals(host)) {
+            return source;
+        }
+
+        if (("tlgrm.ru".equals(host) || "www.tlgrm.ru".equals(host)) && path.startsWith("/stickers/")) {
+            final String slug = path.substring("/stickers/".length()).split("/")[0];
+            if (!slug.isEmpty()) {
+                return Uri.parse("https://stickers.cheogram.com/telegram/" + slug);
+            }
+        }
+
+        if (("t.me".equals(host) || "telegram.me".equals(host)) && path.startsWith("/addstickers/")) {
+            final String slug = path.substring("/addstickers/".length()).split("/")[0];
+            if (!slug.isEmpty()) {
+                return Uri.parse("https://stickers.cheogram.com/telegram/" + slug);
+            }
+        }
+
+        return null;
     }
 
     private void oneSticker(JSONObject sticker) throws Exception {

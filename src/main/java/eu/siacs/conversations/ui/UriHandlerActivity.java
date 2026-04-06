@@ -167,6 +167,24 @@ public class UriHandlerActivity extends AppCompatActivity {
             return false;
         }
 
+        if ("https".equals(uri.getScheme())
+                && ("tlgrm.ru".equals(uri.getHost()) || "www.tlgrm.ru".equals(uri.getHost()))
+                && uri.getPath() != null
+                && uri.getPath().startsWith("/stickers/")) {
+            stickers = uri;
+            if (hasStoragePermission(1)) downloadStickers();
+            return false;
+        }
+
+        if ("https".equals(uri.getScheme())
+                && ("t.me".equals(uri.getHost()) || "telegram.me".equals(uri.getHost()))
+                && uri.getPath() != null
+                && uri.getPath().startsWith("/addstickers/")) {
+            stickers = uri;
+            if (hasStoragePermission(1)) downloadStickers();
+            return false;
+        }
+
         if (SignupUtils.isSupportTokenRegistry() && xmppUri.isValidJid()) {
             final String preAuth = xmppUri.getParameter(XmppUri.PARAMETER_PRE_AUTH);
             final Jid jid = xmppUri.getJid();

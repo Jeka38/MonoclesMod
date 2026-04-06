@@ -1333,7 +1333,10 @@
     <string name="custom_primary_dark_color">Custom primary dark color</string>
     <string name="custom_accent_color">Custom accent color</string>
     <string name="change_stickers_location">Change stickers location</string>
-    <string name="update_default_stickers">Update default stickers</string>
+    <string name="update_default_stickers">Add stickers from tlgrm.ru</string>
+    <string name="add_stickers_from_tlgrm">Add sticker pack</string>
+    <string name="add_stickers_from_tlgrm_summary">Paste a tlgrm.ru/stickers link or a pack name. Only added stickers will appear in search.</string>
+    <string name="sticker_download_started">Sticker download started</string>
     <string name="clear_blocked_media">Clear blocked media</string>
     <string name="choose_sticker_location">Choose sticker location</string>
     <string name="you_may_sometimes_have_to">You may sometimes have to force quit the app to get changes applied.</string>

@@ -1430,7 +1430,10 @@
     <string name="custom_primary_dark_color">Пользовательский основной темный цвет</string>
     <string name="custom_accent_color">Пользовательский акцентный цвет</string>
     <string name="change_stickers_location">Изменить расположение стикеров</string>
-    <string name="update_default_stickers">Обновить стикеры по умолчанию</string>
+    <string name="update_default_stickers">Добавить стикеры из tlgrm.ru</string>
+    <string name="add_stickers_from_tlgrm">Добавить стикерпак</string>
+    <string name="add_stickers_from_tlgrm_summary">Вставьте ссылку tlgrm.ru/stickers или имя пака. В поиске показываются только заранее добавленные стикеры.</string>
+    <string name="sticker_download_started">Загрузка стикеров запущена</string>
     <string name="clear_blocked_media">Очистить заблокированный носитель</string>
     <string name="monocles_account_introduction">Зарегистрируйтесь сейчас и <b>получите безопасную учетную запись monocles, питаемую регенеративной энергией</b>, чтобы напрямую начать общение.</string>
     <string name="cleanup_conversations">Очистить разговоры</string>

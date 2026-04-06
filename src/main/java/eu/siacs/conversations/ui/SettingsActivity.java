@@ -61,6 +61,7 @@ import java.util.Map;
 import android.provider.MediaStore;
 import android.view.Menu;
 import android.view.MenuItem;
+import android.widget.EditText;
 import android.widget.Toast;
 
 import eu.siacs.conversations.Config;
@@ -1350,11 +1351,35 @@ public class SettingsActivity extends XmppActivity implements OnSharedPreference
     }
 
     private void downloadStickers() {
+        final EditText input = new EditText(this);
+        input.setHint("https://tlgrm.ru/stickers/pack_name");
+        new AlertDialog.Builder(this)
+                .setTitle(R.string.add_stickers_from_tlgrm)
+                .setMessage(R.string.add_stickers_from_tlgrm_summary)
+                .setView(input)
+                .setPositiveButton(R.string.add, (dialog, which) -> startStickerDownloadFromInput(input.getText() == null ? "" : input.getText().toString()))
+                .setNegativeButton(R.string.cancel, null)
+                .show();
+    }
+
+    private void startStickerDownloadFromInput(final String rawInput) {
+        final String input = rawInput == null ? "" : rawInput.trim();
+        if (input.isEmpty()) {
+            displayToast(getString(R.string.import_sticker_failed));
+            return;
+        }
+        Uri source;
+        if (input.startsWith("http://") || input.startsWith("https://")) {
+            source = Uri.parse(input);
+        } else {
+            source = Uri.parse("https://tlgrm.ru/stickers/" + input);
+        }
         Intent intent = new Intent(this, DownloadDefaultStickers.class);
+        intent.setData(source);
         intent.putExtra("tor", xmppConnectionService.useTorToConnect());
         intent.putExtra("i2p", xmppConnectionService.useI2PToConnect());
         ContextCompat.startForegroundService(this, intent);
-        displayToast("Sticker download started");
+        displayToast(getString(R.string.sticker_download_started));
     }
 
     private void displayToast(final String msg) {
