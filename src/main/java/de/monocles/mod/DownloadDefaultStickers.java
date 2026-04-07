@@ -62,7 +62,8 @@ public class DownloadDefaultStickers extends Service {
     private OkHttpClient http = null;
     private final HashSet<Uri> pendingPacks = new HashSet<Uri>();
     public final XmppConnectionService xmppConnectionService = new XmppConnectionService();
-    private static final Pattern TLGRM_IMG_PATTERN = Pattern.compile("<img[^>]+src=\"([^\"]+)\"");
+    private static final Pattern TLGRM_IMG_TAG_PATTERN = Pattern.compile("<img[^>]*>", Pattern.CASE_INSENSITIVE);
+    private static final Pattern TLGRM_IMG_URL_ATTR_PATTERN = Pattern.compile("(data-original|data-src|src)=\"([^\"]+)\"", Pattern.CASE_INSENSITIVE);
     private static final Pattern TLGRM_TITLE_PATTERN = Pattern.compile("<h1[^>]*>\\s*Набор стикеров\\s+([^<]+)</h1>");
 
 
@@ -204,9 +205,9 @@ public class DownloadDefaultStickers extends Service {
         final String defaultPack = sourceUri.getLastPathSegment() == null ? "tlgrm" : sourceUri.getLastPathSegment();
         final String packName = findTlgrmPackName(html, defaultPack);
         final List<String> imgUrls = new ArrayList<>();
-        final Matcher matcher = TLGRM_IMG_PATTERN.matcher(html);
+        final Matcher matcher = TLGRM_IMG_TAG_PATTERN.matcher(html);
         while (matcher.find()) {
-            final String raw = matcher.group(1);
+            final String raw = extractTlgrmImageUrl(matcher.group());
             if (raw == null) continue;
             if (!raw.contains("/stickers/")) continue;
             final String normalized = normalizeTlgrmUrl(raw);
@@ -247,6 +248,23 @@ public class DownloadDefaultStickers extends Service {
             return "https://tlgrm.ru/" + decoded;
         }
         return decoded;
+    }
+
+    private String extractTlgrmImageUrl(final String imgTag) {
+        final Matcher attrMatcher = TLGRM_IMG_URL_ATTR_PATTERN.matcher(Strings.nullToEmpty(imgTag));
+        String fallback = null;
+        while (attrMatcher.find()) {
+            final String attr = Strings.nullToEmpty(attrMatcher.group(1)).toLowerCase();
+            final String value = attrMatcher.group(2);
+            if (value == null || value.trim().isEmpty()) continue;
+            if ("data-original".equals(attr) || "data-src".equals(attr)) {
+                return value;
+            }
+            if ("src".equals(attr) && fallback == null) {
+                fallback = value;
+            }
+        }
+        return fallback;
     }
 
     private File stickerDir() {
