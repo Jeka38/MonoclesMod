@@ -1249,12 +1249,22 @@ public class MessageAdapter extends ArrayAdapter<Message> {
         viewHolder.images.setLayoutParams(layoutParams);
 
         if (isGif && mPlayGifInside) {
-            showImages(true, mediaRuntime, true, isVideo, viewHolder);
+            showImages(true, 0, true, isVideo, viewHolder);
             Log.d(Config.LOGTAG, "Gif Image file");
+            final float gifScaleFactor = type == SENT ? 1.5f : 1.0f;
+            final int maxGifWidth = Math.max(1, metrics.widthPixels - Math.round(96f * metrics.density));
+            final int maxGifHeight = Math.max(1, Math.round(metrics.heightPixels * 0.70f));
+            final int gifScaledW = Math.min(maxGifWidth, Math.round(scaledW * gifScaleFactor));
+            final int gifScaledH = Math.min(maxGifHeight, Math.round(scaledH * gifScaleFactor));
+
+            LinearLayout.LayoutParams gifLayoutParams = new LinearLayout.LayoutParams(gifScaledW, gifScaledH);
+            gifLayoutParams.setMargins(0, (int) (metrics.density * 4), 0, (int) (metrics.density * 4));
+            viewHolder.images.setLayoutParams(gifLayoutParams);
+            viewHolder.image.setLayoutParams(new RelativeLayout.LayoutParams(gifScaledW, gifScaledH));
 
             Glide.with(activity)
                     .load(file)
-                    .override(scaledW, scaledH)
+                    .override(gifScaledW, gifScaledH)
                     .centerInside() // Сохраняем пропорции без кадрирования
                     .into(viewHolder.image);
         } else {
@@ -1271,22 +1281,31 @@ public class MessageAdapter extends ArrayAdapter<Message> {
     }
     private void imagePreviewLayout(int w, int h, ImageView image) {
         final float target = activity.getResources().getDimension(R.dimen.image_preview_width);
+        final int sourceWidth = w > 0 ? w : (int) target;
+        final int sourceHeight = h > 0 ? h : (int) target;
+        final int maxSourceSide = Math.max(sourceWidth, sourceHeight);
         final int scaledW;
         final int scaledH;
-        if (w <= 0 || h <= 0) {
-            scaledW = (int) target;
-            scaledH = (int) target;
+
+        if (maxSourceSide * metrics.density <= target) {
+            scaledW = Math.round(sourceWidth * metrics.density);
+            scaledH = Math.round(sourceHeight * metrics.density);
+        } else if (maxSourceSide <= target) {
+            scaledW = sourceWidth;
+            scaledH = sourceHeight;
         } else {
-            float ratio = (float) w / h;
-            if (ratio >= 1.0f) {
-                scaledW = (int) target;
-                scaledH = (int) (target / ratio);
-            } else {
-                scaledH = (int) target;
-                scaledW = (int) (target * ratio);
-            }
+            final float downscale = maxSourceSide / target;
+            scaledW = Math.round(sourceWidth / downscale);
+            scaledH = Math.round(sourceHeight / downscale);
         }
-        final RelativeLayout.LayoutParams layoutParams = new RelativeLayout.LayoutParams(scaledW, scaledH);
+
+        final int maxWidth = Math.max(1, metrics.widthPixels - Math.round(96f * metrics.density));
+        final int maxHeight = Math.max(1, Math.round(metrics.heightPixels * 0.70f));
+        final float viewportScale = Math.min(1.0f, Math.min(maxWidth / (float) Math.max(1, scaledW), maxHeight / (float) Math.max(1, scaledH)));
+        final int finalScaledW = Math.max(1, Math.round(scaledW * viewportScale));
+        final int finalScaledH = Math.max(1, Math.round(scaledH * viewportScale));
+
+        final RelativeLayout.LayoutParams layoutParams = new RelativeLayout.LayoutParams(finalScaledW, finalScaledH);
         image.setLayoutParams(layoutParams);
         image.setScaleType(ImageView.ScaleType.FIT_CENTER);
     }
