@@ -62,11 +62,12 @@ public class DownloadDefaultStickers extends Service {
     private OkHttpClient http = null;
     private final HashSet<Uri> pendingPacks = new HashSet<Uri>();
     public final XmppConnectionService xmppConnectionService = new XmppConnectionService();
-    private static final Pattern TLGRM_IMG_TAG_PATTERN = Pattern.compile("<img[^>]*>", Pattern.CASE_INSENSITIVE);
-    private static final Pattern TLGRM_IMG_URL_ATTR_PATTERN = Pattern.compile("(data-original|data-src|src)=\"([^\"]+)\"", Pattern.CASE_INSENSITIVE);
+    private static final Pattern TLGRM_MEDIA_TAG_PATTERN = Pattern.compile("<(img|source|video)[^>]*>", Pattern.CASE_INSENSITIVE);
+    private static final Pattern TLGRM_MEDIA_URL_ATTR_PATTERN = Pattern.compile("(data-original|data-src|poster|src)=\"([^\"]+)\"", Pattern.CASE_INSENSITIVE);
     private static final Pattern TLGRM_TITLE_PATTERN = Pattern.compile("<h1[^>]*>\\s*Набор стикеров\\s+([^<]+)</h1>");
     private static final Pattern TLGRM_SHOW_MORE_PATTERN = Pattern.compile("Показать\\s+ещ[её]\\s+(\\d+)\\s+стикер", Pattern.CASE_INSENSITIVE);
-    private static final Pattern TLGRM_NUMBERED_STICKER_PATTERN = Pattern.compile("^(.*?/)(\\d+)\\.(webp|png|jpg|jpeg)$", Pattern.CASE_INSENSITIVE);
+    private static final Pattern TLGRM_NUMBERED_STICKER_PATTERN = Pattern.compile("^(.*?/)(\\d+)\\.(webp|png|jpg|jpeg|gif|webm|mp4|tgs)$", Pattern.CASE_INSENSITIVE);
+    private static final Pattern TLGRM_STICKER_FILE_PATTERN = Pattern.compile("\\.(webp|png|jpg|jpeg|gif|webm|mp4|tgs)(\\?.*)?$", Pattern.CASE_INSENSITIVE);
 
 
     @Override
@@ -207,12 +208,12 @@ public class DownloadDefaultStickers extends Service {
         final String defaultPack = sourceUri.getLastPathSegment() == null ? "tlgrm" : sourceUri.getLastPathSegment();
         final String packName = findTlgrmPackName(html, defaultPack);
         final List<String> imgUrls = new ArrayList<>();
-        final Matcher matcher = TLGRM_IMG_TAG_PATTERN.matcher(html);
+        final Matcher matcher = TLGRM_MEDIA_TAG_PATTERN.matcher(html);
         while (matcher.find()) {
             final String raw = extractTlgrmImageUrl(matcher.group());
             if (raw == null) continue;
-            if (!raw.contains("/stickers/")) continue;
             final String normalized = normalizeTlgrmUrl(raw);
+            if (!isTlgrmStickerAsset(normalized)) continue;
             if (!imgUrls.contains(normalized)) imgUrls.add(normalized);
         }
         final int hiddenStickers = parseTlgrmHiddenStickerCount(html);
@@ -259,13 +260,13 @@ public class DownloadDefaultStickers extends Service {
     }
 
     private String extractTlgrmImageUrl(final String imgTag) {
-        final Matcher attrMatcher = TLGRM_IMG_URL_ATTR_PATTERN.matcher(Strings.nullToEmpty(imgTag));
+        final Matcher attrMatcher = TLGRM_MEDIA_URL_ATTR_PATTERN.matcher(Strings.nullToEmpty(imgTag));
         String fallback = null;
         while (attrMatcher.find()) {
             final String attr = Strings.nullToEmpty(attrMatcher.group(1)).toLowerCase();
             final String value = attrMatcher.group(2);
             if (value == null || value.trim().isEmpty()) continue;
-            if ("data-original".equals(attr) || "data-src".equals(attr)) {
+            if ("data-original".equals(attr) || "data-src".equals(attr) || "poster".equals(attr)) {
                 return value;
             }
             if ("src".equals(attr) && fallback == null) {
@@ -273,6 +274,15 @@ public class DownloadDefaultStickers extends Service {
             }
         }
         return fallback;
+    }
+
+    private boolean isTlgrmStickerAsset(final String url) {
+        if (Strings.isNullOrEmpty(url)) return false;
+        final String lower = url.toLowerCase();
+        if (lower.contains("yandex.ru")) return false;
+        if (lower.contains("logo") || lower.contains("icon")) return false;
+        if (lower.contains("/stickers/")) return true;
+        return TLGRM_STICKER_FILE_PATTERN.matcher(lower).find();
     }
 
     private int parseTlgrmHiddenStickerCount(final String html) {
