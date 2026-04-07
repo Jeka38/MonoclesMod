@@ -1254,16 +1254,14 @@ public class MessageAdapter extends ArrayAdapter<Message> {
 
             Glide.with(activity)
                     .load(file)
-                    .override(scaledW, scaledH)
-                    .centerInside() // Сохраняем пропорции без кадрирования
+                    .fitCenter()
                     .into(viewHolder.image);
         } else {
             showImages(true, mediaRuntime, false, isVideo, viewHolder);
 
             Glide.with(activity)
                     .load(file)
-                    .override(scaledW, scaledH)
-                    .centerInside() // Сохраняем пропорции без кадрирования
+                    .fitCenter()
                     .into(viewHolder.image);
         }
 
