@@ -1014,16 +1014,14 @@ public class SettingsActivity extends XmppActivity implements OnSharedPreference
             updateTheme();
         }
 
-        final Preference downloadDefaultStickers = mSettingsFragment.findPreference("download_default_stickers");
-        if (downloadDefaultStickers != null) {
-            downloadDefaultStickers.setOnPreferenceClickListener(
-                preference -> {
-                    if (hasStoragePermission(REQUEST_DOWNLOAD_STICKERS)) {
-                        downloadStickers();
-                    }
-                    return true;
+        final Preference searchTlgrmStickers = mSettingsFragment.findPreference("search_tlgrm_stickers");
+        if (searchTlgrmStickers != null) {
+            searchTlgrmStickers.setOnPreferenceClickListener(preference -> {
+                if (hasStoragePermission(REQUEST_DOWNLOAD_STICKERS)) {
+                    showTlgrmStickerDialog();
                 }
-            );
+                return true;
+            });
         }
 
 //        final Preference importOwnStickers = mSettingsFragment.findPreference("import_own_stickers");
@@ -1318,7 +1316,7 @@ public class SettingsActivity extends XmppActivity implements OnSharedPreference
                     createCompatibleBackup();
                 }
                 if (requestCode == REQUEST_DOWNLOAD_STICKERS) {
-                    downloadStickers();
+                    showTlgrmStickerDialog();
                 }
             } else {
                 ToastCompat.makeText(
@@ -1349,12 +1347,29 @@ public class SettingsActivity extends XmppActivity implements OnSharedPreference
         builder.create().show();
     }
 
-    private void downloadStickers() {
+    private void showTlgrmStickerDialog() {
+        final android.widget.EditText input = new android.widget.EditText(this);
+        input.setHint(R.string.tlgrm_search_hint);
+        new AlertDialog.Builder(this)
+                .setTitle(R.string.search_tlgrm_stickers)
+                .setView(input)
+                .setPositiveButton(R.string.ok, (dialog, which) -> installTlgrmStickers(input.getText().toString()))
+                .setNegativeButton(R.string.cancel, null)
+                .show();
+    }
+
+    private void installTlgrmStickers(final String queryOrUrl) {
+        final String value = Strings.nullToEmpty(queryOrUrl).trim();
+        if (value.isEmpty()) return;
+        final Uri data = value.contains("://")
+                ? Uri.parse(value)
+                : Uri.parse("https://tlgrm.ru/stickers/" + value);
         Intent intent = new Intent(this, DownloadDefaultStickers.class);
+        intent.setData(data);
         intent.putExtra("tor", xmppConnectionService.useTorToConnect());
         intent.putExtra("i2p", xmppConnectionService.useI2PToConnect());
         ContextCompat.startForegroundService(this, intent);
-        displayToast("Sticker download started");
+        displayToast(getString(R.string.tlgrm_install_started));
     }
 
     private void displayToast(final String msg) {

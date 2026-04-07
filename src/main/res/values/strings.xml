@@ -1334,6 +1334,10 @@
     <string name="custom_accent_color">Custom accent color</string>
     <string name="change_stickers_location">Change stickers location</string>
     <string name="update_default_stickers">Update default stickers</string>
+    <string name="search_tlgrm_stickers">Search stickers on tlgrm.ru</string>
+    <string name="search_tlgrm_stickers_summary">Find sticker packs on tlgrm.ru and install them into local stickers</string>
+    <string name="tlgrm_search_hint">Enter pack name or tlgrm.ru sticker URL</string>
+    <string name="tlgrm_install_started">Sticker installation started</string>
     <string name="clear_blocked_media">Clear blocked media</string>
     <string name="choose_sticker_location">Choose sticker location</string>
     <string name="you_may_sometimes_have_to">You may sometimes have to force quit the app to get changes applied.</string>

@@ -329,7 +329,6 @@ public class ConversationsActivity extends XmppActivity implements OnConversatio
         if (fragment instanceof ConversationsOverviewFragment) {
 
             if (offerToSetupDiallerIntegration()) return;
-            if (offerToDownloadStickers()) return;
             openBatteryOptimizationDialogIfNeeded();
             new showMemoryWarning(this).execute();
             showOutdatedVersionWarning();

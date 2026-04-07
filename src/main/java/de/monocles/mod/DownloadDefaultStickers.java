@@ -19,6 +19,7 @@ import android.util.Log;
 import androidx.core.app.NotificationCompat;
 
 import com.google.common.io.ByteStreams;
+import com.google.common.base.Strings;
 
 import eu.siacs.conversations.services.XmppConnectionService;
 import io.ipfs.cid.Cid;
@@ -27,9 +28,15 @@ import java.io.File;
 import java.io.FileOutputStream;
 import java.io.OutputStream;
 import java.io.OutputStreamWriter;
+import java.net.URLDecoder;
+import java.nio.charset.StandardCharsets;
+import java.util.ArrayList;
 import java.util.HashSet;
+import java.util.List;
 import java.util.Objects;
 import java.util.concurrent.atomic.AtomicBoolean;
+import java.util.regex.Matcher;
+import java.util.regex.Pattern;
 
 import org.json.JSONArray;
 import org.json.JSONObject;
@@ -55,6 +62,8 @@ public class DownloadDefaultStickers extends Service {
     private OkHttpClient http = null;
     private final HashSet<Uri> pendingPacks = new HashSet<Uri>();
     public final XmppConnectionService xmppConnectionService = new XmppConnectionService();
+    private static final Pattern TLGRM_IMG_PATTERN = Pattern.compile("<img[^>]+src=\"([^\"]+)\"");
+    private static final Pattern TLGRM_TITLE_PATTERN = Pattern.compile("<h1[^>]*>\\s*Набор стикеров\\s+([^<]+)</h1>");
 
 
     @Override
@@ -92,7 +101,8 @@ public class DownloadDefaultStickers extends Service {
     }
 
     private void oneSticker(JSONObject sticker) throws Exception {
-        Response r = http.newCall(new Request.Builder().url(sticker.getString("url")).build()).execute();
+        final String stickerUrl = sticker.getString("url");
+        Response r = http.newCall(new Request.Builder().url(stickerUrl).build()).execute();
         File file = null;
         try {
             file = new File(mStickerDir.getAbsolutePath() + "/" + sticker.getString("pack") + "/" + sticker.getString("name") + "." + MimeUtils.guessExtensionFromMimeType(r.headers().get("content-type")));
@@ -107,10 +117,17 @@ public class DownloadDefaultStickers extends Service {
             Log.d(de.monocles.mod.Config.LOGTAG, Objects.requireNonNull(e.getMessage()));
         }
 
-        JSONArray cids = sticker.getJSONArray("cids");
-        for (int i = 0; i < cids.length(); i++) {
-            Cid cid = Cid.decode(cids.getString(i));
-            mDatabaseBackend.saveCid(cid, file, sticker.getString("url"));
+        if (sticker.has("cids")) {
+            JSONArray cids = sticker.getJSONArray("cids");
+            for (int i = 0; i < cids.length(); i++) {
+                Cid cid = Cid.decode(cids.getString(i));
+                mDatabaseBackend.saveCid(cid, file, stickerUrl);
+            }
+        } else if (file != null) {
+            Cid[] cids = xmppConnectionService.getFileBackend().calculateCids(new java.io.FileInputStream(file));
+            for (Cid cid : cids) {
+                mDatabaseBackend.saveCid(cid, file, stickerUrl);
+            }
         }
 
         if (file != null) {
@@ -157,8 +174,7 @@ public class DownloadDefaultStickers extends Service {
                 .setProgress(1, 0, false);
         startForeground(NOTIFICATION_ID, mBuilder.build());
 
-        Response r = http.newCall(new Request.Builder().url(jsonUri.toString()).build()).execute();
-        JSONArray stickers = new JSONArray(r.body().string());
+        final JSONArray stickers = loadStickerSource(jsonUri);
 
         final Progress progress = new Progress(mBuilder, 1, 0);
         for (int i = 0; i < stickers.length(); i++) {
@@ -176,6 +192,66 @@ public class DownloadDefaultStickers extends Service {
             pendingPacks.remove(jsonUri);
         }
         download();
+    }
+
+    private JSONArray loadStickerSource(final Uri sourceUri) throws Exception {
+        if (!"tlgrm.ru".equalsIgnoreCase(sourceUri.getHost())) {
+            Response response = http.newCall(new Request.Builder().url(sourceUri.toString()).build()).execute();
+            return new JSONArray(response.body().string());
+        }
+        return scrapeTlgrmPack(sourceUri);
+    }
+
+    private JSONArray scrapeTlgrmPack(final Uri sourceUri) throws Exception {
+        final String url = sourceUri.toString();
+        final Response response = http.newCall(new Request.Builder().url(url).build()).execute();
+        final String html = response.body().string();
+        final String defaultPack = sourceUri.getLastPathSegment() == null ? "tlgrm" : sourceUri.getLastPathSegment();
+        final String packName = findTlgrmPackName(html, defaultPack);
+        final List<String> imgUrls = new ArrayList<>();
+        final Matcher matcher = TLGRM_IMG_PATTERN.matcher(html);
+        while (matcher.find()) {
+            final String raw = matcher.group(1);
+            if (raw == null) continue;
+            if (!raw.contains("/stickers/")) continue;
+            final String normalized = normalizeTlgrmUrl(raw);
+            if (!imgUrls.contains(normalized)) imgUrls.add(normalized);
+        }
+        JSONArray result = new JSONArray();
+        int idx = 0;
+        for (String imgUrl : imgUrls) {
+            JSONObject item = new JSONObject();
+            item.put("url", imgUrl);
+            item.put("pack", packName);
+            item.put("name", "sticker_" + idx++);
+            item.put("copyright", "Imported from " + sourceUri.getHost());
+            result.put(item);
+        }
+        return result;
+    }
+
+    private String findTlgrmPackName(final String html, final String fallback) {
+        final Matcher matcher = TLGRM_TITLE_PATTERN.matcher(html);
+        if (matcher.find()) {
+            return sanitizeFilename(matcher.group(1));
+        }
+        return sanitizeFilename(fallback);
+    }
+
+    private String sanitizeFilename(final String input) {
+        return Strings.nullToEmpty(input).replaceAll("[\\\\/:*?\"<>|]", "_").trim();
+    }
+
+    private String normalizeTlgrmUrl(final String rawUrl) {
+        String decoded = URLDecoder.decode(rawUrl, StandardCharsets.UTF_8);
+        if (decoded.startsWith("//")) {
+            return "https:" + decoded;
+        } else if (decoded.startsWith("/")) {
+            return "https://tlgrm.ru" + decoded;
+        } else if (!decoded.startsWith("http")) {
+            return "https://tlgrm.ru/" + decoded;
+        }
+        return decoded;
     }
 
     private File stickerDir() {
