@@ -1,11 +1,14 @@
 package eu.siacs.conversations.ui;
 
+import static eu.siacs.conversations.persistance.FileBackend.APP_DIRECTORY;
+
 import android.Manifest;
 import android.app.Activity;
 import android.content.Intent;
 import android.content.pm.PackageManager;
 import android.net.Uri;
 import android.os.Bundle;
+import android.os.Environment;
 import android.preference.PreferenceManager;
 import android.util.Log;
 import android.view.View;
@@ -19,10 +22,12 @@ import androidx.databinding.DataBindingUtil;
 import com.google.common.base.Strings;
 
 import de.monocles.mod.DownloadDefaultStickers;
+import de.monocles.mod.TlgrmStickerSearch;
 
 import org.jetbrains.annotations.NotNull;
 
 import java.io.IOException;
+import java.io.File;
 import java.util.List;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
@@ -56,6 +61,7 @@ public class UriHandlerActivity extends AppCompatActivity {
     private ActivityUriHandlerBinding binding;
     private Call call;
     private Uri stickers;
+    private String tgStickerPackSet;
 
     public static void scan(final Activity activity) {
         scan(activity, false);
@@ -125,7 +131,11 @@ public class UriHandlerActivity extends AppCompatActivity {
         super.onRequestPermissionsResult(requestCode, permissions, grantResults);
         if (grantResults.length > 0) {
             if (grantResults[0] == PackageManager.PERMISSION_GRANTED) {
-                downloadStickers();
+                if (tgStickerPackSet != null) {
+                    downloadTlgrmStickerPack(tgStickerPackSet);
+                } else {
+                    downloadStickers();
+                }
             }
         }
         finish();
@@ -139,6 +149,27 @@ public class UriHandlerActivity extends AppCompatActivity {
         ContextCompat.startForegroundService(this, intent);
         Toast.makeText(this, "Sticker download started", Toast.LENGTH_SHORT).show();
         finish();
+    }
+
+    private void downloadTlgrmStickerPack(final String packSlug) {
+        final File stickerDir = new File(Environment.getExternalStoragePublicDirectory(Environment.DIRECTORY_DOCUMENTS)
+                + File.separator + APP_DIRECTORY + File.separator + "Stickers");
+        if (!stickerDir.exists()) {
+            //noinspection ResultOfMethodCallIgnored
+            stickerDir.mkdirs();
+        }
+        new Thread(() -> {
+            try {
+                final TlgrmStickerSearch search = new TlgrmStickerSearch();
+                final int downloaded = search.downloadPack(packSlug, stickerDir);
+                runOnUiThread(() -> Toast.makeText(this, getResources().getQuantityString(R.plurals.stickers_imported_count, downloaded, downloaded), Toast.LENGTH_SHORT).show());
+            } catch (final IOException e) {
+                Log.d(Config.LOGTAG, "Failed to download tg addstickers pack", e);
+                runOnUiThread(() -> Toast.makeText(this, R.string.import_sticker_failed, Toast.LENGTH_SHORT).show());
+            } finally {
+                runOnUiThread(this::finish);
+            }
+        }).start();
     }
 
     private boolean handleUri(final Uri uri) {
@@ -164,6 +195,16 @@ public class UriHandlerActivity extends AppCompatActivity {
             q.parseQuery(uri.getFragment());
             stickers = Uri.parse("https://stickers.cheogram.com/signal/" + q.getValue("pack_id") + "," + q.getValue("pack_key"));
             if (hasStoragePermission(1)) downloadStickers();
+            return false;
+        }
+
+        if ("tg".equalsIgnoreCase(uri.getScheme())
+                && "addstickers".equalsIgnoreCase(uri.getHost())
+                && uri.getQueryParameter("set") != null) {
+            tgStickerPackSet = uri.getQueryParameter("set");
+            if (hasStoragePermission(1)) {
+                downloadTlgrmStickerPack(tgStickerPackSet);
+            }
             return false;
         }
 
