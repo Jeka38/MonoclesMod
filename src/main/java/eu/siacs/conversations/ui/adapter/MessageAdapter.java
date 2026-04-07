@@ -1249,7 +1249,7 @@ public class MessageAdapter extends ArrayAdapter<Message> {
         viewHolder.images.setLayoutParams(layoutParams);
 
         if (isGif && mPlayGifInside) {
-            showImages(true, mediaRuntime, true, isVideo, viewHolder);
+            showImages(true, 0, true, isVideo, viewHolder);
             Log.d(Config.LOGTAG, "Gif Image file");
             final float gifScaleFactor = type == SENT ? 1.5f : 1.0f;
             final int maxGifWidth = Math.max(1, metrics.widthPixels - Math.round(96f * metrics.density));
