@@ -110,7 +110,14 @@ public class DownloadDefaultStickers extends Service {
         Response r = http.newCall(new Request.Builder().url(stickerUrl).build()).execute();
         File file = null;
         try {
-            file = new File(mStickerDir.getAbsolutePath() + "/" + sticker.getString("pack") + "/" + sticker.getString("name") + "." + MimeUtils.guessExtensionFromMimeType(r.headers().get("content-type")));
+            String ext = MimeUtils.guessExtensionFromMimeType(r.headers().get("content-type"));
+            if (Strings.isNullOrEmpty(ext)) {
+                ext = extensionFromUrl(stickerUrl);
+            }
+            if (Strings.isNullOrEmpty(ext)) {
+                ext = "bin";
+            }
+            file = new File(mStickerDir.getAbsolutePath() + "/" + sticker.getString("pack") + "/" + sticker.getString("name") + "." + ext);
             Objects.requireNonNull(file.getParentFile()).mkdirs();
             OutputStream os = new FileOutputStream(file);
             if (r.body() != null) {
@@ -327,6 +334,15 @@ public class DownloadDefaultStickers extends Service {
             expanded.add(prefix + i + "." + ext);
         }
         return expanded;
+    }
+
+    private String extensionFromUrl(final String url) {
+        if (Strings.isNullOrEmpty(url)) return null;
+        final String path = Uri.parse(url).getPath();
+        if (Strings.isNullOrEmpty(path)) return null;
+        final int dot = path.lastIndexOf('.');
+        if (dot < 0 || dot + 1 >= path.length()) return null;
+        return path.substring(dot + 1).toLowerCase();
     }
 
     private File stickerDir() {
