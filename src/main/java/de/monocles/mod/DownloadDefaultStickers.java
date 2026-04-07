@@ -5,6 +5,9 @@ import static eu.siacs.conversations.persistance.FileBackend.APP_DIRECTORY;
 import android.app.Notification;
 import android.app.NotificationManager;
 import android.app.Service;
+import android.graphics.Bitmap;
+import android.graphics.BitmapFactory;
+import android.graphics.Color;
 import android.content.Context;
 import android.content.SharedPreferences;
 import android.content.Intent;
@@ -20,6 +23,7 @@ import androidx.core.app.NotificationCompat;
 
 import com.google.common.io.ByteStreams;
 import com.google.common.base.Strings;
+import com.google.common.io.Files;
 
 import eu.siacs.conversations.services.XmppConnectionService;
 import io.ipfs.cid.Cid;
@@ -30,6 +34,7 @@ import java.io.OutputStream;
 import java.io.OutputStreamWriter;
 import java.net.URLDecoder;
 import java.nio.charset.StandardCharsets;
+import java.util.ArrayDeque;
 import java.util.ArrayList;
 import java.util.HashSet;
 import java.util.List;
@@ -124,6 +129,7 @@ public class DownloadDefaultStickers extends Service {
                 ByteStreams.copy(r.body().byteStream(), os);
             }
             os.close();
+            file = stripSolidBackgroundIfNeeded(file);
         } catch (final Exception e) {
             file = null;
             Log.d(de.monocles.mod.Config.LOGTAG, Objects.requireNonNull(e.getMessage()));
@@ -343,6 +349,111 @@ public class DownloadDefaultStickers extends Service {
         final int dot = path.lastIndexOf('.');
         if (dot < 0 || dot + 1 >= path.length()) return null;
         return path.substring(dot + 1).toLowerCase();
+    }
+
+    private File stripSolidBackgroundIfNeeded(final File input) {
+        try {
+            final String name = input.getName().toLowerCase();
+            if (!(name.endsWith(".png") || name.endsWith(".webp") || name.endsWith(".jpg") || name.endsWith(".jpeg"))) {
+                return input;
+            }
+            final Bitmap bitmap = BitmapFactory.decodeFile(input.getAbsolutePath());
+            if (bitmap == null) return input;
+            final Bitmap mutable = bitmap.copy(Bitmap.Config.ARGB_8888, true);
+            bitmap.recycle();
+            if (mutable == null) return input;
+
+            final int w = mutable.getWidth();
+            final int h = mutable.getHeight();
+            if (w < 8 || h < 8) {
+                mutable.recycle();
+                return input;
+            }
+
+            final int c1 = mutable.getPixel(0, 0);
+            final int c2 = mutable.getPixel(w - 1, 0);
+            final int c3 = mutable.getPixel(0, h - 1);
+            final int c4 = mutable.getPixel(w - 1, h - 1);
+            final int bg = averageColor(c1, c2, c3, c4);
+            if (Color.alpha(bg) < 240) {
+                mutable.recycle();
+                return input;
+            }
+            if (!cornersSimilar(bg, c1, c2, c3, c4)) {
+                mutable.recycle();
+                return input;
+            }
+
+            final boolean[] visited = new boolean[w * h];
+            final ArrayDeque<Integer> q = new ArrayDeque<>();
+            for (int x = 0; x < w; x++) {
+                q.add(x);
+                q.add((h - 1) * w + x);
+            }
+            for (int y = 0; y < h; y++) {
+                q.add(y * w);
+                q.add(y * w + (w - 1));
+            }
+
+            int changed = 0;
+            while (!q.isEmpty()) {
+                int p = q.poll();
+                if (p < 0 || p >= visited.length || visited[p]) continue;
+                visited[p] = true;
+                int x = p % w;
+                int y = p / w;
+                int color = mutable.getPixel(x, y);
+                if (!isNearColor(bg, color, 22)) continue;
+                mutable.setPixel(x, y, Color.TRANSPARENT);
+                changed++;
+                if (x > 0) q.add(p - 1);
+                if (x + 1 < w) q.add(p + 1);
+                if (y > 0) q.add(p - w);
+                if (y + 1 < h) q.add(p + w);
+            }
+            if (changed < (w * h) / 100) {
+                mutable.recycle();
+                return input;
+            }
+
+            final File output = new File(input.getParentFile(), Files.getNameWithoutExtension(input.getName()) + ".png");
+            try (FileOutputStream fos = new FileOutputStream(output)) {
+                mutable.compress(Bitmap.CompressFormat.PNG, 100, fos);
+            }
+            mutable.recycle();
+            if (!output.getAbsolutePath().equals(input.getAbsolutePath())) {
+                //noinspection ResultOfMethodCallIgnored
+                input.delete();
+            }
+            return output;
+        } catch (final Exception e) {
+            return input;
+        }
+    }
+
+    private int averageColor(final int... colors) {
+        int r = 0, g = 0, b = 0, a = 0;
+        for (int c : colors) {
+            r += Color.red(c);
+            g += Color.green(c);
+            b += Color.blue(c);
+            a += Color.alpha(c);
+        }
+        final int n = Math.max(1, colors.length);
+        return Color.argb(a / n, r / n, g / n, b / n);
+    }
+
+    private boolean cornersSimilar(final int bg, final int... colors) {
+        for (int c : colors) {
+            if (!isNearColor(bg, c, 20)) return false;
+        }
+        return true;
+    }
+
+    private boolean isNearColor(final int c1, final int c2, final int threshold) {
+        return Math.abs(Color.red(c1) - Color.red(c2)) <= threshold
+                && Math.abs(Color.green(c1) - Color.green(c2)) <= threshold
+                && Math.abs(Color.blue(c1) - Color.blue(c2)) <= threshold;
     }
 
     private File stickerDir() {
