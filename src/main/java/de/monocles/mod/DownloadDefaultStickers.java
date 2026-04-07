@@ -65,6 +65,8 @@ public class DownloadDefaultStickers extends Service {
     private static final Pattern TLGRM_IMG_TAG_PATTERN = Pattern.compile("<img[^>]*>", Pattern.CASE_INSENSITIVE);
     private static final Pattern TLGRM_IMG_URL_ATTR_PATTERN = Pattern.compile("(data-original|data-src|src)=\"([^\"]+)\"", Pattern.CASE_INSENSITIVE);
     private static final Pattern TLGRM_TITLE_PATTERN = Pattern.compile("<h1[^>]*>\\s*Набор стикеров\\s+([^<]+)</h1>");
+    private static final Pattern TLGRM_SHOW_MORE_PATTERN = Pattern.compile("Показать\\s+ещ[её]\\s+(\\d+)\\s+стикер", Pattern.CASE_INSENSITIVE);
+    private static final Pattern TLGRM_NUMBERED_STICKER_PATTERN = Pattern.compile("^(.*?/)(\\d+)\\.(webp|png|jpg|jpeg)$", Pattern.CASE_INSENSITIVE);
 
 
     @Override
@@ -213,6 +215,12 @@ public class DownloadDefaultStickers extends Service {
             final String normalized = normalizeTlgrmUrl(raw);
             if (!imgUrls.contains(normalized)) imgUrls.add(normalized);
         }
+        final int hiddenStickers = parseTlgrmHiddenStickerCount(html);
+        if (hiddenStickers > 0) {
+            final List<String> expanded = expandTlgrmNumberedUrls(imgUrls, hiddenStickers);
+            imgUrls.clear();
+            imgUrls.addAll(expanded);
+        }
         JSONArray result = new JSONArray();
         int idx = 0;
         for (String imgUrl : imgUrls) {
@@ -265,6 +273,38 @@ public class DownloadDefaultStickers extends Service {
             }
         }
         return fallback;
+    }
+
+    private int parseTlgrmHiddenStickerCount(final String html) {
+        final Matcher matcher = TLGRM_SHOW_MORE_PATTERN.matcher(Strings.nullToEmpty(html));
+        if (!matcher.find()) return 0;
+        try {
+            return Integer.parseInt(matcher.group(1));
+        } catch (final Exception e) {
+            return 0;
+        }
+    }
+
+    private List<String> expandTlgrmNumberedUrls(final List<String> currentUrls, final int hiddenStickers) {
+        if (currentUrls.isEmpty()) return currentUrls;
+        String sample = null;
+        for (String url : currentUrls) {
+            if (TLGRM_NUMBERED_STICKER_PATTERN.matcher(url).matches()) {
+                sample = url;
+                break;
+            }
+        }
+        if (sample == null) return currentUrls;
+        final Matcher sampleMatcher = TLGRM_NUMBERED_STICKER_PATTERN.matcher(sample);
+        if (!sampleMatcher.matches()) return currentUrls;
+        final String prefix = sampleMatcher.group(1);
+        final String ext = sampleMatcher.group(3);
+        final int total = currentUrls.size() + hiddenStickers;
+        final List<String> expanded = new ArrayList<>(total);
+        for (int i = 1; i <= total; i++) {
+            expanded.add(prefix + i + "." + ext);
+        }
+        return expanded;
     }
 
     private File stickerDir() {
