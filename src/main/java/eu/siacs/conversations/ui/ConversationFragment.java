@@ -850,6 +850,7 @@ public class ConversationFragment extends XmppFragment
             binding.gifsview.setVisibility(GONE);
             if (activity != null && activity.xmppConnectionService != null) {
                 activity.xmppConnectionService.rescanStickers(true);
+                scheduleStickerPickerRefresh(5);
             }
             backPressedLeaveEmojiPicker.setEnabled(true);
             binding.textinput.requestFocus();
@@ -2210,6 +2211,19 @@ public class ConversationFragment extends XmppFragment
             if (adapter != null) {
                 adapter.search(q);
             }
+        }, 400L);
+    }
+
+    private void scheduleStickerPickerRefresh(final int attemptsLeft) {
+        if (attemptsLeft <= 0 || binding == null || binding.stickersview == null) return;
+        binding.stickersview.postDelayed(() -> {
+            setupEmojiSearch();
+            final EmojiSearch.EmojiSearchAdapter adapter = (EmojiSearch.EmojiSearchAdapter) binding.stickersview.getAdapter();
+            if (adapter != null) {
+                adapter.search("");
+                if (adapter.getCount() > 0) return;
+            }
+            scheduleStickerPickerRefresh(attemptsLeft - 1);
         }, 400L);
     }
 
