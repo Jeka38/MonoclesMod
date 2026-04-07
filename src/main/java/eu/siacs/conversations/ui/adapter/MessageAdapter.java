@@ -1251,10 +1251,19 @@ public class MessageAdapter extends ArrayAdapter<Message> {
         if (isGif && mPlayGifInside) {
             showImages(true, mediaRuntime, true, isVideo, viewHolder);
             Log.d(Config.LOGTAG, "Gif Image file");
+            final int maxGifWidth = Math.max(1, metrics.widthPixels - Math.round(96f * metrics.density));
+            final int maxGifHeight = Math.max(1, Math.round(metrics.heightPixels * 0.70f));
+            final int gifScaledW = Math.min(maxGifWidth, Math.round(scaledW * 1.1f));
+            final int gifScaledH = Math.min(maxGifHeight, Math.round(scaledH * 1.1f));
+
+            LinearLayout.LayoutParams gifLayoutParams = new LinearLayout.LayoutParams(gifScaledW, gifScaledH);
+            gifLayoutParams.setMargins(0, (int) (metrics.density * 4), 0, (int) (metrics.density * 4));
+            viewHolder.images.setLayoutParams(gifLayoutParams);
+            viewHolder.image.setLayoutParams(new RelativeLayout.LayoutParams(gifScaledW, gifScaledH));
 
             Glide.with(activity)
                     .load(file)
-                    .override(scaledW, scaledH)
+                    .override(gifScaledW, gifScaledH)
                     .centerInside() // Сохраняем пропорции без кадрирования
                     .into(viewHolder.image);
         } else {
