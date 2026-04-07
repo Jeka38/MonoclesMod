@@ -560,6 +560,11 @@
             android:theme="@style/Base.Theme.MaterialComponents" />
         <activity android:name=".ui.MemorizingActivity" />
         <activity
+            android:name=".ui.StickerSearchActivity"
+            android:label="@string/stickers"
+            android:exported="false"
+            android:launchMode="singleTask" />
+        <activity
             android:name=".ui.MediaBrowserActivity"
             android:label="@string/media_browser"
             android:exported="false"

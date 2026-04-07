@@ -170,7 +170,6 @@ import de.monocles.mod.BobTransfer;
 import de.monocles.mod.GifsAdapter;
 import de.monocles.mod.KeyboardHeightProvider;
 import de.monocles.mod.StickerAdapter;
-import de.monocles.mod.TlgrmStickerSearch;
 import de.monocles.mod.WebxdcPage;
 import de.monocles.mod.WebxdcStore;
 import eu.siacs.conversations.Config;
@@ -338,8 +337,6 @@ public class ConversationFragment extends XmppFragment
     private String[] filesPaths;
     private String[] filesNames;
     File dirGifs = new File(Environment.getExternalStoragePublicDirectory(Environment.DIRECTORY_DOCUMENTS) + File.separator + APP_DIRECTORY + File.separator + "GIFs");
-    private final Handler stickerSearchDebounce = new Handler(Looper.getMainLooper());
-    private TlgrmStickerSearch tlgrmStickerSearch;
 
 
     protected OnClickListener clickToVerify = new OnClickListener() {
@@ -2116,7 +2113,6 @@ public class ConversationFragment extends XmppFragment
 
 
     public void LoadStickers() {
-        tlgrmStickerSearch = new TlgrmStickerSearch();
         if (!hasStoragePermission(activity)) return;
         if (!dirStickers.exists()) {
             dirStickers.mkdir();
@@ -2128,17 +2124,11 @@ public class ConversationFragment extends XmppFragment
             attachFileToConversation(conversation, Uri.fromFile(file), MimeUtils.guessMimeTypeFromExtension(MimeUtils.extractRelevantExtension(file.getName())));
         });
 
-        binding.stickersSearch.setOnEditorActionListener((v, actionId, event) -> {
-            if (actionId == EditorInfo.IME_ACTION_SEARCH || actionId == EditorInfo.IME_ACTION_DONE) {
-                final String pack = binding.stickersSearch.getText() == null ? "" : binding.stickersSearch.getText().toString();
-                if (pack.trim().isEmpty()) {
-                    return true;
-                }
-                stickerSearchDebounce.removeCallbacksAndMessages(null);
-                stickerSearchDebounce.postDelayed(() -> downloadStickerPack(pack), 200L);
-                return true;
-            }
-            return false;
+        binding.stickersSearch.setFocusable(false);
+        binding.stickersSearch.setOnClickListener(v -> {
+            if (activity == null) return;
+            final Intent intent = new Intent(activity, StickerSearchActivity.class);
+            startActivity(intent);
         });
     }
 
@@ -2187,39 +2177,6 @@ public class ConversationFragment extends XmppFragment
                     return true;
                 }
             });
-    }
-
-    private void downloadStickerPack(final String query) {
-        if (activity == null || tlgrmStickerSearch == null) return;
-        new Thread(() -> {
-            try {
-                int downloaded;
-                if (tlgrmStickerSearch.isDirectStickerUrl(query)) {
-                    downloaded = tlgrmStickerSearch.downloadDirectSticker(query, dirStickers);
-                } else if (tlgrmStickerSearch.isTlgrmUrl(query)) {
-                    downloaded = tlgrmStickerSearch.downloadFromTlgrmPageUrl(query, dirStickers);
-                } else {
-                    try {
-                        downloaded = tlgrmStickerSearch.downloadPack(query, dirStickers);
-                    } catch (final IOException primaryError) {
-                        downloaded = tlgrmStickerSearch.downloadSearchResultPack(query, dirStickers);
-                    }
-                }
-                final int importedCount = downloaded;
-                if (activity != null) {
-                    activity.runOnUiThread(() -> {
-                        loadLocalStickersGrid();
-                        final String message = getResources().getQuantityString(R.plurals.stickers_imported_count, importedCount, importedCount);
-                        Toast.makeText(activity, message, Toast.LENGTH_SHORT).show();
-                    });
-                }
-            } catch (final IOException e) {
-                Log.d(Config.LOGTAG, "Failed to download tlgrm sticker pack/search", e);
-                if (activity != null) {
-                    activity.runOnUiThread(() -> Toast.makeText(activity, R.string.import_sticker_failed, Toast.LENGTH_SHORT).show());
-                }
-            }
-        }).start();
     }
 
     private void loadLocalStickersGrid() {
@@ -2275,7 +2232,6 @@ public class ConversationFragment extends XmppFragment
     public void onDestroyView() {
         super.onDestroyView();
         Log.d(Config.LOGTAG, "ConversationFragment.onDestroyView()");
-        stickerSearchDebounce.removeCallbacksAndMessages(null);
         if (activity != null &&
                 activity.getWindow() != null &&
                 activity.getWindow().getDecorView() != null) {
