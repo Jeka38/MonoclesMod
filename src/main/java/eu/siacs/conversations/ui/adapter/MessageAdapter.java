@@ -1272,8 +1272,9 @@ public class MessageAdapter extends ArrayAdapter<Message> {
     private void imagePreviewLayout(int w, int h, ImageView image) {
         final float defaultMaxSide = activity.getResources().getDimension(R.dimen.image_preview_width);
         final float minSide = 64f * metrics.density;
+        final float preferredLongSide = Math.min(defaultMaxSide, 180f * metrics.density);
         final int availableWidth = Math.max((int) minSide, metrics.widthPixels - Math.round(96f * metrics.density));
-        final int availableHeight = Math.max((int) minSide, Math.round(metrics.heightPixels * 0.55f));
+        final int availableHeight = Math.max((int) minSide, Math.round(metrics.heightPixels * 0.70f));
         final int maxSide = Math.max((int) minSide, Math.min((int) defaultMaxSide, availableWidth));
 
         final int sourceWidth = w > 0 ? w : maxSide;
@@ -1281,7 +1282,10 @@ public class MessageAdapter extends ArrayAdapter<Message> {
 
         final float widthScale = maxSide / (float) sourceWidth;
         final float heightScale = availableHeight / (float) sourceHeight;
-        final float scale = Math.min(1.0f, Math.min(widthScale, heightScale));
+        final float maxFitScale = Math.min(widthScale, heightScale);
+        final float sourceLongSide = Math.max(sourceWidth, sourceHeight);
+        final float minReadableScale = preferredLongSide / sourceLongSide;
+        final float scale = Math.min(maxFitScale, Math.max(minReadableScale, Math.min(1.0f, maxFitScale)));
 
         final int scaledW = Math.max((int) minSide, Math.round(sourceWidth * scale));
         final int scaledH = Math.max((int) minSide, Math.round(sourceHeight * scale));
