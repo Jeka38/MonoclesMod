@@ -1280,23 +1280,32 @@ public class MessageAdapter extends ArrayAdapter<Message> {
         viewHolder.image.setOnClickListener(v -> openDownloadable(message));
     }
     private void imagePreviewLayout(int w, int h, ImageView image) {
-        final float defaultMaxSide = activity.getResources().getDimension(R.dimen.image_preview_width);
-        final float minSide = 1f;
-        final int availableWidth = Math.max((int) minSide, metrics.widthPixels - Math.round(96f * metrics.density));
-        final int availableHeight = Math.max((int) minSide, Math.round(metrics.heightPixels * 0.70f));
-        final int maxSide = Math.max((int) minSide, Math.min((int) defaultMaxSide, availableWidth));
+        final float target = activity.getResources().getDimension(R.dimen.image_preview_width);
+        final int sourceWidth = w > 0 ? w : (int) target;
+        final int sourceHeight = h > 0 ? h : (int) target;
+        final int maxSourceSide = Math.max(sourceWidth, sourceHeight);
+        final int scaledW;
+        final int scaledH;
 
-        final int sourceWidth = w > 0 ? w : maxSide;
-        final int sourceHeight = h > 0 ? h : maxSide;
+        if (maxSourceSide * metrics.density <= target) {
+            scaledW = Math.round(sourceWidth * metrics.density);
+            scaledH = Math.round(sourceHeight * metrics.density);
+        } else if (maxSourceSide <= target) {
+            scaledW = sourceWidth;
+            scaledH = sourceHeight;
+        } else {
+            final float downscale = maxSourceSide / target;
+            scaledW = Math.round(sourceWidth / downscale);
+            scaledH = Math.round(sourceHeight / downscale);
+        }
 
-        final float widthScale = maxSide / (float) sourceWidth;
-        final float heightScale = availableHeight / (float) sourceHeight;
-        final float scale = Math.min(1.0f, Math.min(widthScale, heightScale));
+        final int maxWidth = Math.max(1, metrics.widthPixels - Math.round(96f * metrics.density));
+        final int maxHeight = Math.max(1, Math.round(metrics.heightPixels * 0.70f));
+        final float viewportScale = Math.min(1.0f, Math.min(maxWidth / (float) Math.max(1, scaledW), maxHeight / (float) Math.max(1, scaledH)));
+        final int finalScaledW = Math.max(1, Math.round(scaledW * viewportScale));
+        final int finalScaledH = Math.max(1, Math.round(scaledH * viewportScale));
 
-        final int scaledW = Math.max(1, Math.round(sourceWidth * scale));
-        final int scaledH = Math.max(1, Math.round(sourceHeight * scale));
-
-        final RelativeLayout.LayoutParams layoutParams = new RelativeLayout.LayoutParams(scaledW, scaledH);
+        final RelativeLayout.LayoutParams layoutParams = new RelativeLayout.LayoutParams(finalScaledW, finalScaledH);
         image.setLayoutParams(layoutParams);
         image.setScaleType(ImageView.ScaleType.FIT_CENTER);
     }
