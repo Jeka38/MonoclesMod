@@ -7003,7 +7003,7 @@ public class XmppConnectionService extends Service {
                                 saveCid(cid, file);
                             }
                             if (file.length() < 129000) {
-                                emojiSearch.addEmoji(new EmojiSearch.CustomEmoji(filename, cids[0].toString(), icon, file.getParentFile().getName()));
+                                emojiSearch.addEmoji(new EmojiSearch.CustomEmoji(filename, file.getAbsolutePath(), icon, file.getParentFile().getName()));
                             }
                         }
                     } catch (final Exception e) {

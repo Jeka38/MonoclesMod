@@ -123,11 +123,6 @@ public class DownloadDefaultStickers extends Service {
                 Cid cid = Cid.decode(cids.getString(i));
                 mDatabaseBackend.saveCid(cid, file, stickerUrl);
             }
-        } else if (file != null) {
-            Cid[] cids = xmppConnectionService.getFileBackend().calculateCids(new java.io.FileInputStream(file));
-            for (Cid cid : cids) {
-                mDatabaseBackend.saveCid(cid, file, stickerUrl);
-            }
         }
 
         if (file != null) {
