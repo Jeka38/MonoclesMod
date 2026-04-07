@@ -52,12 +52,16 @@ import java.io.InputStream;
 import java.io.OutputStream;
 import java.net.URI;
 import java.net.URISyntaxException;
+import java.net.URLEncoder;
+import java.nio.charset.StandardCharsets;
 import java.security.KeyStoreException;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collections;
 import java.util.List;
 import java.util.Map;
+import java.util.regex.Matcher;
+import java.util.regex.Pattern;
 import android.provider.MediaStore;
 import android.view.Menu;
 import android.view.MenuItem;
@@ -79,9 +83,14 @@ import eu.siacs.conversations.utils.TimeFrameUtils;
 import eu.siacs.conversations.xmpp.Jid;
 import me.drakeet.support.toast.ToastCompat;
 import eu.siacs.conversations.services.UnifiedPushDistributor;
+import eu.siacs.conversations.http.HttpConnectionManager;
+import okhttp3.OkHttpClient;
+import okhttp3.Request;
+import okhttp3.Response;
 import p32929.easypasscodelock.Utils.EasyLock;
 
 public class SettingsActivity extends XmppActivity implements OnSharedPreferenceChangeListener {
+    private static final Pattern TLGRM_PACK_LINK_PATTERN = Pattern.compile("<a[^>]+href=\"(/stickers/[^\"]+)\"[^>]*>(.*?)</a>", Pattern.CASE_INSENSITIVE | Pattern.DOTALL);
 
     public static final String AWAY_WHEN_SCREEN_IS_OFF = "away_when_screen_off";
     public static final String TREAT_VIBRATE_AS_SILENT = "treat_vibrate_as_silent";
@@ -1361,6 +1370,10 @@ public class SettingsActivity extends XmppActivity implements OnSharedPreference
     private void installTlgrmStickers(final String queryOrUrl) {
         final String value = Strings.nullToEmpty(queryOrUrl).trim();
         if (value.isEmpty()) return;
+        if (!value.contains("://")) {
+            searchTlgrmAndInstall(value);
+            return;
+        }
         final Uri data = value.contains("://")
                 ? Uri.parse(value)
                 : Uri.parse("https://tlgrm.ru/stickers/" + value);
@@ -1370,6 +1383,79 @@ public class SettingsActivity extends XmppActivity implements OnSharedPreference
         intent.putExtra("i2p", xmppConnectionService.useI2PToConnect());
         ContextCompat.startForegroundService(this, intent);
         displayToast(getString(R.string.tlgrm_install_started));
+    }
+
+    private void searchTlgrmAndInstall(final String query) {
+        new Thread(() -> {
+            final List<TlgrmPack> packs = searchTlgrmPacks(query);
+            runOnUiThread(() -> {
+                if (packs.isEmpty()) {
+                    displayToast(getString(R.string.no_results_found));
+                    return;
+                }
+                final CharSequence[] items = new CharSequence[packs.size()];
+                for (int i = 0; i < packs.size(); i++) {
+                    items[i] = packs.get(i).title;
+                }
+                new AlertDialog.Builder(this)
+                        .setTitle(R.string.search_tlgrm_stickers)
+                        .setItems(items, (dialog, which) -> installTlgrmStickers(packs.get(which).url))
+                        .setNegativeButton(R.string.cancel, null)
+                        .show();
+            });
+        }).start();
+    }
+
+    private List<TlgrmPack> searchTlgrmPacks(final String query) {
+        final ArrayList<TlgrmPack> result = new ArrayList<>();
+        final String normalizedQuery = Strings.nullToEmpty(query).trim().toLowerCase();
+        final OkHttpClient client = HttpConnectionManager.newBuilder(
+                xmppConnectionService.useTorToConnect(),
+                xmppConnectionService.useI2PToConnect()
+        ).build();
+        final List<String> urls = List.of(
+                "https://tlgrm.ru/stickers?query=" + URLEncoder.encode(query, StandardCharsets.UTF_8),
+                "https://tlgrm.ru/stickers"
+        );
+        for (final String url : urls) {
+            try {
+                Response response = client.newCall(new Request.Builder().url(url).build()).execute();
+                if (response.body() == null) continue;
+                final String html = response.body().string();
+                final Matcher matcher = TLGRM_PACK_LINK_PATTERN.matcher(html);
+                while (matcher.find()) {
+                    final String path = matcher.group(1);
+                    final String label = matcher.group(2).replaceAll("<[^>]+>", "").trim();
+                    if (path == null || path.equals("/stickers")) continue;
+                    final String fullUrl = "https://tlgrm.ru" + path;
+                    final String key = (label + " " + path).toLowerCase();
+                    if (!normalizedQuery.isEmpty() && !key.contains(normalizedQuery)) continue;
+                    boolean exists = false;
+                    for (TlgrmPack pack : result) {
+                        if (pack.url.equals(fullUrl)) {
+                            exists = true;
+                            break;
+                        }
+                    }
+                    if (!exists) {
+                        result.add(new TlgrmPack(label.isEmpty() ? path.substring(path.lastIndexOf('/') + 1) : label, fullUrl));
+                    }
+                    if (result.size() >= 30) return result;
+                }
+            } catch (Exception ignored) {
+            }
+        }
+        return result;
+    }
+
+    private static class TlgrmPack {
+        private final String title;
+        private final String url;
+
+        private TlgrmPack(final String title, final String url) {
+            this.title = title;
+            this.url = url;
+        }
     }
 
     private void displayToast(final String msg) {
