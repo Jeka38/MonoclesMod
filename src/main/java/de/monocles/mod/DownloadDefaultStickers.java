@@ -64,6 +64,7 @@ public class DownloadDefaultStickers extends Service {
     public final XmppConnectionService xmppConnectionService = new XmppConnectionService();
     private static final Pattern TLGRM_MEDIA_TAG_PATTERN = Pattern.compile("<(img|source|video)[^>]*>", Pattern.CASE_INSENSITIVE);
     private static final Pattern TLGRM_MEDIA_URL_ATTR_PATTERN = Pattern.compile("(data-original|data-src|poster|src)=\"([^\"]+)\"", Pattern.CASE_INSENSITIVE);
+    private static final Pattern TLGRM_ANCHOR_HREF_PATTERN = Pattern.compile("<a[^>]+href=\"([^\"]+)\"[^>]*>", Pattern.CASE_INSENSITIVE);
     private static final Pattern TLGRM_TITLE_PATTERN = Pattern.compile("<h1[^>]*>\\s*Набор стикеров\\s+([^<]+)</h1>");
     private static final Pattern TLGRM_SHOW_MORE_PATTERN = Pattern.compile("Показать\\s+ещ[её]\\s+(\\d+)\\s+стикер", Pattern.CASE_INSENSITIVE);
     private static final Pattern TLGRM_NUMBERED_STICKER_PATTERN = Pattern.compile("^(.*?/)(\\d+)\\.(webp|png|jpg|jpeg|gif|webm|mp4|tgs)$", Pattern.CASE_INSENSITIVE);
@@ -208,6 +209,16 @@ public class DownloadDefaultStickers extends Service {
         final String defaultPack = sourceUri.getLastPathSegment() == null ? "tlgrm" : sourceUri.getLastPathSegment();
         final String packName = findTlgrmPackName(html, defaultPack);
         final List<String> imgUrls = new ArrayList<>();
+        final Matcher anchorMatcher = TLGRM_ANCHOR_HREF_PATTERN.matcher(html);
+        while (anchorMatcher.find()) {
+            final String raw = anchorMatcher.group(1);
+            final String normalized = normalizeTlgrmUrl(raw);
+            if (!isTlgrmStickerAsset(normalized)) continue;
+            if (!imgUrls.contains(normalized)) imgUrls.add(normalized);
+        }
+
+        // Fallback to media sources (can be preview-sized) only when direct sticker links are absent.
+        if (imgUrls.isEmpty()) {
         final Matcher matcher = TLGRM_MEDIA_TAG_PATTERN.matcher(html);
         while (matcher.find()) {
             final String raw = extractTlgrmImageUrl(matcher.group());
@@ -215,6 +226,7 @@ public class DownloadDefaultStickers extends Service {
             final String normalized = normalizeTlgrmUrl(raw);
             if (!isTlgrmStickerAsset(normalized)) continue;
             if (!imgUrls.contains(normalized)) imgUrls.add(normalized);
+        }
         }
         final int hiddenStickers = parseTlgrmHiddenStickerCount(html);
         if (hiddenStickers > 0) {
