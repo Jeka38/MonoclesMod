@@ -148,6 +148,9 @@ public class SettingsActivity extends XmppActivity implements OnSharedPreference
     public static final int REQUEST_IMPORT_SETTINGS = 0xbf8703;
     public static final int REQUEST_IMPORT_STICKERS = 0xbf8705;
     public static final int REQUEST_IMPORT_GIFS = 0xbf8706;
+    private static final int STICKER_ACTION_NONE = 0;
+    private static final int STICKER_ACTION_SEARCH = 1;
+    private static final int STICKER_ACTION_DELETE = 2;
 
     Preference multiAccountPreference;
     Preference autoMessageExpiryPreference;
@@ -157,6 +160,7 @@ public class SettingsActivity extends XmppActivity implements OnSharedPreference
     boolean isMultiAccountChecked = false;
     boolean isBundledEmojiChecked;
     boolean isQuickShareAttachmentChoiceChecked = false;
+    private int pendingStickerAction = STICKER_ACTION_NONE;
     private SettingsFragment mSettingsFragment;
 
     @Override
@@ -1026,8 +1030,19 @@ public class SettingsActivity extends XmppActivity implements OnSharedPreference
         final Preference searchTlgrmStickers = mSettingsFragment.findPreference("search_tlgrm_stickers");
         if (searchTlgrmStickers != null) {
             searchTlgrmStickers.setOnPreferenceClickListener(preference -> {
+                pendingStickerAction = STICKER_ACTION_SEARCH;
                 if (hasStoragePermission(REQUEST_DOWNLOAD_STICKERS)) {
                     showTlgrmStickerDialog();
+                }
+                return true;
+            });
+        }
+        final Preference deleteInstalledStickers = mSettingsFragment.findPreference("delete_installed_stickers");
+        if (deleteInstalledStickers != null) {
+            deleteInstalledStickers.setOnPreferenceClickListener(preference -> {
+                pendingStickerAction = STICKER_ACTION_DELETE;
+                if (hasStoragePermission(REQUEST_DOWNLOAD_STICKERS)) {
+                    confirmDeleteInstalledStickers();
                 }
                 return true;
             });
@@ -1325,7 +1340,12 @@ public class SettingsActivity extends XmppActivity implements OnSharedPreference
                     createCompatibleBackup();
                 }
                 if (requestCode == REQUEST_DOWNLOAD_STICKERS) {
-                    showTlgrmStickerDialog();
+                    if (pendingStickerAction == STICKER_ACTION_DELETE) {
+                        confirmDeleteInstalledStickers();
+                    } else {
+                        showTlgrmStickerDialog();
+                    }
+                    pendingStickerAction = STICKER_ACTION_NONE;
                 }
             } else {
                 ToastCompat.makeText(
@@ -1365,6 +1385,37 @@ public class SettingsActivity extends XmppActivity implements OnSharedPreference
                 .setPositiveButton(R.string.ok, (dialog, which) -> installTlgrmStickers(input.getText().toString()))
                 .setNegativeButton(R.string.cancel, null)
                 .show();
+    }
+
+    private void confirmDeleteInstalledStickers() {
+        new AlertDialog.Builder(this)
+                .setTitle(R.string.delete_installed_stickers)
+                .setMessage(R.string.delete_installed_stickers_confirm)
+                .setPositiveButton(R.string.yes, (dialog, which) -> deleteInstalledStickers())
+                .setNegativeButton(R.string.no, null)
+                .show();
+    }
+
+    private void deleteInstalledStickers() {
+        final File stickerRoot = new File(Environment.getExternalStoragePublicDirectory(Environment.DIRECTORY_DOCUMENTS) + File.separator + APP_DIRECTORY + File.separator + "Stickers");
+        deleteRecursively(stickerRoot);
+        if (xmppConnectionService != null) {
+            xmppConnectionService.rescanStickers(true);
+        }
+        displayToast(getString(R.string.installed_stickers_deleted));
+    }
+
+    private void deleteRecursively(final File file) {
+        if (file == null || !file.exists()) return;
+        if (file.isDirectory()) {
+            final File[] children = file.listFiles();
+            if (children != null) {
+                for (File child : children) {
+                    deleteRecursively(child);
+                }
+            }
+        }
+        file.delete();
     }
 
     private void installTlgrmStickers(final String queryOrUrl) {

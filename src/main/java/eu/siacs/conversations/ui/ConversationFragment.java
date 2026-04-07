@@ -848,6 +848,9 @@ public class ConversationFragment extends XmppFragment
             binding.emojiPicker.setVisibility(GONE);
             binding.stickersview.setVisibility(VISIBLE);
             binding.gifsview.setVisibility(GONE);
+            if (activity != null && activity.xmppConnectionService != null) {
+                activity.xmppConnectionService.rescanStickers(true);
+            }
             backPressedLeaveEmojiPicker.setEnabled(true);
             binding.textinput.requestFocus();
             try {

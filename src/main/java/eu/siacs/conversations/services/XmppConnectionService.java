@@ -6984,14 +6984,21 @@ public class XmppConnectionService extends Service {
     }
 
     public void rescanStickers() {
+        rescanStickers(false);
+    }
+
+    public void rescanStickers(final boolean force) {
         long msToRescan = (mLastStickerRescan + 600000L) - SystemClock.elapsedRealtime();
-        if (msToRescan > 0) return;
+        if (!force && msToRescan > 0) return;
         Log.d(Config.LOGTAG, "rescanStickers");
 
         mLastStickerRescan = SystemClock.elapsedRealtime();
         mStickerScanExecutor.execute(() -> {
             Thread.currentThread().setPriority(Thread.MIN_PRIORITY);
             try {
+                if (force) {
+                    emojiSearch.clear();
+                }
                 for (File file : Files.fileTraverser().breadthFirst(stickerDir())) {
                     try {
                         if (file.isFile() && file.canRead()) {

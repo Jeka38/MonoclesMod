@@ -53,6 +53,10 @@ public class EmojiSearch {
         emoji.add(one);
     }
 
+    public synchronized void clear() {
+        emoji.clear();
+    }
+
     public synchronized List<Emoji> find(final String q) {
         final ResultPQ pq = new ResultPQ();
         for (Emoji e : emoji) {

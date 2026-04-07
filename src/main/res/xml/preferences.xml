@@ -416,6 +416,10 @@
             android:summary="@string/search_tlgrm_stickers_summary"
             android:key="search_tlgrm_stickers" />
         <Preference
+            android:title="@string/delete_installed_stickers"
+            android:summary="@string/delete_installed_stickers_summary"
+            android:key="delete_installed_stickers" />
+        <Preference
             android:title="@string/import_own_gifs"
             android:summary="@string/import_own_gifs_summary"
             android:key="import_own_gifs" />
