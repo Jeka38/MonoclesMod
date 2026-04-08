@@ -167,6 +167,21 @@ public class UriHandlerActivity extends AppCompatActivity {
             return false;
         }
 
+        if ("tg".equals(uri.getScheme()) && "addstickers".equals(uri.getHost()) && uri.getQueryParameter("set") != null) {
+            stickers = Uri.parse("https://stickers.cheogram.com/telegram/" + uri.getQueryParameter("set"));
+            if (hasStoragePermission(1)) downloadStickers();
+            return false;
+        }
+
+        if ("https".equals(uri.getScheme()) && "t.me".equals(uri.getHost())) {
+            final List<String> segments = uri.getPathSegments();
+            if (segments.size() >= 2 && "addstickers".equals(segments.get(0))) {
+                stickers = Uri.parse("https://stickers.cheogram.com/telegram/" + segments.get(1));
+                if (hasStoragePermission(1)) downloadStickers();
+                return false;
+            }
+        }
+
         if (SignupUtils.isSupportTokenRegistry() && xmppUri.isValidJid()) {
             final String preAuth = xmppUri.getParameter(XmppUri.PARAMETER_PRE_AUTH);
             final Jid jid = xmppUri.getJid();

@@ -1494,6 +1494,20 @@ public class ConversationFragment extends XmppFragment
                                 }
                             } catch (final Exception e) {
                             }
+                        } else if (source != null && source.length() > 0 && (source.startsWith("file://") || source.startsWith("/"))) {
+                            try {
+                                final Uri stickerUri = Uri.parse(source);
+                                final File stickerFile = source.startsWith("/")
+                                        ? new File(source)
+                                        : new File(Objects.requireNonNull(stickerUri.getPath()));
+                                if (stickerFile.exists() && stickerFile.canRead()) {
+                                    message.setBody("");
+                                    message.setRelativeFilePath(stickerFile.getAbsolutePath());
+                                    message.setType(Message.TYPE_IMAGE);
+                                    activity.xmppConnectionService.getFileBackend().updateFileParams(message, null, false);
+                                }
+                            } catch (final Exception ignored) {
+                            }
                         }
                     }
                 }
