@@ -670,17 +670,38 @@ public class XmppConnectionService extends Service {
         if (!dirStickers.exists()) {
             dirStickers.mkdir();
         }
-        if (dirStickers.listFiles() != null) {
-            if (dirStickers.isDirectory() && dirStickers.listFiles() != null) {
-                filesStickers = dirStickers.listFiles();
-                filesPathsStickers = new String[filesStickers.length];
-                filesNamesStickers = new String[filesStickers.length];
-                for (int i = 0; i < filesStickers.length; i++) {
-                    filesPathsStickers[i] = filesStickers[i].getAbsolutePath();
-                    filesNamesStickers[i] = filesStickers[i].getName();
+        ArrayList<File> stickerFiles = new ArrayList<>();
+        findStickers(dirStickers, stickerFiles);
+        filesStickers = stickerFiles.toArray(new File[0]);
+        filesPathsStickers = new String[filesStickers.length];
+        filesNamesStickers = new String[filesStickers.length];
+        for (int i = 0; i < filesStickers.length; i++) {
+            filesPathsStickers[i] = filesStickers[i].getAbsolutePath();
+            filesNamesStickers[i] = filesStickers[i].getName();
+        }
+    }
+
+    private void findStickers(File dir, ArrayList<File> stickerFiles) {
+        File[] files = dir.listFiles();
+        if (files == null) return;
+        for (File file : files) {
+            if (file.isDirectory()) {
+                findStickers(file, stickerFiles);
+            } else {
+                String name = file.getName().toLowerCase();
+                if (name.endsWith(".png") || name.endsWith(".webp") || name.endsWith(".jpg") || name.endsWith(".jpeg") || name.endsWith(".gif")) {
+                    stickerFiles.add(file);
                 }
             }
         }
+    }
+
+    public String[] getFilesPathsStickers() {
+        return filesPathsStickers;
+    }
+
+    public String[] getFilesNamesStickers() {
+        return filesNamesStickers;
     }
 
     public void LoadGifs() {

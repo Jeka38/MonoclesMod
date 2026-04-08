@@ -169,6 +169,7 @@ import java.util.stream.Stream;
 import de.monocles.mod.BobTransfer;
 import de.monocles.mod.EmojiSearch;
 import de.monocles.mod.GifsAdapter;
+import de.monocles.mod.StickerAdapter;
 import de.monocles.mod.KeyboardHeightProvider;
 import de.monocles.mod.WebxdcPage;
 import de.monocles.mod.WebxdcStore;
@@ -2125,23 +2126,41 @@ public class ConversationFragment extends XmppFragment
 
 
     public void LoadStickers() {
-        final Pattern lastColonPattern = Pattern.compile("");
-        binding.stickersview.setOnItemClickListener((parent, view, position, id) -> {
-            EmojiSearch.EmojiSearchAdapter adapter = ((EmojiSearch.EmojiSearchAdapter) binding.stickersview.getAdapter());
-            Editable toInsert = adapter.getItem(position).toInsert();
-            toInsert.append(" ");
-            Editable s = binding.textinput.getText();
+        if (!hasStoragePermission(activity)) return;
+        if (activity == null || activity.xmppConnectionService == null) return;
+        new Thread(() -> {
+            activity.xmppConnectionService.LoadStickers();
+            activity.runOnUiThread(() -> {
+                filesPathsStickers = activity.xmppConnectionService.getFilesPathsStickers();
+                filesNamesStickers = activity.xmppConnectionService.getFilesNamesStickers();
 
-            Matcher lastColonMatcher = lastColonPattern.matcher(s);
-            int lastColon = 0;
-            while(lastColonMatcher.find()) lastColon = lastColonMatcher.end();
-            if (lastColon >= 0) {
-                int start = binding.textinput.getSelectionStart(); //this is to get the the cursor position
-                binding.textinput.getText().insert(start, toInsert); //this will get the text and insert the emoji into   the current position
-            }
+                if (filesPathsStickers == null) return;
+
+                de.monocles.mod.GridView stickersGrid = binding.stickersview;
+                stickersGrid.setAdapter(new StickerAdapter(activity, filesNamesStickers, filesPathsStickers));
+            });
+        }).start();
+
+        de.monocles.mod.GridView stickersGrid = binding.stickersview;
+        stickersGrid.setOnItemClickListener((parent, view, position, id) -> {
+            if (activity == null) return;
+            String filePath = filesPathsStickers[position];
+            mediaPreviewAdapter.addMediaPreviews(Attachment.of(activity, Uri.fromFile(new File(filePath)), Attachment.Type.IMAGE));
+            toggleInputMethod();
         });
 
-        setupEmojiSearch();
+        stickersGrid.setOnItemLongClickListener((parent, view, position, id) -> {
+            if (activity != null && filesPathsStickers[position] != null) {
+                File file = new File(filesPathsStickers[position]);
+                if (file.delete()) {
+                    Toast.makeText(activity, R.string.sticker_deleted, Toast.LENGTH_LONG).show();
+                    LoadStickers();
+                } else {
+                    Toast.makeText(activity, R.string.failed_to_delete_sticker, Toast.LENGTH_LONG).show();
+                }
+            }
+            return true;
+        });
     }
 
     public void LoadGifs() {
