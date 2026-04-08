@@ -168,7 +168,7 @@ public class UriHandlerActivity extends AppCompatActivity {
         }
 
         if ("tg".equals(uri.getScheme()) && "addstickers".equals(uri.getHost()) && uri.getQueryParameter("set") != null) {
-            stickers = Uri.parse("https://stickers.cheogram.com/telegram/" + uri.getQueryParameter("set"));
+            stickers = Uri.parse("https://tlgrm.ru/stickers/" + uri.getQueryParameter("set"));
             if (hasStoragePermission(1)) downloadStickers();
             return false;
         }
@@ -176,7 +176,7 @@ public class UriHandlerActivity extends AppCompatActivity {
         if ("https".equals(uri.getScheme()) && "t.me".equals(uri.getHost())) {
             final List<String> segments = uri.getPathSegments();
             if (segments.size() >= 2 && "addstickers".equals(segments.get(0))) {
-                stickers = Uri.parse("https://stickers.cheogram.com/telegram/" + segments.get(1));
+                stickers = Uri.parse("https://tlgrm.ru/stickers/" + segments.get(1));
                 if (hasStoragePermission(1)) downloadStickers();
                 return false;
             }

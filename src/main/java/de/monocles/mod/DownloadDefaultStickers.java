@@ -27,9 +27,14 @@ import java.io.File;
 import java.io.FileOutputStream;
 import java.io.OutputStream;
 import java.io.OutputStreamWriter;
+import java.net.URL;
 import java.util.HashSet;
+import java.util.LinkedHashSet;
+import java.util.Locale;
 import java.util.Objects;
 import java.util.concurrent.atomic.AtomicBoolean;
+import java.util.regex.Matcher;
+import java.util.regex.Pattern;
 
 import org.json.JSONArray;
 import org.json.JSONObject;
@@ -55,6 +60,7 @@ public class DownloadDefaultStickers extends Service {
     private OkHttpClient http = null;
     private final HashSet<Uri> pendingPacks = new HashSet<Uri>();
     public final XmppConnectionService xmppConnectionService = new XmppConnectionService();
+    private static final Pattern TLGRM_STICKER_PATTERN = Pattern.compile("https://tlgrm\\.ru/_/stickers/[^\"']+");
 
 
     @Override
@@ -157,6 +163,15 @@ public class DownloadDefaultStickers extends Service {
                 .setProgress(1, 0, false);
         startForeground(NOTIFICATION_ID, mBuilder.build());
 
+        if ("tlgrm.ru".equalsIgnoreCase(jsonUri.getHost()) && jsonUri.getPath() != null && jsonUri.getPath().startsWith("/stickers/")) {
+            downloadTlgrmPack(jsonUri);
+            synchronized(pendingPacks) {
+                pendingPacks.remove(jsonUri);
+            }
+            download();
+            return;
+        }
+
         Response r = http.newCall(new Request.Builder().url(jsonUri.toString()).build()).execute();
         JSONArray stickers = new JSONArray(r.body().string());
 
@@ -176,6 +191,65 @@ public class DownloadDefaultStickers extends Service {
             pendingPacks.remove(jsonUri);
         }
         download();
+    }
+
+    private void downloadTlgrmPack(final Uri packUri) throws Exception {
+        final String pack = packUri.getLastPathSegment();
+        if (pack == null || pack.trim().isEmpty()) {
+            return;
+        }
+        final Response r = http.newCall(new Request.Builder().url(packUri.toString()).build()).execute();
+        if (r.body() == null) {
+            return;
+        }
+        final String html = r.body().string();
+        final LinkedHashSet<String> stickerUrls = new LinkedHashSet<>();
+        final Matcher matcher = TLGRM_STICKER_PATTERN.matcher(html);
+        while (matcher.find()) {
+            stickerUrls.add(matcher.group());
+        }
+
+        int i = 0;
+        for (String stickerUrl : stickerUrls) {
+            i++;
+            downloadTlgrmSticker(pack, i, stickerUrl);
+        }
+    }
+
+    private void downloadTlgrmSticker(final String pack, final int index, final String stickerUrl) throws Exception {
+        final Response r = http.newCall(new Request.Builder().url(stickerUrl).build()).execute();
+        if (r.body() == null) {
+            return;
+        }
+        String extension = MimeUtils.guessExtensionFromMimeType(r.header("content-type"));
+        if (extension == null || extension.isBlank()) {
+            try {
+                final String path = new URL(stickerUrl).getPath();
+                final int dot = path.lastIndexOf('.');
+                extension = dot > -1 ? path.substring(dot + 1).toLowerCase(Locale.US) : "webp";
+            } catch (final Exception ignored) {
+                extension = "webp";
+            }
+        }
+
+        final File file = new File(mStickerDir.getAbsolutePath() + "/" + pack + "/" + index + "." + extension);
+        Objects.requireNonNull(file.getParentFile()).mkdirs();
+        OutputStream os = new FileOutputStream(file);
+        ByteStreams.copy(r.body().byteStream(), os);
+        os.close();
+
+        MediaScannerConnection.scanFile(
+                getBaseContext(),
+                new String[]{file.getAbsolutePath()},
+                null,
+                new MediaScannerConnection.MediaScannerConnectionClient() {
+                    @Override
+                    public void onMediaScannerConnected() {}
+
+                    @Override
+                    public void onScanCompleted(String path, Uri uri) {}
+                }
+        );
     }
 
     private File stickerDir() {
