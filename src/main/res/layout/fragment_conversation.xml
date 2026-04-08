@@ -361,104 +361,140 @@
                                 android:src="@drawable/ic_send_text_offline" />
                     </RelativeLayout>
 
-            <LinearLayout
+            <RelativeLayout
                 android:id="@+id/emojis_sticker_layout"
                 android:layout_width="match_parent"
                 android:layout_height="0dp"
                 android:layout_below="@+id/textformat"
-                android:orientation="vertical"
                 android:visibility="visible"
                 android:animateLayoutChanges="true" >
 
-                <androidx.emoji2.emojipicker.EmojiPickerView
-                    android:id="@+id/emoji_picker"
-                    android:layout_width="match_parent"
-                    android:layout_height="match_parent"
-                    android:layout_weight="1"
-                    android:visibility="visible" />
-
-                <androidx.recyclerview.widget.RecyclerView
-                    android:id="@+id/sticker_packs_ribbon"
-                    android:layout_width="match_parent"
-                    android:layout_height="48dp"
-                    android:orientation="horizontal"
-                    android:visibility="gone"
-                    app:layoutManager="androidx.recyclerview.widget.LinearLayoutManager" />
-
-                <de.monocles.mod.GridView
-                    android:id="@+id/stickersview"
-                    android:layout_width="match_parent"
-                    android:layout_height="match_parent"
-                    android:layout_marginLeft="4dp"
-                    android:layout_marginStart="4dp"
-                    android:layout_marginEnd="4dp"
-                    android:layout_marginRight="4dp"
-                    android:layout_marginTop="4dp"
-                    android:divider="@android:color/transparent"
-                    android:numColumns="6"
-                    android:dividerHeight="0dp"
-                    android:layout_weight="1"
-                    android:visibility="gone" />
-
-                <de.monocles.mod.GridView
-                    android:id="@+id/gifsview"
-                    android:layout_width="match_parent"
-                    android:layout_height="match_parent"
-                    android:layout_marginLeft="4dp"
-                    android:layout_marginStart="4dp"
-                    android:layout_marginEnd="4dp"
-                    android:layout_marginRight="4dp"
-                    android:layout_marginTop="4dp"
-                    android:divider="@android:color/transparent"
-                    android:numColumns="4"
-                    android:dividerHeight="0dp"
-                    android:layout_weight="1"
-                    android:visibility="gone" />
-
                 <LinearLayout
-                    android:layout_width="fill_parent"
-                    android:layout_height="62dp"
-                    android:layout_weight="1"
-                    android:gravity="bottom|center_horizontal"
-                    android:orientation="horizontal"
-                    android:animateLayoutChanges="true" >
+                    android:layout_width="match_parent"
+                    android:layout_height="match_parent"
+                    android:orientation="vertical">
 
-                    <TextView
-                        android:id="@+id/emojis_button"
-                        android:layout_width="wrap_content"
-                        android:layout_height="wrap_content"
-                        android:gravity="bottom|center_horizontal"
-                        android:text="@string/emojis"
-                        android:textSize="16sp" />
+                    <androidx.recyclerview.widget.RecyclerView
+                        android:id="@+id/sticker_packs_ribbon"
+                        android:layout_width="match_parent"
+                        android:layout_height="48dp"
+                        android:orientation="horizontal"
+                        android:visibility="gone"
+                        app:layoutManager="androidx.recyclerview.widget.LinearLayoutManager" />
+
+                    <androidx.emoji2.emojipicker.EmojiPickerView
+                        android:id="@+id/emoji_picker"
+                        android:layout_width="match_parent"
+                        android:layout_height="match_parent"
+                        android:layout_weight="1"
+                        android:visibility="visible" />
+
+                    <de.monocles.mod.GridView
+                        android:id="@+id/stickersview"
+                        android:layout_width="match_parent"
+                        android:layout_height="match_parent"
+                        android:layout_marginLeft="4dp"
+                        android:layout_marginStart="4dp"
+                        android:layout_marginEnd="4dp"
+                        android:layout_marginRight="4dp"
+                        android:layout_marginTop="4dp"
+                        android:divider="@android:color/transparent"
+                        android:numColumns="6"
+                        android:dividerHeight="0dp"
+                        android:layout_weight="1"
+                        android:visibility="gone" />
+
+                    <de.monocles.mod.GridView
+                        android:id="@+id/gifsview"
+                        android:layout_width="match_parent"
+                        android:layout_height="match_parent"
+                        android:layout_marginLeft="4dp"
+                        android:layout_marginStart="4dp"
+                        android:layout_marginEnd="4dp"
+                        android:layout_marginRight="4dp"
+                        android:layout_marginTop="4dp"
+                        android:divider="@android:color/transparent"
+                        android:numColumns="4"
+                        android:dividerHeight="0dp"
+                        android:layout_weight="1"
+                        android:visibility="gone" />
 
                     <View
-                        android:layout_width="20dp"
-                        android:layout_height="wrap_content" />
-
-                    <TextView
-                        android:id="@+id/gifs_button"
-                        android:layout_width="wrap_content"
-                        android:layout_height="wrap_content"
-                        android:gravity="bottom|center_horizontal"
-                        android:text="@string/gifs"
-                        android:textSize="16sp" />
-
-                    <View
-                    android:layout_width="20dp"
-                    android:layout_height="wrap_content" />
-
-                    <TextView
-                    android:id="@+id/stickers_button"
-                    android:layout_width="wrap_content"
-                    android:layout_height="wrap_content"
-                    android:gravity="bottom|center_horizontal"
-                    android:text="@string/stickers"
-                    android:textSize="16sp" />
-
+                        android:layout_width="match_parent"
+                        android:layout_height="80dp" />
 
                 </LinearLayout>
 
-            </LinearLayout>
+                <RelativeLayout
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:layout_alignParentBottom="true"
+                    android:layout_marginBottom="12dp">
+
+                    <LinearLayout
+                        android:id="@+id/picker_nav_pill"
+                        android:layout_width="wrap_content"
+                        android:layout_height="wrap_content"
+                        android:layout_centerInParent="true"
+                        android:background="@drawable/input_bubble_light"
+                        android:padding="4dp"
+                        android:gravity="center"
+                        android:orientation="horizontal"
+                        android:elevation="4dp"
+                        android:animateLayoutChanges="true">
+
+                        <TextView
+                            android:id="@+id/emojis_button"
+                            android:layout_width="wrap_content"
+                            android:layout_height="wrap_content"
+                            android:paddingLeft="12dp"
+                            android:paddingRight="12dp"
+                            android:paddingTop="6dp"
+                            android:paddingBottom="6dp"
+                            android:text="@string/emojis"
+                            android:textColor="?attr/text_Color_Main"
+                            android:textSize="14sp" />
+
+                        <TextView
+                            android:id="@+id/gifs_button"
+                            android:layout_width="wrap_content"
+                            android:layout_height="wrap_content"
+                            android:paddingLeft="12dp"
+                            android:paddingRight="12dp"
+                            android:paddingTop="6dp"
+                            android:paddingBottom="6dp"
+                            android:text="@string/gifs"
+                            android:textColor="?attr/text_Color_Main"
+                            android:textSize="14sp" />
+
+                        <TextView
+                            android:id="@+id/stickers_button"
+                            android:layout_width="wrap_content"
+                            android:layout_height="wrap_content"
+                            android:paddingLeft="12dp"
+                            android:paddingRight="12dp"
+                            android:paddingTop="6dp"
+                            android:paddingBottom="6dp"
+                            android:text="@string/stickers"
+                            android:textColor="?attr/text_Color_Main"
+                            android:textSize="14sp" />
+                    </LinearLayout>
+
+                    <ImageView
+                        android:id="@+id/picker_settings"
+                        android:layout_width="36dp"
+                        android:layout_height="36dp"
+                        android:layout_alignParentRight="true"
+                        android:layout_centerVertical="true"
+                        android:layout_marginRight="16dp"
+                        android:padding="8dp"
+                        android:elevation="4dp"
+                        android:background="@drawable/input_bubble_light"
+                        android:src="?attr/icon_settings" />
+
+                </RelativeLayout>
+
+            </RelativeLayout>
 
             <RelativeLayout
                 android:id="@+id/textformat"
