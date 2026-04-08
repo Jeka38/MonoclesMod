@@ -170,6 +170,7 @@ import de.monocles.mod.BobTransfer;
 import de.monocles.mod.EmojiSearch;
 import de.monocles.mod.GifsAdapter;
 import de.monocles.mod.StickerAdapter;
+import de.monocles.mod.StickerPackAdapter;
 import de.monocles.mod.KeyboardHeightProvider;
 import de.monocles.mod.WebxdcPage;
 import de.monocles.mod.WebxdcStore;
@@ -810,6 +811,7 @@ public class ConversationFragment extends XmppFragment
         public void onClick(View v) {
             binding.emojiPicker.setVisibility(VISIBLE);
             binding.stickersview.setVisibility(GONE);
+            binding.stickerPacksRibbon.setVisibility(GONE);
             binding.gifsview.setVisibility(GONE);
             EmojiPickerView emojiPickerView = binding.emojiPicker;
             backPressedLeaveEmojiPicker.setEnabled(true);
@@ -848,6 +850,7 @@ public class ConversationFragment extends XmppFragment
         public void onClick(View v) {
             binding.emojiPicker.setVisibility(GONE);
             binding.stickersview.setVisibility(VISIBLE);
+            binding.stickerPacksRibbon.setVisibility(activity.xmppConnectionService.getStickerPackNames().isEmpty() ? GONE : VISIBLE);
             binding.gifsview.setVisibility(GONE);
             backPressedLeaveEmojiPicker.setEnabled(true);
             binding.textinput.requestFocus();
@@ -898,6 +901,7 @@ public class ConversationFragment extends XmppFragment
         public void onClick(View v) {
             binding.emojiPicker.setVisibility(GONE);
             binding.stickersview.setVisibility(GONE);
+            binding.stickerPacksRibbon.setVisibility(GONE);
             binding.gifsview.setVisibility(VISIBLE);
             backPressedLeaveEmojiPicker.setEnabled(true);
             binding.textinput.requestFocus();
@@ -2131,17 +2135,49 @@ public class ConversationFragment extends XmppFragment
         new Thread(() -> {
             activity.xmppConnectionService.LoadStickers();
             activity.runOnUiThread(() -> {
-                filesPathsStickers = activity.xmppConnectionService.getFilesPathsStickers();
-                filesNamesStickers = activity.xmppConnectionService.getFilesNamesStickers();
-
-                if (filesPathsStickers == null) return;
-
-                de.monocles.mod.GridView stickersGrid = binding.stickersview;
-                stickersGrid.setAdapter(new StickerAdapter(activity, filesNamesStickers, filesPathsStickers));
+                List<String> packs = activity.xmppConnectionService.getStickerPackNames();
+                if (packs == null || packs.isEmpty()) {
+                    binding.stickerPacksRibbon.setVisibility(GONE);
+                    filesPathsStickers = activity.xmppConnectionService.getFilesPathsStickers();
+                    filesNamesStickers = activity.xmppConnectionService.getFilesNamesStickers();
+                    updateStickersGrid(filesNamesStickers, filesPathsStickers);
+                } else {
+                    binding.stickerPacksRibbon.setVisibility(VISIBLE);
+                    binding.stickerPacksRibbon.setAdapter(new StickerPackAdapter(packs, activity.xmppConnectionService, packName -> {
+                        List<File> stickers = activity.xmppConnectionService.getStickersForPack(packName);
+                        if (stickers != null) {
+                            String[] paths = new String[stickers.size()];
+                            String[] names = new String[stickers.size()];
+                            for (int i = 0; i < stickers.size(); i++) {
+                                paths[i] = stickers.get(i).getAbsolutePath();
+                                names[i] = stickers.get(i).getName();
+                            }
+                            updateStickersGrid(names, paths);
+                        }
+                    }));
+                    // Load first pack by default
+                    List<File> stickers = activity.xmppConnectionService.getStickersForPack(packs.get(0));
+                    if (stickers != null) {
+                        String[] paths = new String[stickers.size()];
+                        String[] names = new String[stickers.size()];
+                        for (int i = 0; i < stickers.size(); i++) {
+                            paths[i] = stickers.get(i).getAbsolutePath();
+                            names[i] = stickers.get(i).getName();
+                        }
+                        updateStickersGrid(names, paths);
+                    }
+                }
             });
         }).start();
+    }
+
+    private void updateStickersGrid(String[] names, String[] paths) {
+        filesPathsStickers = paths;
+        filesNamesStickers = names;
+        if (filesPathsStickers == null) return;
 
         de.monocles.mod.GridView stickersGrid = binding.stickersview;
+        stickersGrid.setAdapter(new StickerAdapter(activity, filesNamesStickers, filesPathsStickers));
         stickersGrid.setOnItemClickListener((parent, view, position, id) -> {
             if (activity == null) return;
             String filePath = filesPathsStickers[position];

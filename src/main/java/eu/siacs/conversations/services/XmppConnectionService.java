@@ -617,7 +617,8 @@ public class XmppConnectionService extends Service {
     private File[] filesStickers;
     private String[] filesPathsStickers;
     private String[] filesNamesStickers;
-    File dirStickers = new File(Environment.getExternalStoragePublicDirectory(Environment.DIRECTORY_DOCUMENTS) + File.separator + APP_DIRECTORY + File.separator + "Stickers");
+    private final HashMap<String, List<File>> stickerPacks = new HashMap<>();
+    File dirStickers;
     //Gifspaths
     private File[] files;
     private String[] filesPaths;
@@ -670,27 +671,39 @@ public class XmppConnectionService extends Service {
         if (!dirStickers.exists()) {
             dirStickers.mkdir();
         }
-        ArrayList<File> stickerFiles = new ArrayList<>();
-        findStickers(dirStickers, stickerFiles);
-        filesStickers = stickerFiles.toArray(new File[0]);
-        filesPathsStickers = new String[filesStickers.length];
-        filesNamesStickers = new String[filesStickers.length];
-        for (int i = 0; i < filesStickers.length; i++) {
-            filesPathsStickers[i] = filesStickers[i].getAbsolutePath();
-            filesNamesStickers[i] = filesStickers[i].getName();
+        synchronized (stickerPacks) {
+            stickerPacks.clear();
+            findStickers(dirStickers, null);
+            ArrayList<File> allStickers = new ArrayList<>();
+            for (List<File> pack : stickerPacks.values()) {
+                allStickers.addAll(pack);
+            }
+            filesStickers = allStickers.toArray(new File[0]);
+            filesPathsStickers = new String[filesStickers.length];
+            filesNamesStickers = new String[filesStickers.length];
+            for (int i = 0; i < filesStickers.length; i++) {
+                filesPathsStickers[i] = filesStickers[i].getAbsolutePath();
+                filesNamesStickers[i] = filesStickers[i].getName();
+            }
         }
     }
 
-    private void findStickers(File dir, ArrayList<File> stickerFiles) {
+    private void findStickers(File dir, String currentPack) {
         File[] files = dir.listFiles();
         if (files == null) return;
         for (File file : files) {
             if (file.isDirectory()) {
-                findStickers(file, stickerFiles);
+                findStickers(file, file.getName());
             } else {
                 String name = file.getName().toLowerCase();
                 if (name.endsWith(".png") || name.endsWith(".webp") || name.endsWith(".jpg") || name.endsWith(".jpeg") || name.endsWith(".gif")) {
-                    stickerFiles.add(file);
+                    String packName = currentPack == null ? "Default" : currentPack;
+                    List<File> pack = stickerPacks.get(packName);
+                    if (pack == null) {
+                        pack = new ArrayList<>();
+                        stickerPacks.put(packName, pack);
+                    }
+                    pack.add(file);
                 }
             }
         }
@@ -702,6 +715,24 @@ public class XmppConnectionService extends Service {
 
     public String[] getFilesNamesStickers() {
         return filesNamesStickers;
+    }
+
+    public List<String> getStickerPackNames() {
+        synchronized (stickerPacks) {
+            List<String> packs = new ArrayList<>(stickerPacks.keySet());
+            Collections.sort(packs);
+            if (packs.contains("Default")) {
+                packs.remove("Default");
+                packs.add(0, "Default");
+            }
+            return packs;
+        }
+    }
+
+    public List<File> getStickersForPack(String packName) {
+        synchronized (stickerPacks) {
+            return stickerPacks.get(packName);
+        }
     }
 
     public void LoadGifs() {
@@ -1797,6 +1828,7 @@ public class XmppConnectionService extends Service {
     @SuppressLint("TrulyRandom")
     @Override
     public void onCreate() {
+        dirStickers = new File(getFilesDir(), "stickers");
         org.jxmpp.stringprep.libidn.LibIdnXmppStringprep.setup();
         emojiSearch = new EmojiSearch(this);
         updateNotificationChannels();
@@ -7001,7 +7033,7 @@ public class XmppConnectionService extends Service {
 
 
     private File stickerDir() {
-        return new File(Environment.getExternalStoragePublicDirectory(Environment.DIRECTORY_DOCUMENTS) + File.separator + APP_DIRECTORY + File.separator + "Stickers");
+        return dirStickers;
     }
 
     public void rescanStickers() {

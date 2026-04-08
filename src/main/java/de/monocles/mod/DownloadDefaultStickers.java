@@ -253,15 +253,7 @@ public class DownloadDefaultStickers extends Service {
     }
 
     private File stickerDir() {
-        SharedPreferences p = PreferenceManager.getDefaultSharedPreferences(getBaseContext());
-        final String dir = p.getString("sticker_directory", "Stickers");
-        if (dir.startsWith("content://")) {
-            Uri uri = Uri.parse(dir);
-            uri = DocumentsContract.buildDocumentUriUsingTree(uri, DocumentsContract.getTreeDocumentId(uri));
-            return new File(FileUtils.getPath(getBaseContext(), uri));
-        } else {
-            return new File(Environment.getExternalStoragePublicDirectory(Environment.DIRECTORY_DOCUMENTS) + File.separator + APP_DIRECTORY + File.separator + dir);
-        }
+        return new File(getFilesDir(), "stickers");
     }
 
     @Override
