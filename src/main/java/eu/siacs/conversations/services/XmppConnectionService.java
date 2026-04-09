@@ -269,6 +269,7 @@ public class XmppConnectionService extends Service {
     public static final String ACTION_FCM_TOKEN_REFRESH = "fcm_token_refresh";
     public static final String ACTION_FCM_MESSAGE_RECEIVED = "fcm_message_received";
     public static final String ACTION_DISMISS_CALL = "dismiss_call";
+    public static final String ACTION_STICKERS_UPDATED = "de.monocles.mod.STICKERS_UPDATED";
     public static final String ACTION_END_CALL = "end_call";
     public static final String ACTION_STARTING_CALL = "starting_call";
     public static final String ACTION_PROVISION_ACCOUNT = "provision_account";
@@ -417,6 +418,7 @@ public class XmppConnectionService extends Service {
     private final Set<OnRosterUpdate> mOnRosterUpdates = Collections.newSetFromMap(new WeakHashMap<OnRosterUpdate, Boolean>());
     private final Set<OnUpdateBlocklist> mOnUpdateBlocklist = Collections.newSetFromMap(new WeakHashMap<OnUpdateBlocklist, Boolean>());
     private final Set<OnMucRosterUpdate> mOnMucRosterUpdate = Collections.newSetFromMap(new WeakHashMap<OnMucRosterUpdate, Boolean>());
+    private final Set<OnStickerPacksUpdated> mOnStickerPacksUpdated = Collections.newSetFromMap(new WeakHashMap<OnStickerPacksUpdated, Boolean>());
     private final Set<OnKeyStatusUpdated> mOnKeyStatusUpdated = Collections.newSetFromMap(new WeakHashMap<OnKeyStatusUpdated, Boolean>());
     private final Set<OnJingleRtpConnectionUpdate> onJingleRtpConnectionUpdate = Collections.newSetFromMap(new WeakHashMap<OnJingleRtpConnectionUpdate, Boolean>());
     private final Map<String, PendingMucCaptchaRequest> pendingMucCaptchaRequests = new ConcurrentHashMap<>();
@@ -618,6 +620,7 @@ public class XmppConnectionService extends Service {
     private String[] filesPathsStickers;
     private String[] filesNamesStickers;
     private final HashMap<String, List<File>> stickerPacks = new HashMap<>();
+    private final List<String> recentStickers = new ArrayList<>();
     File dirStickers;
     //Gifspaths
     private File[] files;
@@ -665,8 +668,46 @@ public class XmppConnectionService extends Service {
         }
     }
 
+    private void loadRecentStickers() {
+        String recent = getPreferences().getString("recent_stickers", "");
+        synchronized (recentStickers) {
+            recentStickers.clear();
+            if (!recent.isEmpty()) {
+                recentStickers.addAll(Arrays.asList(recent.split("\n")));
+            }
+        }
+    }
+
+    private void saveRecentStickers() {
+        StringBuilder sb = new StringBuilder();
+        synchronized (recentStickers) {
+            for (String path : recentStickers) {
+                sb.append(path).append("\n");
+            }
+        }
+        getPreferences().edit().putString("recent_stickers", sb.toString().trim()).apply();
+    }
+
+    public void addRecentSticker(String path) {
+        synchronized (recentStickers) {
+            recentStickers.remove(path);
+            recentStickers.add(0, path);
+            while (recentStickers.size() > 32) {
+                recentStickers.remove(recentStickers.size() - 1);
+            }
+        }
+        saveRecentStickers();
+    }
+
+    public List<String> getRecentStickers() {
+        synchronized (recentStickers) {
+            return new ArrayList<>(recentStickers);
+        }
+    }
+
     public void LoadStickers() {
         if (!hasStoragePermission(this)) return;
+        loadRecentStickers();
         // Load and show Stickers
         if (!dirStickers.exists()) {
             dirStickers.mkdir();
@@ -1043,6 +1084,10 @@ public class XmppConnectionService extends Service {
                 mJingleConnectionManager.rejectRtpSession(sessionId);
                 break;
             }
+            case ACTION_STICKERS_UPDATED:
+                LoadStickers();
+                updateStickerPacksUi();
+                break;
             case TorServiceUtils.ACTION_STATUS:
                 final String status = intent == null ? null : intent.getStringExtra(TorServiceUtils.EXTRA_STATUS);
                 //TODO port and host are in 'extras' - but this may not be a reliable source?
@@ -1939,6 +1984,7 @@ public class XmppConnectionService extends Service {
             }
             systemBroadcastFilter.addAction(NotificationManager.ACTION_INTERRUPTION_FILTER_CHANGED);
         }
+        systemBroadcastFilter.addAction(ACTION_STICKERS_UPDATED);
         ContextCompat.registerReceiver(
                 this,
                 this.mInternalEventReceiver,
@@ -3778,6 +3824,20 @@ public class XmppConnectionService extends Service {
         }
         if (remainingListeners) {
             switchToBackground();
+        }
+    }
+
+    public void setOnStickerPacksUpdatedListener(OnStickerPacksUpdated listener) {
+        synchronized (LISTENER_LOCK) {
+            if (!this.mOnStickerPacksUpdated.add(listener)) {
+                Log.w(Config.LOGTAG, listener.getClass().getName() + " is already registered as OnStickerPacksUpdatedListener");
+            }
+        }
+    }
+
+    public void removeOnStickerPacksUpdatedListener(OnStickerPacksUpdated listener) {
+        synchronized (LISTENER_LOCK) {
+            this.mOnStickerPacksUpdated.remove(listener);
         }
     }
 
@@ -5856,6 +5916,12 @@ public class XmppConnectionService extends Service {
         }
     }
 
+    public void updateStickerPacksUi() {
+        for (OnStickerPacksUpdated listener : threadSafeList(this.mOnStickerPacksUpdated)) {
+            listener.onStickerPacksUpdated();
+        }
+    }
+
     public void keyStatusUpdated(AxolotlService.FetchStatus report) {
         for (OnKeyStatusUpdated listener : threadSafeList(this.mOnKeyStatusUpdated)) {
             listener.onKeyStatusUpdated(report);
@@ -6913,6 +6979,10 @@ public class XmppConnectionService extends Service {
 
     public interface OnShowErrorToast {
         void onShowErrorToast(int resId);
+    }
+
+    public interface OnStickerPacksUpdated {
+        void onStickerPacksUpdated();
     }
 
     public class XmppConnectionBinder extends Binder {

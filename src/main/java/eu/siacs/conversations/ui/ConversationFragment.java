@@ -256,7 +256,8 @@ public class ConversationFragment extends XmppFragment
         implements EditMessage.KeyboardListener,
         MessageAdapter.OnContactPictureLongClicked,
         MessageAdapter.OnContactPictureClicked,
-        MessageAdapter.OnInlineImageLongClicked {
+        MessageAdapter.OnInlineImageLongClicked,
+        XmppConnectionService.OnStickerPacksUpdated {
 
     //Voice recoder
     private MediaRecorder mRecorder;
@@ -1902,6 +1903,15 @@ public class ConversationFragment extends XmppFragment
             Intent intent = new Intent(activity, SettingsActivity.class);
             startActivity(intent);
         });
+        binding.stickerRecent.setOnClickListener(v -> {
+            List<String> recent = activity.xmppConnectionService.getRecentStickers();
+            String[] paths = recent.toArray(new String[0]);
+            String[] names = new String[paths.length];
+            for (int i = 0; i < paths.length; i++) {
+                names[i] = new File(paths[i]).getName();
+            }
+            updateStickersGrid(names, paths);
+        });
         binding.messagesView.setOnScrollListener(mOnScrollListener);
         binding.messagesView.setTranscriptMode(ListView.TRANSCRIPT_MODE_NORMAL);
         mediaPreviewAdapter = new MediaPreviewAdapter(this);
@@ -2033,6 +2043,13 @@ public class ConversationFragment extends XmppFragment
     }
 
 
+    @Override
+    public void onStickerPacksUpdated() {
+        if (activity != null) {
+            activity.runOnUiThread(this::LoadStickers);
+        }
+    }
+
     public void LoadStickers() {
         if (!hasStoragePermission(activity)) return;
         if (activity == null || activity.xmppConnectionService == null) return;
@@ -2041,12 +2058,12 @@ public class ConversationFragment extends XmppFragment
             activity.runOnUiThread(() -> {
                 List<String> packs = activity.xmppConnectionService.getStickerPackNames();
                 if (packs == null || packs.isEmpty()) {
-                    binding.stickerPacksRibbon.setVisibility(GONE);
+                    binding.stickerRibbonContainer.setVisibility(GONE);
                     filesPathsStickers = activity.xmppConnectionService.getFilesPathsStickers();
                     filesNamesStickers = activity.xmppConnectionService.getFilesNamesStickers();
                     updateStickersGrid(filesNamesStickers, filesPathsStickers);
                 } else {
-                    binding.stickerPacksRibbon.setVisibility(VISIBLE);
+                    binding.stickerRibbonContainer.setVisibility(VISIBLE);
                     binding.stickerPacksRibbon.setAdapter(new StickerPackAdapter(packs, activity.xmppConnectionService, packName -> {
                         List<File> stickers = activity.xmppConnectionService.getStickersForPack(packName);
                         if (stickers != null) {
@@ -2059,16 +2076,26 @@ public class ConversationFragment extends XmppFragment
                             updateStickersGrid(names, paths);
                         }
                     }));
-                    // Load first pack by default
-                    List<File> stickers = activity.xmppConnectionService.getStickersForPack(packs.get(0));
-                    if (stickers != null) {
-                        String[] paths = new String[stickers.size()];
-                        String[] names = new String[stickers.size()];
-                        for (int i = 0; i < stickers.size(); i++) {
-                            paths[i] = stickers.get(i).getAbsolutePath();
-                            names[i] = stickers.get(i).getName();
+                    // Load recent or first pack by default
+                    List<String> recent = activity.xmppConnectionService.getRecentStickers();
+                    if (!recent.isEmpty()) {
+                        String[] paths = recent.toArray(new String[0]);
+                        String[] names = new String[paths.length];
+                        for (int i = 0; i < paths.length; i++) {
+                            names[i] = new File(paths[i]).getName();
                         }
                         updateStickersGrid(names, paths);
+                    } else {
+                        List<File> stickers = activity.xmppConnectionService.getStickersForPack(packs.get(0));
+                        if (stickers != null) {
+                            String[] paths = new String[stickers.size()];
+                            String[] names = new String[stickers.size()];
+                            for (int i = 0; i < stickers.size(); i++) {
+                                paths[i] = stickers.get(i).getAbsolutePath();
+                                names[i] = stickers.get(i).getName();
+                            }
+                            updateStickersGrid(names, paths);
+                        }
                     }
                 }
             });
@@ -2085,7 +2112,8 @@ public class ConversationFragment extends XmppFragment
         stickersGrid.setOnItemClickListener((parent, view, position, id) -> {
             if (activity == null) return;
             String filePath = filesPathsStickers[position];
-            mediaPreviewAdapter.addMediaPreviews(Attachment.of(activity, Uri.fromFile(new File(filePath)), Attachment.Type.IMAGE));
+            activity.xmppConnectionService.addRecentSticker(filePath);
+            attachFileToConversation(conversation, Uri.fromFile(new File(filePath)), "image/webp");
             toggleInputMethod();
         });
 
@@ -3808,6 +3836,9 @@ public class ConversationFragment extends XmppFragment
         disableEncrpytionForExceptions();
         binding.messagesView.post(this::fireReadEvent);
         updateChatBG();
+        if (activity != null && activity.xmppConnectionService != null) {
+            activity.xmppConnectionService.setOnStickerPacksUpdatedListener(this);
+        }
     }
 
     private void disableEncrpytionForExceptions() {
@@ -4437,6 +4468,9 @@ public class ConversationFragment extends XmppFragment
         super.onStop();
         if (activity != null) {
             hideSoftKeyboard(activity);
+            if (activity.xmppConnectionService != null) {
+                activity.xmppConnectionService.removeOnStickerPacksUpdatedListener(this);
+            }
         }
         final Activity activity = getActivity();
         if (messageListAdapter == null) {
@@ -5651,6 +5685,9 @@ public class ConversationFragment extends XmppFragment
     @Override
     public void onBackendConnected() {
         Log.d(Config.LOGTAG, "ConversationFragment.onBackendConnected()");
+        if (activity != null && activity.xmppConnectionService != null) {
+            activity.xmppConnectionService.setOnStickerPacksUpdatedListener(this);
+        }
         String uuid = pendingConversationsUuid.pop();
 
         if (uuid != null) {

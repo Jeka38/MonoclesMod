@@ -374,13 +374,29 @@
                     android:layout_height="match_parent"
                     android:orientation="vertical">
 
+                <LinearLayout
+                    android:id="@+id/sticker_ribbon_container"
+                        android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                        android:orientation="horizontal"
+                    android:visibility="gone">
+
+                    <ImageView
+                        android:id="@+id/sticker_recent"
+                        android:layout_width="48dp"
+                        android:layout_height="48dp"
+                        android:padding="12dp"
+                        android:background="?attr/selectableItemBackgroundBorderless"
+                        android:src="?attr/icon_recent" />
+
                     <androidx.recyclerview.widget.RecyclerView
                         android:id="@+id/sticker_packs_ribbon"
-                        android:layout_width="match_parent"
+                        android:layout_width="0dp"
                         android:layout_height="48dp"
+                        android:layout_weight="1"
                         android:orientation="horizontal"
-                        android:visibility="gone"
                         app:layoutManager="androidx.recyclerview.widget.LinearLayoutManager" />
+                </LinearLayout>
 
                     <androidx.emoji2.emojipicker.EmojiPickerView
                         android:id="@+id/emoji_picker"

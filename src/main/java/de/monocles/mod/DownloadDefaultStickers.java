@@ -59,7 +59,6 @@ public class DownloadDefaultStickers extends Service {
     private File mStickerDir;
     private OkHttpClient http = null;
     private final HashSet<Uri> pendingPacks = new HashSet<Uri>();
-    public final XmppConnectionService xmppConnectionService = new XmppConnectionService();
     private static final Pattern TLGRM_STICKER_PATTERN = Pattern.compile("https://tlgrm\\.ru/_/stickers/[^\"']+");
 
 
@@ -85,6 +84,9 @@ public class DownloadDefaultStickers extends Service {
                 } catch (final Exception e) {
                     Log.d(Config.LOGTAG, "unable to download stickers", e);
                 }
+                final Intent stickersUpdatedIntent = new Intent(XmppConnectionService.ACTION_STICKERS_UPDATED);
+                stickersUpdatedIntent.setPackage(getPackageName());
+                sendBroadcast(stickersUpdatedIntent);
                 stopForeground(true);
                 RUNNING.set(false);
                 stopSelf();
@@ -93,7 +95,6 @@ public class DownloadDefaultStickers extends Service {
         } else {
             Log.d(Config.LOGTAG, "DownloadDefaultStickers. ignoring start command because already running");
         }
-        xmppConnectionService.LoadStickers();
         return START_NOT_STICKY;
     }
 

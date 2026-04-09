@@ -113,6 +113,7 @@
     <attr name="icon_secure" format="reference" />
     <attr name="icon_small_lock" format="reference" />
     <attr name="icon_settings" format="reference" />
+    <attr name="icon_recent" format="reference" />
     <attr name="icon_share" format="reference" />
     <attr name="icon_action_share" format="reference" />
     <attr name="icon_delete" format="reference" />

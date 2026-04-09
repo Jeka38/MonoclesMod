@@ -414,7 +414,7 @@
     <string name="format_text">Отформатировать текст</string>
     <string name="gif">GIF</string>
     <string name="go_online_to_delete">Вы должны активировать и/или быть в сети для учетной записи, которую хотите удалить с сервера.</string>
-    <string name="got_invitation_from" formatted="false">%s пригласил вас в чат %s.</string>
+    <string name="got_invitation_from">%1$s пригласил вас в чат %2$s.</string>
     <string name="gp_disable">Выключить</string>
     <string name="gp_long">Длинный</string>
     <string name="gp_medium">Средний</string>
@@ -455,7 +455,7 @@
     <string name="improperly_formatted_provisioning">Неправильно отформатированный код инициализации</string>
     <string name="in_progress">В процессе</string>
     <string name="incoming_call">Входящий звонок</string>
-    <string name="incoming_call_duration" formatted="false">%s · входящий звонок · %s</string>
+    <string name="incoming_call_duration">%1$s · входящий звонок · %2$s</string>
     <string name="incoming_call_time">%s · входящий звонок</string>
     <string name="incoming_calls_channel_name">Входящие звонки</string>
     <string name="install">Установка</string>
@@ -715,7 +715,7 @@
     <string name="other_devices">Другие устройства</string>
     <string name="outcast">Заблокированный</string>
     <string name="outgoing_call">Исходящий звонок</string>
-    <string name="outgoing_call_duration" formatted="false">%s · исходящий звонок · %s</string>
+    <string name="outgoing_call_duration">%1$s · исходящий звонок · %2$s</string>
     <string name="outgoing_call_time">%s ·исходящий звонок</string>
     <string name="owner">владелец</string>
     <string name="owners_can_edit_subject">Владельцы могут изменять эту тему.</string>
@@ -1360,7 +1360,7 @@
     <string name="bold">смелый</string>
     <string name="conference_technical_problems">Вы покинули эту конференцию по техническим причинам</string>
     <string name="account_status_incompatible_client">Несовместимый клиент</string>
-    <string name="sending_x_file_x">Отправка %1$s (%2$s %)</string>
+    <string name="sending_x_file_x">Отправка %1$s (%2$s %%)</string>
     <string name="pref_theme_White">Белый</string>
     <string name="rtp_state_content_add_video">Переключиться на видеовызов\?</string>
     <string name="rtp_state_content_add">Добавить дополнительные треки\?</string>
@@ -1390,7 +1390,7 @@
     <string name="italic">курсив</string>
     <string name="switch_to_video">Переключиться на видео</string>
     <string name="enable_notifications">Включить уведомления</string>
-    <string name="receiving_file_x">Получение %1$s (%2$s %)</string>
+    <string name="receiving_file_x">Получение %1$s (%2$s %%)</string>
     <string name="no_otr_session_found">Действительная сессия OTR не найдена!</string>
     <string name="copy_otr_clipboard_description">Скопировать отпечаток OTR в буфер обмена</string>
     <string name="otr_warning">Поддержка шифрования OTR находится в бета-режиме. Нажмите «Подробнее», чтобы получить дополнительную информацию. Откроется ссылка в браузере.</string>
@@ -1400,8 +1400,8 @@
     <string name="reply_to">Ответить на</string>
     <string name="moderate_reason">Причина модерации</string>
     <string name="unable_to_moderate">Невозможно модерировать</string>
-    <string name="incoming_call_duration_timestamp">Входящий вызов (%s) · %s</string>
-    <string name="outgoing_call_duration_timestamp">Исходящий звонок (%s) · %s</string>
+    <string name="incoming_call_duration_timestamp">Входящий вызов (%1$s) · %2$s</string>
+    <string name="outgoing_call_duration_timestamp">Исходящий звонок (%1$s) · %2$s</string>
     <string name="outgoing_call_timestamp">Исходящие звонки · %s</string>
     <string name="note_to_self">Примечание для себя</string>
 <!--    <string name="refresh_feature_discovery">Обнаружение функций</string>-->
