@@ -154,7 +154,7 @@ public class UriHandlerActivity extends AppCompatActivity {
 
         if ("sgnl".equals(uri.getScheme()) && uri.getQueryParameter("pack_id") != null) {
             stickers = Uri.parse("https://stickers.cheogram.com/signal/" + uri.getQueryParameter("pack_id") + "," + uri.getQueryParameter("pack_key"));
-            if (hasStoragePermission(1)) downloadStickers();
+            downloadStickers();
             return false;
         }
 
@@ -163,13 +163,13 @@ public class UriHandlerActivity extends AppCompatActivity {
             q.setAllowUnregisteredParamaters(true);
             q.parseQuery(uri.getFragment());
             stickers = Uri.parse("https://stickers.cheogram.com/signal/" + q.getValue("pack_id") + "," + q.getValue("pack_key"));
-            if (hasStoragePermission(1)) downloadStickers();
+            downloadStickers();
             return false;
         }
 
         if ("tg".equals(uri.getScheme()) && "addstickers".equals(uri.getHost()) && uri.getQueryParameter("set") != null) {
             stickers = Uri.parse("https://tlgrm.ru/stickers/" + uri.getQueryParameter("set"));
-            if (hasStoragePermission(1)) downloadStickers();
+            downloadStickers();
             return false;
         }
 
@@ -177,7 +177,7 @@ public class UriHandlerActivity extends AppCompatActivity {
             final List<String> segments = uri.getPathSegments();
             if (segments.size() >= 2 && "addstickers".equals(segments.get(0))) {
                 stickers = Uri.parse("https://tlgrm.ru/stickers/" + segments.get(1));
-                if (hasStoragePermission(1)) downloadStickers();
+                downloadStickers();
                 return false;
             }
         }

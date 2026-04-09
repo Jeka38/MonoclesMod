@@ -29,6 +29,7 @@ import com.kedia.ogparser.OpenGraphResult;
 import java.util.HashMap;
 
 import de.monocles.mod.EmojiSearch;
+import de.monocles.mod.utils.StickerUtils;
 import eu.siacs.conversations.ui.ConversationsActivity;
 import eu.siacs.conversations.ui.MucCaptchaActivity;
 import eu.siacs.conversations.persistance.UnifiedPushDatabase;
@@ -284,7 +285,7 @@ public class XmppConnectionService extends Service {
 
     public final CountDownLatch restoredFromDatabaseLatch = new CountDownLatch(1);
     private final static Executor FILE_OBSERVER_EXECUTOR = Executors.newSingleThreadExecutor();
-    private final static Executor FILE_ATTACHMENT_EXECUTOR = Executors.newSingleThreadExecutor();
+    public final static Executor FILE_ATTACHMENT_EXECUTOR = Executors.newSingleThreadExecutor();
     private final ScheduledExecutorService internalPingExecutor = Executors.newSingleThreadScheduledExecutor();
     private final static SerialSingleThreadExecutor VIDEO_COMPRESSION_EXECUTOR = new SerialSingleThreadExecutor("VideoCompression");
     private final SerialSingleThreadExecutor mDatabaseWriterExecutor = new SerialSingleThreadExecutor("DatabaseWriter");
@@ -706,11 +707,10 @@ public class XmppConnectionService extends Service {
     }
 
     public void LoadStickers() {
-        if (!hasStoragePermission(this)) return;
         loadRecentStickers();
         // Load and show Stickers
         if (!dirStickers.exists()) {
-            dirStickers.mkdir();
+            dirStickers.mkdirs();
         }
         synchronized (stickerPacks) {
             stickerPacks.clear();
@@ -1873,7 +1873,7 @@ public class XmppConnectionService extends Service {
     @SuppressLint("TrulyRandom")
     @Override
     public void onCreate() {
-        dirStickers = new File(getFilesDir(), "stickers");
+        dirStickers = StickerUtils.getStickersDir(this);
         org.jxmpp.stringprep.libidn.LibIdnXmppStringprep.setup();
         emojiSearch = new EmojiSearch(this);
         updateNotificationChannels();

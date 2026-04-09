@@ -34,6 +34,7 @@ import android.util.Log;
 import static eu.siacs.conversations.utils.CameraUtils.showCameraChooser;
 
 import de.monocles.mod.DownloadDefaultStickers;
+import de.monocles.mod.utils.StickerUtils;
 
 import androidx.annotation.NonNull;
 import androidx.appcompat.app.AlertDialog;
@@ -67,6 +68,7 @@ import eu.siacs.conversations.Config;
 import eu.siacs.conversations.R;
 import eu.siacs.conversations.crypto.OmemoSetting;
 import eu.siacs.conversations.entities.Account;
+import eu.siacs.conversations.services.XmppConnectionService;
 import eu.siacs.conversations.entities.Contact;
 import eu.siacs.conversations.persistance.FileBackend;
 import eu.siacs.conversations.services.ExportBackupService;
@@ -193,85 +195,25 @@ public class SettingsActivity extends XmppActivity implements OnSharedPreference
         // Import and compress stickers
         if(requestCode == REQUEST_IMPORT_STICKERS) {
             if(resultCode == RESULT_OK) {
-                if(data.getClipData() != null) {
-                    for(int i = 0; i < data.getClipData().getItemCount(); i++) {
-                        Uri imageUri = data.getClipData().getItemAt(i).getUri();
-                        //do something with the image (save it to some directory or whatever you need to do with it here)
+                XmppConnectionService.FILE_ATTACHMENT_EXECUTOR.execute(() -> {
+                    if(data.getClipData() != null) {
+                        for(int i = 0; i < data.getClipData().getItemCount(); i++) {
+                            Uri imageUri = data.getClipData().getItemAt(i).getUri();
+                            if (imageUri != null) {
+                                importStickerToService(imageUri);
+                            }
+                        }
+                    } else if(data.getData() != null) {
+                        Uri imageUri = data.getData();
                         if (imageUri != null) {
-                            InputStream in;
-                            OutputStream out;
-                            try {
-                                File stickerfolder = new File(Environment.getExternalStoragePublicDirectory(Environment.DIRECTORY_DOCUMENTS) + File.separator + APP_DIRECTORY + File.separator + "Stickers");
-                                //create output directory if it doesn't exist
-                                if (!stickerfolder.exists()) {
-                                    stickerfolder.mkdirs();
-                                }
-                                String filename = getFileName(imageUri);
-                                File newSticker = new File(Environment.getExternalStoragePublicDirectory(Environment.DIRECTORY_DOCUMENTS) + File.separator + APP_DIRECTORY + File.separator + "Stickers" + File.separator + filename);
-
-                                in = getContentResolver().openInputStream(imageUri);
-                                out = new FileOutputStream(newSticker);
-                                byte[] buffer = new byte[4096];
-                                int read;
-                                while ((read = in.read(buffer)) != -1) {
-                                    out.write(buffer, 0, read);
-                                }
-                                in.close();
-                                in = null;
-                                // write the output file
-                                out.flush();
-                                out.close();
-                                out = null;
-                                if (!filename.endsWith(".webp") && !filename.endsWith(".svg")) {
-                                    compressImageToSticker(newSticker, imageUri, 0);
-                                }
-                            } catch (IOException exception) {
-                                Toast.makeText(this,R.string.import_sticker_failed,Toast.LENGTH_LONG).show();
-                                Log.d(Config.LOGTAG, "Could not import sticker" + exception);
-                            }
+                            importStickerToService(imageUri);
                         }
                     }
-                    Toast.makeText(this,R.string.sticker_imported,Toast.LENGTH_LONG).show();
-                    xmppConnectionService.LoadStickers();       //TODO: Check again if really needed
-                } else if(data.getData() != null) {
-                    Uri imageUri = data.getData();
-                    //do something with the image (save it to some directory or whatever you need to do with it here)
-                    if (imageUri != null) {
-                        InputStream in;
-                        OutputStream out;
-                        try {
-                            File stickerfolder = new File(Environment.getExternalStoragePublicDirectory(Environment.DIRECTORY_DOCUMENTS) + File.separator + APP_DIRECTORY + File.separator + "Stickers");
-                            //create output directory if it doesn't exist
-                            if (!stickerfolder.exists()) {
-                                stickerfolder.mkdirs();
-                            }
-                            String filename = getFileName(imageUri);
-                            File newSticker = new File(Environment.getExternalStoragePublicDirectory(Environment.DIRECTORY_DOCUMENTS) + File.separator + APP_DIRECTORY + File.separator + "Stickers" + File.separator + filename);
-
-                            in = getContentResolver().openInputStream(imageUri);
-                            out = new FileOutputStream(newSticker);
-                            byte[] buffer = new byte[4096];
-                            int read;
-                            while ((read = in.read(buffer)) != -1) {
-                                out.write(buffer, 0, read);
-                            }
-                            in.close();
-                            in = null;
-                            // write the output file
-                            out.flush();
-                            out.close();
-                            out = null;
-                            if (!filename.endsWith(".webp") && !filename.endsWith(".svg")) {
-                                compressImageToSticker(newSticker, imageUri, 0);
-                            }
-                            Toast.makeText(this,R.string.sticker_imported,Toast.LENGTH_LONG).show();
-                            xmppConnectionService.LoadStickers();       //TODO: Check again if really needed
-                        } catch (IOException exception) {
-                            Toast.makeText(this,R.string.import_sticker_failed,Toast.LENGTH_LONG).show();
-                            Log.d(Config.LOGTAG, "Could not import sticker" + exception);
-                        }
-                    }
-                }
+                    runOnUiThread(() -> {
+                        Toast.makeText(this,R.string.sticker_imported,Toast.LENGTH_LONG).show();
+                        xmppConnectionService.LoadStickers();
+                    });
+                });
             }
         }
 
@@ -359,213 +301,28 @@ public class SettingsActivity extends XmppActivity implements OnSharedPreference
     }
 
     public String getFileName(Uri uri) {
-        String result = null;
-        if (uri.getScheme().equals("content")) {
-            Cursor cursor = getContentResolver().query(uri, null, null, null, null);
-            try {
-                if (cursor != null && cursor.moveToFirst()) {
-                    result = cursor.getString(cursor.getColumnIndex(OpenableColumns.DISPLAY_NAME));
-                }
-            } finally {
-                cursor.close();
-            }
-        }
-        if (result == null) {
-            result = uri.getPath();
-            int cut = result.lastIndexOf('/');
-            if (cut != -1) {
-                result = result.substring(cut + 1);
-            }
-        }
-        return result;
+        return StickerUtils.getFileName(getContentResolver(), uri);
     }
 
-    public void compressImageToSticker(File f, Uri image, int sampleSize) throws IOException {
-        InputStream is = null;
-        OutputStream os = null;
-        int IMAGE_QUALITY = 65;
-        int ImageSize = (int) (0.04 * 1024 * 1024);
+    private void importStickerToService(Uri uri) {
         try {
-            if (!f.exists() && !f.createNewFile()) {
-                throw new IOException(String.valueOf(R.string.error_unable_to_create_temporary_file));
+            File stickerfolder = new File(StickerUtils.getStickersDir(this), "Imported");
+            if (!stickerfolder.exists()) {
+                stickerfolder.mkdirs();
             }
-            is = getContentResolver().openInputStream(image);
-            if (is == null) {
-                throw new IOException(String.valueOf(R.string.error_not_an_image_file));
+            String filename = StickerUtils.getFileName(getContentResolver(), uri);
+            if (!filename.toLowerCase().endsWith(".webp")) {
+                filename = filename + ".webp";
             }
-            final Bitmap originalBitmap;
-            final BitmapFactory.Options options = new BitmapFactory.Options();
-            final int inSampleSize = (int) Math.pow(2, sampleSize);
-            Log.d(Config.LOGTAG, "reading bitmap with sample size " + inSampleSize);
-            options.inSampleSize = inSampleSize;
-            originalBitmap = BitmapFactory.decodeStream(is, null, options);
-            is.close();
-            if (originalBitmap == null) {
-                throw new IOException("Source file was not an image");
-            }
-            if (!"image/jpeg".equals(options.outMimeType) && hasAlpha(originalBitmap)) {
-                originalBitmap.recycle();
-                throw new IOException("Source file had alpha channel");
-            }
-            int size;
-            int resolution = 480;
-            if (resolution == 0) {
-                int height = originalBitmap.getHeight();
-                int width = originalBitmap.getWidth();
-                size = height > width ? height : width;
-            } else {
-                size = resolution;
-            }
-            Bitmap scaledBitmap = resize(originalBitmap, size);
-            final int rotation = getRotation(image);
-            scaledBitmap = rotate(scaledBitmap, rotation);
-            boolean targetSizeReached = false;
-            int quality = IMAGE_QUALITY;
-            while (!targetSizeReached) {
-                os = new FileOutputStream(f);
-                boolean success = scaledBitmap.compress(Config.IMAGE_FORMAT, quality, os);
-                if (!success) {
-                    throw new IOException(String.valueOf(R.string.error_compressing_image));
-                }
-                os.flush();
-                targetSizeReached = (f.length() <= ImageSize && ImageSize != 0) || quality <= 50;
-                quality -= 5;
-            }
-            scaledBitmap.recycle();
-        } catch (final FileNotFoundException e) {
-            cleanup(f);
-            throw new IOException(String.valueOf(R.string.error_file_not_found));
-        } catch (final IOException e) {
-            cleanup(f);
-            throw new IOException(String.valueOf(R.string.error_io_exception));
-        } catch (SecurityException e) {
-            cleanup(f);
-            throw new IOException(String.valueOf(R.string.error_security_exception_during_image_copy));
-        } catch (final OutOfMemoryError e) {
-            ++sampleSize;
-            if (sampleSize <= 3) {
-                compressImageToSticker(f, image, sampleSize);
-            } else {
-                throw new IOException(String.valueOf(R.string.error_out_of_memory));
-            }
-        } finally {
-            close(os);
-            close(is);
+            filename = StickerUtils.getUniqueFileName(stickerfolder, filename);
+            File newSticker = new File(stickerfolder, filename);
+            StickerUtils.compressImageToSticker(this, newSticker, uri, 0);
+        } catch (IOException exception) {
+            runOnUiThread(() -> Toast.makeText(this, R.string.import_sticker_failed, Toast.LENGTH_LONG).show());
+            Log.d(Config.LOGTAG, "Could not import sticker", exception);
         }
     }
 
-    private int getRotation(final File f) {
-        try (final InputStream inputStream = new FileInputStream(f)) {
-            return getRotation(inputStream);
-        } catch (Exception e) {
-            return 0;
-        }
-    }
-
-    private int getRotation(final Uri image) {
-        try (final InputStream is = getContentResolver().openInputStream(image)) {
-            return is == null ? 0 : getRotation(is);
-        } catch (final Exception e) {
-            return 0;
-        }
-    }
-
-    public static int getRotation(final InputStream inputStream) throws IOException {
-        final ExifInterface exif = new ExifInterface(inputStream);
-        final int orientation = exif.getAttributeInt(ExifInterface.TAG_ORIENTATION, ExifInterface.ORIENTATION_UNDEFINED);
-        switch (orientation) {
-            case ExifInterface.ORIENTATION_ROTATE_180:
-                return 180;
-            case ExifInterface.ORIENTATION_ROTATE_90:
-                return 90;
-            case ExifInterface.ORIENTATION_ROTATE_270:
-                return 270;
-            default:
-                return 0;
-        }
-    }
-
-    private static Bitmap rotate(final Bitmap bitmap, final int degree) {
-        if (degree == 0) {
-            return bitmap;
-        }
-        final int w = bitmap.getWidth();
-        final int h = bitmap.getHeight();
-        final Matrix matrix = new Matrix();
-        matrix.postRotate(degree);
-        final Bitmap result = Bitmap.createBitmap(bitmap, 0, 0, w, h, matrix, true);
-        if (!bitmap.isRecycled()) {
-            bitmap.recycle();
-        }
-        return result;
-    }
-
-    public static void close(final Closeable stream) {
-        if (stream != null) {
-            try {
-                stream.close();
-            } catch (Exception e) {
-                Log.d(Config.LOGTAG, "unable to close stream", e);
-            }
-        }
-    }
-
-    private static void cleanup(final File file) {
-        try {
-            file.delete();
-        } catch (Exception e) {
-
-        }
-    }
-
-    /*  TODO: Just Maybe add later
-        private int getRotation ( final File file){
-            try (final InputStream inputStream = new FileInputStream(file)) {
-                return getRotation(inputStream);
-            } catch (Exception e) {
-                return 0;
-            }
-        }
-*/
-    private Bitmap resize(final Bitmap originalBitmap, int size) throws IOException {
-        int w = originalBitmap.getWidth();
-        int h = originalBitmap.getHeight();
-        if (w <= 0 || h <= 0) {
-            throw new IOException("Decoded bitmap reported bounds smaller 0");
-        } else if (Math.max(w, h) > size) {
-            int scalledW;
-            int scalledH;
-            if (w <= h) {
-                scalledW = Math.max((int) (w / ((double) h / size)), 1);
-                scalledH = size;
-            } else {
-                scalledW = size;
-                scalledH = Math.max((int) (h / ((double) w / size)), 1);
-            }
-            final Bitmap result = Bitmap.createScaledBitmap(originalBitmap, scalledW, scalledH, true);
-            if (!originalBitmap.isRecycled()) {
-                originalBitmap.recycle();
-            }
-            return result;
-        } else {
-            return originalBitmap;
-        }
-    }
-
-    private static boolean hasAlpha(final Bitmap bitmap) {
-        final int w = bitmap.getWidth();
-        final int h = bitmap.getHeight();
-        final int yStep = Math.max(1, w / 100);
-        final int xStep = Math.max(1, h / 100);
-        for (int x = 0; x < w; x += xStep) {
-            for (int y = 0; y < h; y += yStep) {
-                if (Color.alpha(bitmap.getPixel(x, y)) < 255) {
-                    return true;
-                }
-            }
-        }
-        return false;
-    }
 
     @Override
     protected void onBackendConnected() {

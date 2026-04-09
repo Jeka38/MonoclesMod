@@ -389,6 +389,15 @@
                         android:background="?attr/selectableItemBackgroundBorderless"
                         android:src="?attr/icon_recent" />
 
+                    <ImageView
+                        android:id="@+id/add_sticker"
+                        android:layout_width="48dp"
+                        android:layout_height="48dp"
+                        android:padding="12dp"
+                        android:background="?attr/selectableItemBackgroundBorderless"
+                        android:src="@drawable/ic_add_white_24dp"
+                        app:tint="?attr/text_Color_Main" />
+
                     <androidx.recyclerview.widget.RecyclerView
                         android:id="@+id/sticker_packs_ribbon"
                         android:layout_width="0dp"

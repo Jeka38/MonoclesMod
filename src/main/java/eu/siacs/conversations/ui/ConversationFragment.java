@@ -171,6 +171,7 @@ import de.monocles.mod.EmojiSearch;
 import de.monocles.mod.GifsAdapter;
 import de.monocles.mod.StickerAdapter;
 import de.monocles.mod.StickerPackAdapter;
+import de.monocles.mod.utils.StickerUtils;
 import de.monocles.mod.KeyboardHeightProvider;
 import de.monocles.mod.WebxdcPage;
 import de.monocles.mod.WebxdcStore;
@@ -294,6 +295,7 @@ public class ConversationFragment extends XmppFragment
     public static final int REQUEST_SAVE_STICKER = 0x215;
     public static final int REQUEST_SAVE_GIF = 0x216;
     public static final int REQUEST_WEBXDC_STORE = 0x217;
+    public static final int REQUEST_IMPORT_STICKER = 0x218;
     public static final int ATTACHMENT_CHOICE_CHOOSE_IMAGE = 0x0301;
     public static final int ATTACHMENT_CHOICE_TAKE_PHOTO = 0x0302;
     public static final int ATTACHMENT_CHOICE_CHOOSE_FILE = 0x0303;
@@ -334,7 +336,7 @@ public class ConversationFragment extends XmppFragment
     private File[] filesStickers;
     private String[] filesPathsStickers;
     private String[] filesNamesStickers;
-    File dirStickers = new File(Environment.getExternalStoragePublicDirectory(Environment.DIRECTORY_DOCUMENTS) + File.separator + APP_DIRECTORY + File.separator + "Stickers");
+    File dirStickers;
     //Gifspaths
     private File[] files;
     private String[] filesPaths;
@@ -1564,6 +1566,23 @@ public class ConversationFragment extends XmppFragment
             triggerRtpSession(RtpSessionActivity.ACTION_MAKE_VOICE_CALL);
         } else if (requestCode == REQUEST_START_VIDEO_CALL) {
             triggerRtpSession(RtpSessionActivity.ACTION_MAKE_VIDEO_CALL);
+        } else if (requestCode == REQUEST_IMPORT_STICKER) {
+            XmppConnectionService.FILE_ATTACHMENT_EXECUTOR.execute(() -> {
+                if (data.getClipData() != null) {
+                    for (int i = 0; i < data.getClipData().getItemCount(); i++) {
+                        Uri imageUri = data.getClipData().getItemAt(i).getUri();
+                        if (imageUri != null) {
+                            importSticker(imageUri);
+                        }
+                    }
+                } else if (data.getData() != null) {
+                    importSticker(data.getData());
+                }
+                activity.runOnUiThread(() -> {
+                    Toast.makeText(activity, R.string.sticker_imported, Toast.LENGTH_SHORT).show();
+                    LoadStickers();
+                });
+            });
         } else if (requestCode == ATTACHMENT_CHOICE_CHOOSE_IMAGE) {
             final List<Attachment> imageUris = Attachment.extractAttachments(getActivity(), data, Attachment.Type.IMAGE);
 
@@ -1740,6 +1759,25 @@ public class ConversationFragment extends XmppFragment
         activity.xmppConnectionService.sendUnblockRequest(conversation);
     }
 
+    private void importSticker(Uri uri) {
+        try {
+            File stickerfolder = new File(StickerUtils.getStickersDir(activity), "Imported");
+            if (!stickerfolder.exists()) {
+                stickerfolder.mkdirs();
+            }
+            String filename = StickerUtils.getFileName(activity.getContentResolver(), uri);
+            if (!filename.toLowerCase().endsWith(".webp")) {
+                filename = filename + ".webp";
+            }
+            filename = StickerUtils.getUniqueFileName(stickerfolder, filename);
+            File newSticker = new File(stickerfolder, filename);
+            StickerUtils.compressImageToSticker(activity, newSticker, uri, 0);
+        } catch (IOException exception) {
+            activity.runOnUiThread(() -> Toast.makeText(activity, R.string.import_sticker_failed, Toast.LENGTH_LONG).show());
+            Log.d(Config.LOGTAG, "Could not import sticker", exception);
+        }
+    }
+
     @Override
     public void onAttach(Activity activity) {
         super.onAttach(activity);
@@ -1867,6 +1905,7 @@ public class ConversationFragment extends XmppFragment
     public View onCreateView(final LayoutInflater inflater, ViewGroup container, Bundle savedInstanceState) {
         this.binding = DataBindingUtil.inflate(inflater, R.layout.fragment_conversation, container, false);
         binding.getRoot().setOnClickListener(null); //TODO why did we do this?
+        dirStickers = StickerUtils.getStickersDir(activity);
 
         LoadStickers();
         LoadGifs();
@@ -1911,6 +1950,12 @@ public class ConversationFragment extends XmppFragment
                 names[i] = new File(paths[i]).getName();
             }
             updateStickersGrid(names, paths);
+        });
+        binding.addSticker.setOnClickListener(v -> {
+            Intent intent = new Intent(Intent.ACTION_GET_CONTENT);
+            intent.setType("image/*");
+            intent.putExtra(Intent.EXTRA_ALLOW_MULTIPLE, true);
+            startActivityForResult(Intent.createChooser(intent, "Select images"), REQUEST_IMPORT_STICKER);
         });
         binding.messagesView.setOnScrollListener(mOnScrollListener);
         binding.messagesView.setTranscriptMode(ListView.TRANSCRIPT_MODE_NORMAL);
@@ -2051,7 +2096,6 @@ public class ConversationFragment extends XmppFragment
     }
 
     public void LoadStickers() {
-        if (!hasStoragePermission(activity)) return;
         if (activity == null || activity.xmppConnectionService == null) return;
         new Thread(() -> {
             activity.xmppConnectionService.LoadStickers();
