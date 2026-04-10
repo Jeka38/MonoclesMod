@@ -66,11 +66,14 @@ public class DownloadDefaultStickers extends Service {
 
     @Override
     public int onStartCommand(Intent intent, int flags, int startId) {
+        if (intent == null || intent.getData() == null) {
+            return START_NOT_STICKY;
+        }
         if (http == null) {
-            http = HttpConnectionManager.newBuilder(intent == null ? getResources().getBoolean(R.bool.use_tor)  : intent.getBooleanExtra("tor", getResources().getBoolean(R.bool.use_tor)), intent != null && intent.getBooleanExtra("i2p", getResources().getBoolean(R.bool.use_i2p))).build();
+            http = HttpConnectionManager.newBuilder(intent.getBooleanExtra("tor", getResources().getBoolean(R.bool.use_tor)), intent.getBooleanExtra("i2p", getResources().getBoolean(R.bool.use_i2p))).build();
         }
         synchronized(pendingPacks) {
-            pendingPacks.add(intent == null || intent.getData() == null ? Uri.parse("https://stickers.cheogram.com/index.json") : intent.getData());
+            pendingPacks.add(intent.getData());
         }
         if (RUNNING.compareAndSet(false, true)) {
             new Thread(() -> {
@@ -87,7 +90,9 @@ public class DownloadDefaultStickers extends Service {
         } else {
             Log.d(Config.LOGTAG, "DownloadDefaultStickers. ignoring start command because already running");
         }
-        xmppConnectionService.LoadStickers();
+        Intent reloadIntent = new Intent(this, XmppConnectionService.class);
+        reloadIntent.setAction(XmppConnectionService.ACTION_RELOAD_STICKERS);
+        startService(reloadIntent);
         return START_NOT_STICKY;
     }
 
@@ -175,19 +180,14 @@ public class DownloadDefaultStickers extends Service {
         synchronized(pendingPacks) {
             pendingPacks.remove(jsonUri);
         }
+        Intent reloadIntent = new Intent(this, XmppConnectionService.class);
+        reloadIntent.setAction(XmppConnectionService.ACTION_RELOAD_STICKERS);
+        startService(reloadIntent);
         download();
     }
 
     private File stickerDir() {
-        SharedPreferences p = PreferenceManager.getDefaultSharedPreferences(getBaseContext());
-        final String dir = p.getString("sticker_directory", "Stickers");
-        if (dir.startsWith("content://")) {
-            Uri uri = Uri.parse(dir);
-            uri = DocumentsContract.buildDocumentUriUsingTree(uri, DocumentsContract.getTreeDocumentId(uri));
-            return new File(FileUtils.getPath(getBaseContext(), uri));
-        } else {
-            return new File(Environment.getExternalStoragePublicDirectory(Environment.DIRECTORY_DOCUMENTS) + File.separator + APP_DIRECTORY + File.separator + dir);
-        }
+        return new File(getFilesDir(), "stickers");
     }
 
     @Override

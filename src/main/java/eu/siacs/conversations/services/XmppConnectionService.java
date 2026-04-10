@@ -276,6 +276,8 @@ public class XmppConnectionService extends Service {
     private static final String ACTION_POST_CONNECTIVITY_CHANGE = "eu.siacs.conversations.POST_CONNECTIVITY_CHANGE";
     public static final String ACTION_RENEW_UNIFIED_PUSH_ENDPOINTS = "eu.siacs.conversations.UNIFIED_PUSH_RENEW";
     public static final String ACTION_QUICK_LOG = "eu.siacs.conversations.QUICK_LOG";
+    public static final String ACTION_STICKERS_UPDATED = "de.monocles.mod.STICKERS_UPDATED";
+    public static final String ACTION_RELOAD_STICKERS = "de.monocles.mod.RELOAD_STICKERS";
     public static final String FDroid = "org.fdroid.fdroid";
     public static final String PlayStore = "com.android.vending";
     private static final String SETTING_LAST_ACTIVITY_TS = "last_activity_timestamp";
@@ -617,12 +619,12 @@ public class XmppConnectionService extends Service {
     private File[] filesStickers;
     private String[] filesPathsStickers;
     private String[] filesNamesStickers;
-    File dirStickers = new File(Environment.getExternalStoragePublicDirectory(Environment.DIRECTORY_DOCUMENTS) + File.separator + APP_DIRECTORY + File.separator + "Stickers");
+    File dirStickers;
     //Gifspaths
     private File[] files;
     private String[] filesPaths;
     private String[] filesNames;
-    File dirGifs = new File(Environment.getExternalStoragePublicDirectory(Environment.DIRECTORY_DOCUMENTS) + File.separator + APP_DIRECTORY + File.separator + "GIFs");
+    File dirGifs;
 
     private Timer pingTimer; // Таймер для keep-alive
 
@@ -665,41 +667,59 @@ public class XmppConnectionService extends Service {
     }
 
     public void LoadStickers() {
-        if (!hasStoragePermission(this)) return;
         // Load and show Stickers
+        if (dirStickers == null) return;
         if (!dirStickers.exists()) {
             dirStickers.mkdir();
         }
-        if (dirStickers.listFiles() != null) {
-            if (dirStickers.isDirectory() && dirStickers.listFiles() != null) {
-                filesStickers = dirStickers.listFiles();
-                filesPathsStickers = new String[filesStickers.length];
-                filesNamesStickers = new String[filesStickers.length];
-                for (int i = 0; i < filesStickers.length; i++) {
-                    filesPathsStickers[i] = filesStickers[i].getAbsolutePath();
-                    filesNamesStickers[i] = filesStickers[i].getName();
+        List<File> stickers = new ArrayList<>();
+        File[] packs = dirStickers.listFiles();
+        if (packs != null) {
+            for (File pack : packs) {
+                if (pack.isDirectory()) {
+                    File[] files = pack.listFiles();
+                    if (files != null) {
+                        for (File file : files) {
+                            if (file.isFile() && !file.getName().equals("copyright.txt")) {
+                                stickers.add(file);
+                            }
+                        }
+                    }
+                } else if (pack.isFile()) {
+                    stickers.add(pack);
                 }
             }
         }
+        filesStickers = stickers.toArray(new File[0]);
+        filesPathsStickers = new String[filesStickers.length];
+        filesNamesStickers = new String[filesStickers.length];
+        for (int i = 0; i < filesStickers.length; i++) {
+            filesPathsStickers[i] = filesStickers[i].getAbsolutePath();
+            filesNamesStickers[i] = filesStickers[i].getName();
+        }
+        sendBroadcast(new Intent(ACTION_STICKERS_UPDATED));
     }
 
     public void LoadGifs() {
-        if (!hasStoragePermission(this)) return;
         // Load and show GIFs
+        if (dirGifs == null) return;
         if (!dirGifs.exists()) {
             dirGifs.mkdir();
         }
-        if (dirGifs.listFiles() != null) {
-            if (dirGifs.isDirectory() && dirGifs.listFiles() != null) {
-                files = dirGifs.listFiles();
-                filesPaths = new String[files.length];
-                filesNames = new String[files.length];
-                for (int i = 0; i < files.length; i++) {
-                    filesPaths[i] = files[i].getAbsolutePath();
-                    filesNames[i] = files[i].getName();
-                }
+        List<File> gifs = new ArrayList<>();
+        for (File file : Files.fileTraverser().breadthFirst(dirGifs)) {
+            if (file.isFile()) {
+                gifs.add(file);
             }
         }
+        files = gifs.toArray(new File[0]);
+        filesPaths = new String[files.length];
+        filesNames = new String[files.length];
+        for (int i = 0; i < files.length; i++) {
+            filesPaths[i] = files[i].getAbsolutePath();
+            filesNames[i] = files[i].getName();
+        }
+        sendBroadcast(new Intent(ACTION_STICKERS_UPDATED));
     }
 
     private static String generateFetchKey(Account account, final Avatar avatar) {
@@ -1125,6 +1145,10 @@ public class XmppConnectionService extends Service {
                 if (message != null && Config.QUICK_LOG) {
                     quickLog(message);
                 }
+                break;
+            case ACTION_RELOAD_STICKERS:
+                LoadStickers();
+                LoadGifs();
                 break;
             case Intent.ACTION_SEND:
                 final Uri uri = intent == null ? null : intent.getData();
@@ -1776,6 +1800,10 @@ public class XmppConnectionService extends Service {
     @SuppressLint("TrulyRandom")
     @Override
     public void onCreate() {
+        dirStickers = new File(getFilesDir(), "stickers");
+        dirGifs = new File(getFilesDir(), "gifs");
+        LoadStickers();
+        LoadGifs();
         org.jxmpp.stringprep.libidn.LibIdnXmppStringprep.setup();
         emojiSearch = new EmojiSearch(this);
         updateNotificationChannels();
@@ -6980,7 +7008,7 @@ public class XmppConnectionService extends Service {
 
 
     private File stickerDir() {
-        return new File(Environment.getExternalStoragePublicDirectory(Environment.DIRECTORY_DOCUMENTS) + File.separator + APP_DIRECTORY + File.separator + "Stickers");
+        return new File(getFilesDir(), "stickers");
     }
 
     public void rescanStickers() {
@@ -7018,5 +7046,13 @@ public class XmppConnectionService extends Service {
 
     public EmojiSearch emojiSearch() {
         return emojiSearch;
+    }
+
+    public String[] getFilesPathsStickers() {
+        return filesPathsStickers;
+    }
+
+    public String[] getFilesNamesStickers() {
+        return filesNamesStickers;
     }
 }

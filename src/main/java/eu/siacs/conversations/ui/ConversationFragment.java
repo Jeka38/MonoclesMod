@@ -25,6 +25,8 @@ import static eu.siacs.conversations.utils.StorageHelper.getConversationsDirecto
 import static eu.siacs.conversations.xmpp.Patches.ENCRYPTION_EXCEPTIONS;
 
 import android.Manifest;
+import android.content.BroadcastReceiver;
+import android.content.IntentFilter;
 import android.animation.ArgbEvaluator;
 import android.animation.Animator;
 import android.animation.AnimatorInflater;
@@ -170,6 +172,7 @@ import de.monocles.mod.BobTransfer;
 import de.monocles.mod.EmojiSearch;
 import de.monocles.mod.GifsAdapter;
 import de.monocles.mod.KeyboardHeightProvider;
+import de.monocles.mod.StickerAdapter;
 import de.monocles.mod.WebxdcPage;
 import de.monocles.mod.WebxdcStore;
 import eu.siacs.conversations.Config;
@@ -331,13 +334,21 @@ public class ConversationFragment extends XmppFragment
     private File[] filesStickers;
     private String[] filesPathsStickers;
     private String[] filesNamesStickers;
-    File dirStickers = new File(Environment.getExternalStoragePublicDirectory(Environment.DIRECTORY_DOCUMENTS) + File.separator + APP_DIRECTORY + File.separator + "Stickers");
+    File dirStickers;
     //Gifspaths
     private File[] files;
     private String[] filesPaths;
     private String[] filesNames;
-    File dirGifs = new File(Environment.getExternalStoragePublicDirectory(Environment.DIRECTORY_DOCUMENTS) + File.separator + APP_DIRECTORY + File.separator + "GIFs");
+    File dirGifs;
     private EmojiSearch emojiSearch = null;
+
+    private final BroadcastReceiver mStickerUpdatedReceiver = new BroadcastReceiver() {
+        @Override
+        public void onReceive(Context context, Intent intent) {
+            LoadStickers();
+            LoadGifs();
+        }
+    };
 
 
     protected OnClickListener clickToVerify = new OnClickListener() {
@@ -850,13 +861,6 @@ public class ConversationFragment extends XmppFragment
             binding.gifsview.setVisibility(GONE);
             backPressedLeaveEmojiPicker.setEnabled(true);
             binding.textinput.requestFocus();
-            try {
-                if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O && isEmpty(dirStickers.toPath())) {
-                    Toast.makeText(activity, R.string.update_default_stickers, Toast.LENGTH_LONG).show();
-                }
-            } catch (IOException e) {
-                throw new RuntimeException(e);
-            }
             if (binding.emojiPicker.getVisibility() == VISIBLE) {
                 binding.emojisButton.setBackground(ContextCompat.getDrawable(activity, R.drawable.selector_bubble));
                 binding.emojisButton.setTypeface(null, Typeface.BOLD);
@@ -1948,6 +1952,14 @@ public class ConversationFragment extends XmppFragment
         this.binding = DataBindingUtil.inflate(inflater, R.layout.fragment_conversation, container, false);
         binding.getRoot().setOnClickListener(null); //TODO why did we do this?
 
+        this.dirStickers = new File(activity.getFilesDir(), "stickers");
+        this.dirGifs = new File(activity.getFilesDir(), "gifs");
+
+        if (activity != null && activity.xmppConnectionService != null) {
+            activity.xmppConnectionService.LoadStickers();
+            activity.xmppConnectionService.LoadGifs();
+        }
+
         LoadStickers();
         LoadGifs();
 
@@ -2111,51 +2123,69 @@ public class ConversationFragment extends XmppFragment
 
 
     public void LoadStickers() {
-        final Pattern lastColonPattern = Pattern.compile("");
-        binding.stickersview.setOnItemClickListener((parent, view, position, id) -> {
-            EmojiSearch.EmojiSearchAdapter adapter = ((EmojiSearch.EmojiSearchAdapter) binding.stickersview.getAdapter());
-            Editable toInsert = adapter.getItem(position).toInsert();
-            toInsert.append(" ");
-            Editable s = binding.textinput.getText();
-
-            Matcher lastColonMatcher = lastColonPattern.matcher(s);
-            int lastColon = 0;
-            while(lastColonMatcher.find()) lastColon = lastColonMatcher.end();
-            if (lastColon >= 0) {
-                int start = binding.textinput.getSelectionStart(); //this is to get the the cursor position
-                binding.textinput.getText().insert(start, toInsert); //this will get the text and insert the emoji into   the current position
+        if (activity != null && activity.xmppConnectionService != null) {
+            final String[] names = activity.xmppConnectionService.getFilesNamesStickers();
+            final String[] paths = activity.xmppConnectionService.getFilesPathsStickers();
+            if (names != null && paths != null) {
+                binding.stickersview.setAdapter(new StickerAdapter(activity, names, paths));
+                binding.stickersview.setOnItemClickListener((parent, view, position, id) -> {
+                    if (activity == null) return;
+                    String filePath = paths[position];
+                    attachFileToConversation(conversation, Uri.fromFile(new File(filePath)), "image/webp");
+                    toggleInputMethod();
+                });
             }
-        });
-
-        setupEmojiSearch();
+        }
     }
 
     public void LoadGifs() {
-            if (!hasStoragePermission(activity)) return;
+        if (activity != null && activity.xmppConnectionService != null) {
+            // GIFs are handled by XmppConnectionService
+            // The existing logic used fragment-local files/filesPaths/filesNames
+            // But we should probably use the ones from the service now for consistency
+            // However, the service currently only returns stickers.
+            // Let's keep it simple for now and just use the ones from the service if I add them there,
+            // or stick to the current logic but fix the storage path.
+
             // Load and show GIFs
             if (!dirGifs.exists()) {
                 dirGifs.mkdir();
             }
-            if (dirGifs.listFiles() != null) {
-                if (dirGifs.isDirectory() && dirGifs.listFiles() != null) {
-                    files = dirGifs.listFiles();
-                    filesPaths = new String[files.length];
-                    filesNames = new String[files.length];
-                    for (int i = 0; i < files.length; i++) {
-                        filesPaths[i] = files[i].getAbsolutePath();
-                        filesNames[i] = files[i].getName();
+            List<File> gifList = new ArrayList<>();
+            File[] packs = dirGifs.listFiles();
+            if (packs != null) {
+                for (File pack : packs) {
+                    if (pack.isDirectory()) {
+                        File[] files = pack.listFiles();
+                        if (files != null) {
+                            for (File file : files) {
+                                if (file.isFile()) {
+                                    gifList.add(file);
+                                }
+                            }
+                        }
+                    } else if (pack.isFile()) {
+                        gifList.add(pack);
                     }
                 }
             }
+            File[] filesGifs = gifList.toArray(new File[0]);
+            String[] filesPathsGifs = new String[filesGifs.length];
+            String[] filesNamesGifs = new String[filesGifs.length];
+            for (int i = 0; i < filesGifs.length; i++) {
+                filesPathsGifs[i] = filesGifs[i].getAbsolutePath();
+                filesNamesGifs[i] = filesGifs[i].getName();
+            }
+
             de.monocles.mod.GridView GifsGrid = binding.gifsview; // init GridView
             // Create an object of CustomAdapter and set Adapter to GirdView
-            GifsGrid.setAdapter(new GifsAdapter(activity, filesNames, filesPaths));
+            GifsGrid.setAdapter(new GifsAdapter(activity, filesNamesGifs, filesPathsGifs));
             // implement setOnItemClickListener event on GridView
             GifsGrid.setOnItemClickListener(new AdapterView.OnItemClickListener() {
                 @Override
                 public void onItemClick(AdapterView<?> parent, View view, int position, long id) {
                     if (activity == null) return;
-                    String filePath = filesPaths[position];
+                    String filePath = filesPathsGifs[position];
                     mediaPreviewAdapter.addMediaPreviews(Attachment.of(activity, Uri.fromFile(new File(filePath)), Attachment.Type.IMAGE));
                     toggleInputMethod();
                 }
@@ -2164,8 +2194,8 @@ public class ConversationFragment extends XmppFragment
             GifsGrid.setOnItemLongClickListener(new AdapterView.OnItemLongClickListener() {
                 @Override
                 public boolean onItemLongClick(AdapterView<?> parent, View view, int position, long id) {
-                    if (activity != null && filesPaths[position] != null) {
-                        File file = new File(filesPaths[position]);
+                    if (activity != null && filesPathsGifs[position] != null) {
+                        File file = new File(filesPathsGifs[position]);
                         if (file.delete()) {
                             Toast.makeText(activity, R.string.gif_deleted, Toast.LENGTH_LONG).show();
                         } else {
@@ -2175,6 +2205,7 @@ public class ConversationFragment extends XmppFragment
                     return true;
                 }
             });
+        }
     }
 
     protected void setupEmojiSearch() {
@@ -2182,8 +2213,6 @@ public class ConversationFragment extends XmppFragment
             emojiSearch = activity.xmppConnectionService.emojiSearch();
         }
         if (emojiSearch == null || binding.stickersview == null) return;
-
-        binding.stickersview.setAdapter(emojiSearch.makeAdapter(activity));
 
         final Pattern lastColonPattern = Pattern.compile("");
         Editable s = binding.textinput.getText();
@@ -3808,9 +3837,24 @@ public class ConversationFragment extends XmppFragment
     @Override
     public void onResume() {
         super.onResume();
+        if (activity != null) {
+            activity.registerReceiver(mStickerUpdatedReceiver, new IntentFilter(XmppConnectionService.ACTION_STICKERS_UPDATED));
+        }
         disableEncrpytionForExceptions();
         binding.messagesView.post(this::fireReadEvent);
         updateChatBG();
+    }
+
+    @Override
+    public void onPause() {
+        super.onPause();
+        if (activity != null) {
+            try {
+                activity.unregisterReceiver(mStickerUpdatedReceiver);
+            } catch (Exception e) {
+                //ignore
+            }
+        }
     }
 
     private void disableEncrpytionForExceptions() {
@@ -4093,7 +4137,7 @@ public class ConversationFragment extends XmppFragment
         if (dir.startsWith("content://")) {
             intent.putExtra("android.provider.extra.INITIAL_URI", Uri.parse(dir));
         } else {
-            new File(Environment.getExternalStoragePublicDirectory(Environment.DIRECTORY_DOCUMENTS) + File.separator + APP_DIRECTORY + File.separator + "Stickers").mkdirs();
+            new File(activity.getFilesDir(), "stickers").mkdirs();
             Uri uri;
             if (Build.VERSION.SDK_INT >= 29) {
                 Intent tmp = ((StorageManager) activity.getSystemService(Context.STORAGE_SERVICE)).getPrimaryStorageVolume().createOpenDocumentTreeIntent();
@@ -4130,7 +4174,7 @@ public class ConversationFragment extends XmppFragment
         if (dir.startsWith("content://")) {
             intent.putExtra("android.provider.extra.INITIAL_URI", Uri.parse(dir));
         } else {
-            new File(Environment.getExternalStoragePublicDirectory(Environment.DIRECTORY_DOCUMENTS) + File.separator + APP_DIRECTORY + File.separator + "Stickers").mkdirs();
+            new File(activity.getFilesDir(), "gifs").mkdirs();
             Uri uri;
             if (Build.VERSION.SDK_INT >= 29) {
                 Intent tmp = ((StorageManager) activity.getSystemService(Context.STORAGE_SERVICE)).getPrimaryStorageVolume().createOpenDocumentTreeIntent();
@@ -5671,6 +5715,8 @@ public class ConversationFragment extends XmppFragment
         if (activityResult != null) {
             handleActivityResult(activityResult);
         }
+        LoadStickers();
+        LoadGifs();
         setupEmojiSearch();
         clearPending();
     }

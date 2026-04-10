@@ -201,13 +201,13 @@ public class SettingsActivity extends XmppActivity implements OnSharedPreference
                             InputStream in;
                             OutputStream out;
                             try {
-                                File stickerfolder = new File(Environment.getExternalStoragePublicDirectory(Environment.DIRECTORY_DOCUMENTS) + File.separator + APP_DIRECTORY + File.separator + "Stickers");
+                                File stickerfolder = new File(getFilesDir(), "stickers");
                                 //create output directory if it doesn't exist
                                 if (!stickerfolder.exists()) {
                                     stickerfolder.mkdirs();
                                 }
                                 String filename = getFileName(imageUri);
-                                File newSticker = new File(Environment.getExternalStoragePublicDirectory(Environment.DIRECTORY_DOCUMENTS) + File.separator + APP_DIRECTORY + File.separator + "Stickers" + File.separator + filename);
+                                File newSticker = new File(new File(getFilesDir(), "stickers").getAbsolutePath() + File.separator + filename);
 
                                 in = getContentResolver().openInputStream(imageUri);
                                 out = new FileOutputStream(newSticker);
@@ -240,13 +240,13 @@ public class SettingsActivity extends XmppActivity implements OnSharedPreference
                         InputStream in;
                         OutputStream out;
                         try {
-                            File stickerfolder = new File(Environment.getExternalStoragePublicDirectory(Environment.DIRECTORY_DOCUMENTS) + File.separator + APP_DIRECTORY + File.separator + "Stickers");
+                            File stickerfolder = new File(getFilesDir(), "stickers");
                             //create output directory if it doesn't exist
                             if (!stickerfolder.exists()) {
                                 stickerfolder.mkdirs();
                             }
                             String filename = getFileName(imageUri);
-                            File newSticker = new File(Environment.getExternalStoragePublicDirectory(Environment.DIRECTORY_DOCUMENTS) + File.separator + APP_DIRECTORY + File.separator + "Stickers" + File.separator + filename);
+                            File newSticker = new File(new File(getFilesDir(), "stickers").getAbsolutePath() + File.separator + filename);
 
                             in = getContentResolver().openInputStream(imageUri);
                             out = new FileOutputStream(newSticker);
@@ -286,13 +286,13 @@ public class SettingsActivity extends XmppActivity implements OnSharedPreference
                             InputStream in;
                             OutputStream out;
                             try {
-                                File gifsfolder = new File(Environment.getExternalStoragePublicDirectory(Environment.DIRECTORY_DOCUMENTS) + File.separator + APP_DIRECTORY + File.separator + "GIFs");
+                                File gifsfolder = new File(getFilesDir(), "gifs");
                                 //create output directory if it doesn't exist
                                 if (!gifsfolder.exists()) {
                                     gifsfolder.mkdirs();
                                 }
                                 String filename = getFileName(imageUri);
-                                File newGif = new File(Environment.getExternalStoragePublicDirectory(Environment.DIRECTORY_DOCUMENTS) + File.separator + APP_DIRECTORY + File.separator + "GIFs" + File.separator + filename);
+                                File newGif = new File(new File(getFilesDir(), "gifs").getAbsolutePath() + File.separator + filename);
 
                                 in = getContentResolver().openInputStream(imageUri);
                                 out = new FileOutputStream(newGif);
@@ -322,13 +322,13 @@ public class SettingsActivity extends XmppActivity implements OnSharedPreference
                         InputStream in;
                         OutputStream out;
                         try {
-                            File gifsfolder = new File(Environment.getExternalStoragePublicDirectory(Environment.DIRECTORY_DOCUMENTS) + File.separator + APP_DIRECTORY + File.separator + "GIFs");
+                            File gifsfolder = new File(getFilesDir(), "gifs");
                             //create output directory if it doesn't exist
                             if (!gifsfolder.exists()) {
                                 gifsfolder.mkdirs();
                             }
                             String filename = getFileName(imageUri);
-                            File newGif = new File(Environment.getExternalStoragePublicDirectory(Environment.DIRECTORY_DOCUMENTS) + File.separator + APP_DIRECTORY + File.separator + "GIFs" + File.separator + filename);
+                            File newGif = new File(new File(getFilesDir(), "gifs").getAbsolutePath() + File.separator + filename);
 
                             in = getContentResolver().openInputStream(imageUri);
                             out = new FileOutputStream(newGif);
@@ -1014,17 +1014,6 @@ public class SettingsActivity extends XmppActivity implements OnSharedPreference
             updateTheme();
         }
 
-        final Preference downloadDefaultStickers = mSettingsFragment.findPreference("download_default_stickers");
-        if (downloadDefaultStickers != null) {
-            downloadDefaultStickers.setOnPreferenceClickListener(
-                preference -> {
-                    if (hasStoragePermission(REQUEST_DOWNLOAD_STICKERS)) {
-                        downloadStickers();
-                    }
-                    return true;
-                }
-            );
-        }
 
 //        final Preference importOwnStickers = mSettingsFragment.findPreference("import_own_stickers");
 //        if (importOwnStickers != null) {
@@ -1317,9 +1306,6 @@ public class SettingsActivity extends XmppActivity implements OnSharedPreference
                 if (requestCode == REQUEST_CREATE_BACKUP) {
                     createCompatibleBackup();
                 }
-                if (requestCode == REQUEST_DOWNLOAD_STICKERS) {
-                    downloadStickers();
-                }
             } else {
                 ToastCompat.makeText(
                         this,
@@ -1349,13 +1335,6 @@ public class SettingsActivity extends XmppActivity implements OnSharedPreference
         builder.create().show();
     }
 
-    private void downloadStickers() {
-        Intent intent = new Intent(this, DownloadDefaultStickers.class);
-        intent.putExtra("tor", xmppConnectionService.useTorToConnect());
-        intent.putExtra("i2p", xmppConnectionService.useI2PToConnect());
-        ContextCompat.startForegroundService(this, intent);
-        displayToast("Sticker download started");
-    }
 
     private void displayToast(final String msg) {
         runOnUiThread(() -> ToastCompat.makeText(SettingsActivity.this, msg, ToastCompat.LENGTH_LONG).show());
