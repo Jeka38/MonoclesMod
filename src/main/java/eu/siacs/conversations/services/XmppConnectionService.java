@@ -617,12 +617,12 @@ public class XmppConnectionService extends Service {
     private File[] filesStickers;
     private String[] filesPathsStickers;
     private String[] filesNamesStickers;
-    File dirStickers = new File(Environment.getExternalStoragePublicDirectory(Environment.DIRECTORY_DOCUMENTS) + File.separator + APP_DIRECTORY + File.separator + "Stickers");
+    File dirStickers;
     //Gifspaths
     private File[] files;
     private String[] filesPaths;
     private String[] filesNames;
-    File dirGifs = new File(Environment.getExternalStoragePublicDirectory(Environment.DIRECTORY_DOCUMENTS) + File.separator + APP_DIRECTORY + File.separator + "GIFs");
+    File dirGifs;
 
     private Timer pingTimer; // Таймер для keep-alive
 
@@ -665,7 +665,6 @@ public class XmppConnectionService extends Service {
     }
 
     public void LoadStickers() {
-        if (!hasStoragePermission(this)) return;
         // Load and show Stickers
         if (!dirStickers.exists()) {
             dirStickers.mkdir();
@@ -684,7 +683,6 @@ public class XmppConnectionService extends Service {
     }
 
     public void LoadGifs() {
-        if (!hasStoragePermission(this)) return;
         // Load and show GIFs
         if (!dirGifs.exists()) {
             dirGifs.mkdir();
@@ -1776,6 +1774,8 @@ public class XmppConnectionService extends Service {
     @SuppressLint("TrulyRandom")
     @Override
     public void onCreate() {
+        dirStickers = new File(getFilesDir(), "stickers");
+        dirGifs = new File(getFilesDir(), "gifs");
         org.jxmpp.stringprep.libidn.LibIdnXmppStringprep.setup();
         emojiSearch = new EmojiSearch(this);
         updateNotificationChannels();
@@ -6980,7 +6980,7 @@ public class XmppConnectionService extends Service {
 
 
     private File stickerDir() {
-        return new File(Environment.getExternalStoragePublicDirectory(Environment.DIRECTORY_DOCUMENTS) + File.separator + APP_DIRECTORY + File.separator + "Stickers");
+        return new File(getFilesDir(), "stickers");
     }
 
     public void rescanStickers() {
