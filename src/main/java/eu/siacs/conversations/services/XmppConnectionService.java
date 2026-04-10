@@ -2278,7 +2278,7 @@ public class XmppConnectionService extends Service {
                 if (account.isOnlineAndConnected()) {
                     FILE_ATTACHMENT_EXECUTOR.execute(() -> {
                         for (URI link : links) {
-                            if ("https".equals(link.getScheme())) {
+                            if ("http".equals(link.getScheme()) || "https".equals(link.getScheme())) {
                                 try {
                                     HttpUrl url = HttpUrl.parse(link.toString());
                                     OkHttpClient http = getHttpConnectionManager().buildHttpClient(url, account, false);
