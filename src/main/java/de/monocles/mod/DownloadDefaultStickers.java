@@ -90,7 +90,9 @@ public class DownloadDefaultStickers extends Service {
         } else {
             Log.d(Config.LOGTAG, "DownloadDefaultStickers. ignoring start command because already running");
         }
-        xmppConnectionService.LoadStickers();
+        Intent reloadIntent = new Intent(this, XmppConnectionService.class);
+        reloadIntent.setAction(XmppConnectionService.ACTION_RELOAD_STICKERS);
+        startService(reloadIntent);
         return START_NOT_STICKY;
     }
 
@@ -178,6 +180,9 @@ public class DownloadDefaultStickers extends Service {
         synchronized(pendingPacks) {
             pendingPacks.remove(jsonUri);
         }
+        Intent reloadIntent = new Intent(this, XmppConnectionService.class);
+        reloadIntent.setAction(XmppConnectionService.ACTION_RELOAD_STICKERS);
+        startService(reloadIntent);
         download();
     }
 
