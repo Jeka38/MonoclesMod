@@ -1315,7 +1315,7 @@ public class MessageAdapter extends ArrayAdapter<Message> {
     }
 
     private void showImages(final boolean show, final int duration, final boolean isGif, final boolean isVideo, final ViewHolder viewHolder) {
-        boolean hasDuration = duration > 0;
+        boolean hasDuration = duration > 0 && isVideo;
         if (show) {
             viewHolder.images.setVisibility(View.VISIBLE);
             viewHolder.image.setVisibility(View.VISIBLE);
