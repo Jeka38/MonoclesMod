@@ -349,7 +349,8 @@ public final class MucDetailsContextMenuHelper {
                 }
                 return true;
             case R.id.highlight_in_muc:
-                activity.highlightInMuc(conversation, user.getName());
+                final String nick = user.getNick();
+                activity.highlightInMuc(conversation, nick != null ? nick : user.getComparableName());
                 return true;
             default:
                 return false;
