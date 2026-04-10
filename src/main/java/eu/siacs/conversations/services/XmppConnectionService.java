@@ -7019,4 +7019,12 @@ public class XmppConnectionService extends Service {
     public EmojiSearch emojiSearch() {
         return emojiSearch;
     }
+
+    public String[] getFilesPathsStickers() {
+        return filesPathsStickers;
+    }
+
+    public String[] getFilesNamesStickers() {
+        return filesNamesStickers;
+    }
 }

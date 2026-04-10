@@ -850,13 +850,6 @@ public class ConversationFragment extends XmppFragment
             binding.gifsview.setVisibility(GONE);
             backPressedLeaveEmojiPicker.setEnabled(true);
             binding.textinput.requestFocus();
-            try {
-                if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O && isEmpty(dirStickers.toPath())) {
-                    Toast.makeText(activity, R.string.update_default_stickers, Toast.LENGTH_LONG).show();
-                }
-            } catch (IOException e) {
-                throw new RuntimeException(e);
-            }
             if (binding.emojiPicker.getVisibility() == VISIBLE) {
                 binding.emojisButton.setBackground(ContextCompat.getDrawable(activity, R.drawable.selector_bubble));
                 binding.emojisButton.setTypeface(null, Typeface.BOLD);
@@ -2114,27 +2107,22 @@ public class ConversationFragment extends XmppFragment
 
 
     public void LoadStickers() {
-        final Pattern lastColonPattern = Pattern.compile("");
-        binding.stickersview.setOnItemClickListener((parent, view, position, id) -> {
-            EmojiSearch.EmojiSearchAdapter adapter = ((EmojiSearch.EmojiSearchAdapter) binding.stickersview.getAdapter());
-            Editable toInsert = adapter.getItem(position).toInsert();
-            toInsert.append(" ");
-            Editable s = binding.textinput.getText();
-
-            Matcher lastColonMatcher = lastColonPattern.matcher(s);
-            int lastColon = 0;
-            while(lastColonMatcher.find()) lastColon = lastColonMatcher.end();
-            if (lastColon >= 0) {
-                int start = binding.textinput.getSelectionStart(); //this is to get the the cursor position
-                binding.textinput.getText().insert(start, toInsert); //this will get the text and insert the emoji into   the current position
+        if (activity != null && activity.xmppConnectionService != null) {
+            final String[] names = activity.xmppConnectionService.getFilesNamesStickers();
+            final String[] paths = activity.xmppConnectionService.getFilesPathsStickers();
+            if (names != null && paths != null) {
+                binding.stickersview.setAdapter(new StickerAdapter(activity, names, paths));
+                binding.stickersview.setOnItemClickListener((parent, view, position, id) -> {
+                    if (activity == null) return;
+                    String filePath = paths[position];
+                    attachFileToConversation(conversation, Uri.fromFile(new File(filePath)), "image/webp");
+                    toggleInputMethod();
+                });
             }
-        });
-
-        setupEmojiSearch();
+        }
     }
 
     public void LoadGifs() {
-            if (!hasStoragePermission(activity)) return;
             // Load and show GIFs
             if (!dirGifs.exists()) {
                 dirGifs.mkdir();
@@ -2185,8 +2173,6 @@ public class ConversationFragment extends XmppFragment
             emojiSearch = activity.xmppConnectionService.emojiSearch();
         }
         if (emojiSearch == null || binding.stickersview == null) return;
-
-        binding.stickersview.setAdapter(emojiSearch.makeAdapter(activity));
 
         final Pattern lastColonPattern = Pattern.compile("");
         Editable s = binding.textinput.getText();
