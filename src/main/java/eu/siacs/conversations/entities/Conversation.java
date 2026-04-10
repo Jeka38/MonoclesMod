@@ -2327,7 +2327,7 @@ public class Conversation extends AbstractEntity implements Blockable, Comparabl
                             String uriS = uriEl.getContent();
                             if (mimeType == null || uriS == null) continue;
                             Uri uri = Uri.parse(uriS);
-                            if (mimeType.startsWith("image/") && "https".equals(uri.getScheme())) {
+                            if (mimeType.startsWith("image/") && ("http".equals(uri.getScheme()) || "https".equals(uri.getScheme()))) {
                                 final Drawable d = getDrawableForUrl(uri.toString());
                                 if (d != null) {
                                     binding.mediaImage.setImageDrawable(d);

@@ -74,7 +74,7 @@ public class AttachFileToConversationRunnable implements Runnable, TranscoderLis
 
     private void processAsFile() {
         final String path = mXmppConnectionService.getFileBackend().getOriginalPath(uri);
-        if ("https".equals(uri.getScheme())) {
+        if ("http".equals(uri.getScheme()) || "https".equals(uri.getScheme())) {
             message.getFileParams().url = uri.toString();
             message.getFileParams().setMediaType(mimeType);
             final int encryption = message.getEncryption();
