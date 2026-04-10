@@ -38,7 +38,8 @@ public class UserPreviewAdapter extends ListAdapter<MucOptions.User, UserPreview
         viewHolder.binding.getRoot().setOnClickListener(v -> {
             final XmppActivity activity = XmppActivity.find(v);
             if (activity != null) {
-                activity.highlightInMuc(user.getConversation(), user.getNick());
+                final String nick = user.getNick();
+                activity.highlightInMuc(user.getConversation(), nick != null ? nick : user.getComparableName());
             }
         });
         viewHolder.binding.getRoot().setOnCreateContextMenuListener(this);
