@@ -2551,9 +2551,6 @@ public class FileBackend {
             activity.runOnUiThread(
                     () -> {
                         try {
-                            activity.runOnUiThread(() -> {
-                                ToastCompat.makeText(activity, activity.getString(R.string.copy_file_to, destination), ToastCompat.LENGTH_SHORT).show();
-                            });
                             fileBackend.copyFile(source, destination);
                             activity.runOnUiThread(() -> {
                                 ToastCompat.makeText(activity, activity.getString(R.string.file_copied_to, destination), ToastCompat.LENGTH_SHORT).show();

@@ -1627,9 +1627,9 @@ public class ConversationFragment extends XmppFragment
                     final File source = ((XmppActivity) activity).xmppConnectionService.getFileBackend().getFile(m);
                     try {
                         ((XmppActivity) activity).xmppConnectionService.getFileBackend().copyFileToDocumentFile(activity, source, df);
-                        Toast.makeText(activity, R.string.file_saved, Toast.LENGTH_SHORT).show();
+                        ToastCompat.makeText(activity, R.string.file_saved, Toast.LENGTH_SHORT).show();
                     } catch (final FileBackend.FileCopyException e) {
-                        Toast.makeText(activity, e.getResId(), Toast.LENGTH_SHORT).show();
+                        ToastCompat.makeText(activity, e.getResId(), Toast.LENGTH_SHORT).show();
                     }
                 }
             }
@@ -5884,7 +5884,7 @@ public class ConversationFragment extends XmppFragment
         }
         final File file = ((XmppActivity) activity).xmppConnectionService.getFileBackend().getFile(message);
         if (!file.exists()) {
-            Toast.makeText(activity, R.string.file_deleted, Toast.LENGTH_SHORT).show();
+            ToastCompat.makeText(activity, R.string.file_deleted, Toast.LENGTH_SHORT).show();
             return;
         }
         final Message.FileParams params = message.getFileParams();
