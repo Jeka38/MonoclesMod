@@ -292,6 +292,35 @@
                 <data android:host="signal.art" />
                 <data android:pathPrefix="/addstickers/" />
             </intent-filter>
+            <intent-filter android:label="Import Sticker Pack">
+                <action android:name="android.intent.action.VIEW" />
+
+                <category android:name="android.intent.category.DEFAULT" />
+                <category android:name="android.intent.category.BROWSABLE" />
+
+                <data android:scheme="tg" />
+                <data android:host="addstickers" />
+            </intent-filter>
+            <intent-filter android:label="Import Sticker Pack">
+                <action android:name="android.intent.action.VIEW" />
+
+                <category android:name="android.intent.category.DEFAULT" />
+                <category android:name="android.intent.category.BROWSABLE" />
+
+                <data android:scheme="https" />
+                <data android:host="t.me" />
+                <data android:pathPrefix="/addstickers/" />
+            </intent-filter>
+            <intent-filter android:label="Import Sticker Pack">
+                <action android:name="android.intent.action.VIEW" />
+
+                <category android:name="android.intent.category.DEFAULT" />
+                <category android:name="android.intent.category.BROWSABLE" />
+
+                <data android:scheme="https" />
+                <data android:host="telegram.me" />
+                <data android:pathPrefix="/addstickers/" />
+            </intent-filter>
             <intent-filter android:autoVerify="true">
                 <action android:name="android.intent.action.VIEW" />
 

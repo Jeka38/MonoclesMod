@@ -158,6 +158,24 @@ public class UriHandlerActivity extends AppCompatActivity {
             return false;
         }
 
+        if ("tg".equals(uri.getScheme()) && "addstickers".equals(uri.getHost())) {
+            String set = uri.getQueryParameter("set");
+            if (set != null) {
+                stickers = Uri.parse("https://stickers.cheogram.com/telegram/" + set);
+                if (hasStoragePermission(1)) downloadStickers();
+                return false;
+            }
+        }
+
+        if ("https".equals(uri.getScheme()) && ("t.me".equals(uri.getHost()) || "telegram.me".equals(uri.getHost())) && uri.getPath() != null && uri.getPath().startsWith("/addstickers/")) {
+            String set = uri.getLastPathSegment();
+            if (set != null) {
+                stickers = Uri.parse("https://stickers.cheogram.com/telegram/" + set);
+                if (hasStoragePermission(1)) downloadStickers();
+                return false;
+            }
+        }
+
         if ("https".equals(uri.getScheme()) && "signal.art".equals(uri.getHost())) {
             android.net.UrlQuerySanitizer q = new android.net.UrlQuerySanitizer();
             q.setAllowUnregisteredParamaters(true);
