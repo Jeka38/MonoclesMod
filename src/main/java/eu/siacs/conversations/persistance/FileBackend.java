@@ -3,6 +3,7 @@ package eu.siacs.conversations.persistance;
 import static eu.siacs.conversations.utils.StorageHelper.getConversationsDirectory;
 import static eu.siacs.conversations.utils.StorageHelper.getGlobalAudiosPath;
 import static eu.siacs.conversations.utils.StorageHelper.getGlobalDocumentsPath;
+import static eu.siacs.conversations.utils.StorageHelper.getGlobalDownloadsPath;
 import static eu.siacs.conversations.utils.StorageHelper.getGlobalPicturesPath;
 import static eu.siacs.conversations.utils.StorageHelper.getGlobalVideosPath;
 
@@ -2626,7 +2627,7 @@ public class FileBackend {
         } else if (mime != null && mime.startsWith("audio")) {
             return getGlobalAudiosPath() + File.separator + filename;
         } else {
-            return getGlobalDocumentsPath() + File.separator + filename;
+            return getGlobalDownloadsPath() + File.separator + filename;
         }
     }
 

@@ -87,7 +87,7 @@ public class StorageHelper {
     }
 
     public static String getGlobalDownloadsPath() {
-        return Environment.getExternalStoragePublicDirectory(Environment.DIRECTORY_DOWNLOADS) + File.separator + "monocles mod"+ File.separator;
+        return Environment.getExternalStoragePublicDirectory(Environment.DIRECTORY_DOWNLOADS) + File.separator + APP_DIRECTORY + File.separator;
     }
 
     public static String getGlobalAudiosPath() {
