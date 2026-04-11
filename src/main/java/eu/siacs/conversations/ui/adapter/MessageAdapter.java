@@ -998,7 +998,7 @@ public class MessageAdapter extends ArrayAdapter<Message> {
 
     private void displayOpenableMessage(ViewHolder viewHolder, final Message message, final boolean darkBackground, final int type) {
         displayTextMessage(viewHolder, message, darkBackground, type);
-        viewHolder.download_button.setVisibility(View.VISIBLE);
+        viewHolder.download_button.setVisibility(View.GONE);
         viewHolder.audioPlayer.setVisibility(GONE);
         showImages(false, viewHolder);
         viewHolder.richlinkview.setVisibility(GONE);
@@ -1066,6 +1066,7 @@ public class MessageAdapter extends ArrayAdapter<Message> {
         DrawableCompat.setTint(drawable, StyledAttributes.getColor(getContext(), R.attr.colorAccent));
         viewHolder.download_button.setCompoundDrawablesWithIntrinsicBounds(drawable, null, null, null);
         viewHolder.download_button.setText(activity.getString(R.string.open_x_file, UIHelper.getFileDescriptionString(activity, message) + APKName));
+        viewHolder.download_button.setVisibility(View.GONE);
     }
 
     private void showVCard(final Message message, ViewHolder viewHolder) {
@@ -1084,6 +1085,7 @@ public class MessageAdapter extends ArrayAdapter<Message> {
         DrawableCompat.setTint(drawable, StyledAttributes.getColor(getContext(), R.attr.colorAccent));
         viewHolder.download_button.setCompoundDrawablesWithIntrinsicBounds(drawable, null, null, null);
         viewHolder.download_button.setText(activity.getString(R.string.open_x_file, UIHelper.getFileDescriptionString(activity, message) + VCardName));
+        viewHolder.download_button.setVisibility(View.GONE);
     }
 
     private void displayRichLinkMessage(final ViewHolder viewHolder, final Message message, boolean darkBackground) {

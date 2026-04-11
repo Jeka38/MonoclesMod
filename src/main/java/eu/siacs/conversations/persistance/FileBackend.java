@@ -2596,13 +2596,26 @@ public class FileBackend {
 
     public String getDestinationToSaveFile(Message message) {
         final DownloadableFile file = getFile(message);
-        final String mime = file.getMimeType();
+        String mime = message.getMimeType();
+        final Message.FileParams params = message.getFileParams();
+        if (mime == null && params != null) {
+            mime = params.getMediaType();
+        }
+        if (mime == null) {
+            mime = file.getMimeType();
+        }
         String extension = MimeUtils.guessExtensionFromMimeType(mime);
         if (extension == null) {
-            Log.d(Config.LOGTAG, "extension from mime type was null");
-            extension = "null";
+            extension = MimeUtils.extractRelevantExtension(message.getRelativeFilePath());
         }
-        if ("ogg".equals(extension) && mime.startsWith("audio/")) {
+        if (extension == null && params != null && params.url != null) {
+            extension = MimeUtils.extractRelevantExtension(params.url);
+        }
+        if (extension == null) {
+            Log.d(Config.LOGTAG, "extension from mime type was null");
+            extension = "bin";
+        }
+        if ("ogg".equals(extension) && mime != null && mime.startsWith("audio/")) {
             extension = "oga";
         }
         String filename = fileDateFormat.format(new Date(message.getTimeSent())) + "_" + message.getUuid().substring(0, 4) + "." + extension;

@@ -2525,7 +2525,7 @@ public class ConversationFragment extends XmppFragment
                 showErrorMessage.setVisible(true);
             }
             final String mime = m.isFileOrImage() ? m.getMimeType() : null;
-            if ((m.isGeoUri() && GeoHelper.openInOsmAnd(getActivity(), m)) || (mime != null && mime.startsWith("audio/"))) {
+            if ((m.isGeoUri() && GeoHelper.openInOsmAnd(getActivity(), m)) || (m.isFileOrImage() && !fileDeleted && !receiving)) {
                 openWith.setVisible(true);
             }
             if (m.edited() && m.getRetractId() == null) {
