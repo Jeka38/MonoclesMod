@@ -1619,15 +1619,18 @@ public class ConversationFragment extends XmppFragment
             mediaPreviewAdapter.addMediaPreviews(Attachment.of(activity, data.getData(), Attachment.Type.FILE));
             toggleInputMethod();
         } else if (requestCode == REQUEST_SAVE_AS) {
-            final DocumentFile df = DocumentFile.fromSingleUri(activity, data.getData());
-            final Message m = mPendingSaveAsMessage.pop();
-            if (m != null) {
-                final File source = activity.xmppConnectionService.getFileBackend().getFile(m);
-                try {
-                    activity.xmppConnectionService.getFileBackend().copyFileToDocumentFile(activity, source, df);
-                    Toast.makeText(activity, R.string.file_saved, Toast.LENGTH_SHORT).show();
-                } catch (final FileBackend.FileCopyException e) {
-                    Toast.makeText(activity, e.getResId(), Toast.LENGTH_SHORT).show();
+            final Activity activity = getActivity();
+            if (activity != null && data != null && data.getData() != null) {
+                final DocumentFile df = DocumentFile.fromSingleUri(activity, data.getData());
+                final Message m = mPendingSaveAsMessage.pop();
+                if (m != null && df != null && ((XmppActivity) activity).xmppConnectionService != null) {
+                    final File source = ((XmppActivity) activity).xmppConnectionService.getFileBackend().getFile(m);
+                    try {
+                        ((XmppActivity) activity).xmppConnectionService.getFileBackend().copyFileToDocumentFile(activity, source, df);
+                        Toast.makeText(activity, R.string.file_saved, Toast.LENGTH_SHORT).show();
+                    } catch (final FileBackend.FileCopyException e) {
+                        Toast.makeText(activity, e.getResId(), Toast.LENGTH_SHORT).show();
+                    }
                 }
             }
         } else if (requestCode == REQUEST_SAVE_STICKER) {
@@ -5875,6 +5878,10 @@ public class ConversationFragment extends XmppFragment
 
 
     public void saveFileAs(final Message message) {
+        final Activity activity = getActivity();
+        if (activity == null) {
+            return;
+        }
         final Message.FileParams params = message.getFileParams();
         final String name = params != null ? params.getName() : null;
         String mime = message.getMimeType();
@@ -5888,7 +5895,18 @@ public class ConversationFragment extends XmppFragment
             intent.putExtra(Intent.EXTRA_TITLE, name);
         }
         mPendingSaveAsMessage.push(message);
-        startActivityForResult(intent, REQUEST_SAVE_AS);
+        try {
+            startActivityForResult(intent, REQUEST_SAVE_AS);
+        } catch (ActivityNotFoundException e) {
+            Toast.makeText(activity, R.string.no_application_found, Toast.LENGTH_SHORT).show();
+        }
+    }
+
+    public static void saveFileAs(Activity activity, Message message) {
+        ConversationFragment fragment = ConversationFragment.get(activity);
+        if (fragment != null) {
+            fragment.saveFileAs(message);
+        }
     }
 
     private void deleteMessageFile(final Message message) {

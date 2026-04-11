@@ -1047,7 +1047,7 @@ public class MessageAdapter extends ArrayAdapter<Message> {
             viewHolder.download_button.setCompoundDrawablesWithIntrinsicBounds(drawable, null, null, null);
             viewHolder.download_button.setText(activity.getString(R.string.download_x_file, UIHelper.getFileDescriptionString(activity, message)));
         }
-        viewHolder.download_button.setOnClickListener(v -> mConversationFragment.saveFileAs(message));
+        viewHolder.download_button.setOnClickListener(v -> ConversationFragment.saveFileAs(activity, message));
     }
 
     private void showAPK(final Message message, final ViewHolder viewHolder) {
