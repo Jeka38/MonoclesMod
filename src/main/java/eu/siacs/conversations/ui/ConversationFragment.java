@@ -291,6 +291,7 @@ public class ConversationFragment extends XmppFragment
     public static final int REQUEST_SAVE_STICKER = 0x215;
     public static final int REQUEST_SAVE_GIF = 0x216;
     public static final int REQUEST_WEBXDC_STORE = 0x217;
+    public static final int REQUEST_SAVE_AS = 0x218;
     public static final int ATTACHMENT_CHOICE_CHOOSE_IMAGE = 0x0301;
     public static final int ATTACHMENT_CHOICE_TAKE_PHOTO = 0x0302;
     public static final int ATTACHMENT_CHOICE_CHOOSE_FILE = 0x0303;
@@ -318,6 +319,7 @@ public class ConversationFragment extends XmppFragment
     private final PendingItem<ScrollState> pendingScrollState = new PendingItem<>();
     private final PendingItem<String> pendingLastMessageUuid = new PendingItem<>();
     private final PendingItem<Message> pendingMessage = new PendingItem<>();
+    private final PendingItem<Message> mPendingSaveAsMessage = new PendingItem<>();
     public Uri mPendingEditorContent = null;
     public FragmentConversationBinding binding;
     protected MessageAdapter messageListAdapter;
@@ -1616,6 +1618,18 @@ public class ConversationFragment extends XmppFragment
         if (requestCode == REQUEST_WEBXDC_STORE) {
             mediaPreviewAdapter.addMediaPreviews(Attachment.of(activity, data.getData(), Attachment.Type.FILE));
             toggleInputMethod();
+        } else if (requestCode == REQUEST_SAVE_AS) {
+            final DocumentFile df = DocumentFile.fromSingleUri(activity, data.getData());
+            final Message m = mPendingSaveAsMessage.pop();
+            if (m != null) {
+                final File source = activity.xmppConnectionService.getFileBackend().getFile(m);
+                try {
+                    activity.xmppConnectionService.getFileBackend().copyFileToDocumentFile(activity, source, df);
+                    Toast.makeText(activity, R.string.file_saved, Toast.LENGTH_SHORT).show();
+                } catch (final FileBackend.FileCopyException e) {
+                    Toast.makeText(activity, e.getResId(), Toast.LENGTH_SHORT).show();
+                }
+            }
         } else if (requestCode == REQUEST_SAVE_STICKER) {
             final DocumentFile df = DocumentFile.fromSingleUri(activity, data.getData());
             final File f = savingAsSticker;
@@ -5859,6 +5873,23 @@ public class ConversationFragment extends XmppFragment
     }
 
 
+
+    public void saveFileAs(final Message message) {
+        final Message.FileParams params = message.getFileParams();
+        final String name = params != null ? params.getName() : null;
+        String mime = message.getMimeType();
+        if (mime == null && params != null) {
+            mime = params.getMediaType();
+        }
+        final Intent intent = new Intent(Intent.ACTION_CREATE_DOCUMENT);
+        intent.addCategory(Intent.CATEGORY_OPENABLE);
+        intent.setType(mime == null ? "application/octet-stream" : mime);
+        if (name != null) {
+            intent.putExtra(Intent.EXTRA_TITLE, name);
+        }
+        mPendingSaveAsMessage.push(message);
+        startActivityForResult(intent, REQUEST_SAVE_AS);
+    }
 
     private void deleteMessageFile(final Message message) {
         List<Element> thumbs = selectedMessage.getFileParams() != null ? selectedMessage.getFileParams().getThumbnails() : null;

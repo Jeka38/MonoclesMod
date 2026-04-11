@@ -402,6 +402,7 @@
     <string name="file">файл</string>
     <string name="file_copied_to">Файл скопирован в %s</string>
     <string name="file_deleted">Файл удален</string>
+    <string name="file_saved">Файл сохранен</string>
     <string name="file_too_large">Файл слишком большой</string>
     <string name="file_transmission_cancelled">передача файла отменена</string>
     <string name="file_transmission_failed">передача файла прервана</string>
