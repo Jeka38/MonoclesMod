@@ -140,6 +140,7 @@ dependencies {
     implementation 'com.github.inusedname:AndroidPhotoFilters:1.0.7.2'
     implementation 'com.github.chrisbanes:PhotoView:2.3.0'
     implementation 'com.github.natario1:Autocomplete:v1.1.0'
+    implementation 'ca.denisab85:tdlib:v1.8.8-20221107'
 }
 
 ext {
