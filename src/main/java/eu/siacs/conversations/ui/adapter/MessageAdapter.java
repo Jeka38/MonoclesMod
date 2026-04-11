@@ -998,6 +998,12 @@ public class MessageAdapter extends ArrayAdapter<Message> {
 
     private void displayOpenableMessage(ViewHolder viewHolder, final Message message, final boolean darkBackground, final int type) {
         displayTextMessage(viewHolder, message, darkBackground, type);
+        final DownloadableFile file = activity.xmppConnectionService.getFileBackend().getFile(message);
+        if (file != null && !file.exists() && !message.isFileDeleted()) {
+            new Thread(new markFileDeletedFinisher(message, activity)).start();
+            displayInfoMessage(viewHolder, activity.getString(R.string.file_deleted), darkBackground, message);
+            return;
+        }
         viewHolder.download_button.setVisibility(View.VISIBLE);
         viewHolder.audioPlayer.setVisibility(GONE);
         showImages(false, viewHolder);
@@ -1227,7 +1233,6 @@ public class MessageAdapter extends ArrayAdapter<Message> {
         if (file != null && !file.exists() && !message.isFileDeleted()) {
             new Thread(new markFileDeletedFinisher(message, activity)).start();
             displayInfoMessage(viewHolder, activity.getString(R.string.file_deleted), darkBackground, message);
-            ToastCompat.makeText(activity, R.string.file_deleted, ToastCompat.LENGTH_SHORT).show();
             return;
         }
 

@@ -5879,7 +5879,12 @@ public class ConversationFragment extends XmppFragment
 
     public void saveFileAs(final Message message) {
         final Activity activity = getActivity();
-        if (activity == null) {
+        if (activity == null || ((XmppActivity) activity).xmppConnectionService == null) {
+            return;
+        }
+        final File file = ((XmppActivity) activity).xmppConnectionService.getFileBackend().getFile(message);
+        if (!file.exists()) {
+            Toast.makeText(activity, R.string.file_deleted, Toast.LENGTH_SHORT).show();
             return;
         }
         final Message.FileParams params = message.getFileParams();
@@ -5888,6 +5893,9 @@ public class ConversationFragment extends XmppFragment
         if (mime == null && params != null) {
             mime = params.getMediaType();
         }
+        if (mime != null) {
+            mime = mime.split(";")[0];
+        }
         final Intent intent = new Intent(Intent.ACTION_CREATE_DOCUMENT);
         intent.addCategory(Intent.CATEGORY_OPENABLE);
         intent.setType(mime == null ? "application/octet-stream" : mime);
@@ -5895,10 +5903,14 @@ public class ConversationFragment extends XmppFragment
             intent.putExtra(Intent.EXTRA_TITLE, name);
         }
         mPendingSaveAsMessage.push(message);
-        try {
-            startActivityForResult(intent, REQUEST_SAVE_AS);
-        } catch (ActivityNotFoundException e) {
-            Toast.makeText(activity, R.string.no_application_found, Toast.LENGTH_SHORT).show();
+        if (intent.resolveActivity(activity.getPackageManager()) != null) {
+            try {
+                startActivityForResult(intent, REQUEST_SAVE_AS);
+            } catch (ActivityNotFoundException e) {
+                ((XmppActivity) activity).xmppConnectionService.getFileBackend().saveFile(message, activity);
+            }
+        } else {
+            ((XmppActivity) activity).xmppConnectionService.getFileBackend().saveFile(message, activity);
         }
     }
 
