@@ -1207,6 +1207,7 @@
     <string name="save_x_file">Save %s</string>
     <string name="file_copied_to">File copied to %s</string>
     <string name="copy_file_to">Copy file to %s</string>
+    <string name="file_saved">File saved</string>
     <string name="use_individual_notifications">Use individual notifications</string>
     <string name="pref_remove_all_individual_summary">Remove all individual notifications for your contacts and rooms.</string>
     <string name="pref_remove_all_individual_notifications_title">Remove all individual notifications</string>

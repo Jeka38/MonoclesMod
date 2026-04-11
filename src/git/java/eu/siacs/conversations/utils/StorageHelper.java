@@ -59,7 +59,7 @@ public class StorageHelper {
     }
 
     public static String getGlobalDownloadsPath() {
-        return Environment.getExternalStoragePublicDirectory(Environment.DIRECTORY_DOCUMENTS) + File.separator + APP_DIRECTORY + File.separator + "downloads" + File.separator;
+        return Environment.getExternalStoragePublicDirectory(Environment.DIRECTORY_DOWNLOADS) + File.separator + APP_DIRECTORY + File.separator;
     }
 
     public static String getGlobalAudiosPath() {

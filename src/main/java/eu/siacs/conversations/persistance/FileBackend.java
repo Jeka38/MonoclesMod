@@ -3,6 +3,7 @@ package eu.siacs.conversations.persistance;
 import static eu.siacs.conversations.utils.StorageHelper.getConversationsDirectory;
 import static eu.siacs.conversations.utils.StorageHelper.getGlobalAudiosPath;
 import static eu.siacs.conversations.utils.StorageHelper.getGlobalDocumentsPath;
+import static eu.siacs.conversations.utils.StorageHelper.getGlobalDownloadsPath;
 import static eu.siacs.conversations.utils.StorageHelper.getGlobalPicturesPath;
 import static eu.siacs.conversations.utils.StorageHelper.getGlobalVideosPath;
 
@@ -2550,9 +2551,6 @@ public class FileBackend {
             activity.runOnUiThread(
                     () -> {
                         try {
-                            activity.runOnUiThread(() -> {
-                                ToastCompat.makeText(activity, activity.getString(R.string.copy_file_to, destination), ToastCompat.LENGTH_SHORT).show();
-                            });
                             fileBackend.copyFile(source, destination);
                             activity.runOnUiThread(() -> {
                                 ToastCompat.makeText(activity, activity.getString(R.string.file_copied_to, destination), ToastCompat.LENGTH_SHORT).show();
@@ -2596,13 +2594,26 @@ public class FileBackend {
 
     public String getDestinationToSaveFile(Message message) {
         final DownloadableFile file = getFile(message);
-        final String mime = file.getMimeType();
+        String mime = message.getMimeType();
+        final Message.FileParams params = message.getFileParams();
+        if (mime == null && params != null) {
+            mime = params.getMediaType();
+        }
+        if (mime == null) {
+            mime = file.getMimeType();
+        }
         String extension = MimeUtils.guessExtensionFromMimeType(mime);
         if (extension == null) {
-            Log.d(Config.LOGTAG, "extension from mime type was null");
-            extension = "null";
+            extension = MimeUtils.extractRelevantExtension(message.getRelativeFilePath());
         }
-        if ("ogg".equals(extension) && mime.startsWith("audio/")) {
+        if (extension == null && params != null && params.url != null) {
+            extension = MimeUtils.extractRelevantExtension(params.url);
+        }
+        if (extension == null) {
+            Log.d(Config.LOGTAG, "extension from mime type was null");
+            extension = "bin";
+        }
+        if ("ogg".equals(extension) && mime != null && mime.startsWith("audio/")) {
             extension = "oga";
         }
         String filename = fileDateFormat.format(new Date(message.getTimeSent())) + "_" + message.getUuid().substring(0, 4) + "." + extension;
@@ -2613,7 +2624,7 @@ public class FileBackend {
         } else if (mime != null && mime.startsWith("audio")) {
             return getGlobalAudiosPath() + File.separator + filename;
         } else {
-            return getGlobalDocumentsPath() + File.separator + filename;
+            return getGlobalDownloadsPath() + File.separator + filename;
         }
     }
 

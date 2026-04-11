@@ -998,6 +998,12 @@ public class MessageAdapter extends ArrayAdapter<Message> {
 
     private void displayOpenableMessage(ViewHolder viewHolder, final Message message, final boolean darkBackground, final int type) {
         displayTextMessage(viewHolder, message, darkBackground, type);
+        final DownloadableFile file = activity.xmppConnectionService.getFileBackend().getFile(message);
+        if (file != null && !file.exists() && !message.isFileDeleted()) {
+            new Thread(new markFileDeletedFinisher(message, activity)).start();
+            displayInfoMessage(viewHolder, activity.getString(R.string.file_deleted), darkBackground, message);
+            return;
+        }
         viewHolder.download_button.setVisibility(View.VISIBLE);
         viewHolder.audioPlayer.setVisibility(GONE);
         showImages(false, viewHolder);
@@ -1015,7 +1021,7 @@ public class MessageAdapter extends ArrayAdapter<Message> {
             final Drawable drawable = DrawableCompat.wrap(icon);
             DrawableCompat.setTint(drawable, StyledAttributes.getColor(getContext(), R.attr.colorAccent));
             viewHolder.download_button.setCompoundDrawablesWithIntrinsicBounds(drawable, null, null, null);
-            viewHolder.download_button.setText(activity.getString(R.string.open_x_file, UIHelper.getFileDescriptionString(activity, message)));
+            viewHolder.download_button.setText(activity.getString(R.string.download_x_file, UIHelper.getFileDescriptionString(activity, message)));
         } else if (mimeType != null && message.getMimeType().equals("application/vnd.android.package-archive")) {
             try {
                 showAPK(message, viewHolder);
@@ -1027,27 +1033,27 @@ public class MessageAdapter extends ArrayAdapter<Message> {
             final Drawable drawable = DrawableCompat.wrap(icon);
             DrawableCompat.setTint(drawable, StyledAttributes.getColor(getContext(), R.attr.colorAccent));
             viewHolder.download_button.setCompoundDrawablesWithIntrinsicBounds(drawable, null, null, null);
-            viewHolder.download_button.setText(activity.getString(R.string.open_x_file, UIHelper.getFileDescriptionString(activity, message)));
+            viewHolder.download_button.setText(activity.getString(R.string.download_x_file, UIHelper.getFileDescriptionString(activity, message)));
         } else if (mimeType != null && message.getMimeType().contains("image")) {
             final Drawable icon = activity.getResources().getDrawable(R.drawable.ic_image_grey600_48dp);
             final Drawable drawable = DrawableCompat.wrap(icon);
             DrawableCompat.setTint(drawable, StyledAttributes.getColor(getContext(), R.attr.colorAccent));
             viewHolder.download_button.setCompoundDrawablesWithIntrinsicBounds(drawable, null, null, null);
-            viewHolder.download_button.setText(activity.getString(R.string.open_x_file, UIHelper.getFileDescriptionString(activity, message)));
+            viewHolder.download_button.setText(activity.getString(R.string.download_x_file, UIHelper.getFileDescriptionString(activity, message)));
         } else if (mimeType != null && message.getMimeType().contains("audio")) {
             final Drawable icon = activity.getResources().getDrawable(R.drawable.ic_audio_grey600_48dp);
             final Drawable drawable = DrawableCompat.wrap(icon);
             DrawableCompat.setTint(drawable, StyledAttributes.getColor(getContext(), R.attr.colorAccent));
             viewHolder.download_button.setCompoundDrawablesWithIntrinsicBounds(drawable, null, null, null);
-            viewHolder.download_button.setText(activity.getString(R.string.open_x_file, UIHelper.getFileDescriptionString(activity, message)));
+            viewHolder.download_button.setText(activity.getString(R.string.download_x_file, UIHelper.getFileDescriptionString(activity, message)));
         } else {
             final Drawable icon = activity.getResources().getDrawable(R.drawable.ic_file_grey600_48dp);
             final  Drawable drawable = DrawableCompat.wrap(icon);
             DrawableCompat.setTint(drawable, StyledAttributes.getColor(getContext(), R.attr.colorAccent));
             viewHolder.download_button.setCompoundDrawablesWithIntrinsicBounds(drawable, null, null, null);
-            viewHolder.download_button.setText(activity.getString(R.string.open_x_file, UIHelper.getFileDescriptionString(activity, message)));
+            viewHolder.download_button.setText(activity.getString(R.string.download_x_file, UIHelper.getFileDescriptionString(activity, message)));
         }
-        viewHolder.download_button.setOnClickListener(v -> openDownloadable(message));
+        viewHolder.download_button.setOnClickListener(v -> ConversationFragment.saveFileAs(activity, message));
     }
 
     private void showAPK(final Message message, final ViewHolder viewHolder) {
@@ -1065,7 +1071,8 @@ public class MessageAdapter extends ArrayAdapter<Message> {
         final Drawable drawable = DrawableCompat.wrap(icon);
         DrawableCompat.setTint(drawable, StyledAttributes.getColor(getContext(), R.attr.colorAccent));
         viewHolder.download_button.setCompoundDrawablesWithIntrinsicBounds(drawable, null, null, null);
-        viewHolder.download_button.setText(activity.getString(R.string.open_x_file, UIHelper.getFileDescriptionString(activity, message) + APKName));
+        viewHolder.download_button.setText(activity.getString(R.string.download_x_file, UIHelper.getFileDescriptionString(activity, message) + APKName));
+        viewHolder.download_button.setVisibility(View.VISIBLE);
     }
 
     private void showVCard(final Message message, ViewHolder viewHolder) {
@@ -1083,7 +1090,8 @@ public class MessageAdapter extends ArrayAdapter<Message> {
         final  Drawable drawable = DrawableCompat.wrap(icon);
         DrawableCompat.setTint(drawable, StyledAttributes.getColor(getContext(), R.attr.colorAccent));
         viewHolder.download_button.setCompoundDrawablesWithIntrinsicBounds(drawable, null, null, null);
-        viewHolder.download_button.setText(activity.getString(R.string.open_x_file, UIHelper.getFileDescriptionString(activity, message) + VCardName));
+        viewHolder.download_button.setText(activity.getString(R.string.download_x_file, UIHelper.getFileDescriptionString(activity, message) + VCardName));
+        viewHolder.download_button.setVisibility(View.VISIBLE);
     }
 
     private void displayRichLinkMessage(final ViewHolder viewHolder, final Message message, boolean darkBackground) {
@@ -1225,7 +1233,6 @@ public class MessageAdapter extends ArrayAdapter<Message> {
         if (file != null && !file.exists() && !message.isFileDeleted()) {
             new Thread(new markFileDeletedFinisher(message, activity)).start();
             displayInfoMessage(viewHolder, activity.getString(R.string.file_deleted), darkBackground, message);
-            ToastCompat.makeText(activity, R.string.file_deleted, ToastCompat.LENGTH_SHORT).show();
             return;
         }
 
