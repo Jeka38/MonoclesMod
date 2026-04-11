@@ -161,8 +161,12 @@ public class UriHandlerActivity extends AppCompatActivity {
         if ("tg".equals(uri.getScheme()) && "addstickers".equals(uri.getHost())) {
             String set = uri.getQueryParameter("set");
             if (set != null) {
-                stickers = Uri.parse("https://stickers.cheogram.com/telegram/" + set);
-                if (hasStoragePermission(1)) downloadStickers();
+                if (hasStoragePermission(1)) {
+                    Intent downloadIntent = new Intent(this, de.monocles.mod.StickerDownloadService.class);
+                    downloadIntent.setData(uri);
+                    ContextCompat.startForegroundService(this, downloadIntent);
+                    finish();
+                }
                 return false;
             }
         }
@@ -170,8 +174,13 @@ public class UriHandlerActivity extends AppCompatActivity {
         if ("https".equals(uri.getScheme()) && ("t.me".equals(uri.getHost()) || "telegram.me".equals(uri.getHost())) && uri.getPath() != null && uri.getPath().startsWith("/addstickers/")) {
             String set = uri.getLastPathSegment();
             if (set != null) {
-                stickers = Uri.parse("https://stickers.cheogram.com/telegram/" + set);
-                if (hasStoragePermission(1)) downloadStickers();
+                if (hasStoragePermission(1)) {
+                    Uri tgUri = new Uri.Builder().scheme("tg").authority("addstickers").appendQueryParameter("set", set).build();
+                    Intent downloadIntent = new Intent(this, de.monocles.mod.StickerDownloadService.class);
+                    downloadIntent.setData(tgUri);
+                    ContextCompat.startForegroundService(this, downloadIntent);
+                    finish();
+                }
                 return false;
             }
         }
