@@ -5,6 +5,7 @@ import android.content.Context;
 import android.graphics.drawable.Drawable;
 import android.text.Spannable;
 import android.text.SpannableStringBuilder;
+import android.text.style.ImageSpan;
 import android.view.LayoutInflater;
 import android.view.View;
 import android.view.ViewGroup;
@@ -87,6 +88,41 @@ public class EmojiSearch {
 
     public EmojiSearchAdapter makeAdapter(Activity context) {
         return new EmojiSearchAdapter(context);
+    }
+
+    public synchronized void replaceSmileysWithImages(final SpannableStringBuilder text) {
+        if (text == null || text.length() == 0) {
+            return;
+        }
+        final List<CustomEmoji> customEmoji = new ArrayList<>();
+        for (final Emoji one : emoji) {
+            if (one instanceof CustomEmoji) {
+                customEmoji.add((CustomEmoji) one);
+            }
+        }
+        customEmoji.sort((a, b) -> Integer.compare(b.insertToken.length(), a.insertToken.length()));
+
+        for (final CustomEmoji one : customEmoji) {
+            for (final String alias : one.emoticon) {
+                if (alias == null || alias.isEmpty()) {
+                    continue;
+                }
+                int from = 0;
+                while (from < text.length()) {
+                    final String full = text.toString();
+                    final int start = full.indexOf(alias, from);
+                    if (start < 0) {
+                        break;
+                    }
+                    final int end = start + alias.length();
+                    final ImageSpan[] spans = text.getSpans(start, end, ImageSpan.class);
+                    if (spans == null || spans.length == 0) {
+                        text.setSpan(new InlineImageSpan(one.icon, one.source), start, end, Spannable.SPAN_EXCLUSIVE_EXCLUSIVE);
+                    }
+                    from = end;
+                }
+            }
+        }
     }
 
     public static class ResultPQ extends PriorityQueue<BoundExtractedResult<Emoji>> {
@@ -172,20 +208,55 @@ public class EmojiSearch {
     public static class CustomEmoji extends Emoji {
         protected final String source;
         protected final Drawable icon;
+        private final String insertToken;
 
         public CustomEmoji(final String shortcode, final String source, final Drawable icon, final String tag) {
-            super(null, 999);
+            this(shortcode, source, icon, tag, 999);
+        }
+
+        public CustomEmoji(final String shortcode, final String source, final Drawable icon, final String tag, final int order) {
+            super(null, order);
             shortcodes.add(shortcode);
+            emoticon.add(shortcode);
             if (tag != null) tags.add(tag);
             this.source = source;
             this.icon = icon;
+            this.insertToken = shortcode;
+            if (icon == null) {
+                throw new IllegalArgumentException("icon must not be null");
+            }
+        }
+
+        public CustomEmoji(final List<String> aliases, final String source, final Drawable icon, final String tag) {
+            this(aliases, source, icon, tag, 999);
+        }
+
+        public CustomEmoji(final List<String> aliases, final String source, final Drawable icon, final String tag, final int order) {
+            super(null, order);
+            if (aliases != null) {
+                for (final String alias : aliases) {
+                    if (alias == null || alias.trim().isEmpty()) {
+                        continue;
+                    }
+                    shortcodes.add(alias);
+                    emoticon.add(alias);
+                }
+            }
+            if (shortcodes.isEmpty()) {
+                throw new IllegalArgumentException("at least one alias must be provided");
+            }
+            if (tag != null) tags.add(tag);
+            this.source = source;
+            this.icon = icon;
+            this.insertToken = shortcodes.get(0);
             if (icon == null) {
                 throw new IllegalArgumentException("icon must not be null");
             }
         }
 
         public SpannableStringBuilder toInsert() {
-            SpannableStringBuilder builder = new SpannableStringBuilder(":" + shortcodes.get(0) + ":");
+            final String token = insertToken.matches("[a-zA-Z0-9_+\\-]+") ? ":" + insertToken + ":" : insertToken;
+            SpannableStringBuilder builder = new SpannableStringBuilder(token);
             builder.setSpan(new InlineImageSpan(icon, source), 0, builder.length(), Spannable.SPAN_EXCLUSIVE_EXCLUSIVE);
             return builder;
         }
