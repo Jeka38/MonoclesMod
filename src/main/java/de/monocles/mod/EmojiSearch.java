@@ -5,6 +5,7 @@ import android.content.Context;
 import android.graphics.drawable.Drawable;
 import android.text.Spannable;
 import android.text.SpannableStringBuilder;
+import android.text.style.ImageSpan;
 import android.view.LayoutInflater;
 import android.view.View;
 import android.view.ViewGroup;
@@ -53,6 +54,16 @@ public class EmojiSearch {
         emoji.add(one);
     }
 
+    public synchronized void clearCustomEmoji() {
+        final List<Emoji> toRemove = new ArrayList<>();
+        for (final Emoji one : emoji) {
+            if (one instanceof CustomEmoji) {
+                toRemove.add(one);
+            }
+        }
+        emoji.removeAll(toRemove);
+    }
+
     public synchronized List<Emoji> find(final String q) {
         final ResultPQ pq = new ResultPQ();
         for (Emoji e : emoji) {
@@ -88,6 +99,68 @@ public class EmojiSearch {
     public EmojiSearchAdapter makeAdapter(Activity context) {
         return new EmojiSearchAdapter(context);
     }
+
+    public synchronized void replaceSmileysWithImages(final SpannableStringBuilder text) {
+        if (text == null || text.length() == 0) {
+            return;
+        }
+        if (text.getSpans(0, text.length(), SmileysProcessedMarker.class).length > 0) {
+            return;
+        }
+        final List<PairAliasEmoji> aliases = new ArrayList<>();
+        for (final Emoji one : emoji) {
+            if (!(one instanceof CustomEmoji)) {
+                continue;
+            }
+            final CustomEmoji custom = (CustomEmoji) one;
+            for (final String alias : custom.emoticon) {
+                if (alias == null || alias.isEmpty()) {
+                    continue;
+                }
+                aliases.add(new PairAliasEmoji(alias, custom));
+            }
+        }
+        aliases.sort((a, b) -> Integer.compare(b.alias.length(), a.alias.length()));
+
+        final String full = text.toString();
+        int i = 0;
+        while (i < full.length()) {
+            boolean matched = false;
+            for (final PairAliasEmoji one : aliases) {
+                final String alias = one.alias;
+                if (i + alias.length() > full.length()) {
+                    continue;
+                }
+                if (!full.regionMatches(i, alias, 0, alias.length())) {
+                    continue;
+                }
+                final int end = i + alias.length();
+                final ImageSpan[] spans = text.getSpans(i, end, ImageSpan.class);
+                if (spans == null || spans.length == 0) {
+                    text.setSpan(new InlineImageSpan(one.emoji.icon, one.emoji.source), i, end, Spannable.SPAN_EXCLUSIVE_EXCLUSIVE);
+                }
+                i = end;
+                matched = true;
+                break;
+            }
+            if (!matched) {
+                i++;
+            }
+        }
+        text.setSpan(new SmileysProcessedMarker(), 0, 0, Spannable.SPAN_MARK_MARK);
+    }
+
+    private static class PairAliasEmoji {
+        final String alias;
+        final CustomEmoji emoji;
+
+        PairAliasEmoji(final String alias, final CustomEmoji emoji) {
+            this.alias = alias;
+            this.emoji = emoji;
+        }
+    }
+
+    private static class SmileysProcessedMarker { }
 
     public static class ResultPQ extends PriorityQueue<BoundExtractedResult<Emoji>> {
         public void addTopK(Emoji e, int score, int k) {
@@ -172,20 +245,55 @@ public class EmojiSearch {
     public static class CustomEmoji extends Emoji {
         protected final String source;
         protected final Drawable icon;
+        private final String insertToken;
 
         public CustomEmoji(final String shortcode, final String source, final Drawable icon, final String tag) {
-            super(null, 999);
+            this(shortcode, source, icon, tag, 999);
+        }
+
+        public CustomEmoji(final String shortcode, final String source, final Drawable icon, final String tag, final int order) {
+            super(null, order);
             shortcodes.add(shortcode);
+            emoticon.add(shortcode);
             if (tag != null) tags.add(tag);
             this.source = source;
             this.icon = icon;
+            this.insertToken = shortcode;
+            if (icon == null) {
+                throw new IllegalArgumentException("icon must not be null");
+            }
+        }
+
+        public CustomEmoji(final List<String> aliases, final String source, final Drawable icon, final String tag) {
+            this(aliases, source, icon, tag, 999);
+        }
+
+        public CustomEmoji(final List<String> aliases, final String source, final Drawable icon, final String tag, final int order) {
+            super(null, order);
+            if (aliases != null) {
+                for (final String alias : aliases) {
+                    if (alias == null || alias.trim().isEmpty()) {
+                        continue;
+                    }
+                    shortcodes.add(alias);
+                    emoticon.add(alias);
+                }
+            }
+            if (shortcodes.isEmpty()) {
+                throw new IllegalArgumentException("at least one alias must be provided");
+            }
+            if (tag != null) tags.add(tag);
+            this.source = source;
+            this.icon = icon;
+            this.insertToken = shortcodes.get(0);
             if (icon == null) {
                 throw new IllegalArgumentException("icon must not be null");
             }
         }
 
         public SpannableStringBuilder toInsert() {
-            SpannableStringBuilder builder = new SpannableStringBuilder(":" + shortcodes.get(0) + ":");
+            final String token = insertToken.matches("[a-zA-Z0-9_+\\-]+") ? ":" + insertToken + ":" : insertToken;
+            SpannableStringBuilder builder = new SpannableStringBuilder(token);
             builder.setSpan(new InlineImageSpan(icon, source), 0, builder.length(), Spannable.SPAN_EXCLUSIVE_EXCLUSIVE);
             return builder;
         }

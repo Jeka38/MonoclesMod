@@ -93,6 +93,7 @@ import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
 import de.monocles.mod.BobTransfer;
+import de.monocles.mod.EmojiSearch;
 import de.monocles.mod.MessageTextActionModeCallback;
 import de.monocles.mod.Util;
 import de.monocles.mod.WebxdcPage;
@@ -697,7 +698,7 @@ public class MessageAdapter extends ArrayAdapter<Message> {
 
     private SpannableStringBuilder getSpannableBody(final Message message) {
         Drawable fallbackImg = ResourcesCompat.getDrawable(activity.getResources(), activity.getThemeResource(R.attr.ic_attach_photo, R.drawable.ic_attach_photo), null);
-        return replaceYoutube(activity.getApplicationContext(), message.getMergedBody((cid) -> {
+        final SpannableStringBuilder body = replaceYoutube(activity.getApplicationContext(), message.getMergedBody((cid) -> {
             try {
                 DownloadableFile f = activity.xmppConnectionService.getFileForCid(cid);
                 if (f == null || !f.canRead()) {
@@ -718,6 +719,13 @@ public class MessageAdapter extends ArrayAdapter<Message> {
                 return null;
             }
         }, fallbackImg));
+        if (activity != null && activity.xmppConnectionService != null) {
+            final EmojiSearch emojiSearch = activity.xmppConnectionService.emojiSearch();
+            if (emojiSearch != null) {
+                emojiSearch.replaceSmileysWithImages(body);
+            }
+        }
+        return body;
     }
 
     private void displayTextMessage(final ViewHolder viewHolder,
