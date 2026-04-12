@@ -230,6 +230,7 @@ public class SettingsActivity extends XmppActivity implements OnSharedPreference
                 if (imported) {
                     Toast.makeText(this, R.string.sticker_imported, Toast.LENGTH_LONG).show();
                     xmppConnectionService.LoadStickers();
+                    xmppConnectionService.rescanStickers(true);
                 }
             }
         }
@@ -1122,6 +1123,7 @@ public class SettingsActivity extends XmppActivity implements OnSharedPreference
             if (!failed) {
                 Toast.makeText(this, R.string.sticker_deleted, Toast.LENGTH_LONG).show();
                 xmppConnectionService.LoadStickers();
+                xmppConnectionService.rescanStickers(true);
             } else {
                 Toast.makeText(this, R.string.failed_to_delete_sticker, Toast.LENGTH_LONG).show();
             }

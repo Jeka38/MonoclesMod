@@ -6990,8 +6990,12 @@ public class XmppConnectionService extends Service {
     }
 
     public void rescanStickers() {
+        rescanStickers(false);
+    }
+
+    public void rescanStickers(final boolean force) {
         long msToRescan = (mLastStickerRescan + 600000L) - SystemClock.elapsedRealtime();
-        if (msToRescan > 0) return;
+        if (!force && msToRescan > 0) return;
         Log.d(Config.LOGTAG, "rescanStickers");
 
         mLastStickerRescan = SystemClock.elapsedRealtime();
