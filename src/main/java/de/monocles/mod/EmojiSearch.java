@@ -54,6 +54,16 @@ public class EmojiSearch {
         emoji.add(one);
     }
 
+    public synchronized void clearCustomEmoji() {
+        final List<Emoji> toRemove = new ArrayList<>();
+        for (final Emoji one : emoji) {
+            if (one instanceof CustomEmoji) {
+                toRemove.add(one);
+            }
+        }
+        emoji.removeAll(toRemove);
+    }
+
     public synchronized List<Emoji> find(final String q) {
         final ResultPQ pq = new ResultPQ();
         for (Emoji e : emoji) {

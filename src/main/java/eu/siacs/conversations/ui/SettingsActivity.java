@@ -1122,6 +1122,7 @@ public class SettingsActivity extends XmppActivity implements OnSharedPreference
             }
             if (!failed) {
                 Toast.makeText(this, R.string.sticker_deleted, Toast.LENGTH_LONG).show();
+                xmppConnectionService.emojiSearch().clearCustomEmoji();
                 xmppConnectionService.LoadStickers();
                 xmppConnectionService.rescanStickers(true);
             } else {

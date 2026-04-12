@@ -7002,6 +7002,7 @@ public class XmppConnectionService extends Service {
         mStickerScanExecutor.execute(() -> {
             Thread.currentThread().setPriority(Thread.MIN_PRIORITY);
             try {
+                emojiSearch.clearCustomEmoji();
                 final Map<String, List<String>> icondefAliases = loadIcondefAliases(stickerDir());
                 for (File file : Files.fileTraverser().breadthFirst(stickerDir())) {
                     try {
