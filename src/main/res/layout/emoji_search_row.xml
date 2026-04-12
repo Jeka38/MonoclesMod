@@ -17,7 +17,7 @@
 			android:layout_width="wrap_content"
 			android:layout_height="wrap_content"
 			android:gravity="center_vertical|center_horizontal"
-			android:textSize="36sp"
+			android:textSize="24sp"
 			app:emojiCompatEnabled="false"
 			android:visibility="gone" />
 
@@ -25,7 +25,7 @@
 			android:id="@+id/unicode"
 			android:layout_width="wrap_content"
 			android:layout_height="wrap_content"
-			android:textSize="36sp"
+			android:textSize="24sp"
 			android:gravity="center_vertical|center_horizontal"
 			android:textAppearance="?textAppearanceBodyMedium" />
 
