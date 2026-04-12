@@ -1109,7 +1109,7 @@ public class SettingsActivity extends XmppActivity implements OnSharedPreference
         }
         final AlertDialog.Builder builder = new AlertDialog.Builder(this);
         builder.setTitle(R.string.delete_all_smile_packs);
-        builder.setMessage(R.string.are_you_sure);
+        builder.setMessage(R.string.mgmt_account_are_you_sure);
         builder.setNegativeButton(R.string.cancel, null);
         builder.setPositiveButton(R.string.delete, (dialog, which) -> {
             final File[] files = stickerRoot.listFiles();
