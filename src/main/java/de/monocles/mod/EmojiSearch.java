@@ -104,34 +104,55 @@ public class EmojiSearch {
         if (text == null || text.length() == 0) {
             return;
         }
-        final List<CustomEmoji> customEmoji = new ArrayList<>();
+        final List<PairAliasEmoji> aliases = new ArrayList<>();
         for (final Emoji one : emoji) {
-            if (one instanceof CustomEmoji) {
-                customEmoji.add((CustomEmoji) one);
+            if (!(one instanceof CustomEmoji)) {
+                continue;
             }
-        }
-        customEmoji.sort((a, b) -> Integer.compare(b.insertToken.length(), a.insertToken.length()));
-
-        for (final CustomEmoji one : customEmoji) {
-            for (final String alias : one.emoticon) {
+            final CustomEmoji custom = (CustomEmoji) one;
+            for (final String alias : custom.emoticon) {
                 if (alias == null || alias.isEmpty()) {
                     continue;
                 }
-                int from = 0;
-                while (from < text.length()) {
-                    final String full = text.toString();
-                    final int start = full.indexOf(alias, from);
-                    if (start < 0) {
-                        break;
-                    }
-                    final int end = start + alias.length();
-                    final ImageSpan[] spans = text.getSpans(start, end, ImageSpan.class);
-                    if (spans == null || spans.length == 0) {
-                        text.setSpan(new InlineImageSpan(one.icon, one.source), start, end, Spannable.SPAN_EXCLUSIVE_EXCLUSIVE);
-                    }
-                    from = end;
-                }
+                aliases.add(new PairAliasEmoji(alias, custom));
             }
+        }
+        aliases.sort((a, b) -> Integer.compare(b.alias.length(), a.alias.length()));
+
+        final String full = text.toString();
+        int i = 0;
+        while (i < full.length()) {
+            boolean matched = false;
+            for (final PairAliasEmoji one : aliases) {
+                final String alias = one.alias;
+                if (i + alias.length() > full.length()) {
+                    continue;
+                }
+                if (!full.regionMatches(i, alias, 0, alias.length())) {
+                    continue;
+                }
+                final int end = i + alias.length();
+                final ImageSpan[] spans = text.getSpans(i, end, ImageSpan.class);
+                if (spans == null || spans.length == 0) {
+                    text.setSpan(new InlineImageSpan(one.emoji.icon, one.emoji.source), i, end, Spannable.SPAN_EXCLUSIVE_EXCLUSIVE);
+                }
+                i = end;
+                matched = true;
+                break;
+            }
+            if (!matched) {
+                i++;
+            }
+        }
+    }
+
+    private static class PairAliasEmoji {
+        final String alias;
+        final CustomEmoji emoji;
+
+        PairAliasEmoji(final String alias, final CustomEmoji emoji) {
+            this.alias = alias;
+            this.emoji = emoji;
         }
     }
 
