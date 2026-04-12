@@ -544,21 +544,7 @@ public class MessageAdapter extends ArrayAdapter<Message> {
         } else {
             viewHolder.messageBody.setTextAppearance(getContext(), R.style.TextAppearance_Conversations_Body1_Emoji);
         }
-        ImageSpan[] imageSpans = body.getSpans(0, body.length(), ImageSpan.class);
-        boolean single = false;
-        if (imageSpans.length == 1) {
-            SpannableStringBuilder test = new SpannableStringBuilder(body);
-            test.delete(body.getSpanStart(imageSpans[0]), body.getSpanEnd(imageSpans[0]));
-            if (test.toString().trim().isEmpty()) {
-                single = true;
-            }
-        } else if (imageSpans.length == 0) {
-            if (Emoticons.isEmoji(body.toString().trim())) {
-                single = true;
-            }
-        }
-        float size = single ? 1.0f : 3.0f;
-        body.setSpan(new RelativeSizeSpan(size), 0, body.length(), Spannable.SPAN_EXCLUSIVE_EXCLUSIVE);
+        body.setSpan(new RelativeSizeSpan(1.0f), 0, body.length(), Spannable.SPAN_EXCLUSIVE_EXCLUSIVE);
         viewHolder.messageBody.setText(body);
     }
 
