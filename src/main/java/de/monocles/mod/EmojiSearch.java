@@ -5,6 +5,7 @@ import android.content.Context;
 import android.graphics.drawable.Drawable;
 import android.text.Spannable;
 import android.text.SpannableStringBuilder;
+import android.text.style.ImageSpan;
 import android.view.LayoutInflater;
 import android.view.View;
 import android.view.ViewGroup;
@@ -87,6 +88,41 @@ public class EmojiSearch {
 
     public EmojiSearchAdapter makeAdapter(Activity context) {
         return new EmojiSearchAdapter(context);
+    }
+
+    public synchronized void replaceSmileysWithImages(final SpannableStringBuilder text) {
+        if (text == null || text.length() == 0) {
+            return;
+        }
+        final List<CustomEmoji> customEmoji = new ArrayList<>();
+        for (final Emoji one : emoji) {
+            if (one instanceof CustomEmoji) {
+                customEmoji.add((CustomEmoji) one);
+            }
+        }
+        customEmoji.sort((a, b) -> Integer.compare(b.insertToken.length(), a.insertToken.length()));
+
+        for (final CustomEmoji one : customEmoji) {
+            for (final String alias : one.emoticon) {
+                if (alias == null || alias.isEmpty()) {
+                    continue;
+                }
+                int from = 0;
+                while (from < text.length()) {
+                    final String full = text.toString();
+                    final int start = full.indexOf(alias, from);
+                    if (start < 0) {
+                        break;
+                    }
+                    final int end = start + alias.length();
+                    final ImageSpan[] spans = text.getSpans(start, end, ImageSpan.class);
+                    if (spans == null || spans.length == 0) {
+                        text.setSpan(new InlineImageSpan(one.icon, one.source), start, end, Spannable.SPAN_EXCLUSIVE_EXCLUSIVE);
+                    }
+                    from = end;
+                }
+            }
+        }
     }
 
     public static class ResultPQ extends PriorityQueue<BoundExtractedResult<Emoji>> {

@@ -91,6 +91,7 @@ import android.widget.AbsListView;
 import android.widget.AbsListView.OnScrollListener;
 import android.widget.AdapterView;
 import android.widget.AdapterView.AdapterContextMenuInfo;
+import android.widget.GridView;
 import android.widget.LinearLayout;
 import android.widget.ListView;
 import android.widget.RelativeLayout;
@@ -916,16 +917,17 @@ public class ConversationFragment extends XmppFragment
             return;
         }
         final EmojiSearch.EmojiSearchAdapter adapter = emojiSearch.makeAdapter(activity);
-        final ListView listView = new ListView(activity);
-        listView.setDividerHeight(0);
-        listView.setAdapter(adapter);
+        final GridView gridView = new GridView(activity);
+        gridView.setNumColumns(5);
+        gridView.setStretchMode(GridView.STRETCH_COLUMN_WIDTH);
+        gridView.setAdapter(adapter);
         adapter.search("");
         final AlertDialog dialog = new AlertDialog.Builder(activity)
                 .setTitle(R.string.stickers)
-                .setView(listView)
+                .setView(gridView)
                 .setNegativeButton(R.string.cancel, null)
                 .create();
-        listView.setOnItemClickListener((parent, view, position, id) -> {
+        gridView.setOnItemClickListener((parent, view, position, id) -> {
             final EmojiSearch.Emoji item = adapter.getItem(position);
             if (item == null) {
                 return;
