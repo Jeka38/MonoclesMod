@@ -909,12 +909,32 @@ public class ConversationFragment extends XmppFragment
     }
 
     private void openRecentSmiles() {
-        mstickersButtonListener.onClick(binding.stickersButton);
-        if (binding.stickersview == null || binding.stickersview.getAdapter() == null) {
+        if (emojiSearch == null && activity != null && activity.xmppConnectionService != null) {
+            emojiSearch = activity.xmppConnectionService.emojiSearch();
+        }
+        if (activity == null || emojiSearch == null) {
             return;
         }
-        final EmojiSearch.EmojiSearchAdapter adapter = (EmojiSearch.EmojiSearchAdapter) binding.stickersview.getAdapter();
+        final EmojiSearch.EmojiSearchAdapter adapter = emojiSearch.makeAdapter(activity);
+        final ListView listView = new ListView(activity);
+        listView.setDividerHeight(0);
+        listView.setAdapter(adapter);
         adapter.search("");
+        final AlertDialog dialog = new AlertDialog.Builder(activity)
+                .setTitle(R.string.stickers)
+                .setView(listView)
+                .setNegativeButton(R.string.cancel, null)
+                .create();
+        listView.setOnItemClickListener((parent, view, position, id) -> {
+            final EmojiSearch.Emoji item = adapter.getItem(position);
+            if (item == null) {
+                return;
+            }
+            final int start = binding.textinput.getSelectionStart();
+            binding.textinput.getText().insert(start, item.toInsert());
+            dialog.dismiss();
+        });
+        dialog.show();
     }
 
     private final OnClickListener mgifsButtonListener = new OnClickListener() {
