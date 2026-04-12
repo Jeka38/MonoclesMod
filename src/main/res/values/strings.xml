@@ -1239,7 +1239,6 @@
     <string name="reconnecting_video_call">Reconnecting video call</string>
     <string name="user">User</string>
     <string name="format_text">Format text</string>
-    <string name="bold">bold</string>
     <string name="italic">italic</string>
     <string name="monospace">monospace</string>
     <string name="strikethrough">strikethrough</string>
