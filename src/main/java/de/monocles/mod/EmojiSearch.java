@@ -104,6 +104,9 @@ public class EmojiSearch {
         if (text == null || text.length() == 0) {
             return;
         }
+        if (text.getSpans(0, text.length(), SmileysProcessedMarker.class).length > 0) {
+            return;
+        }
         final List<PairAliasEmoji> aliases = new ArrayList<>();
         for (final Emoji one : emoji) {
             if (!(one instanceof CustomEmoji)) {
@@ -144,6 +147,7 @@ public class EmojiSearch {
                 i++;
             }
         }
+        text.setSpan(new SmileysProcessedMarker(), 0, 0, Spannable.SPAN_MARK_MARK);
     }
 
     private static class PairAliasEmoji {
@@ -155,6 +159,8 @@ public class EmojiSearch {
             this.emoji = emoji;
         }
     }
+
+    private static class SmileysProcessedMarker { }
 
     public static class ResultPQ extends PriorityQueue<BoundExtractedResult<Emoji>> {
         public void addTopK(Emoji e, int score, int k) {
