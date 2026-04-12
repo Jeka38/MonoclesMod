@@ -236,9 +236,7 @@ public class SettingsActivity extends XmppActivity implements OnSharedPreference
                                 out.flush();
                                 out.close();
                                 out = null;
-                                if (isRasterImageForSticker(filename)) {
-                                    compressImageToSticker(newSticker, imageUri, 0);
-                                }
+                                // Keep original file format/quality for smile packs (icondef + images)
                             } catch (IOException exception) {
                                 Toast.makeText(this,R.string.import_sticker_failed,Toast.LENGTH_LONG).show();
                                 Log.d(Config.LOGTAG, "Could not import sticker" + exception);
@@ -286,9 +284,7 @@ public class SettingsActivity extends XmppActivity implements OnSharedPreference
                             out.flush();
                             out.close();
                             out = null;
-                            if (isRasterImageForSticker(filename)) {
-                                compressImageToSticker(newSticker, imageUri, 0);
-                            }
+                            // Keep original file format/quality for smile packs (icondef + images)
                             Toast.makeText(this,R.string.sticker_imported,Toast.LENGTH_LONG).show();
                             xmppConnectionService.LoadStickers();       //TODO: Check again if really needed
                         } catch (IOException exception) {
@@ -412,14 +408,6 @@ public class SettingsActivity extends XmppActivity implements OnSharedPreference
         final int extensionIdx = filename.lastIndexOf('.');
         final String base = extensionIdx > 0 ? filename.substring(0, extensionIdx) : filename;
         return base.length() >= 4 && HEX_ONLY_FILENAME.matcher(base).matches();
-    }
-
-    private static boolean isRasterImageForSticker(final String filename) {
-        if (filename == null) {
-            return false;
-        }
-        final String lower = filename.toLowerCase(Locale.US);
-        return lower.endsWith(".png") || lower.endsWith(".jpg") || lower.endsWith(".jpeg") || lower.endsWith(".bmp");
     }
 
     private static boolean isZipFile(final String filename) {

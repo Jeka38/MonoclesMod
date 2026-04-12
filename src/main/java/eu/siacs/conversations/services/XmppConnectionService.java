@@ -7014,11 +7014,12 @@ public class XmppConnectionService extends Service {
                                 saveCid(cid, file);
                             }
                             if (file.length() < 129000) {
+                                final int customOrder = (int) Math.min(Integer.MAX_VALUE, file.lastModified() / 1000L);
                                 final List<String> aliases = icondefAliases.get(file.getAbsolutePath());
                                 if (aliases != null && !aliases.isEmpty()) {
-                                    emojiSearch.addEmoji(new EmojiSearch.CustomEmoji(aliases, cids[0].toString(), icon, file.getParentFile().getName()));
+                                    emojiSearch.addEmoji(new EmojiSearch.CustomEmoji(aliases, cids[0].toString(), icon, file.getParentFile().getName(), customOrder));
                                 } else {
-                                    emojiSearch.addEmoji(new EmojiSearch.CustomEmoji(filename, cids[0].toString(), icon, file.getParentFile().getName()));
+                                    emojiSearch.addEmoji(new EmojiSearch.CustomEmoji(filename, cids[0].toString(), icon, file.getParentFile().getName(), customOrder));
                                 }
                             }
                         }

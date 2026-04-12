@@ -175,7 +175,11 @@ public class EmojiSearch {
         private final String insertToken;
 
         public CustomEmoji(final String shortcode, final String source, final Drawable icon, final String tag) {
-            super(null, 999);
+            this(shortcode, source, icon, tag, 999);
+        }
+
+        public CustomEmoji(final String shortcode, final String source, final Drawable icon, final String tag, final int order) {
+            super(null, order);
             shortcodes.add(shortcode);
             emoticon.add(shortcode);
             if (tag != null) tags.add(tag);
@@ -188,7 +192,11 @@ public class EmojiSearch {
         }
 
         public CustomEmoji(final List<String> aliases, final String source, final Drawable icon, final String tag) {
-            super(null, 999);
+            this(aliases, source, icon, tag, 999);
+        }
+
+        public CustomEmoji(final List<String> aliases, final String source, final Drawable icon, final String tag, final int order) {
+            super(null, order);
             if (aliases != null) {
                 for (final String alias : aliases) {
                     if (alias == null || alias.trim().isEmpty()) {
