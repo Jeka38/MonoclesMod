@@ -58,6 +58,7 @@ import java.util.Arrays;
 import java.util.Collections;
 import java.util.List;
 import java.util.Map;
+import java.util.regex.Pattern;
 import android.provider.MediaStore;
 import android.view.Menu;
 import android.view.MenuItem;
@@ -82,6 +83,7 @@ import eu.siacs.conversations.services.UnifiedPushDistributor;
 import p32929.easypasscodelock.Utils.EasyLock;
 
 public class SettingsActivity extends XmppActivity implements OnSharedPreferenceChangeListener {
+    private static final Pattern HEX_ONLY_FILENAME = Pattern.compile("^[0-9a-fA-F]+$");
 
     public static final String AWAY_WHEN_SCREEN_IS_OFF = "away_when_screen_off";
     public static final String TREAT_VIBRATE_AS_SILENT = "treat_vibrate_as_silent";
@@ -207,6 +209,11 @@ public class SettingsActivity extends XmppActivity implements OnSharedPreference
                                     stickerfolder.mkdirs();
                                 }
                                 String filename = getFileName(imageUri);
+                                if (isHexOnlyStickerFilename(filename)) {
+                                    Toast.makeText(this, R.string.import_sticker_failed, Toast.LENGTH_LONG).show();
+                                    Log.d(Config.LOGTAG, "Skipping sticker import due to hex-only filename: " + filename);
+                                    continue;
+                                }
                                 File newSticker = new File(Environment.getExternalStoragePublicDirectory(Environment.DIRECTORY_DOCUMENTS) + File.separator + APP_DIRECTORY + File.separator + "Stickers" + File.separator + filename);
 
                                 in = getContentResolver().openInputStream(imageUri);
@@ -246,6 +253,11 @@ public class SettingsActivity extends XmppActivity implements OnSharedPreference
                                 stickerfolder.mkdirs();
                             }
                             String filename = getFileName(imageUri);
+                            if (isHexOnlyStickerFilename(filename)) {
+                                Toast.makeText(this,R.string.import_sticker_failed,Toast.LENGTH_LONG).show();
+                                Log.d(Config.LOGTAG, "Skipping sticker import due to hex-only filename: " + filename);
+                                return;
+                            }
                             File newSticker = new File(Environment.getExternalStoragePublicDirectory(Environment.DIRECTORY_DOCUMENTS) + File.separator + APP_DIRECTORY + File.separator + "Stickers" + File.separator + filename);
 
                             in = getContentResolver().openInputStream(imageUri);
@@ -378,6 +390,15 @@ public class SettingsActivity extends XmppActivity implements OnSharedPreference
             }
         }
         return result;
+    }
+
+    private static boolean isHexOnlyStickerFilename(final String filename) {
+        if (filename == null) {
+            return false;
+        }
+        final int extensionIdx = filename.lastIndexOf('.');
+        final String base = extensionIdx > 0 ? filename.substring(0, extensionIdx) : filename;
+        return base.length() >= 4 && HEX_ONLY_FILENAME.matcher(base).matches();
     }
 
     public void compressImageToSticker(File f, Uri image, int sampleSize) throws IOException {
@@ -1026,17 +1047,17 @@ public class SettingsActivity extends XmppActivity implements OnSharedPreference
             );
         }
 
-//        final Preference importOwnStickers = mSettingsFragment.findPreference("import_own_stickers");
-//        if (importOwnStickers != null) {
-//            importOwnStickers.setOnPreferenceClickListener(
-//                preference -> {
-//                    if (hasStoragePermission(REQUEST_IMPORT_STICKERS)) {
-//                        importStickers();
-//                    }
-//                    return true;
-//                }
-//            );
-//        }
+        final Preference importOwnStickers = mSettingsFragment.findPreference("import_own_stickers");
+        if (importOwnStickers != null) {
+            importOwnStickers.setOnPreferenceClickListener(
+                preference -> {
+                    if (hasStoragePermission(REQUEST_IMPORT_STICKERS)) {
+                        importStickers();
+                    }
+                    return true;
+                }
+            );
+        }
 
         final Preference importOwnGifs = mSettingsFragment.findPreference("import_own_gifs");
         if (importOwnGifs != null) {

@@ -732,6 +732,10 @@ public class ConversationFragment extends XmppFragment
     private final OnClickListener memojiButtonListener = new OnClickListener() {
         @Override
         public void onClick(View v) {
+            if (useSmilesInsteadOfEmoji()) {
+                mstickersButtonListener.onClick(v);
+                return;
+            }
             if (binding.emojiButton.getVisibility() == VISIBLE && binding.emojisStickerLayout.getHeight() > 100) {
                 binding.emojiButton.setVisibility(GONE);
                 binding.keyboardButton.setVisibility(VISIBLE);
@@ -809,6 +813,10 @@ public class ConversationFragment extends XmppFragment
     private final OnClickListener memojisButtonListener = new OnClickListener() {
         @Override
         public void onClick(View v) {
+            if (useSmilesInsteadOfEmoji()) {
+                mstickersButtonListener.onClick(v);
+                return;
+            }
             binding.emojiPicker.setVisibility(VISIBLE);
             binding.stickersview.setVisibility(GONE);
             binding.gifsview.setVisibility(GONE);
@@ -892,6 +900,12 @@ public class ConversationFragment extends XmppFragment
             }
         }
         return false;
+    }
+
+    private boolean useSmilesInsteadOfEmoji() {
+        return activity != null
+                && PreferenceManager.getDefaultSharedPreferences(activity)
+                .getBoolean("use_smiles_instead_of_emoji", activity.getResources().getBoolean(R.bool.use_smiles_instead_of_emoji));
     }
 
     private final OnClickListener mgifsButtonListener = new OnClickListener() {
