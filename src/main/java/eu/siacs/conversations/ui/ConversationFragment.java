@@ -91,6 +91,7 @@ import android.widget.AbsListView;
 import android.widget.AbsListView.OnScrollListener;
 import android.widget.AdapterView;
 import android.widget.AdapterView.AdapterContextMenuInfo;
+import android.widget.GridView;
 import android.widget.LinearLayout;
 import android.widget.ListView;
 import android.widget.RelativeLayout;
@@ -732,6 +733,10 @@ public class ConversationFragment extends XmppFragment
     private final OnClickListener memojiButtonListener = new OnClickListener() {
         @Override
         public void onClick(View v) {
+            if (useSmilesInsteadOfEmoji()) {
+                openRecentSmiles();
+                return;
+            }
             if (binding.emojiButton.getVisibility() == VISIBLE && binding.emojisStickerLayout.getHeight() > 100) {
                 binding.emojiButton.setVisibility(GONE);
                 binding.keyboardButton.setVisibility(VISIBLE);
@@ -809,6 +814,10 @@ public class ConversationFragment extends XmppFragment
     private final OnClickListener memojisButtonListener = new OnClickListener() {
         @Override
         public void onClick(View v) {
+            if (useSmilesInsteadOfEmoji()) {
+                openRecentSmiles();
+                return;
+            }
             binding.emojiPicker.setVisibility(VISIBLE);
             binding.stickersview.setVisibility(GONE);
             binding.gifsview.setVisibility(GONE);
@@ -892,6 +901,42 @@ public class ConversationFragment extends XmppFragment
             }
         }
         return false;
+    }
+
+    private boolean useSmilesInsteadOfEmoji() {
+        return activity != null
+                && PreferenceManager.getDefaultSharedPreferences(activity)
+                .getBoolean("use_smiles_instead_of_emoji", activity.getResources().getBoolean(R.bool.use_smiles_instead_of_emoji));
+    }
+
+    private void openRecentSmiles() {
+        if (emojiSearch == null && activity != null && activity.xmppConnectionService != null) {
+            emojiSearch = activity.xmppConnectionService.emojiSearch();
+        }
+        if (activity == null || emojiSearch == null) {
+            return;
+        }
+        final EmojiSearch.EmojiSearchAdapter adapter = emojiSearch.makeAdapter(activity);
+        final GridView gridView = new GridView(activity);
+        gridView.setNumColumns(5);
+        gridView.setStretchMode(GridView.STRETCH_COLUMN_WIDTH);
+        gridView.setAdapter(adapter);
+        adapter.search("");
+        final AlertDialog dialog = new AlertDialog.Builder(activity)
+                .setTitle(R.string.stickers)
+                .setView(gridView)
+                .setNegativeButton(R.string.cancel, null)
+                .create();
+        gridView.setOnItemClickListener((parent, view, position, id) -> {
+            final EmojiSearch.Emoji item = adapter.getItem(position);
+            if (item == null) {
+                return;
+            }
+            final int start = binding.textinput.getSelectionStart();
+            binding.textinput.getText().insert(start, item.toInsert());
+            dialog.dismiss();
+        });
+        dialog.show();
     }
 
     private final OnClickListener mgifsButtonListener = new OnClickListener() {
