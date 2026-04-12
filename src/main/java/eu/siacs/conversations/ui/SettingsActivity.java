@@ -60,6 +60,8 @@ import java.util.List;
 import java.util.Locale;
 import java.util.Map;
 import java.util.regex.Pattern;
+import java.util.zip.ZipEntry;
+import java.util.zip.ZipInputStream;
 import android.provider.MediaStore;
 import android.view.Menu;
 import android.view.MenuItem;
@@ -210,6 +212,10 @@ public class SettingsActivity extends XmppActivity implements OnSharedPreference
                                     stickerfolder.mkdirs();
                                 }
                                 String filename = getFileName(imageUri);
+                                if (isZipFile(filename)) {
+                                    importSmilePackZip(imageUri, filename);
+                                    continue;
+                                }
                                 if (isHexOnlyStickerFilename(filename)) {
                                     Toast.makeText(this, R.string.import_sticker_failed, Toast.LENGTH_LONG).show();
                                     Log.d(Config.LOGTAG, "Skipping sticker import due to hex-only filename: " + filename);
@@ -254,6 +260,12 @@ public class SettingsActivity extends XmppActivity implements OnSharedPreference
                                 stickerfolder.mkdirs();
                             }
                             String filename = getFileName(imageUri);
+                            if (isZipFile(filename)) {
+                                importSmilePackZip(imageUri, filename);
+                                Toast.makeText(this,R.string.sticker_imported,Toast.LENGTH_LONG).show();
+                                xmppConnectionService.LoadStickers();
+                                return;
+                            }
                             if (isHexOnlyStickerFilename(filename)) {
                                 Toast.makeText(this,R.string.import_sticker_failed,Toast.LENGTH_LONG).show();
                                 Log.d(Config.LOGTAG, "Skipping sticker import due to hex-only filename: " + filename);
@@ -408,6 +420,69 @@ public class SettingsActivity extends XmppActivity implements OnSharedPreference
         }
         final String lower = filename.toLowerCase(Locale.US);
         return lower.endsWith(".png") || lower.endsWith(".jpg") || lower.endsWith(".jpeg") || lower.endsWith(".bmp");
+    }
+
+    private static boolean isZipFile(final String filename) {
+        return filename != null && filename.toLowerCase(Locale.US).endsWith(".zip");
+    }
+
+    private void importSmilePackZip(final Uri zipUri, final String filename) throws IOException {
+        final File stickerRoot = new File(Environment.getExternalStoragePublicDirectory(Environment.DIRECTORY_DOCUMENTS) + File.separator + APP_DIRECTORY + File.separator + "Stickers");
+        if (!stickerRoot.exists() && !stickerRoot.mkdirs()) {
+            throw new IOException("Unable to create sticker root");
+        }
+        final String baseName = filename.substring(0, Math.max(0, filename.lastIndexOf('.'))).replaceAll("[^a-zA-Z0-9._-]", "_");
+        final File targetDir = new File(stickerRoot, baseName + "_" + System.currentTimeMillis());
+        if (!targetDir.mkdirs()) {
+            throw new IOException("Unable to create target sticker pack dir");
+        }
+
+        boolean hasIcondef = false;
+        final InputStream openedInputStream = getContentResolver().openInputStream(zipUri);
+        if (openedInputStream == null) {
+            throw new IOException("Unable to open smile pack zip");
+        }
+        try (InputStream inputStream = openedInputStream;
+             ZipInputStream zis = new ZipInputStream(inputStream)) {
+            ZipEntry entry;
+            while ((entry = zis.getNextEntry()) != null) {
+                final String entryName = entry.getName();
+                if (entryName == null || entryName.contains("..")) {
+                    zis.closeEntry();
+                    continue;
+                }
+                final File outFile = new File(targetDir, entryName);
+                final String canonicalTargetDir = targetDir.getCanonicalPath() + File.separator;
+                if (!outFile.getCanonicalPath().startsWith(canonicalTargetDir)) {
+                    zis.closeEntry();
+                    continue;
+                }
+                if (entry.isDirectory()) {
+                    if (!outFile.exists()) {
+                        outFile.mkdirs();
+                    }
+                } else {
+                    final File parent = outFile.getParentFile();
+                    if (parent != null && !parent.exists()) {
+                        parent.mkdirs();
+                    }
+                    try (OutputStream out = new FileOutputStream(outFile)) {
+                        final byte[] buffer = new byte[4096];
+                        int read;
+                        while ((read = zis.read(buffer)) != -1) {
+                            out.write(buffer, 0, read);
+                        }
+                    }
+                    if ("icondef.xml".equalsIgnoreCase(outFile.getName())) {
+                        hasIcondef = true;
+                    }
+                }
+                zis.closeEntry();
+            }
+        }
+        if (!hasIcondef) {
+            throw new IOException("icondef.xml not found in smile pack");
+        }
     }
 
     public void compressImageToSticker(File f, Uri image, int sampleSize) throws IOException {
@@ -1099,9 +1174,9 @@ public class SettingsActivity extends XmppActivity implements OnSharedPreference
     private void importStickers() {
         Intent intent = new Intent(Intent.ACTION_GET_CONTENT);
         intent.setType("*/*");
-        intent.putExtra(Intent.EXTRA_MIME_TYPES, new String[]{"image/*", "text/xml", "application/xml"});
+        intent.putExtra(Intent.EXTRA_MIME_TYPES, new String[]{"image/*", "text/xml", "application/xml", "application/zip"});
         intent.putExtra(Intent.EXTRA_ALLOW_MULTIPLE, true);
-        startActivityForResult(Intent.createChooser(intent, "Select smile pack files"), REQUEST_IMPORT_STICKERS);
+        startActivityForResult(Intent.createChooser(intent, "Select smile pack files (or ZIP)"), REQUEST_IMPORT_STICKERS);
     }
 
     private void importGifs() {
