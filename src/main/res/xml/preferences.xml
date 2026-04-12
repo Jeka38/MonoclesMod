@@ -414,6 +414,15 @@
         <Preference
             android:title="@string/update_default_stickers"
             android:key="download_default_stickers" />
+        <SwitchPreference
+            android:defaultValue="false"
+            android:key="enable_smiles"
+            android:summary="@string/pref_enable_smiles_summary"
+            android:title="@string/pref_enable_smiles" />
+        <Preference
+            android:title="@string/import_own_smiles"
+            android:summary="@string/import_own_smiles_summary"
+            android:key="import_own_smiles" />
         <Preference
             android:title="@string/import_own_gifs"
             android:summary="@string/import_own_gifs_summary"

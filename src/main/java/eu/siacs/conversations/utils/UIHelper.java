@@ -51,6 +51,12 @@ import eu.siacs.conversations.services.XmppConnectionService;
 import eu.siacs.conversations.ui.util.MyLinkify;
 import eu.siacs.conversations.ui.util.QuoteHelper;
 import eu.siacs.conversations.xmpp.Jid;
+import java.util.regex.Matcher;
+import java.util.regex.Pattern;
+import java.util.Map;
+import de.monocles.mod.EmojiSearch;
+import de.monocles.mod.InlineImageSpan;
+import android.text.Spanned;
 
 public class UIHelper {
 
@@ -724,6 +730,21 @@ public class UIHelper {
             return Math.round(size * 1f / 1024) + " KiB";
         } else {
             return size + " B";
+        }
+    }
+
+    public static void replaceEmojisWithSmiles(Context context, Spannable spannable, Map<String, EmojiSearch.CustomEmoji> smiles) {
+        if (smiles == null || smiles.isEmpty()) {
+            return;
+        }
+        Pattern pattern = Emoticons.getEmojiPattern(spannable);
+        Matcher matcher = pattern.matcher(spannable);
+        while (matcher.find()) {
+            String emoji = matcher.group();
+            EmojiSearch.CustomEmoji smile = smiles.get(emoji);
+            if (smile != null) {
+                spannable.setSpan(new InlineImageSpan(smile.getIcon(), smile.uniquePart()), matcher.start(), matcher.end(), Spanned.SPAN_EXCLUSIVE_EXCLUSIVE);
+            }
         }
     }
 }

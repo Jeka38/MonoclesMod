@@ -1594,6 +1594,10 @@
     <string name="failed_to_delete_sticker">Не удалось удалить стикер</string>
     <string name="import_gif_failed">Не удалось импортировать GIF-файлы</string>
     <string name="gif_imported">GIF-файлы импортированы</string>
+    <string name="pref_enable_smiles">Включить смайлы</string>
+    <string name="pref_enable_smiles_summary">Заменять эмодзи на смайлы, если они доступны</string>
+    <string name="import_own_smiles">Импортировать смайлы</string>
+    <string name="import_own_smiles_summary">Импортируйте свои собственные смайлы. Соответствие эмодзи по имени файла (шорткод или смайлик).</string>
     <string name="import_own_gifs">Импортировать собственные GIF-файлы</string>
     <string name="import_own_gifs_summary">Импортируйте свои собственные GIF-файлы. Они будут отсортированы по имени файла.</string>
     <string name="failed_to_delete_gif">Не удалось удалить GIF</string>
