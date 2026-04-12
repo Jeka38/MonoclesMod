@@ -57,6 +57,7 @@ import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collections;
 import java.util.List;
+import java.util.Locale;
 import java.util.Map;
 import java.util.regex.Pattern;
 import android.provider.MediaStore;
@@ -229,7 +230,7 @@ public class SettingsActivity extends XmppActivity implements OnSharedPreference
                                 out.flush();
                                 out.close();
                                 out = null;
-                                if (!filename.endsWith(".webp") && !filename.endsWith(".svg")) {
+                                if (isRasterImageForSticker(filename)) {
                                     compressImageToSticker(newSticker, imageUri, 0);
                                 }
                             } catch (IOException exception) {
@@ -273,7 +274,7 @@ public class SettingsActivity extends XmppActivity implements OnSharedPreference
                             out.flush();
                             out.close();
                             out = null;
-                            if (!filename.endsWith(".webp") && !filename.endsWith(".svg")) {
+                            if (isRasterImageForSticker(filename)) {
                                 compressImageToSticker(newSticker, imageUri, 0);
                             }
                             Toast.makeText(this,R.string.sticker_imported,Toast.LENGTH_LONG).show();
@@ -399,6 +400,14 @@ public class SettingsActivity extends XmppActivity implements OnSharedPreference
         final int extensionIdx = filename.lastIndexOf('.');
         final String base = extensionIdx > 0 ? filename.substring(0, extensionIdx) : filename;
         return base.length() >= 4 && HEX_ONLY_FILENAME.matcher(base).matches();
+    }
+
+    private static boolean isRasterImageForSticker(final String filename) {
+        if (filename == null) {
+            return false;
+        }
+        final String lower = filename.toLowerCase(Locale.US);
+        return lower.endsWith(".png") || lower.endsWith(".jpg") || lower.endsWith(".jpeg") || lower.endsWith(".bmp");
     }
 
     public void compressImageToSticker(File f, Uri image, int sampleSize) throws IOException {
@@ -1089,10 +1098,10 @@ public class SettingsActivity extends XmppActivity implements OnSharedPreference
 
     private void importStickers() {
         Intent intent = new Intent(Intent.ACTION_GET_CONTENT);
-        intent.setType("image/*"); //allows any image file type. Change * to specific extension to limit it
-        //**These following line is the important one!
+        intent.setType("*/*");
+        intent.putExtra(Intent.EXTRA_MIME_TYPES, new String[]{"image/*", "text/xml", "application/xml"});
         intent.putExtra(Intent.EXTRA_ALLOW_MULTIPLE, true);
-        startActivityForResult(Intent.createChooser(intent, "Select images"), REQUEST_IMPORT_STICKERS); //REQUEST_IMPORT_STICKERS is simply a global int used to check the calling intent in onActivityResult
+        startActivityForResult(Intent.createChooser(intent, "Select smile pack files"), REQUEST_IMPORT_STICKERS);
     }
 
     private void importGifs() {

@@ -116,7 +116,11 @@ import org.conscrypt.Conscrypt;
 import org.openintents.openpgp.IOpenPgpService2;
 import org.openintents.openpgp.util.OpenPgpApi;
 import org.openintents.openpgp.util.OpenPgpServiceConnection;
+import org.w3c.dom.Document;
+import org.w3c.dom.NodeList;
 import com.google.common.base.Optional;
+
+import javax.xml.parsers.DocumentBuilderFactory;
 
 import eu.siacs.conversations.utils.Emoticons;
 import java.io.FileInputStream;
@@ -6992,18 +6996,30 @@ public class XmppConnectionService extends Service {
         mStickerScanExecutor.execute(() -> {
             Thread.currentThread().setPriority(Thread.MIN_PRIORITY);
             try {
+                final Map<String, List<String>> icondefAliases = loadIcondefAliases(stickerDir());
                 for (File file : Files.fileTraverser().breadthFirst(stickerDir())) {
                     try {
                         if (file.isFile() && file.canRead()) {
+                            if ("icondef.xml".equalsIgnoreCase(file.getName())) {
+                                continue;
+                            }
                             DownloadableFile df = new DownloadableFile(file.getAbsolutePath());
                             Drawable icon = fileBackend.getThumbnail(df, getResources(), (int) (getResources().getDisplayMetrics().density * 288), false);
+                            if (icon == null) {
+                                continue;
+                            }
                             final String filename = Files.getNameWithoutExtension(df.getName());
                             Cid[] cids = fileBackend.calculateCids(new FileInputStream(df));
                             for (Cid cid : cids) {
                                 saveCid(cid, file);
                             }
                             if (file.length() < 129000) {
-                                emojiSearch.addEmoji(new EmojiSearch.CustomEmoji(filename, cids[0].toString(), icon, file.getParentFile().getName()));
+                                final List<String> aliases = icondefAliases.get(file.getAbsolutePath());
+                                if (aliases != null && !aliases.isEmpty()) {
+                                    emojiSearch.addEmoji(new EmojiSearch.CustomEmoji(aliases, cids[0].toString(), icon, file.getParentFile().getName()));
+                                } else {
+                                    emojiSearch.addEmoji(new EmojiSearch.CustomEmoji(filename, cids[0].toString(), icon, file.getParentFile().getName()));
+                                }
                             }
                         }
                     } catch (final Exception e) {
@@ -7014,6 +7030,57 @@ public class XmppConnectionService extends Service {
                 Log.w(Config.LOGTAG, "rescanStickers: " + e);
             }
         });
+    }
+
+    private Map<String, List<String>> loadIcondefAliases(final File stickerRoot) {
+        final Map<String, List<String>> aliasesByAbsolutePath = new HashMap<>();
+        try {
+            for (File file : Files.fileTraverser().breadthFirst(stickerRoot)) {
+                if (!file.isFile() || !file.canRead() || !"icondef.xml".equalsIgnoreCase(file.getName())) {
+                    continue;
+                }
+                aliasesByAbsolutePath.putAll(parseIcondef(file));
+            }
+        } catch (final Exception e) {
+            Log.w(Config.LOGTAG, "loadIcondefAliases: " + e);
+        }
+        return aliasesByAbsolutePath;
+    }
+
+    private Map<String, List<String>> parseIcondef(final File icondefFile) {
+        final Map<String, List<String>> byFile = new HashMap<>();
+        try {
+            final DocumentBuilderFactory factory = DocumentBuilderFactory.newInstance();
+            factory.setNamespaceAware(false);
+            final Document document = factory.newDocumentBuilder().parse(icondefFile);
+            final NodeList icons = document.getElementsByTagName("icon");
+            for (int i = 0; i < icons.getLength(); i++) {
+                final org.w3c.dom.Element icon = (org.w3c.dom.Element) icons.item(i);
+                final NodeList objectNodes = icon.getElementsByTagName("object");
+                if (objectNodes.getLength() == 0) {
+                    continue;
+                }
+                final String objectName = objectNodes.item(0).getTextContent();
+                if (objectName == null || objectName.trim().isEmpty()) {
+                    continue;
+                }
+                final File iconFile = new File(icondefFile.getParentFile(), objectName.trim());
+                final NodeList textNodes = icon.getElementsByTagName("text");
+                final List<String> aliases = new ArrayList<>();
+                for (int j = 0; j < textNodes.getLength(); j++) {
+                    final String alias = textNodes.item(j).getTextContent();
+                    if (alias != null && !alias.trim().isEmpty()) {
+                        aliases.add(alias.trim());
+                    }
+                }
+                if (!aliases.isEmpty()) {
+                    byFile.put(iconFile.getAbsolutePath(), aliases);
+                }
+            }
+        } catch (final Exception e) {
+            Log.w(Config.LOGTAG, "parseIcondef " + icondefFile + ": " + e);
+        }
+        return byFile;
     }
 
     public EmojiSearch emojiSearch() {

@@ -172,20 +172,47 @@ public class EmojiSearch {
     public static class CustomEmoji extends Emoji {
         protected final String source;
         protected final Drawable icon;
+        private final String insertToken;
 
         public CustomEmoji(final String shortcode, final String source, final Drawable icon, final String tag) {
             super(null, 999);
             shortcodes.add(shortcode);
+            emoticon.add(shortcode);
             if (tag != null) tags.add(tag);
             this.source = source;
             this.icon = icon;
+            this.insertToken = shortcode;
+            if (icon == null) {
+                throw new IllegalArgumentException("icon must not be null");
+            }
+        }
+
+        public CustomEmoji(final List<String> aliases, final String source, final Drawable icon, final String tag) {
+            super(null, 999);
+            if (aliases != null) {
+                for (final String alias : aliases) {
+                    if (alias == null || alias.trim().isEmpty()) {
+                        continue;
+                    }
+                    shortcodes.add(alias);
+                    emoticon.add(alias);
+                }
+            }
+            if (shortcodes.isEmpty()) {
+                throw new IllegalArgumentException("at least one alias must be provided");
+            }
+            if (tag != null) tags.add(tag);
+            this.source = source;
+            this.icon = icon;
+            this.insertToken = shortcodes.get(0);
             if (icon == null) {
                 throw new IllegalArgumentException("icon must not be null");
             }
         }
 
         public SpannableStringBuilder toInsert() {
-            SpannableStringBuilder builder = new SpannableStringBuilder(":" + shortcodes.get(0) + ":");
+            final String token = insertToken.matches("[a-zA-Z0-9_+\\-]+") ? ":" + insertToken + ":" : insertToken;
+            SpannableStringBuilder builder = new SpannableStringBuilder(token);
             builder.setSpan(new InlineImageSpan(icon, source), 0, builder.length(), Spannable.SPAN_EXCLUSIVE_EXCLUSIVE);
             return builder;
         }
