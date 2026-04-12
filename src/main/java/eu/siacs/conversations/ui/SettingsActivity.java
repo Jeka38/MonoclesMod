@@ -59,7 +59,6 @@ import java.util.Collections;
 import java.util.List;
 import java.util.Locale;
 import java.util.Map;
-import java.util.regex.Pattern;
 import java.util.zip.ZipEntry;
 import java.util.zip.ZipInputStream;
 import android.provider.MediaStore;
@@ -86,7 +85,6 @@ import eu.siacs.conversations.services.UnifiedPushDistributor;
 import p32929.easypasscodelock.Utils.EasyLock;
 
 public class SettingsActivity extends XmppActivity implements OnSharedPreferenceChangeListener {
-    private static final Pattern HEX_ONLY_FILENAME = Pattern.compile("^[0-9a-fA-F]+$");
 
     public static final String AWAY_WHEN_SCREEN_IS_OFF = "away_when_screen_off";
     public static final String TREAT_VIBRATE_AS_SILENT = "treat_vibrate_as_silent";
@@ -195,103 +193,43 @@ public class SettingsActivity extends XmppActivity implements OnSharedPreference
     protected void onActivityResult(int requestCode, int resultCode, Intent data) {
         super.onActivityResult(requestCode, resultCode, data);
 
-        // Import and compress stickers
-        if(requestCode == REQUEST_IMPORT_STICKERS) {
-            if(resultCode == RESULT_OK) {
-                if(data.getClipData() != null) {
-                    for(int i = 0; i < data.getClipData().getItemCount(); i++) {
-                        Uri imageUri = data.getClipData().getItemAt(i).getUri();
-                        //do something with the image (save it to some directory or whatever you need to do with it here)
-                        if (imageUri != null) {
-                            InputStream in;
-                            OutputStream out;
-                            try {
-                                File stickerfolder = new File(Environment.getExternalStoragePublicDirectory(Environment.DIRECTORY_DOCUMENTS) + File.separator + APP_DIRECTORY + File.separator + "Stickers");
-                                //create output directory if it doesn't exist
-                                if (!stickerfolder.exists()) {
-                                    stickerfolder.mkdirs();
-                                }
-                                String filename = getFileName(imageUri);
-                                if (isZipFile(filename)) {
-                                    importSmilePackZip(imageUri, filename);
-                                    continue;
-                                }
-                                if (isHexOnlyStickerFilename(filename)) {
-                                    Toast.makeText(this, R.string.import_sticker_failed, Toast.LENGTH_LONG).show();
-                                    Log.d(Config.LOGTAG, "Skipping sticker import due to hex-only filename: " + filename);
-                                    continue;
-                                }
-                                File newSticker = new File(Environment.getExternalStoragePublicDirectory(Environment.DIRECTORY_DOCUMENTS) + File.separator + APP_DIRECTORY + File.separator + "Stickers" + File.separator + filename);
-
-                                in = getContentResolver().openInputStream(imageUri);
-                                out = new FileOutputStream(newSticker);
-                                byte[] buffer = new byte[4096];
-                                int read;
-                                while ((read = in.read(buffer)) != -1) {
-                                    out.write(buffer, 0, read);
-                                }
-                                in.close();
-                                in = null;
-                                // write the output file
-                                out.flush();
-                                out.close();
-                                out = null;
-                                // Keep original file format/quality for smile packs (icondef + images)
-                            } catch (IOException exception) {
-                                Toast.makeText(this,R.string.import_sticker_failed,Toast.LENGTH_LONG).show();
-                                Log.d(Config.LOGTAG, "Could not import sticker" + exception);
-                            }
-                        }
-                    }
-                    Toast.makeText(this,R.string.sticker_imported,Toast.LENGTH_LONG).show();
-                    xmppConnectionService.LoadStickers();       //TODO: Check again if really needed
-                } else if(data.getData() != null) {
-                    Uri imageUri = data.getData();
-                    //do something with the image (save it to some directory or whatever you need to do with it here)
-                    if (imageUri != null) {
-                        InputStream in;
-                        OutputStream out;
+        // Import smile packs exclusively as ZIP archives (icondef.xml + images)
+        if (requestCode == REQUEST_IMPORT_STICKERS) {
+            if (resultCode == RESULT_OK && data != null) {
+                boolean imported = false;
+                if (data.getClipData() != null) {
+                    for (int i = 0; i < data.getClipData().getItemCount(); i++) {
+                        final Uri zipUri = data.getClipData().getItemAt(i).getUri();
+                        if (zipUri == null) continue;
                         try {
-                            File stickerfolder = new File(Environment.getExternalStoragePublicDirectory(Environment.DIRECTORY_DOCUMENTS) + File.separator + APP_DIRECTORY + File.separator + "Stickers");
-                            //create output directory if it doesn't exist
-                            if (!stickerfolder.exists()) {
-                                stickerfolder.mkdirs();
+                            final String filename = getFileName(zipUri);
+                            if (!isZipFile(filename)) {
+                                throw new IOException("Smile pack must be a ZIP archive");
                             }
-                            String filename = getFileName(imageUri);
-                            if (isZipFile(filename)) {
-                                importSmilePackZip(imageUri, filename);
-                                Toast.makeText(this,R.string.sticker_imported,Toast.LENGTH_LONG).show();
-                                xmppConnectionService.LoadStickers();
-                                return;
-                            }
-                            if (isHexOnlyStickerFilename(filename)) {
-                                Toast.makeText(this,R.string.import_sticker_failed,Toast.LENGTH_LONG).show();
-                                Log.d(Config.LOGTAG, "Skipping sticker import due to hex-only filename: " + filename);
-                                return;
-                            }
-                            File newSticker = new File(Environment.getExternalStoragePublicDirectory(Environment.DIRECTORY_DOCUMENTS) + File.separator + APP_DIRECTORY + File.separator + "Stickers" + File.separator + filename);
-
-                            in = getContentResolver().openInputStream(imageUri);
-                            out = new FileOutputStream(newSticker);
-                            byte[] buffer = new byte[4096];
-                            int read;
-                            while ((read = in.read(buffer)) != -1) {
-                                out.write(buffer, 0, read);
-                            }
-                            in.close();
-                            in = null;
-                            // write the output file
-                            out.flush();
-                            out.close();
-                            out = null;
-                            // Keep original file format/quality for smile packs (icondef + images)
-                            Toast.makeText(this,R.string.sticker_imported,Toast.LENGTH_LONG).show();
-                            xmppConnectionService.LoadStickers();       //TODO: Check again if really needed
-                        } catch (IOException exception) {
-                            Toast.makeText(this,R.string.import_sticker_failed,Toast.LENGTH_LONG).show();
-                            Log.d(Config.LOGTAG, "Could not import sticker" + exception);
+                            importSmilePackZip(zipUri, filename);
+                            imported = true;
+                        } catch (final IOException e) {
+                            Toast.makeText(this, R.string.import_sticker_failed, Toast.LENGTH_LONG).show();
+                            Log.d(Config.LOGTAG, "Could not import smile pack: " + e);
                         }
                     }
+                } else if (data.getData() != null) {
+                    try {
+                        final Uri zipUri = data.getData();
+                        final String filename = getFileName(zipUri);
+                        if (!isZipFile(filename)) {
+                            throw new IOException("Smile pack must be a ZIP archive");
+                        }
+                        importSmilePackZip(zipUri, filename);
+                        imported = true;
+                    } catch (final IOException e) {
+                        Toast.makeText(this, R.string.import_sticker_failed, Toast.LENGTH_LONG).show();
+                        Log.d(Config.LOGTAG, "Could not import smile pack: " + e);
+                    }
+                }
+                if (imported) {
+                    Toast.makeText(this, R.string.sticker_imported, Toast.LENGTH_LONG).show();
+                    xmppConnectionService.LoadStickers();
                 }
             }
         }
@@ -399,15 +337,6 @@ public class SettingsActivity extends XmppActivity implements OnSharedPreference
             }
         }
         return result;
-    }
-
-    private static boolean isHexOnlyStickerFilename(final String filename) {
-        if (filename == null) {
-            return false;
-        }
-        final int extensionIdx = filename.lastIndexOf('.');
-        final String base = extensionIdx > 0 ? filename.substring(0, extensionIdx) : filename;
-        return base.length() >= 4 && HEX_ONLY_FILENAME.matcher(base).matches();
     }
 
     private static boolean isZipFile(final String filename) {
@@ -1130,6 +1059,13 @@ public class SettingsActivity extends XmppActivity implements OnSharedPreference
                 }
             );
         }
+        final Preference deleteAllSmilePacks = mSettingsFragment.findPreference("delete_all_smile_packs");
+        if (deleteAllSmilePacks != null) {
+            deleteAllSmilePacks.setOnPreferenceClickListener(preference -> {
+                deleteAllSmilePacks();
+                return true;
+            });
+        }
 
         final Preference importOwnGifs = mSettingsFragment.findPreference("import_own_gifs");
         if (importOwnGifs != null) {
@@ -1161,10 +1097,53 @@ public class SettingsActivity extends XmppActivity implements OnSharedPreference
 
     private void importStickers() {
         Intent intent = new Intent(Intent.ACTION_GET_CONTENT);
-        intent.setType("*/*");
-        intent.putExtra(Intent.EXTRA_MIME_TYPES, new String[]{"image/*", "text/xml", "application/xml", "application/zip"});
+        intent.setType("application/zip");
         intent.putExtra(Intent.EXTRA_ALLOW_MULTIPLE, true);
-        startActivityForResult(Intent.createChooser(intent, "Select smile pack files (or ZIP)"), REQUEST_IMPORT_STICKERS);
+        startActivityForResult(Intent.createChooser(intent, "Select smile pack ZIP"), REQUEST_IMPORT_STICKERS);
+    }
+
+    private void deleteAllSmilePacks() {
+        final File stickerRoot = new File(Environment.getExternalStoragePublicDirectory(Environment.DIRECTORY_DOCUMENTS) + File.separator + APP_DIRECTORY + File.separator + "Stickers");
+        if (!stickerRoot.exists()) {
+            return;
+        }
+        final AlertDialog.Builder builder = new AlertDialog.Builder(this);
+        builder.setTitle(R.string.delete_all_smile_packs);
+        builder.setMessage(R.string.are_you_sure);
+        builder.setNegativeButton(R.string.cancel, null);
+        builder.setPositiveButton(R.string.delete, (dialog, which) -> {
+            final File[] files = stickerRoot.listFiles();
+            boolean failed = false;
+            if (files != null) {
+                for (final File file : files) {
+                    failed |= !deleteRecursive(file);
+                }
+            }
+            if (!failed) {
+                Toast.makeText(this, R.string.sticker_deleted, Toast.LENGTH_LONG).show();
+                xmppConnectionService.LoadStickers();
+            } else {
+                Toast.makeText(this, R.string.failed_to_delete_sticker, Toast.LENGTH_LONG).show();
+            }
+        });
+        builder.create().show();
+    }
+
+    private boolean deleteRecursive(final File file) {
+        if (file == null || !file.exists()) {
+            return true;
+        }
+        if (file.isDirectory()) {
+            final File[] children = file.listFiles();
+            if (children != null) {
+                for (final File child : children) {
+                    if (!deleteRecursive(child)) {
+                        return false;
+                    }
+                }
+            }
+        }
+        return file.delete();
     }
 
     private void importGifs() {

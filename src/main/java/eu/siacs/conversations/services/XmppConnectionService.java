@@ -56,8 +56,10 @@ import android.content.SharedPreferences;
 import android.content.pm.PackageManager;
 import android.database.ContentObserver;
 import android.graphics.Bitmap;
+import android.graphics.ImageDecoder;
 import android.graphics.drawable.BitmapDrawable;
 import android.graphics.drawable.Drawable;
+import android.graphics.drawable.AnimatedImageDrawable;
 import android.media.AudioManager;
 import android.net.ConnectivityManager;
 import android.net.Network;
@@ -7004,7 +7006,7 @@ public class XmppConnectionService extends Service {
                                 continue;
                             }
                             DownloadableFile df = new DownloadableFile(file.getAbsolutePath());
-                            Drawable icon = fileBackend.getThumbnail(df, getResources(), (int) (getResources().getDisplayMetrics().density * 288), false);
+                            Drawable icon = createStickerDrawable(df);
                             if (icon == null) {
                                 continue;
                             }
@@ -7082,6 +7084,24 @@ public class XmppConnectionService extends Service {
             Log.w(Config.LOGTAG, "parseIcondef " + icondefFile + ": " + e);
         }
         return byFile;
+    }
+
+    private Drawable createStickerDrawable(final DownloadableFile file) {
+        try {
+            final String lower = file.getName().toLowerCase(Locale.US);
+            if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.P && (lower.endsWith(".gif") || lower.endsWith(".webp"))) {
+                final ImageDecoder.Source source = ImageDecoder.createSource(file);
+                final Drawable drawable = ImageDecoder.decodeDrawable(source);
+                if (drawable instanceof AnimatedImageDrawable) {
+                    ((AnimatedImageDrawable) drawable).start();
+                    return drawable;
+                }
+                return drawable;
+            }
+        } catch (final Exception e) {
+            Log.w(Config.LOGTAG, "createStickerDrawable (animated) failed: " + e);
+        }
+        return fileBackend.getThumbnail(file, getResources(), (int) (getResources().getDisplayMetrics().density * 288), false);
     }
 
     public EmojiSearch emojiSearch() {

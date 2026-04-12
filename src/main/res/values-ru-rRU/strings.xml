@@ -1506,7 +1506,9 @@
     <string name="no_background_set">Нет пользовательского набора фона</string>
     <string name="input_field">Поле ввода</string>
     <string name="import_own_stickers">Импорт стикеров</string>
-    <string name="import_own_stickers_summary">Импортируйте свой набор смайлов (например: icondef.xml + 1.png). Используйте понятные имена файлов (не hex-коды).</string>
+    <string name="import_own_stickers_summary">Импортируйте набор смайлов только ZIP-архивом (icondef.xml + 1.png, 2.png, ...).</string>
+    <string name="delete_all_smile_packs">Удалить все наборы смайлов</string>
+    <string name="delete_all_smile_packs_summary">Удаляет все импортированные наборы смайлов из папки Stickers.</string>
     <string name="pref_use_smiles_instead_of_emoji">Использовать смайлы вместо эмодзи</string>
     <string name="pref_use_smiles_instead_of_emoji_summary">При включении панель эмодзи открывает вкладку смайлов/стикеров, а ввод эмодзи там отключается.</string>
     <string name="thanks">Спасибо за использование чата монокли! Пожалуйста, рассмотрите возможность поддержать разработку небольшим пожертвованием.❤️</string>

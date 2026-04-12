@@ -411,6 +411,10 @@
             android:summary="@string/import_own_stickers_summary"
             android:key="import_own_stickers" />
         <Preference
+            android:title="@string/delete_all_smile_packs"
+            android:summary="@string/delete_all_smile_packs_summary"
+            android:key="delete_all_smile_packs" />
+        <Preference
             android:title="@string/update_default_stickers"
             android:key="download_default_stickers" />
         <Preference
