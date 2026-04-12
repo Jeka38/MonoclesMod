@@ -409,7 +409,6 @@ public class ConversationFragment extends XmppFragment
 
     private final OnClickListener meCommand = v -> Objects.requireNonNull(binding.textinput.getText()).insert(0, Message.ME_COMMAND + " ");
     private final OnClickListener quote = v -> insertQuote();
-    private final OnClickListener boldText = v -> insertFormatting("bold");
     private final OnClickListener italicText = v -> insertFormatting("italic");
     private final OnClickListener monospaceText = v -> insertFormatting("monospace");
     private final OnClickListener strikethroughText = v -> insertFormatting("strikethrough");
@@ -431,7 +430,6 @@ public class ConversationFragment extends XmppFragment
     }
 
     private void insertFormatting(String format) {
-        final String BOLD = "*";
         final String ITALIC = "_";
         final String MONOSPACE = "`";
         final String STRIKETHROUGH = "~";
@@ -448,15 +446,7 @@ public class ConversationFragment extends XmppFragment
         }
         final CharSequence selectedText = this.binding.textinput.getText().subSequence(min, max);
 
-        if (format.equals("bold")) {
-            if (selectedText.length() != 0) {
-                this.binding.textinput.getText().replace(Math.min(selStart, selEnd), Math.max(selStart, selEnd),
-                        BOLD + selectedText + BOLD, 0, selectedText.length() + 2);
-            } else {
-                this.binding.textinput.getText().insert(this.binding.textinput.getSelectionStart(), (BOLD));
-            }
-            return;
-        } else if (format.equals("italic")) {
+        if (format.equals("italic")) {
             if (selectedText.length() != 0) {
                 this.binding.textinput.getText().replace(Math.min(selStart, selEnd), Math.max(selStart, selEnd),
                         ITALIC + selectedText + ITALIC, 0, selectedText.length() + 2);
@@ -5994,7 +5984,6 @@ public class ConversationFragment extends XmppFragment
         this.binding.me.setEnabled(me);
         this.binding.me.setOnClickListener(meCommand);
         this.binding.quote.setOnClickListener(quote);
-        this.binding.bold.setOnClickListener(boldText);
         this.binding.italic.setOnClickListener(italicText);
         this.binding.monospace.setOnClickListener(monospaceText);
         this.binding.strikethrough.setOnClickListener(strikethroughText);
@@ -6002,9 +5991,7 @@ public class ConversationFragment extends XmppFragment
         if (Compatibility.runsTwentyEight()) {
             this.binding.me.setTooltipText(activity.getString(R.string.me));
             this.binding.quote.setTooltipText(activity.getString(R.string.quote));
-            this.binding.bold.setTooltipText(activity.getString(R.string.bold));
             this.binding.italic.setTooltipText(activity.getString(R.string.italic));
-            this.binding.monospace.setTooltipText(activity.getString(R.string.monospace));
             this.binding.monospace.setTooltipText(activity.getString(R.string.monospace));
             this.binding.strikethrough.setTooltipText(activity.getString(R.string.strikethrough));
             this.binding.close.setTooltipText(activity.getString(R.string.close));

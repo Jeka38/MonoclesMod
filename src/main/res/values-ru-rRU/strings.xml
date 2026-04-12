@@ -1358,7 +1358,6 @@
     <string name="close">Закрыть</string>
     <string name="no_manage_storage_permission">Начиная с Android 11 приложениям требуется специальное разрешение для доступа ко всем типам файлов во внешнем хранилище. Чат monocles попросит вас предоставить это разрешение для продолжения.</string>
     <string name="close_format_text">Вы действительно хотите закрыть панель инструментов форматирования текста\? Вы можете снова включить панель инструментов в настройках.</string>
-    <string name="bold">смелый</string>
     <string name="conference_technical_problems">Вы покинули эту конференцию по техническим причинам</string>
     <string name="account_status_incompatible_client">Несовместимый клиент</string>
     <string name="sending_x_file_x">Отправка %1$s (%2$s %)</string>

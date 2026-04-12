@@ -25,7 +25,7 @@ public class InlineImageSpan extends ImageSpan {
     public int getSize(final Paint paint, final CharSequence text, final int start, final int end, final Paint.FontMetricsInt fm) {
         paint.getFontMetricsInt(mTmpFontMetrics);
         final int fontHeight = Math.abs(mTmpFontMetrics.descent - mTmpFontMetrics.ascent);
-        float mRatio = fontHeight * 1.0f / dHeight;
+        float mRatio = fontHeight * 1.0f / Math.max(dHeight, dWidth);
         int mWidth = (int) (dWidth * mRatio);
         getDrawable().setBounds(0, 0, (int) dWidth, (int) dHeight);
         if (fm != null) {
@@ -41,7 +41,7 @@ public class InlineImageSpan extends ImageSpan {
     public void draw(Canvas canvas, CharSequence text, int start, int end, float x, int top, int y, int bottom, Paint paint) {
         paint.getFontMetricsInt(mTmpFontMetrics);
         final int fontHeight = Math.abs(mTmpFontMetrics.descent - mTmpFontMetrics.ascent);
-        float mRatio = fontHeight * 1.0f / dHeight;
+        float mRatio = fontHeight * 1.0f / Math.max(dHeight, dWidth);
 
         Drawable b = getDrawable();
         canvas.save();
