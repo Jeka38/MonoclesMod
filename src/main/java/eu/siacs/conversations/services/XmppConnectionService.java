@@ -7101,7 +7101,12 @@ public class XmppConnectionService extends Service {
         } catch (final Exception e) {
             Log.w(Config.LOGTAG, "createStickerDrawable (animated) failed: " + e);
         }
-        return fileBackend.getThumbnail(file, getResources(), (int) (getResources().getDisplayMetrics().density * 288), false);
+        try {
+            return fileBackend.getThumbnail(file, getResources(), (int) (getResources().getDisplayMetrics().density * 288), false);
+        } catch (final IOException e) {
+            Log.w(Config.LOGTAG, "createStickerDrawable (thumbnail) failed: " + e);
+            return null;
+        }
     }
 
     public EmojiSearch emojiSearch() {
