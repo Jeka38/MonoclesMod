@@ -1470,6 +1470,10 @@
     <string name="failed_to_delete_sticker">Failed to delete sticker</string>
     <string name="import_gif_failed">Failed to import GIFs</string>
     <string name="gif_imported">GIFs imported</string>
+    <string name="pref_enable_smiles">Enable Smiles</string>
+    <string name="pref_enable_smiles_summary">Replace emojis with smiles if available</string>
+    <string name="import_own_smiles">Import smiles</string>
+    <string name="import_own_smiles_summary">Import your own smiles. Match emojis by filename (shortcode or emoticon).</string>
     <string name="import_own_gifs">Import own GIFs</string>
     <string name="import_own_gifs_summary">Import your own GIFs. They will be sorted by the filename.</string>
     <string name="pref_accept_invites_from_strangers">Invites from strangers</string>

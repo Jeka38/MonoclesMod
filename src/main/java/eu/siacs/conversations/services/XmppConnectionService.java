@@ -37,6 +37,11 @@ import eu.siacs.conversations.utils.Consumer;
 import java.net.URI;
 import static eu.siacs.conversations.utils.Compatibility.s;
 import android.Manifest;
+import com.google.common.io.CharStreams;
+import java.io.InputStreamReader;
+import org.json.JSONArray;
+import org.json.JSONObject;
+import org.json.JSONException;
 import androidx.annotation.RequiresApi;
 import android.annotation.SuppressLint;
 import android.annotation.TargetApi;
@@ -280,6 +285,7 @@ public class XmppConnectionService extends Service {
     public static final String PlayStore = "com.android.vending";
     private static final String SETTING_LAST_ACTIVITY_TS = "last_activity_timestamp";
     private EmojiSearch emojiSearch = null;
+    private final Map<String, EmojiSearch.CustomEmoji> mCustomSmiles = new ConcurrentHashMap<>();
 
     public final CountDownLatch restoredFromDatabaseLatch = new CountDownLatch(1);
     private final static Executor FILE_OBSERVER_EXECUTOR = Executors.newSingleThreadExecutor();
@@ -316,6 +322,7 @@ public class XmppConnectionService extends Service {
     private long mLastMucPing = 0;
     private Map<String, Message> mScheduledMessages = new HashMap<>();
     private long mLastStickerRescan = 0;
+    private long mLastSmileRescan = 0;
     public final FileBackend fileBackend = new FileBackend(this);
     private MemorizingTrustManager mMemorizingTrustManager;
     private final NotificationService mNotificationService = new NotificationService(this);
@@ -1522,13 +1529,13 @@ public class XmppConnectionService extends Service {
             case "low":
                 return 209715; // 0.2 * 1024 * 1024 = 209715 (0.2 MiB)
             case "mid":
-                return 524288; // 0.5 * 1024 * 1024 = 524288 (0.5 MiB)
+                return 52424; // 0.5 * 1024 * 1024 = 52424 (0.5 MiB)
             case "high":
                 return 1048576; // 1 * 1024 * 1024 = 1048576 (1 MiB)
             case "uncompressed":
                 return 0;
             default:
-                return 524288;
+                return 52424;
         }
     }
 
@@ -1901,6 +1908,7 @@ public class XmppConnectionService extends Service {
         mForceDuringOnCreate.set(false);
         toggleForegroundService();
         rescanStickers();
+        rescanSmiles();
         internalPingExecutor.scheduleAtFixedRate(this::manageAccountConnectionStatesInternal,120,120,TimeUnit.SECONDS);
         //start export log service every day at given time
         ScheduleAutomaticExport();
@@ -6983,6 +6991,75 @@ public class XmppConnectionService extends Service {
         return new File(Environment.getExternalStoragePublicDirectory(Environment.DIRECTORY_DOCUMENTS) + File.separator + APP_DIRECTORY + File.separator + "Stickers");
     }
 
+    private File smileDir() {
+        return new File(Environment.getExternalStoragePublicDirectory(Environment.DIRECTORY_DOCUMENTS) + File.separator + APP_DIRECTORY + File.separator + "Smiles");
+    }
+
+    public void rescanSmiles() {
+        long msToRescan = (mLastSmileRescan + 600000L) - SystemClock.elapsedRealtime();
+        if (msToRescan > 0) return;
+        Log.d(Config.LOGTAG, "rescanSmiles");
+        mLastSmileRescan = SystemClock.elapsedRealtime();
+        mStickerScanExecutor.execute(() -> {
+            Thread.currentThread().setPriority(Thread.MIN_PRIORITY);
+            final Map<String, String> shortcodeToUnicode = new HashMap<>();
+            final Map<String, String> emoticonToUnicode = new HashMap<>();
+            try (InputStreamReader reader = new InputStreamReader(getResources().openRawResource(R.raw.emoji), "UTF-8")) {
+                final JSONArray data = new JSONArray(CharStreams.toString(reader));
+                for (int i = 0; i < data.length(); i++) {
+                    JSONObject o = data.getJSONObject(i);
+                    String unicode = o.getString("unicode");
+                    final JSONArray rawEmoticon = o.getJSONArray("emoticon");
+                    for (int j = 0; j < rawEmoticon.length(); j++) {
+                        emoticonToUnicode.put(rawEmoticon.getString(j), unicode);
+                    }
+                    final JSONArray rawShortcodes = o.getJSONArray("shortcodes");
+                    for (int j = 0; j < rawShortcodes.length(); j++) {
+                        shortcodeToUnicode.put(rawShortcodes.getString(j), unicode);
+                    }
+                }
+            } catch (final JSONException | IOException e) {
+                Log.e(Config.LOGTAG, "rescanSmiles: emoji.json invalid", e);
+            }
+
+            File dir = smileDir();
+            if (!dir.exists()) {
+                dir.mkdirs();
+            }
+            mCustomSmiles.clear();
+            File[] files = dir.listFiles();
+            if (files != null) {
+                for (File file : files) {
+                    try {
+                        if (file.isFile() && file.canRead()) {
+                            DownloadableFile df = new DownloadableFile(file.getAbsolutePath());
+                            Drawable icon = fileBackend.getThumbnail(df, getResources(), (int) (getResources().getDisplayMetrics().density * 24), false);
+                            final String filename = Files.getNameWithoutExtension(df.getName());
+                            try (FileInputStream fis = new FileInputStream(df)) {
+                                Cid[] cids = fileBackend.calculateCids(fis);
+                                for (Cid cid : cids) {
+                                    saveCid(cid, file);
+                                }
+
+                                String unicode = shortcodeToUnicode.get(filename);
+                                if (unicode == null) {
+                                    unicode = emoticonToUnicode.get(filename);
+                                }
+
+                                if (unicode != null) {
+                                    mCustomSmiles.put(unicode, new EmojiSearch.CustomEmoji(filename, cids[0].toString(), icon, null));
+                                }
+                            }
+                        }
+                    } catch (Exception e) {
+                        Log.w(Config.LOGTAG, "rescanSmiles: " + e);
+                    }
+                }
+            }
+            updateConversationUi();
+        });
+    }
+
     public void rescanStickers() {
         long msToRescan = (mLastStickerRescan + 600000L) - SystemClock.elapsedRealtime();
         if (msToRescan > 0) return;
@@ -6998,12 +7075,14 @@ public class XmppConnectionService extends Service {
                             DownloadableFile df = new DownloadableFile(file.getAbsolutePath());
                             Drawable icon = fileBackend.getThumbnail(df, getResources(), (int) (getResources().getDisplayMetrics().density * 288), false);
                             final String filename = Files.getNameWithoutExtension(df.getName());
-                            Cid[] cids = fileBackend.calculateCids(new FileInputStream(df));
-                            for (Cid cid : cids) {
-                                saveCid(cid, file);
-                            }
-                            if (file.length() < 129000) {
-                                emojiSearch.addEmoji(new EmojiSearch.CustomEmoji(filename, cids[0].toString(), icon, file.getParentFile().getName()));
+                            try (FileInputStream fis = new FileInputStream(df)) {
+                                Cid[] cids = fileBackend.calculateCids(fis);
+                                for (Cid cid : cids) {
+                                    saveCid(cid, file);
+                                }
+                                if (file.length() < 129000) {
+                                    emojiSearch.addEmoji(new EmojiSearch.CustomEmoji(filename, cids[0].toString(), icon, file.getParentFile().getName()));
+                                }
                             }
                         }
                     } catch (final Exception e) {
@@ -7018,5 +7097,9 @@ public class XmppConnectionService extends Service {
 
     public EmojiSearch emojiSearch() {
         return emojiSearch;
+    }
+
+    public Map<String, EmojiSearch.CustomEmoji> getCustomSmiles() {
+        return mCustomSmiles;
     }
 }
