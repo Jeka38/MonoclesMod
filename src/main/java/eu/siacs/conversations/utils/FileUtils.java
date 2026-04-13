@@ -186,4 +186,17 @@ public class FileUtils {
         }
         return extension;
     }
+
+    public static void createNoMedia(File directory) {
+        if (directory == null) {
+            return;
+        }
+        final File noMedia = new File(directory, ".nomedia");
+        if (!noMedia.exists()) {
+            try {
+                noMedia.createNewFile();
+            } catch (Exception ignored) {
+            }
+        }
+    }
 }

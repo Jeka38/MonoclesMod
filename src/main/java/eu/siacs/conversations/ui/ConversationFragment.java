@@ -226,6 +226,7 @@ import eu.siacs.conversations.utils.CameraUtils;
 import eu.siacs.conversations.utils.ChatBackgroundHelper;
 import eu.siacs.conversations.utils.Compatibility;
 import eu.siacs.conversations.utils.Emoticons;
+import eu.siacs.conversations.utils.FileUtils;
 import eu.siacs.conversations.utils.GeoHelper;
 import eu.siacs.conversations.utils.MenuDoubleTabUtil;
 import eu.siacs.conversations.utils.MessageUtils;
@@ -2188,6 +2189,7 @@ public class ConversationFragment extends XmppFragment
             if (!dirGifs.exists()) {
                 dirGifs.mkdir();
             }
+            FileUtils.createNoMedia(dirGifs);
             if (dirGifs.listFiles() != null) {
                 if (dirGifs.isDirectory() && dirGifs.listFiles() != null) {
                     files = dirGifs.listFiles();
@@ -4145,7 +4147,9 @@ public class ConversationFragment extends XmppFragment
         if (dir.startsWith("content://")) {
             intent.putExtra("android.provider.extra.INITIAL_URI", Uri.parse(dir));
         } else {
-            new File(Environment.getExternalStoragePublicDirectory(Environment.DIRECTORY_DOCUMENTS) + File.separator + APP_DIRECTORY + File.separator + "Stickers").mkdirs();
+            final File parent = new File(Environment.getExternalStoragePublicDirectory(Environment.DIRECTORY_DOCUMENTS) + File.separator + APP_DIRECTORY + File.separator + "Stickers");
+            parent.mkdirs();
+            FileUtils.createNoMedia(parent);
             Uri uri;
             if (Build.VERSION.SDK_INT >= 29) {
                 Intent tmp = ((StorageManager) activity.getSystemService(Context.STORAGE_SERVICE)).getPrimaryStorageVolume().createOpenDocumentTreeIntent();
@@ -4182,7 +4186,9 @@ public class ConversationFragment extends XmppFragment
         if (dir.startsWith("content://")) {
             intent.putExtra("android.provider.extra.INITIAL_URI", Uri.parse(dir));
         } else {
-            new File(Environment.getExternalStoragePublicDirectory(Environment.DIRECTORY_DOCUMENTS) + File.separator + APP_DIRECTORY + File.separator + "Stickers").mkdirs();
+            final File parent = new File(Environment.getExternalStoragePublicDirectory(Environment.DIRECTORY_DOCUMENTS) + File.separator + APP_DIRECTORY + File.separator + "GIFs");
+            parent.mkdirs();
+            FileUtils.createNoMedia(parent);
             Uri uri;
             if (Build.VERSION.SDK_INT >= 29) {
                 Intent tmp = ((StorageManager) activity.getSystemService(Context.STORAGE_SERVICE)).getPrimaryStorageVolume().createOpenDocumentTreeIntent();

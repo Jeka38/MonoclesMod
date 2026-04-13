@@ -41,6 +41,7 @@ import androidx.core.content.ContextCompat;
 import androidx.exifinterface.media.ExifInterface;
 
 import eu.siacs.conversations.utils.CameraUtils;
+import eu.siacs.conversations.utils.FileUtils;
 
 import java.io.Closeable;
 import java.io.File;
@@ -251,6 +252,7 @@ public class SettingsActivity extends XmppActivity implements OnSharedPreference
                                 if (!gifsfolder.exists()) {
                                     gifsfolder.mkdirs();
                                 }
+                                FileUtils.createNoMedia(gifsfolder);
                                 String filename = getFileName(imageUri);
                                 File newGif = new File(Environment.getExternalStoragePublicDirectory(Environment.DIRECTORY_DOCUMENTS) + File.separator + APP_DIRECTORY + File.separator + "GIFs" + File.separator + filename);
 
@@ -287,6 +289,7 @@ public class SettingsActivity extends XmppActivity implements OnSharedPreference
                             if (!gifsfolder.exists()) {
                                 gifsfolder.mkdirs();
                             }
+                            FileUtils.createNoMedia(gifsfolder);
                             String filename = getFileName(imageUri);
                             File newGif = new File(Environment.getExternalStoragePublicDirectory(Environment.DIRECTORY_DOCUMENTS) + File.separator + APP_DIRECTORY + File.separator + "GIFs" + File.separator + filename);
 
@@ -349,6 +352,7 @@ public class SettingsActivity extends XmppActivity implements OnSharedPreference
         if (!stickerRoot.exists() && !stickerRoot.mkdirs()) {
             throw new IOException("Unable to create sticker root");
         }
+        FileUtils.createNoMedia(stickerRoot);
         final String baseName = filename.substring(0, Math.max(0, filename.lastIndexOf('.'))).replaceAll("[^a-zA-Z0-9._-]", "_");
         final File targetDir = new File(stickerRoot, baseName + "_" + System.currentTimeMillis());
         if (!targetDir.mkdirs()) {

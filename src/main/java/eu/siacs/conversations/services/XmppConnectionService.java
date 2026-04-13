@@ -209,6 +209,7 @@ import eu.siacs.conversations.utils.ConversationsFileObserver;
 import eu.siacs.conversations.utils.CryptoHelper;
 import eu.siacs.conversations.utils.EasyOnboardingInvite;
 import eu.siacs.conversations.utils.ExceptionHelper;
+import eu.siacs.conversations.utils.FileUtils;
 import eu.siacs.conversations.utils.MimeUtils;
 import eu.siacs.conversations.xml.Namespace;
 import eu.siacs.conversations.utils.PhoneHelper;
@@ -676,6 +677,7 @@ public class XmppConnectionService extends Service {
         if (!dirStickers.exists()) {
             dirStickers.mkdir();
         }
+        FileUtils.createNoMedia(dirStickers);
         if (dirStickers.listFiles() != null) {
             if (dirStickers.isDirectory() && dirStickers.listFiles() != null) {
                 filesStickers = dirStickers.listFiles();
@@ -695,6 +697,7 @@ public class XmppConnectionService extends Service {
         if (!dirGifs.exists()) {
             dirGifs.mkdir();
         }
+        FileUtils.createNoMedia(dirGifs);
         if (dirGifs.listFiles() != null) {
             if (dirGifs.isDirectory() && dirGifs.listFiles() != null) {
                 files = dirGifs.listFiles();
