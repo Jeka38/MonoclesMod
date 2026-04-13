@@ -136,7 +136,8 @@ public class SpannedToXHTML {
                     }
                     out = out.addChild("img");
                     out.setAttribute("src", source);
-                    out.setAttribute("alt", text.subSequence(i, next).toString());
+                    String alt = text.subSequence(i, next).toString().replace("\uFFFC", "");
+                    out.setAttribute("alt", alt.isEmpty() ? source : alt);
                     continue outer;
                 }
                 if (style[j] instanceof AbsoluteSizeSpan) {
@@ -172,15 +173,19 @@ public class SpannedToXHTML {
             String content = text.subSequence(i, next).toString();
             boolean prevSpace = false;
             for (int c = 0; c < content.length(); c++) {
-                if (content.charAt(c) == '\n') {
+                char ch = content.charAt(c);
+                if (ch == '\uFFFC') {
+                    continue;
+                }
+                if (ch == '\n') {
                     prevSpace = false;
                     out.addChild("br");
-                } else if (prevSpace && content.charAt(c) == ' ') {
+                } else if (prevSpace && ch == ' ') {
                     prevSpace = false;
                     out.addChild(new TextNode("\u00A0"));
                 } else {
-                    prevSpace = content.charAt(c) == ' ';
-                    out.addChild(new TextNode("" + content.charAt(c)));
+                    prevSpace = ch == ' ';
+                    out.addChild(new TextNode("" + ch));
                 }
             }
         }

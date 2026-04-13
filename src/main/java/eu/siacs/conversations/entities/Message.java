@@ -746,7 +746,7 @@ public class Message extends AbstractEntity implements AvatarService.Avatarable 
     }
 
     private synchronized void setBodyPreserveXHTML(String body) {
-        this.body = body;
+        this.body = body == null ? "" : body.replace("\uFFFC", "");
         this.isGeoUri = null;
         this.isXmppUri = null;
         this.isWebUri = null;
@@ -755,7 +755,7 @@ public class Message extends AbstractEntity implements AvatarService.Avatarable 
     }
 
     public synchronized void appendBody(String append) {
-        this.body += append;
+        this.body += (append == null ? "" : append.replace("\uFFFC", ""));
         this.isGeoUri = null;
         this.isEmojisOnly = null;
         this.treatAsDownloadable = null;
