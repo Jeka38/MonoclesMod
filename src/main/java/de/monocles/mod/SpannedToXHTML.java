@@ -128,17 +128,19 @@ public class SpannedToXHTML {
                     out.setAttribute("href", ((URLSpan) style[j]).getURL());
                 }
                 if (style[j] instanceof ImageSpan) {
-                    String source = ((ImageSpan) style[j]).getSource();
-                    if (source != null && source.length() > 0 && source.charAt(0) == 'z') {
-                        try {
-                            source = BobTransfer.uri(Cid.decode(source)).toString();
-                        } catch (final Exception e) { }
+                    if (!(style[j] instanceof InlineImageSpan)) {
+                        String source = ((ImageSpan) style[j]).getSource();
+                        if (source != null && source.length() > 0 && source.charAt(0) == 'z') {
+                            try {
+                                source = BobTransfer.uri(Cid.decode(source)).toString();
+                            } catch (final Exception e) { }
+                        }
+                        out = out.addChild("img");
+                        out.setAttribute("src", source);
+                        String alt = text.subSequence(i, next).toString().replace("\uFFFC", "");
+                        out.setAttribute("alt", alt.isEmpty() ? source : alt);
+                        continue outer;
                     }
-                    out = out.addChild("img");
-                    out.setAttribute("src", source);
-                    String alt = text.subSequence(i, next).toString().replace("\uFFFC", "");
-                    out.setAttribute("alt", alt.isEmpty() ? source : alt);
-                    continue outer;
                 }
                 if (style[j] instanceof AbsoluteSizeSpan) {
                     try {

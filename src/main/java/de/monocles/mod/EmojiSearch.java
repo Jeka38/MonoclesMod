@@ -255,6 +255,8 @@ public class EmojiSearch {
             super(null, order);
             shortcodes.add(shortcode);
             emoticon.add(shortcode);
+            emoticon.add(":" + shortcode + ":");
+            emoticon.add("*" + shortcode + "*");
             if (tag != null) tags.add(tag);
             this.source = source;
             this.icon = icon;
@@ -277,6 +279,8 @@ public class EmojiSearch {
                     }
                     shortcodes.add(alias);
                     emoticon.add(alias);
+                    emoticon.add(":" + alias + ":");
+                    emoticon.add("*" + alias + "*");
                 }
             }
             if (shortcodes.isEmpty()) {
@@ -292,7 +296,7 @@ public class EmojiSearch {
         }
 
         public SpannableStringBuilder toInsert() {
-            final String token = insertToken.matches("[a-zA-Z0-9_+\\-]+") ? ":" + insertToken + ":" : insertToken;
+            final String token = insertToken.matches("[a-zA-Z0-9_+\\-]+") ? "*" + insertToken + "*" : insertToken;
             SpannableStringBuilder builder = new SpannableStringBuilder(token);
             builder.setSpan(new InlineImageSpan(icon, source), 0, builder.length(), Spannable.SPAN_EXCLUSIVE_EXCLUSIVE);
             return builder;
