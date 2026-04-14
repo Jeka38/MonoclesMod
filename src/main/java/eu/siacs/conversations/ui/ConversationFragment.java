@@ -1515,26 +1515,6 @@ public class ConversationFragment extends XmppFragment
                     return;
                 }
                 message.setBody(hasSubject && body.length() == 0 ? null : body);
-                if (message.bodyIsOnlyEmojis()) {
-                    SpannableStringBuilder spannable = message.getSpannableBody(null, null);
-                    ImageSpan[] imageSpans = spannable.getSpans(0, spannable.length(), ImageSpan.class);
-                    if (imageSpans.length == 1) {
-                        String source = imageSpans[0].getSource();
-                        if (source != null && source.length() > 0 && source.substring(0, 4).equals("cid:")) {
-                            try {
-                                final Cid cid = BobTransfer.cid(Uri.parse(source));
-                                final String url = activity.xmppConnectionService.getUrlForCid(cid);
-                                final File f = activity.xmppConnectionService.getFileForCid(cid);
-                                if (url != null) {
-                                    message.setBody("");
-                                    message.setRelativeFilePath(f.getAbsolutePath());
-                                    activity.xmppConnectionService.getFileBackend().updateFileParams(message);
-                                }
-                            } catch (final Exception e) {
-                            }
-                        }
-                    }
-                }
             }
 
             if (hasSubject) message.setSubject(binding.textinputSubject.getText().toString());
