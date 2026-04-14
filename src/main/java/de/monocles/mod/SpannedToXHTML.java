@@ -128,8 +128,10 @@ public class SpannedToXHTML {
                     out.setAttribute("href", ((URLSpan) style[j]).getURL());
                 }
                 if (style[j] instanceof ImageSpan) {
-                    if (!(style[j] instanceof InlineImageSpan)) {
-                        String source = ((ImageSpan) style[j]).getSource();
+                    String source = ((ImageSpan) style[j]).getSource();
+                    if (style[j] instanceof InlineImageSpan || (source != null && source.startsWith("*") && source.endsWith("*"))) {
+                        // skip img tag, will add text below
+                    } else {
                         if (source != null && source.length() > 0 && source.charAt(0) == 'z') {
                             try {
                                 source = BobTransfer.uri(Cid.decode(source)).toString();

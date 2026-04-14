@@ -573,9 +573,37 @@ public class Message extends AbstractEntity implements AvatarService.Avatarable 
         return body;
     }
 
+    private static String toPlainText(Spanned span) {
+        if (span == null) return null;
+        StringBuilder sb = new StringBuilder();
+        int next;
+        for (int i = 0; i < span.length(); i = next) {
+            next = span.nextSpanTransition(i, span.length(), ImageSpan.class);
+            ImageSpan[] spans = span.getSpans(i, next, ImageSpan.class);
+            String sub = span.subSequence(i, next).toString();
+            if (spans.length > 0 && sub.equals("\uFFFC")) {
+                boolean replaced = false;
+                for (ImageSpan imageSpan : spans) {
+                    String source = imageSpan.getSource();
+                    if (source != null && !source.isEmpty()) {
+                        sb.append(source);
+                        replaced = true;
+                        break;
+                    }
+                }
+                if (!replaced) {
+                    sb.append(sub.replace("\uFFFC", ""));
+                }
+            } else {
+                sb.append(sub.replace("\uFFFC", ""));
+            }
+        }
+        return sb.toString();
+    }
+
     public synchronized void setBody(Spanned span) {
         // Don't bother removing, we'll edit below
-        setBodyPreserveXHTML(span == null ? null : span.toString());
+        setBodyPreserveXHTML(span == null ? null : toPlainText(span));
         if (span == null || SpannedToXHTML.isPlainText(span)) {
             this.payloads.remove(getHtml(true));
         } else {
@@ -617,7 +645,7 @@ public class Message extends AbstractEntity implements AvatarService.Avatarable 
             final Element body = getOrMakeHtml();
             SpannedToXHTML.append(body, append);
         }
-        appendBody(append.toString());
+        appendBody(toPlainText(append));
     }
 
     public String getQuoteableBody() {
