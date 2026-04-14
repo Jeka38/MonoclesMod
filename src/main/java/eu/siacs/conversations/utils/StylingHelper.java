@@ -84,7 +84,7 @@ public class StylingHelper {
     public static void format(final Editable editable, int start, int end, @ColorInt int textColor, final boolean composing) {
         for (ImStyleParser.Style style : ImStyleParser.parse(editable, start, end)) {
             final int keywordLength = style.getKeyword().length();
-            editable.setSpan(createSpanForStyle(style), style.getStart() + keywordLength, style.getEnd() - keywordLength + 1, Spanned.SPAN_EXCLUSIVE_EXCLUSIVE | ("*".equals(style.getKeyword()) || "_".equals(style.getKeyword()) ? XHTML_EMPHASIS << Spanned.SPAN_USER_SHIFT : 0));
+            editable.setSpan(createSpanForStyle(style), style.getStart() + keywordLength, style.getEnd() - keywordLength + 1, Spanned.SPAN_EXCLUSIVE_EXCLUSIVE | ("_".equals(style.getKeyword()) ? XHTML_EMPHASIS << Spanned.SPAN_USER_SHIFT : 0));
             makeKeywordOpaque(editable, style.getStart(), style.getStart() + keywordLength + ("```".equals(style.getKeyword()) ? 1 : 0), textColor, composing);
             makeKeywordOpaque(editable, style.getEnd() - keywordLength + 1, style.getEnd() + 1, textColor, composing);
         }
@@ -192,8 +192,6 @@ public class StylingHelper {
 
     private static ParcelableSpan createSpanForStyle(ImStyleParser.Style style) {
         switch (style.getKeyword()) {
-            case "*":
-                return new StyleSpan(Typeface.BOLD);
             case "_":
                 return new StyleSpan(Typeface.ITALIC);
             case "~":

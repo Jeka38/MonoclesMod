@@ -139,6 +139,7 @@ public class SettingsActivity extends XmppActivity implements OnSharedPreference
     public static final int REQUEST_IMPORT_SETTINGS = 0xbf8703;
     public static final int REQUEST_IMPORT_STICKERS = 0xbf8705;
     public static final int REQUEST_IMPORT_GIFS = 0xbf8706;
+    public static final int REQUEST_IMPORT_SMILES = 0xbf8707;
 
     Preference multiAccountPreference;
     Preference autoMessageExpiryPreference;
@@ -271,6 +272,45 @@ public class SettingsActivity extends XmppActivity implements OnSharedPreference
                             Log.d(Config.LOGTAG, "Could not import sticker" + exception);
                         }
                     }
+                }
+            }
+        }
+
+        // Import Smiles from ZIP
+        if (requestCode == REQUEST_IMPORT_SMILES) {
+            if (resultCode == RESULT_OK && data != null && data.getData() != null) {
+                Uri zipUri = data.getData();
+                try (InputStream is = getContentResolver().openInputStream(zipUri);
+                     java.util.zip.ZipInputStream zis = new java.util.zip.ZipInputStream(is)) {
+                    File smilesFolder = new File(Environment.getExternalStoragePublicDirectory(Environment.DIRECTORY_DOCUMENTS) + File.separator + APP_DIRECTORY + File.separator + FileBackend.SMILES);
+                    if (!smilesFolder.exists()) {
+                        smilesFolder.mkdirs();
+                    }
+                    java.util.zip.ZipEntry entry;
+                    while ((entry = zis.getNextEntry()) != null) {
+                        if (entry.isDirectory()) continue;
+                        String name = entry.getName();
+                        if (name.contains("/")) {
+                            name = name.substring(name.lastIndexOf("/") + 1);
+                        }
+                        if (name.isEmpty()) continue;
+                        File outFile = new File(smilesFolder, name);
+                        try (FileOutputStream fos = new FileOutputStream(outFile)) {
+                            byte[] buffer = new byte[4096];
+                            int len;
+                            while ((len = zis.read(buffer)) > 0) {
+                                fos.write(buffer, 0, len);
+                            }
+                        }
+                        zis.closeEntry();
+                    }
+                    Toast.makeText(this, R.string.smiles_imported, Toast.LENGTH_LONG).show();
+                    if (xmppConnectionService != null) {
+                        xmppConnectionService.rescanSmiles();
+                    }
+                } catch (IOException e) {
+                    Toast.makeText(this, "Failed to import smiles", Toast.LENGTH_LONG).show();
+                    Log.e(Config.LOGTAG, "Failed to import smiles", e);
                 }
             }
         }
@@ -1026,6 +1066,18 @@ public class SettingsActivity extends XmppActivity implements OnSharedPreference
             );
         }
 
+        final Preference importOwnSmiles = mSettingsFragment.findPreference("import_own_smiles");
+        if (importOwnSmiles != null) {
+            importOwnSmiles.setOnPreferenceClickListener(
+                    preference -> {
+                        if (hasStoragePermission(REQUEST_IMPORT_SMILES)) {
+                            importSmiles();
+                        }
+                        return true;
+                    }
+            );
+        }
+
 //        final Preference importOwnStickers = mSettingsFragment.findPreference("import_own_stickers");
 //        if (importOwnStickers != null) {
 //            importOwnStickers.setOnPreferenceClickListener(
@@ -1080,6 +1132,12 @@ public class SettingsActivity extends XmppActivity implements OnSharedPreference
         //**These following line is the important one!
         intent.putExtra(Intent.EXTRA_ALLOW_MULTIPLE, true);
         startActivityForResult(Intent.createChooser(intent, "Select GIFs"), REQUEST_IMPORT_GIFS); //REQUEST_IMPORT_STICKERS is simply a global int used to check the calling intent in onActivityResult
+    }
+
+    private void importSmiles() {
+        Intent intent = new Intent(Intent.ACTION_GET_CONTENT);
+        intent.setType("application/zip");
+        startActivityForResult(Intent.createChooser(intent, "Select ZIP archive"), REQUEST_IMPORT_SMILES);
     }
 
     private void updateTheme() {

@@ -339,6 +339,7 @@ public class ConversationFragment extends XmppFragment
     private String[] filesPaths;
     private String[] filesNames;
     File dirGifs = new File(Environment.getExternalStoragePublicDirectory(Environment.DIRECTORY_DOCUMENTS) + File.separator + APP_DIRECTORY + File.separator + "GIFs");
+    File dirSmiles = new File(Environment.getExternalStoragePublicDirectory(Environment.DIRECTORY_DOCUMENTS) + File.separator + APP_DIRECTORY + File.separator + FileBackend.SMILES);
     private EmojiSearch emojiSearch = null;
 
 
@@ -408,7 +409,6 @@ public class ConversationFragment extends XmppFragment
 
     private final OnClickListener meCommand = v -> Objects.requireNonNull(binding.textinput.getText()).insert(0, Message.ME_COMMAND + " ");
     private final OnClickListener quote = v -> insertQuote();
-    private final OnClickListener boldText = v -> insertFormatting("bold");
     private final OnClickListener italicText = v -> insertFormatting("italic");
     private final OnClickListener monospaceText = v -> insertFormatting("monospace");
     private final OnClickListener strikethroughText = v -> insertFormatting("strikethrough");
@@ -430,7 +430,6 @@ public class ConversationFragment extends XmppFragment
     }
 
     private void insertFormatting(String format) {
-        final String BOLD = "*";
         final String ITALIC = "_";
         final String MONOSPACE = "`";
         final String STRIKETHROUGH = "~";
@@ -447,15 +446,7 @@ public class ConversationFragment extends XmppFragment
         }
         final CharSequence selectedText = this.binding.textinput.getText().subSequence(min, max);
 
-        if (format.equals("bold")) {
-            if (selectedText.length() != 0) {
-                this.binding.textinput.getText().replace(Math.min(selStart, selEnd), Math.max(selStart, selEnd),
-                        BOLD + selectedText + BOLD, 0, selectedText.length() + 2);
-            } else {
-                this.binding.textinput.getText().insert(this.binding.textinput.getSelectionStart(), (BOLD));
-            }
-            return;
-        } else if (format.equals("italic")) {
+        if (format.equals("italic")) {
             if (selectedText.length() != 0) {
                 this.binding.textinput.getText().replace(Math.min(selStart, selEnd), Math.max(selStart, selEnd),
                         ITALIC + selectedText + ITALIC, 0, selectedText.length() + 2);
@@ -729,80 +720,89 @@ public class ConversationFragment extends XmppFragment
         }
     };
 
+    private void updateMediaPickerTabs() {
+        if (binding.emojiPicker.getVisibility() == VISIBLE) {
+            binding.emojisButton.setBackground(ContextCompat.getDrawable(activity, R.drawable.selector_bubble));
+            binding.emojisButton.setTypeface(null, Typeface.BOLD);
+        } else {
+            binding.emojisButton.setBackgroundColor(0);
+            binding.emojisButton.setTypeface(null, Typeface.NORMAL);
+        }
+        if (binding.smilesview.getVisibility() == VISIBLE) {
+            binding.smilesButton.setBackground(ContextCompat.getDrawable(activity, R.drawable.selector_bubble));
+            binding.smilesButton.setTypeface(null, Typeface.BOLD);
+        } else {
+            binding.smilesButton.setBackgroundColor(0);
+            binding.smilesButton.setTypeface(null, Typeface.NORMAL);
+        }
+        if (binding.stickersview.getVisibility() == VISIBLE) {
+            binding.stickersButton.setBackground(ContextCompat.getDrawable(activity, R.drawable.selector_bubble));
+            binding.stickersButton.setTypeface(null, Typeface.BOLD);
+        } else {
+            binding.stickersButton.setBackgroundColor(0);
+            binding.stickersButton.setTypeface(null, Typeface.NORMAL);
+        }
+        if (binding.gifsview.getVisibility() == VISIBLE) {
+            binding.gifsButton.setBackground(ContextCompat.getDrawable(activity, R.drawable.selector_bubble));
+            binding.gifsButton.setTypeface(null, Typeface.BOLD);
+        } else {
+            binding.gifsButton.setBackgroundColor(0);
+            binding.gifsButton.setTypeface(null, Typeface.NORMAL);
+        }
+    }
+
     private final OnClickListener memojiButtonListener = new OnClickListener() {
         @Override
         public void onClick(View v) {
-            if (binding.emojiButton.getVisibility() == VISIBLE && binding.emojisStickerLayout.getHeight() > 100) {
+            if (binding.emojiButton.getVisibility() == VISIBLE) {
+                if (binding.emojisStickerLayout.getHeight() < 100) {
+                    LinearLayout emojipickerview = binding.emojisStickerLayout;
+                    ViewGroup.LayoutParams params = emojipickerview.getLayoutParams();
+                    params.height = 800;
+                    emojipickerview.setLayoutParams(params);
+                }
                 binding.emojiButton.setVisibility(GONE);
                 binding.keyboardButton.setVisibility(VISIBLE);
                 hideSoftKeyboard(activity);
-                EmojiPickerView emojiPickerView = binding.emojiPicker;
                 backPressedLeaveEmojiPicker.setEnabled(true);
                 binding.textinput.requestFocus();
+
+                final boolean smilesEnabled = activity.xmppConnectionService.getBooleanPreference("enable_smiles", R.bool.enable_smiles);
+                if (smilesEnabled) {
+                    binding.emojiPicker.setVisibility(GONE);
+                    binding.emojisButton.setVisibility(GONE);
+                    binding.smilesview.setVisibility(VISIBLE);
+                    binding.smilesButton.setVisibility(VISIBLE);
+                    binding.smilesButtonSpacing.setVisibility(VISIBLE);
+                } else {
+                    binding.emojiPicker.setVisibility(VISIBLE);
+                    binding.emojisButton.setVisibility(VISIBLE);
+                    binding.smilesview.setVisibility(GONE);
+                    binding.smilesButton.setVisibility(GONE);
+                    binding.smilesButtonSpacing.setVisibility(GONE);
+                }
+
+                EmojiPickerView emojiPickerView = binding.emojiPicker;
                 emojiPickerView.setOnEmojiPickedListener(emojiViewItem -> {
                     int start = binding.textinput.getSelectionStart(); //this is to get the the cursor position
                     binding.textinput.getText().insert(start, emojiViewItem.getEmoji()); //this will get the text and insert the emoji into   the current position
                 });
 
-                if (binding.emojiPicker.getVisibility() == VISIBLE) {
-                    binding.emojisButton.setBackground(ContextCompat.getDrawable(activity, R.drawable.selector_bubble));
-                    binding.emojisButton.setTypeface(null, Typeface.BOLD);
-                } else {
-                    binding.emojisButton.setBackgroundColor(0);
-                    binding.emojisButton.setTypeface(null, Typeface.NORMAL);
-                }
-                if (binding.stickersview.getVisibility() == VISIBLE) {
-                    binding.stickersButton.setBackground(ContextCompat.getDrawable(activity, R.drawable.selector_bubble));
-                    binding.stickersButton.setTypeface(null, Typeface.BOLD);
-                } else {
-                    binding.stickersButton.setBackgroundColor(0);
-                    binding.stickersButton.setTypeface(null, Typeface.NORMAL);
-                }
-                if (binding.gifsview.getVisibility() == VISIBLE) {
-                    binding.gifsButton.setBackground(ContextCompat.getDrawable(activity, R.drawable.selector_bubble));
-                    binding.gifsButton.setTypeface(null, Typeface.BOLD);
-                } else {
-                    binding.gifsButton.setBackgroundColor(0);
-                    binding.gifsButton.setTypeface(null, Typeface.NORMAL);
-                }
-            } else if (binding.emojiButton.getVisibility() == VISIBLE && binding.emojisStickerLayout.getHeight() < 100) {
-                LinearLayout emojipickerview = binding.emojisStickerLayout;
-                ViewGroup.LayoutParams params = emojipickerview.getLayoutParams();
-                params.height = 800;
-                emojipickerview.setLayoutParams(params);
-                binding.emojiButton.setVisibility(GONE);
-                binding.keyboardButton.setVisibility(VISIBLE);
-                hideSoftKeyboard(activity);
-                EmojiPickerView emojiPickerView = binding.emojiPicker;
-                backPressedLeaveEmojiPicker.setEnabled(true);
-                binding.textinput.requestFocus();
-                emojiPickerView.setOnEmojiPickedListener(emojiViewItem -> {
-                    int start = binding.textinput.getSelectionStart(); //this is to get the the cursor position
-                    binding.textinput.getText().insert(start, emojiViewItem.getEmoji()); //this will get the text and insert the emoji into   the current position
-                });
-
-                if (binding.emojiPicker.getVisibility() == VISIBLE) {
-                    binding.emojisButton.setBackground(ContextCompat.getDrawable(activity, R.drawable.selector_bubble));
-                    binding.emojisButton.setTypeface(null, Typeface.BOLD);
-                } else {
-                    binding.emojisButton.setBackgroundColor(0);
-                    binding.emojisButton.setTypeface(null, Typeface.NORMAL);
-                }
-                if (binding.stickersview.getVisibility() == VISIBLE) {
-                    binding.stickersButton.setBackground(ContextCompat.getDrawable(activity, R.drawable.selector_bubble));
-                    binding.stickersButton.setTypeface(null, Typeface.BOLD);
-                } else {
-                    binding.stickersButton.setBackgroundColor(0);
-                    binding.stickersButton.setTypeface(null, Typeface.NORMAL);
-                }
-                if (binding.gifsview.getVisibility() == VISIBLE) {
-                    binding.gifsButton.setBackground(ContextCompat.getDrawable(activity, R.drawable.selector_bubble));
-                    binding.gifsButton.setTypeface(null, Typeface.BOLD);
-                } else {
-                    binding.gifsButton.setBackgroundColor(0);
-                    binding.gifsButton.setTypeface(null, Typeface.NORMAL);
-                }
+                updateMediaPickerTabs();
             }
+        }
+    };
+
+    private final OnClickListener msmilesButtonListener = new OnClickListener() {
+        @Override
+        public void onClick(View v) {
+            binding.emojiPicker.setVisibility(GONE);
+            binding.smilesview.setVisibility(VISIBLE);
+            binding.stickersview.setVisibility(GONE);
+            binding.gifsview.setVisibility(GONE);
+            backPressedLeaveEmojiPicker.setEnabled(true);
+            binding.textinput.requestFocus();
+            updateMediaPickerTabs();
         }
     };
 
@@ -810,6 +810,7 @@ public class ConversationFragment extends XmppFragment
         @Override
         public void onClick(View v) {
             binding.emojiPicker.setVisibility(VISIBLE);
+            binding.smilesview.setVisibility(GONE);
             binding.stickersview.setVisibility(GONE);
             binding.gifsview.setVisibility(GONE);
             EmojiPickerView emojiPickerView = binding.emojiPicker;
@@ -820,27 +821,7 @@ public class ConversationFragment extends XmppFragment
                 binding.textinput.getText().insert(start, emojiViewItem.getEmoji()); //this will get the text and insert the emoji into   the current position
             });
 
-            if (binding.emojiPicker.getVisibility() == VISIBLE) {
-                binding.emojisButton.setBackground(ContextCompat.getDrawable(activity, R.drawable.selector_bubble));
-                binding.emojisButton.setTypeface(null, Typeface.BOLD);
-            } else {
-                binding.emojisButton.setBackgroundColor(0);
-                binding.emojisButton.setTypeface(null, Typeface.NORMAL);
-            }
-            if (binding.stickersview.getVisibility() == VISIBLE) {
-                binding.stickersButton.setBackground(ContextCompat.getDrawable(activity, R.drawable.selector_bubble));
-                binding.stickersButton.setTypeface(null, Typeface.BOLD);
-            } else {
-                binding.stickersButton.setBackgroundColor(0);
-                binding.stickersButton.setTypeface(null, Typeface.NORMAL);
-            }
-            if (binding.gifsview.getVisibility() == VISIBLE) {
-                binding.gifsButton.setBackground(ContextCompat.getDrawable(activity, R.drawable.selector_bubble));
-                binding.gifsButton.setTypeface(null, Typeface.BOLD);
-            } else {
-                binding.gifsButton.setBackgroundColor(0);
-                binding.gifsButton.setTypeface(null, Typeface.NORMAL);
-            }
+            updateMediaPickerTabs();
         }
     };
 
@@ -1991,6 +1972,7 @@ public class ConversationFragment extends XmppFragment
         binding.recordVoiceButton.setOnClickListener(this.mRecordVoiceButtonListener);
         binding.emojiButton.setOnClickListener(this.memojiButtonListener);
         binding.emojisButton.setOnClickListener(this.memojisButtonListener);
+        binding.smilesButton.setOnClickListener(this.msmilesButtonListener);
         binding.stickersButton.setOnClickListener(this.mstickersButtonListener);
         binding.gifsButton.setOnClickListener(this.mgifsButtonListener);
         binding.keyboardButton.setOnClickListener(this.mkeyboardButtonListener);
@@ -2129,20 +2111,22 @@ public class ConversationFragment extends XmppFragment
 
     public void LoadStickers() {
         final Pattern lastColonPattern = Pattern.compile("");
-        binding.stickersview.setOnItemClickListener((parent, view, position, id) -> {
-            EmojiSearch.EmojiSearchAdapter adapter = ((EmojiSearch.EmojiSearchAdapter) binding.stickersview.getAdapter());
+        AdapterView.OnItemClickListener listener = (parent, view, position, id) -> {
+            EmojiSearch.EmojiSearchAdapter adapter = ((EmojiSearch.EmojiSearchAdapter) parent.getAdapter());
             Editable toInsert = adapter.getItem(position).toInsert();
             toInsert.append(" ");
             Editable s = binding.textinput.getText();
 
             Matcher lastColonMatcher = lastColonPattern.matcher(s);
             int lastColon = 0;
-            while(lastColonMatcher.find()) lastColon = lastColonMatcher.end();
+            while (lastColonMatcher.find()) lastColon = lastColonMatcher.end();
             if (lastColon >= 0) {
                 int start = binding.textinput.getSelectionStart(); //this is to get the the cursor position
                 binding.textinput.getText().insert(start, toInsert); //this will get the text and insert the emoji into   the current position
             }
-        });
+        };
+        binding.stickersview.setOnItemClickListener(listener);
+        binding.smilesview.setOnItemClickListener(listener);
 
         setupEmojiSearch();
     }
@@ -2209,13 +2193,19 @@ public class ConversationFragment extends XmppFragment
         emojiDebounce.postDelayed(() -> {
             Matcher lastColonMatcher = lastColonPattern.matcher(s);
             int lastColon = 0;
-            while(lastColonMatcher.find()) lastColon = lastColonMatcher.end();
+            while (lastColonMatcher.find()) lastColon = lastColonMatcher.end();
 
             final String q = s.toString().substring(lastColon);
-            EmojiSearch.EmojiSearchAdapter adapter = ((EmojiSearch.EmojiSearchAdapter) binding.stickersview.getAdapter());
-            if (adapter != null) {
-                adapter.search(q);
+            EmojiSearch.EmojiSearchAdapter stickersAdapter = ((EmojiSearch.EmojiSearchAdapter) binding.stickersview.getAdapter());
+            if (stickersAdapter != null) {
+                stickersAdapter.search(q);
             }
+            EmojiSearch.EmojiSearchAdapter smilesAdapter = (EmojiSearch.EmojiSearchAdapter) binding.smilesview.getAdapter();
+            if (smilesAdapter == null) {
+                smilesAdapter = emojiSearch.makeAdapter(activity);
+                binding.smilesview.setAdapter(smilesAdapter);
+            }
+            smilesAdapter.search(q);
         }, 400L);
     }
 
@@ -5949,7 +5939,6 @@ public class ConversationFragment extends XmppFragment
         this.binding.me.setEnabled(me);
         this.binding.me.setOnClickListener(meCommand);
         this.binding.quote.setOnClickListener(quote);
-        this.binding.bold.setOnClickListener(boldText);
         this.binding.italic.setOnClickListener(italicText);
         this.binding.monospace.setOnClickListener(monospaceText);
         this.binding.strikethrough.setOnClickListener(strikethroughText);
@@ -5957,7 +5946,6 @@ public class ConversationFragment extends XmppFragment
         if (Compatibility.runsTwentyEight()) {
             this.binding.me.setTooltipText(activity.getString(R.string.me));
             this.binding.quote.setTooltipText(activity.getString(R.string.quote));
-            this.binding.bold.setTooltipText(activity.getString(R.string.bold));
             this.binding.italic.setTooltipText(activity.getString(R.string.italic));
             this.binding.monospace.setTooltipText(activity.getString(R.string.monospace));
             this.binding.monospace.setTooltipText(activity.getString(R.string.monospace));

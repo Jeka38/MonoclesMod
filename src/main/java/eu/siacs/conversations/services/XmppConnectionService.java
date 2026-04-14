@@ -200,6 +200,7 @@ import eu.siacs.conversations.ui.interfaces.OnMediaLoaded;
 import eu.siacs.conversations.ui.interfaces.OnSearchResultsAvailable;
 import eu.siacs.conversations.utils.Compatibility;
 import eu.siacs.conversations.utils.ConversationsFileObserver;
+import eu.siacs.conversations.utils.FileUtils;
 import eu.siacs.conversations.utils.CryptoHelper;
 import eu.siacs.conversations.utils.EasyOnboardingInvite;
 import eu.siacs.conversations.utils.ExceptionHelper;
@@ -312,10 +313,12 @@ public class XmppConnectionService extends Service {
     private Multimap<String, String> mutedMucUsers;
     private final ReplacingSerialSingleThreadExecutor mContactMergerExecutor = new ReplacingSerialSingleThreadExecutor("ContactMerger");
     private final ReplacingSerialSingleThreadExecutor mStickerScanExecutor = new ReplacingSerialSingleThreadExecutor("StickerScan");
+    private final ReplacingSerialSingleThreadExecutor mSmilesScanExecutor = new ReplacingSerialSingleThreadExecutor("SmilesScan");
     private long mLastActivity = 0;
     private long mLastMucPing = 0;
     private Map<String, Message> mScheduledMessages = new HashMap<>();
     private long mLastStickerRescan = 0;
+    private long mLastSmilesRescan = 0;
     public final FileBackend fileBackend = new FileBackend(this);
     private MemorizingTrustManager mMemorizingTrustManager;
     private final NotificationService mNotificationService = new NotificationService(this);
@@ -1901,6 +1904,7 @@ public class XmppConnectionService extends Service {
         mForceDuringOnCreate.set(false);
         toggleForegroundService();
         rescanStickers();
+        rescanSmiles();
         internalPingExecutor.scheduleAtFixedRate(this::manageAccountConnectionStatesInternal,120,120,TimeUnit.SECONDS);
         //start export log service every day at given time
         ScheduleAutomaticExport();
@@ -6981,6 +6985,48 @@ public class XmppConnectionService extends Service {
 
     private File stickerDir() {
         return new File(Environment.getExternalStoragePublicDirectory(Environment.DIRECTORY_DOCUMENTS) + File.separator + APP_DIRECTORY + File.separator + "Stickers");
+    }
+
+    private File smilesDir() {
+        return new File(Environment.getExternalStoragePublicDirectory(Environment.DIRECTORY_DOCUMENTS) + File.separator + APP_DIRECTORY + File.separator + FileBackend.SMILES);
+    }
+
+    public void rescanSmiles() {
+        long msToRescan = (mLastSmilesRescan + 600000L) - SystemClock.elapsedRealtime();
+        if (msToRescan > 0) return;
+        Log.d(Config.LOGTAG, "rescanSmiles");
+
+        mLastSmilesRescan = SystemClock.elapsedRealtime();
+        mSmilesScanExecutor.execute(() -> {
+            Thread.currentThread().setPriority(Thread.MIN_PRIORITY);
+            try {
+                final File smilesDir = smilesDir();
+                if (!smilesDir.exists()) {
+                    smilesDir.mkdirs();
+                }
+                FileUtils.createNoMedia(smilesDir);
+                for (File file : Files.fileTraverser().breadthFirst(smilesDir)) {
+                    try {
+                        if (file.isFile() && file.canRead()) {
+                            DownloadableFile df = new DownloadableFile(file.getAbsolutePath());
+                            Drawable icon = fileBackend.getThumbnail(df, getResources(), (int) (getResources().getDisplayMetrics().density * 288), false);
+                            final String filename = Files.getNameWithoutExtension(df.getName());
+                            Cid[] cids = fileBackend.calculateCids(new FileInputStream(df));
+                            for (Cid cid : cids) {
+                                saveCid(cid, file);
+                            }
+                            if (file.length() < 1024 * 1024) { // 1MB limit for smiles
+                                emojiSearch.addEmoji(new EmojiSearch.CustomEmoji(filename, "*" + filename + "*", icon, "Smiles"));
+                            }
+                        }
+                    } catch (final Exception e) {
+                        Log.w(Config.LOGTAG, "rescanSmiles: " + e);
+                    }
+                }
+            } catch (final Exception e) {
+                Log.w(Config.LOGTAG, "rescanSmiles: " + e);
+            }
+        });
     }
 
     public void rescanStickers() {

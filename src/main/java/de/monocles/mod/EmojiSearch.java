@@ -53,6 +53,21 @@ public class EmojiSearch {
         emoji.add(one);
     }
 
+    public synchronized CustomEmoji findCustomEmoji(String q) {
+        if (q.startsWith("*") && q.endsWith("*")) {
+            q = q.substring(1, q.length() - 1);
+        }
+        for (Emoji e : emoji) {
+            if (e instanceof CustomEmoji) {
+                CustomEmoji ce = (CustomEmoji) e;
+                if (ce.shortcodes.get(0).equals(q) || ce.shortcodes.get(0).equals("*" + q + "*")) {
+                    return ce;
+                }
+            }
+        }
+        return null;
+    }
+
     public synchronized List<Emoji> find(final String q) {
         final ResultPQ pq = new ResultPQ();
         for (Emoji e : emoji) {
@@ -185,7 +200,11 @@ public class EmojiSearch {
         }
 
         public SpannableStringBuilder toInsert() {
-            SpannableStringBuilder builder = new SpannableStringBuilder(":" + shortcodes.get(0) + ":");
+            String shortcode = shortcodes.get(0);
+            if (!shortcode.startsWith("*") || !shortcode.endsWith("*")) {
+                shortcode = ":" + shortcode + ":";
+            }
+            SpannableStringBuilder builder = new SpannableStringBuilder(shortcode);
             builder.setSpan(new InlineImageSpan(icon, source), 0, builder.length(), Spannable.SPAN_EXCLUSIVE_EXCLUSIVE);
             return builder;
         }

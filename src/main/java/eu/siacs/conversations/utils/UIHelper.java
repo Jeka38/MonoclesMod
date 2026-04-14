@@ -13,9 +13,19 @@ import android.text.format.DateUtils;
 import android.text.style.ForegroundColorSpan;
 import android.text.style.StyleSpan;
 import android.util.Pair;
+import android.graphics.ImageDecoder;
 import android.graphics.drawable.Drawable;
+import android.os.Build;
+import android.os.Environment;
+import android.text.Spanned;
 
 import androidx.annotation.ColorInt;
+
+import java.io.File;
+import java.util.regex.Matcher;
+import java.util.regex.Pattern;
+
+import eu.siacs.conversations.persistance.FileBackend;
 import androidx.core.content.res.ResourcesCompat;
 
 import com.google.common.base.Strings;
@@ -551,6 +561,27 @@ public class UIHelper {
 
     public static String concatNames(List<MucOptions.User> users) {
         return concatNames(users, users.size());
+    }
+
+    public static SpannableStringBuilder replaceEmojisWithSmiles(Context context, SpannableStringBuilder spannable, de.monocles.mod.EmojiSearch emojiSearch) {
+        if (emojiSearch == null) return spannable;
+        String text = spannable.toString();
+        Pattern pattern = Pattern.compile("\\*([^\\*\\s]+)\\*");
+        Matcher matcher = pattern.matcher(text);
+        while (matcher.find()) {
+            String shortcode = matcher.group(1);
+            de.monocles.mod.EmojiSearch.CustomEmoji ce = emojiSearch.findCustomEmoji(shortcode);
+            if (ce != null) {
+                Drawable drawable = ce.toInsert().getSpans(0, 1, de.monocles.mod.InlineImageSpan.class)[0].getDrawable();
+                if (drawable != null) {
+                    int size = (int) (context.getResources().getDisplayMetrics().density * 24);
+                    drawable.setBounds(0, 0, size, size);
+                    de.monocles.mod.InlineImageSpan span = new de.monocles.mod.InlineImageSpan(drawable, matcher.group());
+                    spannable.setSpan(span, matcher.start(), matcher.end(), Spanned.SPAN_EXCLUSIVE_EXCLUSIVE);
+                }
+            }
+        }
+        return spannable;
     }
 
     public static String concatNames(List<MucOptions.User> users, int max) {

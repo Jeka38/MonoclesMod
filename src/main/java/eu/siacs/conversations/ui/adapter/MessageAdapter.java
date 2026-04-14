@@ -697,7 +697,7 @@ public class MessageAdapter extends ArrayAdapter<Message> {
 
     private SpannableStringBuilder getSpannableBody(final Message message) {
         Drawable fallbackImg = ResourcesCompat.getDrawable(activity.getResources(), activity.getThemeResource(R.attr.ic_attach_photo, R.drawable.ic_attach_photo), null);
-        return replaceYoutube(activity.getApplicationContext(), message.getMergedBody((cid) -> {
+        SpannableStringBuilder spannable = replaceYoutube(activity.getApplicationContext(), message.getMergedBody((cid) -> {
             try {
                 DownloadableFile f = activity.xmppConnectionService.getFileForCid(cid);
                 if (f == null || !f.canRead()) {
@@ -718,6 +718,10 @@ public class MessageAdapter extends ArrayAdapter<Message> {
                 return null;
             }
         }, fallbackImg));
+        if (activity.xmppConnectionService != null && activity.xmppConnectionService.getBooleanPreference("enable_smiles", R.bool.enable_smiles)) {
+            spannable = UIHelper.replaceEmojisWithSmiles(activity, spannable, activity.xmppConnectionService.emojiSearch());
+        }
+        return spannable;
     }
 
     private void displayTextMessage(final ViewHolder viewHolder,

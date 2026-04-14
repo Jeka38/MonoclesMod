@@ -852,6 +852,10 @@
     <string name="pref_picture_quality_summary">Изменять размер и сжимать изображения</string>
     <string name="pref_play_gif_inside">Непосредственное воспроизведение анимированных изображений</string>
     <string name="pref_play_gif_inside_summary">Непосредственное воспроизведение анимированных изображений для аватаров, сообщений о состоянии и графических сообщений.</string>
+    <string name="pref_enable_smiles">Включить Смайлы</string>
+    <string name="pref_enable_smiles_summary">Заменить стандартный выбор эмодзи на свои смайлы</string>
+    <string name="smiles">Смайлы</string>
+    <string name="smiles_imported">Смайлы импортированы</string>
     <string name="pref_prefer_xmpp_avatar">Предпочитаемый аватар XMPP</string>
     <string name="pref_prefer_xmpp_avatar_summary">Предпочитать XMPP-аватар пользователя аватару из адресной книги</string>
     <string name="pref_presence_settings">Доступность</string>
@@ -1596,6 +1600,8 @@
     <string name="gif_imported">GIF-файлы импортированы</string>
     <string name="import_own_gifs">Импортировать собственные GIF-файлы</string>
     <string name="import_own_gifs_summary">Импортируйте свои собственные GIF-файлы. Они будут отсортированы по имени файла.</string>
+    <string name="import_own_smiles">Импортировать Смайлы</string>
+    <string name="import_own_smiles_summary">Импортировать смайлы из ZIP архива</string>
     <string name="failed_to_delete_gif">Не удалось удалить GIF</string>
     <string name="pref_accept_invites_from_strangers">Приглашения от незнакомцев</string>
     <string name="pref_accept_invites_from_strangers_summary">Принимайте приглашения в групповые чаты от незнакомцев</string>

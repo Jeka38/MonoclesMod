@@ -393,6 +393,21 @@
                     android:visibility="gone" />
 
                 <de.monocles.mod.GridView
+                    android:id="@+id/smilesview"
+                    android:layout_width="match_parent"
+                    android:layout_height="match_parent"
+                    android:layout_marginLeft="4dp"
+                    android:layout_marginStart="4dp"
+                    android:layout_marginEnd="4dp"
+                    android:layout_marginRight="4dp"
+                    android:layout_marginTop="4dp"
+                    android:divider="@android:color/transparent"
+                    android:numColumns="6"
+                    android:dividerHeight="0dp"
+                    android:layout_weight="1"
+                    android:visibility="gone" />
+
+                <de.monocles.mod.GridView
                     android:id="@+id/gifsview"
                     android:layout_width="match_parent"
                     android:layout_height="match_parent"
@@ -422,6 +437,21 @@
                         android:gravity="bottom|center_horizontal"
                         android:text="@string/emojis"
                         android:textSize="16sp" />
+
+                    <View
+                        android:id="@+id/smilesButtonSpacing"
+                        android:layout_width="20dp"
+                        android:layout_height="wrap_content"
+                        android:visibility="gone" />
+
+                    <TextView
+                        android:id="@+id/smilesButton"
+                        android:layout_width="wrap_content"
+                        android:layout_height="wrap_content"
+                        android:gravity="bottom|center_horizontal"
+                        android:text="@string/smiles"
+                        android:textSize="16sp"
+                        android:visibility="gone" />
 
                     <View
                         android:layout_width="20dp"
@@ -494,14 +524,6 @@
                         android:textSize="18sp"
                         android:visibility="visible" />
 
-                    <ImageButton
-                        android:id="@+id/bold"
-                        android:layout_width="42dp"
-                        android:layout_height="42dp"
-                        android:background="?attr/selectableItemBackgroundBorderless"
-                        android:contentDescription="@string/bold"
-                        android:src="?attr/ic_bold"
-                        android:visibility="visible" />
 
                     <ImageButton
                         android:id="@+id/italic"
