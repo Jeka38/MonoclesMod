@@ -71,7 +71,6 @@ import android.widget.Toast;
 import androidx.core.app.ActivityCompat;
 import androidx.core.content.ContextCompat;
 
-import de.monocles.mod.DownloadDefaultStickers;
 
 import net.java.otr4j.session.SessionStatus;
 import androidx.appcompat.widget.PopupMenu;
@@ -156,7 +155,6 @@ public class ConversationsActivity extends XmppActivity implements OnConversatio
     public static final int REQUEST_PLAY_PAUSE = 0x5432;
     public static final int REQUEST_MICROPHONE = 0x5432f;
     public static final int DIALLER_INTEGRATION = 0x5432ff;
-    public static final int REQUEST_DOWNLOAD_STICKERS = 0xbf8702;
     public static final int REQUEST_CODE_ULOCK = 0xbf8706;
     public static final String EXTRA_THREAD = "threadId";
     public static final String EXTRA_TYPE = "type";
@@ -329,11 +327,9 @@ public class ConversationsActivity extends XmppActivity implements OnConversatio
         if (fragment instanceof ConversationsOverviewFragment) {
 
             if (offerToSetupDiallerIntegration()) return;
-            if (offerToDownloadStickers()) return;
             openBatteryOptimizationDialogIfNeeded();
             new showMemoryWarning(this).execute();
             showOutdatedVersionWarning();
-            xmppConnectionService.rescanStickers();
         }
 
     }
@@ -397,27 +393,6 @@ public class ConversationsActivity extends XmppActivity implements OnConversatio
         }
     }
 
-    private boolean offerToDownloadStickers() {
-        int offered = getPreferences().getInt("default_stickers_offered", 0);
-        if (offered > 0) return false;
-        getPreferences().edit().putInt("default_stickers_offered", 1).apply();
-
-        AlertDialog.Builder builder = new AlertDialog.Builder(this);
-        builder.setTitle(R.string.download_sticker);
-        builder.setMessage(R.string.download_sticker_summary);
-        builder.setPositiveButton(R.string.yes, (dialog, which) -> {
-            if (hasStoragePermission(REQUEST_DOWNLOAD_STICKERS)) {
-                downloadStickers();
-            }
-        });
-        builder.setNegativeButton(R.string.no, (dialog, which) -> {
-            showDialogsIfMainIsOverview();
-        });
-        final AlertDialog dialog = builder.create();
-        dialog.setCanceledOnTouchOutside(false);
-        dialog.show();
-        return true;
-    }
 
     private boolean offerToSetupDiallerIntegration() {
         if (mRequestCode == DIALLER_INTEGRATION) {
@@ -604,9 +579,6 @@ public class ConversationsActivity extends XmppActivity implements OnConversatio
                                 "com.android.server.telecom.settings.EnableAccountPreferenceActivity"));
                         startActivityForResult(intent, DIALLER_INTEGRATION);
                         break;
-                    case REQUEST_DOWNLOAD_STICKERS:
-                        downloadStickers();
-                        break;
                 }
             } else {
                 showDialogsIfMainIsOverview();
@@ -616,14 +588,6 @@ public class ConversationsActivity extends XmppActivity implements OnConversatio
         }
     }
 
-    private void downloadStickers() {
-        Intent intent = new Intent(this, DownloadDefaultStickers.class);
-        intent.putExtra("tor", xmppConnectionService.useTorToConnect());
-        intent.putExtra("i2p", xmppConnectionService.useI2PToConnect());
-        ContextCompat.startForegroundService(this, intent);
-        displayToast("Sticker download started");
-        showDialogsIfMainIsOverview();
-    }
 
     @Override
     public void onActivityResult(int requestCode, int resultCode, final Intent data) {

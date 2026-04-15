@@ -33,7 +33,6 @@ import android.provider.OpenableColumns;
 import android.util.Log;
 import static eu.siacs.conversations.utils.CameraUtils.showCameraChooser;
 
-import de.monocles.mod.DownloadDefaultStickers;
 
 import androidx.annotation.NonNull;
 import androidx.appcompat.app.AlertDialog;
@@ -132,12 +131,9 @@ public class SettingsActivity extends XmppActivity implements OnSharedPreference
     public static final String RESEND_DELAY = "resend_delay";
     public static final String LARGE_FONT_FOR_MUC_STATUS = "large_font_for_muc_status";
     public static final String SHOW_MUC_STATUS_MESSAGES = "show_muc_status_messages";
-    public static final String STICKER_DIR = "Stickers";
 
     public static final int REQUEST_CREATE_BACKUP = 0xbf8701;
-    public static final int REQUEST_DOWNLOAD_STICKERS = 0xbf8702;
     public static final int REQUEST_IMPORT_SETTINGS = 0xbf8703;
-    public static final int REQUEST_IMPORT_STICKERS = 0xbf8705;
     public static final int REQUEST_IMPORT_GIFS = 0xbf8706;
     public static final int REQUEST_IMPORT_SMILES = 0xbf8707;
 
@@ -191,90 +187,6 @@ public class SettingsActivity extends XmppActivity implements OnSharedPreference
     protected void onActivityResult(int requestCode, int resultCode, Intent data) {
         super.onActivityResult(requestCode, resultCode, data);
 
-        // Import and compress stickers
-        if(requestCode == REQUEST_IMPORT_STICKERS) {
-            if(resultCode == RESULT_OK) {
-                if(data.getClipData() != null) {
-                    for(int i = 0; i < data.getClipData().getItemCount(); i++) {
-                        Uri imageUri = data.getClipData().getItemAt(i).getUri();
-                        //do something with the image (save it to some directory or whatever you need to do with it here)
-                        if (imageUri != null) {
-                            InputStream in;
-                            OutputStream out;
-                            try {
-                                File stickerfolder = new File(Environment.getExternalStoragePublicDirectory(Environment.DIRECTORY_DOCUMENTS) + File.separator + APP_DIRECTORY + File.separator + "Stickers");
-                                //create output directory if it doesn't exist
-                                if (!stickerfolder.exists()) {
-                                    stickerfolder.mkdirs();
-                                }
-                                String filename = getFileName(imageUri);
-                                File newSticker = new File(Environment.getExternalStoragePublicDirectory(Environment.DIRECTORY_DOCUMENTS) + File.separator + APP_DIRECTORY + File.separator + "Stickers" + File.separator + filename);
-
-                                in = getContentResolver().openInputStream(imageUri);
-                                out = new FileOutputStream(newSticker);
-                                byte[] buffer = new byte[4096];
-                                int read;
-                                while ((read = in.read(buffer)) != -1) {
-                                    out.write(buffer, 0, read);
-                                }
-                                in.close();
-                                in = null;
-                                // write the output file
-                                out.flush();
-                                out.close();
-                                out = null;
-                                if (!filename.endsWith(".webp") && !filename.endsWith(".svg")) {
-                                    compressImageToSticker(newSticker, imageUri, 0);
-                                }
-                            } catch (IOException exception) {
-                                Toast.makeText(this,R.string.import_sticker_failed,Toast.LENGTH_LONG).show();
-                                Log.d(Config.LOGTAG, "Could not import sticker" + exception);
-                            }
-                        }
-                    }
-                    Toast.makeText(this,R.string.sticker_imported,Toast.LENGTH_LONG).show();
-                    xmppConnectionService.LoadStickers();       //TODO: Check again if really needed
-                } else if(data.getData() != null) {
-                    Uri imageUri = data.getData();
-                    //do something with the image (save it to some directory or whatever you need to do with it here)
-                    if (imageUri != null) {
-                        InputStream in;
-                        OutputStream out;
-                        try {
-                            File stickerfolder = new File(Environment.getExternalStoragePublicDirectory(Environment.DIRECTORY_DOCUMENTS) + File.separator + APP_DIRECTORY + File.separator + "Stickers");
-                            //create output directory if it doesn't exist
-                            if (!stickerfolder.exists()) {
-                                stickerfolder.mkdirs();
-                            }
-                            String filename = getFileName(imageUri);
-                            File newSticker = new File(Environment.getExternalStoragePublicDirectory(Environment.DIRECTORY_DOCUMENTS) + File.separator + APP_DIRECTORY + File.separator + "Stickers" + File.separator + filename);
-
-                            in = getContentResolver().openInputStream(imageUri);
-                            out = new FileOutputStream(newSticker);
-                            byte[] buffer = new byte[4096];
-                            int read;
-                            while ((read = in.read(buffer)) != -1) {
-                                out.write(buffer, 0, read);
-                            }
-                            in.close();
-                            in = null;
-                            // write the output file
-                            out.flush();
-                            out.close();
-                            out = null;
-                            if (!filename.endsWith(".webp") && !filename.endsWith(".svg")) {
-                                compressImageToSticker(newSticker, imageUri, 0);
-                            }
-                            Toast.makeText(this,R.string.sticker_imported,Toast.LENGTH_LONG).show();
-                            xmppConnectionService.LoadStickers();       //TODO: Check again if really needed
-                        } catch (IOException exception) {
-                            Toast.makeText(this,R.string.import_sticker_failed,Toast.LENGTH_LONG).show();
-                            Log.d(Config.LOGTAG, "Could not import sticker" + exception);
-                        }
-                    }
-                }
-            }
-        }
 
         // Import Smiles from ZIP
         if (requestCode == REQUEST_IMPORT_SMILES) {
@@ -420,79 +332,6 @@ public class SettingsActivity extends XmppActivity implements OnSharedPreference
         return result;
     }
 
-    public void compressImageToSticker(File f, Uri image, int sampleSize) throws IOException {
-        InputStream is = null;
-        OutputStream os = null;
-        int IMAGE_QUALITY = 65;
-        int ImageSize = (int) (0.04 * 1024 * 1024);
-        try {
-            if (!f.exists() && !f.createNewFile()) {
-                throw new IOException(String.valueOf(R.string.error_unable_to_create_temporary_file));
-            }
-            is = getContentResolver().openInputStream(image);
-            if (is == null) {
-                throw new IOException(String.valueOf(R.string.error_not_an_image_file));
-            }
-            final Bitmap originalBitmap;
-            final BitmapFactory.Options options = new BitmapFactory.Options();
-            final int inSampleSize = (int) Math.pow(2, sampleSize);
-            Log.d(Config.LOGTAG, "reading bitmap with sample size " + inSampleSize);
-            options.inSampleSize = inSampleSize;
-            originalBitmap = BitmapFactory.decodeStream(is, null, options);
-            is.close();
-            if (originalBitmap == null) {
-                throw new IOException("Source file was not an image");
-            }
-            if (!"image/jpeg".equals(options.outMimeType) && hasAlpha(originalBitmap)) {
-                originalBitmap.recycle();
-                throw new IOException("Source file had alpha channel");
-            }
-            int size;
-            int resolution = 480;
-            if (resolution == 0) {
-                int height = originalBitmap.getHeight();
-                int width = originalBitmap.getWidth();
-                size = height > width ? height : width;
-            } else {
-                size = resolution;
-            }
-            Bitmap scaledBitmap = resize(originalBitmap, size);
-            final int rotation = getRotation(image);
-            scaledBitmap = rotate(scaledBitmap, rotation);
-            boolean targetSizeReached = false;
-            int quality = IMAGE_QUALITY;
-            while (!targetSizeReached) {
-                os = new FileOutputStream(f);
-                boolean success = scaledBitmap.compress(Config.IMAGE_FORMAT, quality, os);
-                if (!success) {
-                    throw new IOException(String.valueOf(R.string.error_compressing_image));
-                }
-                os.flush();
-                targetSizeReached = (f.length() <= ImageSize && ImageSize != 0) || quality <= 50;
-                quality -= 5;
-            }
-            scaledBitmap.recycle();
-        } catch (final FileNotFoundException e) {
-            cleanup(f);
-            throw new IOException(String.valueOf(R.string.error_file_not_found));
-        } catch (final IOException e) {
-            cleanup(f);
-            throw new IOException(String.valueOf(R.string.error_io_exception));
-        } catch (SecurityException e) {
-            cleanup(f);
-            throw new IOException(String.valueOf(R.string.error_security_exception_during_image_copy));
-        } catch (final OutOfMemoryError e) {
-            ++sampleSize;
-            if (sampleSize <= 3) {
-                compressImageToSticker(f, image, sampleSize);
-            } else {
-                throw new IOException(String.valueOf(R.string.error_out_of_memory));
-            }
-        } finally {
-            close(os);
-            close(is);
-        }
-    }
 
     private int getRotation(final File f) {
         try (final InputStream inputStream = new FileInputStream(f)) {
@@ -1054,17 +893,6 @@ public class SettingsActivity extends XmppActivity implements OnSharedPreference
             updateTheme();
         }
 
-        final Preference downloadDefaultStickers = mSettingsFragment.findPreference("download_default_stickers");
-        if (downloadDefaultStickers != null) {
-            downloadDefaultStickers.setOnPreferenceClickListener(
-                preference -> {
-                    if (hasStoragePermission(REQUEST_DOWNLOAD_STICKERS)) {
-                        downloadStickers();
-                    }
-                    return true;
-                }
-            );
-        }
 
         final Preference importOwnSmiles = mSettingsFragment.findPreference("import_own_smiles");
         if (importOwnSmiles != null) {
@@ -1078,17 +906,6 @@ public class SettingsActivity extends XmppActivity implements OnSharedPreference
             );
         }
 
-//        final Preference importOwnStickers = mSettingsFragment.findPreference("import_own_stickers");
-//        if (importOwnStickers != null) {
-//            importOwnStickers.setOnPreferenceClickListener(
-//                preference -> {
-//                    if (hasStoragePermission(REQUEST_IMPORT_STICKERS)) {
-//                        importStickers();
-//                    }
-//                    return true;
-//                }
-//            );
-//        }
 
         final Preference importOwnGifs = mSettingsFragment.findPreference("import_own_gifs");
         if (importOwnGifs != null) {
@@ -1118,13 +935,6 @@ public class SettingsActivity extends XmppActivity implements OnSharedPreference
         }
     }
 
-    private void importStickers() {
-        Intent intent = new Intent(Intent.ACTION_GET_CONTENT);
-        intent.setType("image/*"); //allows any image file type. Change * to specific extension to limit it
-        //**These following line is the important one!
-        intent.putExtra(Intent.EXTRA_ALLOW_MULTIPLE, true);
-        startActivityForResult(Intent.createChooser(intent, "Select images"), REQUEST_IMPORT_STICKERS); //REQUEST_IMPORT_STICKERS is simply a global int used to check the calling intent in onActivityResult
-    }
 
     private void importGifs() {
         Intent intent = new Intent(Intent.ACTION_GET_CONTENT);
@@ -1375,9 +1185,6 @@ public class SettingsActivity extends XmppActivity implements OnSharedPreference
                 if (requestCode == REQUEST_CREATE_BACKUP) {
                     createCompatibleBackup();
                 }
-                if (requestCode == REQUEST_DOWNLOAD_STICKERS) {
-                    downloadStickers();
-                }
             } else {
                 ToastCompat.makeText(
                         this,
@@ -1407,13 +1214,6 @@ public class SettingsActivity extends XmppActivity implements OnSharedPreference
         builder.create().show();
     }
 
-    private void downloadStickers() {
-        Intent intent = new Intent(this, DownloadDefaultStickers.class);
-        intent.putExtra("tor", xmppConnectionService.useTorToConnect());
-        intent.putExtra("i2p", xmppConnectionService.useI2PToConnect());
-        ContextCompat.startForegroundService(this, intent);
-        displayToast("Sticker download started");
-    }
 
     private void displayToast(final String msg) {
         runOnUiThread(() -> ToastCompat.makeText(SettingsActivity.this, msg, ToastCompat.LENGTH_LONG).show());

@@ -209,6 +209,10 @@ public class EmojiSearch {
             return builder;
         }
 
+        public Drawable getIcon() {
+            return icon;
+        }
+
         @Override
         public String uniquePart() {
             return source;

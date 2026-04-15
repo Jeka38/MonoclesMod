@@ -572,7 +572,7 @@ public class UIHelper {
             String shortcode = matcher.group(1);
             de.monocles.mod.EmojiSearch.CustomEmoji ce = emojiSearch.findCustomEmoji(shortcode);
             if (ce != null) {
-                Drawable drawable = ce.toInsert().getSpans(0, 1, de.monocles.mod.InlineImageSpan.class)[0].getDrawable();
+                Drawable drawable = ce.getIcon();
                 if (drawable != null) {
                     int size = (int) (context.getResources().getDisplayMetrics().density * 24);
                     drawable.setBounds(0, 0, size, size);
