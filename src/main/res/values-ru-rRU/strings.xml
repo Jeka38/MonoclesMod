@@ -1418,6 +1418,7 @@
     <string name="thread_marker">Маркер нити</string>
     <string name="thread_locked">Тема заблокирована</string>
     <string name="tags">Теги</string>
+    <string name="sticker_name">Название стикера</string>
     <string name="action_execute">Выполнить действие</string>
     <string name="block_media">Блокировать медиа</string>
     <string name="new_contact">Новый контакт</string>
@@ -1441,6 +1442,7 @@
     <string name="save_as_contact_bookmark">Сохранить как контакт/закладку</string>
     <string name="new_contact_or_group">Новый контакт или конференция</string>
     <string name="colors">Цвета</string>
+    <string name="choose_sticker_location">Выберите место для стикера</string>
     <string name="you_may_sometimes_have_to">Иногда вам может потребоваться принудительно закрыть приложение, чтобы изменения вступили в силу.</string>
     <string name="create_monocles_only_backup">Экспортировать дополнительные данные только для моноклей (тогда резервная копия не будет импортирована в другие приложения)\?</string>
     <string name="please_be_patient">Пожалуйста, будьте терпеливы...</string>
@@ -1514,6 +1516,11 @@
     <string name="magic_create_text">Мы проведем вас через процесс создания учетной записи со случайным паролем, который вы можете использовать или изменить на свой собственный пароль на следующей странице. \\nТогда вы сможете общаться с пользователями этого и других провайдеров, сообщив им свой полный XMPP-адрес.</string>
     <string name="use_monocles">Я предпочитаю monocles</string>
     <string name="describe_issue">Пожалуйста, опишите вашу проблему подробно. Спасибо.</string>
+    <string name="sticker_saved">Стикер сохранен</string>
+    <string name="sticker_imported">Стикер импортирован</string>
+    <string name="import_sticker_failed">Ошибка импортирования стикера</string>
+    <string name="download_sticker">Скачать стикеры?</string>
+    <string name="download_sticker_summary">Хотите загрузить несколько наборов наклеек по умолчанию?</string>
     <string name="reconnect_on_other_host">Переподключитесь на другом хосте</string>
     <string name="verified_with_qr_code"> - подтверждено QR-кодом</string>
     <string name="key_automatically_accepted"> - ключ не проверен</string>
@@ -1577,10 +1584,13 @@
     <string name="unencrypted">не зашифрованный</string>
     <string name="gifs">GIF</string>
     <string name="copy_GIFs_to_GIFs_folder">Импортировать собственные GIF-файлы через настройки приложения</string>
+    <string name="choose_sticker_name">Выберите имя стикера без окончания</string>
     <string name="save_as_gif">Сохранить как GIF</string>
     <string name="choose_gif_name">Выбираем имя для GIF</string>
     <string name="gif_saved">GIF сохранен</string>
+    <string name="sticker_deleted">Стикер удален</string>
     <string name="gif_deleted">GIF удален</string>
+    <string name="failed_to_delete_sticker">Не удалось удалить стикер</string>
     <string name="import_gif_failed">Не удалось импортировать GIF-файлы</string>
     <string name="gif_imported">GIF-файлы импортированы</string>
     <string name="import_own_gifs">Импортировать собственные GIF-файлы</string>

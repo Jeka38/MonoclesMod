@@ -33,6 +33,7 @@ import android.provider.OpenableColumns;
 import android.util.Log;
 import static eu.siacs.conversations.utils.CameraUtils.showCameraChooser;
 
+import de.monocles.mod.DownloadDefaultStickers;
 
 import androidx.annotation.NonNull;
 import androidx.appcompat.app.AlertDialog;
@@ -131,6 +132,7 @@ public class SettingsActivity extends XmppActivity implements OnSharedPreference
     public static final String RESEND_DELAY = "resend_delay";
     public static final String LARGE_FONT_FOR_MUC_STATUS = "large_font_for_muc_status";
     public static final String SHOW_MUC_STATUS_MESSAGES = "show_muc_status_messages";
+    public static final String STICKER_DIR = "Stickers";
 
     public static final int REQUEST_CREATE_BACKUP = 0xbf8701;
     public static final int REQUEST_IMPORT_SETTINGS = 0xbf8703;
@@ -332,6 +334,79 @@ public class SettingsActivity extends XmppActivity implements OnSharedPreference
         return result;
     }
 
+    public void compressImageToSticker(File f, Uri image, int sampleSize) throws IOException {
+        InputStream is = null;
+        OutputStream os = null;
+        int IMAGE_QUALITY = 65;
+        int ImageSize = (int) (0.04 * 1024 * 1024);
+        try {
+            if (!f.exists() && !f.createNewFile()) {
+                throw new IOException(String.valueOf(R.string.error_unable_to_create_temporary_file));
+            }
+            is = getContentResolver().openInputStream(image);
+            if (is == null) {
+                throw new IOException(String.valueOf(R.string.error_not_an_image_file));
+            }
+            final Bitmap originalBitmap;
+            final BitmapFactory.Options options = new BitmapFactory.Options();
+            final int inSampleSize = (int) Math.pow(2, sampleSize);
+            Log.d(Config.LOGTAG, "reading bitmap with sample size " + inSampleSize);
+            options.inSampleSize = inSampleSize;
+            originalBitmap = BitmapFactory.decodeStream(is, null, options);
+            is.close();
+            if (originalBitmap == null) {
+                throw new IOException("Source file was not an image");
+            }
+            if (!"image/jpeg".equals(options.outMimeType) && hasAlpha(originalBitmap)) {
+                originalBitmap.recycle();
+                throw new IOException("Source file had alpha channel");
+            }
+            int size;
+            int resolution = 480;
+            if (resolution == 0) {
+                int height = originalBitmap.getHeight();
+                int width = originalBitmap.getWidth();
+                size = height > width ? height : width;
+            } else {
+                size = resolution;
+            }
+            Bitmap scaledBitmap = resize(originalBitmap, size);
+            final int rotation = getRotation(image);
+            scaledBitmap = rotate(scaledBitmap, rotation);
+            boolean targetSizeReached = false;
+            int quality = IMAGE_QUALITY;
+            while (!targetSizeReached) {
+                os = new FileOutputStream(f);
+                boolean success = scaledBitmap.compress(Config.IMAGE_FORMAT, quality, os);
+                if (!success) {
+                    throw new IOException(String.valueOf(R.string.error_compressing_image));
+                }
+                os.flush();
+                targetSizeReached = (f.length() <= ImageSize && ImageSize != 0) || quality <= 50;
+                quality -= 5;
+            }
+            scaledBitmap.recycle();
+        } catch (final FileNotFoundException e) {
+            cleanup(f);
+            throw new IOException(String.valueOf(R.string.error_file_not_found));
+        } catch (final IOException e) {
+            cleanup(f);
+            throw new IOException(String.valueOf(R.string.error_io_exception));
+        } catch (SecurityException e) {
+            cleanup(f);
+            throw new IOException(String.valueOf(R.string.error_security_exception_during_image_copy));
+        } catch (final OutOfMemoryError e) {
+            ++sampleSize;
+            if (sampleSize <= 3) {
+                compressImageToSticker(f, image, sampleSize);
+            } else {
+                throw new IOException(String.valueOf(R.string.error_out_of_memory));
+            }
+        } finally {
+            close(os);
+            close(is);
+        }
+    }
 
     private int getRotation(final File f) {
         try (final InputStream inputStream = new FileInputStream(f)) {
@@ -1185,6 +1260,9 @@ public class SettingsActivity extends XmppActivity implements OnSharedPreference
                 if (requestCode == REQUEST_CREATE_BACKUP) {
                     createCompatibleBackup();
                 }
+                if (requestCode == REQUEST_DOWNLOAD_STICKERS) {
+                    downloadStickers();
+                }
             } else {
                 ToastCompat.makeText(
                         this,
@@ -1214,6 +1292,13 @@ public class SettingsActivity extends XmppActivity implements OnSharedPreference
         builder.create().show();
     }
 
+    private void downloadStickers() {
+        Intent intent = new Intent(this, DownloadDefaultStickers.class);
+        intent.putExtra("tor", xmppConnectionService.useTorToConnect());
+        intent.putExtra("i2p", xmppConnectionService.useI2PToConnect());
+        ContextCompat.startForegroundService(this, intent);
+        displayToast("Sticker download started");
+    }
 
     private void displayToast(final String msg) {
         runOnUiThread(() -> ToastCompat.makeText(SettingsActivity.this, msg, ToastCompat.LENGTH_LONG).show());

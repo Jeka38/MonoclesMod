@@ -18,6 +18,7 @@ import androidx.databinding.DataBindingUtil;
 
 import com.google.common.base.Strings;
 
+import de.monocles.mod.DownloadDefaultStickers;
 
 import org.jetbrains.annotations.NotNull;
 
@@ -54,6 +55,7 @@ public class UriHandlerActivity extends AppCompatActivity {
     private static final Pattern LINK_HEADER_PATTERN = Pattern.compile("<(.*?)>");
     private ActivityUriHandlerBinding binding;
     private Call call;
+    private Uri stickers;
 
     public static void scan(final Activity activity) {
         scan(activity, false);
@@ -121,6 +123,21 @@ public class UriHandlerActivity extends AppCompatActivity {
     @Override
     public void onRequestPermissionsResult(int requestCode, String[] permissions, int[] grantResults) {
         super.onRequestPermissionsResult(requestCode, permissions, grantResults);
+        if (grantResults.length > 0) {
+            if (grantResults[0] == PackageManager.PERMISSION_GRANTED) {
+                downloadStickers();
+            }
+        }
+        finish();
+    }
+
+    private void downloadStickers() {
+        Intent intent = new Intent(this, DownloadDefaultStickers.class);
+        intent.setData(stickers);
+        intent.putExtra("tor", PreferenceManager.getDefaultSharedPreferences(getApplicationContext()).getBoolean("use_tor", getResources().getBoolean(R.bool.use_tor)));
+        intent.putExtra("i2p", PreferenceManager.getDefaultSharedPreferences(getApplicationContext()).getBoolean("use_i2p", getResources().getBoolean(R.bool.use_i2p)));
+        ContextCompat.startForegroundService(this, intent);
+        Toast.makeText(this, "Sticker download started", Toast.LENGTH_SHORT).show();
         finish();
     }
 
@@ -135,6 +152,20 @@ public class UriHandlerActivity extends AppCompatActivity {
 
         if (uri == null) return true;
 
+        if ("sgnl".equals(uri.getScheme()) && uri.getQueryParameter("pack_id") != null) {
+            stickers = Uri.parse("https://stickers.cheogram.com/signal/" + uri.getQueryParameter("pack_id") + "," + uri.getQueryParameter("pack_key"));
+            if (hasStoragePermission(1)) downloadStickers();
+            return false;
+        }
+
+        if ("https".equals(uri.getScheme()) && "signal.art".equals(uri.getHost())) {
+            android.net.UrlQuerySanitizer q = new android.net.UrlQuerySanitizer();
+            q.setAllowUnregisteredParamaters(true);
+            q.parseQuery(uri.getFragment());
+            stickers = Uri.parse("https://stickers.cheogram.com/signal/" + q.getValue("pack_id") + "," + q.getValue("pack_key"));
+            if (hasStoragePermission(1)) downloadStickers();
+            return false;
+        }
 
         if (SignupUtils.isSupportTokenRegistry() && xmppUri.isValidJid()) {
             final String preAuth = xmppUri.getParameter(XmppUri.PARAMETER_PRE_AUTH);

@@ -378,7 +378,7 @@
                     android:visibility="visible" />
 
                 <de.monocles.mod.GridView
-                    android:id="@+id/smilesView"
+                    android:id="@+id/smilesview"
                     android:layout_width="match_parent"
                     android:layout_height="match_parent"
                     android:layout_marginLeft="4dp"
@@ -416,7 +416,7 @@
                     android:animateLayoutChanges="true" >
 
                     <TextView
-                        android:id="@+id/emojisButton"
+                        android:id="@+id/emojis_button"
                         android:layout_width="wrap_content"
                         android:layout_height="wrap_content"
                         android:gravity="bottom|center_horizontal"
@@ -443,7 +443,7 @@
                         android:layout_height="wrap_content" />
 
                     <TextView
-                        android:id="@+id/gifsButton"
+                        android:id="@+id/gifs_button"
                         android:layout_width="wrap_content"
                         android:layout_height="wrap_content"
                         android:gravity="bottom|center_horizontal"

@@ -133,6 +133,10 @@
         android:theme="@style/ConversationsTheme"
         tools:targetApi="tiramisu">
 
+        <service
+            android:name="de.monocles.mod.DownloadDefaultStickers"
+            android:exported="false"
+            android:foregroundServiceType="dataSync" />
 
         <service android:name="de.monocles.mod.ConnectionService"
             android:label="@string/app_name"
@@ -268,6 +272,25 @@
                 <category android:name="android.intent.category.BROWSABLE" />
 
                 <data android:scheme="xmpp" />
+            </intent-filter>
+            <intent-filter android:label="Import Sticker Pack">
+                <action android:name="android.intent.action.VIEW" />
+
+                <category android:name="android.intent.category.DEFAULT" />
+                <category android:name="android.intent.category.BROWSABLE" />
+
+                <data android:scheme="sgnl" />
+                <data android:pathPrefix="/addstickers/" />
+            </intent-filter>
+            <intent-filter android:label="Import Sticker Pack">
+                <action android:name="android.intent.action.VIEW" />
+
+                <category android:name="android.intent.category.DEFAULT" />
+                <category android:name="android.intent.category.BROWSABLE" />
+
+                <data android:scheme="https" />
+                <data android:host="signal.art" />
+                <data android:pathPrefix="/addstickers/" />
             </intent-filter>
             <intent-filter android:autoVerify="true">
                 <action android:name="android.intent.action.VIEW" />
