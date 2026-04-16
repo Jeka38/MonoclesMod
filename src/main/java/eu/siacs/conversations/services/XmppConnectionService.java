@@ -614,11 +614,6 @@ public class XmppConnectionService extends Service {
 
     private final BroadcastReceiver mInternalScreenEventReceiver = new InternalEventReceiver();
 
-    //Stickerspaths
-    private File[] filesStickers;
-    private String[] filesPathsStickers;
-    private String[] filesNamesStickers;
-    File dirStickers = new File(Environment.getExternalStoragePublicDirectory(Environment.DIRECTORY_DOCUMENTS) + File.separator + APP_DIRECTORY + File.separator + "Stickers");
     //Gifspaths
     private File[] files;
     private String[] filesPaths;
@@ -665,24 +660,6 @@ public class XmppConnectionService extends Service {
         }
     }
 
-    public void LoadStickers() {
-        if (!hasStoragePermission(this)) return;
-        // Load and show Stickers
-        if (!dirStickers.exists()) {
-            dirStickers.mkdir();
-        }
-        if (dirStickers.listFiles() != null) {
-            if (dirStickers.isDirectory() && dirStickers.listFiles() != null) {
-                filesStickers = dirStickers.listFiles();
-                filesPathsStickers = new String[filesStickers.length];
-                filesNamesStickers = new String[filesStickers.length];
-                for (int i = 0; i < filesStickers.length; i++) {
-                    filesPathsStickers[i] = filesStickers[i].getAbsolutePath();
-                    filesNamesStickers[i] = filesStickers[i].getName();
-                }
-            }
-        }
-    }
 
     public void LoadGifs() {
         if (!hasStoragePermission(this)) return;

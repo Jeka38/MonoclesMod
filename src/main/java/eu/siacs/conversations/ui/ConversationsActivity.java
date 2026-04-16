@@ -155,7 +155,6 @@ public class ConversationsActivity extends XmppActivity implements OnConversatio
     public static final int REQUEST_PLAY_PAUSE = 0x5432;
     public static final int REQUEST_MICROPHONE = 0x5432f;
     public static final int DIALLER_INTEGRATION = 0x5432ff;
-    public static final int REQUEST_DOWNLOAD_STICKERS = 0xbf8702;
     public static final int REQUEST_CODE_ULOCK = 0xbf8706;
     public static final String EXTRA_THREAD = "threadId";
     public static final String EXTRA_TYPE = "type";
@@ -579,9 +578,6 @@ public class ConversationsActivity extends XmppActivity implements OnConversatio
                         intent.setComponent(new ComponentName("com.android.server.telecom",
                                 "com.android.server.telecom.settings.EnableAccountPreferenceActivity"));
                         startActivityForResult(intent, DIALLER_INTEGRATION);
-                        break;
-                    case REQUEST_DOWNLOAD_STICKERS:
-                        downloadStickers();
                         break;
                 }
             } else {

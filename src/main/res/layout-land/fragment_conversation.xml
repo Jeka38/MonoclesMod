@@ -363,7 +363,7 @@
                         </RelativeLayout>
 
                         <LinearLayout
-                            android:id="@+id/emojis_sticker_layout"
+                            android:id="@+id/media_picker_layout"
                             android:layout_width="match_parent"
                             android:layout_height="0dp"
                             android:layout_below="@+id/textformat"
