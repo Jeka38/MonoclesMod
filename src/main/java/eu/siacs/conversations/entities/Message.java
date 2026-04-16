@@ -573,9 +573,24 @@ public class Message extends AbstractEntity implements AvatarService.Avatarable 
         return body;
     }
 
+    public static String toPlainText(Spanned span) {
+        SpannableStringBuilder builder = new SpannableStringBuilder(span);
+        ImageSpan[] spans = builder.getSpans(0, builder.length(), ImageSpan.class);
+        for (ImageSpan s : spans) {
+            int start = builder.getSpanStart(s);
+            int end = builder.getSpanEnd(s);
+            if (s.getSource() != null) {
+                builder.replace(start, end, s.getSource());
+            } else {
+                builder.delete(start, end);
+            }
+        }
+        return builder.toString().replace("\uFFFC", "");
+    }
+
     public synchronized void setBody(Spanned span) {
         // Don't bother removing, we'll edit below
-        setBodyPreserveXHTML(span == null ? null : span.toString());
+        setBodyPreserveXHTML(span == null ? null : toPlainText(span));
         if (span == null || SpannedToXHTML.isPlainText(span)) {
             this.payloads.remove(getHtml(true));
         } else {
@@ -746,7 +761,7 @@ public class Message extends AbstractEntity implements AvatarService.Avatarable 
     }
 
     private synchronized void setBodyPreserveXHTML(String body) {
-        this.body = body;
+        this.body = body == null ? null : body.replace("\uFFFC", "");
         this.isGeoUri = null;
         this.isXmppUri = null;
         this.isWebUri = null;
@@ -755,7 +770,7 @@ public class Message extends AbstractEntity implements AvatarService.Avatarable 
     }
 
     public synchronized void appendBody(String append) {
-        this.body += append;
+        this.body += append.replace("\uFFFC", "");
         this.isGeoUri = null;
         this.isEmojisOnly = null;
         this.treatAsDownloadable = null;
