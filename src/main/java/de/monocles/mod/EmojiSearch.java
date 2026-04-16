@@ -95,8 +95,10 @@ public class EmojiSearch {
             for (Emoji e : emoji) {
                 if (e.shortcodeMatch(r.getReferent().uniquePart())) {
                     // hack see https://stackoverflow.com/questions/76880072/imagespan-with-emojicompat
-                    e.shortcodes.clear();
-                    e.shortcodes.addAll(r.getReferent().shortcodes);
+                    if (e != r.getReferent()) {
+                        e.shortcodes.clear();
+                        e.shortcodes.addAll(r.getReferent().shortcodes);
+                    }
 
                     pq.addTopK(e, r.getScore() - 1, 999);
                 }
@@ -240,17 +242,28 @@ public class EmojiSearch {
 
         @Override
         public View getView(int position, View view, ViewGroup parent) {
-            EmojiSearchRowBinding binding = DataBindingUtil.inflate(LayoutInflater.from(parent.getContext()), R.layout.emoji_search_row, parent, false);
-            if (getItem(position) instanceof CustomEmoji) {
-                binding.nonunicode.setText(getItem(position).toInsert());
+            EmojiSearchRowBinding binding;
+            if (view == null) {
+                binding = DataBindingUtil.inflate(LayoutInflater.from(parent.getContext()), R.layout.emoji_search_row, parent, false);
+                binding.getRoot().setTag(binding);
+            } else {
+                binding = (EmojiSearchRowBinding) view.getTag();
+            }
+            Emoji emoji = getItem(position);
+            if (emoji instanceof CustomEmoji) {
+                binding.nonunicode.setText(emoji.toInsert());
                 binding.nonunicode.setVisibility(View.VISIBLE);
                 binding.unicode.setVisibility(View.GONE);
             } else {
-                binding.unicode.setText(getItem(position).toInsert());
+                binding.unicode.setText(emoji.toInsert());
                 binding.unicode.setVisibility(View.VISIBLE);
                 binding.nonunicode.setVisibility(View.GONE);
             }
-            binding.shortcode.setText(getItem(position).shortcodes.get(0));
+            if (emoji != null && !emoji.shortcodes.isEmpty()) {
+                binding.shortcode.setText(emoji.shortcodes.get(0));
+            } else {
+                binding.shortcode.setText("");
+            }
             return binding.getRoot();
         }
 
