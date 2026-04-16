@@ -219,6 +219,7 @@ import eu.siacs.conversations.utils.TranscoderStrategies;
 import eu.siacs.conversations.utils.WakeLockHelper;
 import eu.siacs.conversations.utils.XmppUri;
 import eu.siacs.conversations.xml.Element;
+import eu.siacs.conversations.xml.XmlElementReader;
 import eu.siacs.conversations.xml.LocalizedContent;
 import eu.siacs.conversations.xmpp.InvalidJid;
 import eu.siacs.conversations.xmpp.OnBindListener;
@@ -6975,22 +6976,59 @@ public class XmppConnectionService extends Service {
                     smilesDir.mkdirs();
                 }
                 FileUtils.createNoMedia(smilesDir);
-                for (File file : Files.fileTraverser().breadthFirst(smilesDir)) {
-                    try {
-                        if (file.isFile() && file.canRead()) {
-                            DownloadableFile df = new DownloadableFile(file.getAbsolutePath());
-                            Drawable icon = fileBackend.getThumbnail(df, getResources(), (int) (getResources().getDisplayMetrics().density * 288), false);
-                            final String filename = Files.getNameWithoutExtension(df.getName());
-                            Cid[] cids = fileBackend.calculateCids(new FileInputStream(df));
-                            for (Cid cid : cids) {
-                                saveCid(cid, file);
-                            }
-                            if (file.length() < 1024 * 1024) { // 1MB limit for smiles
-                                emojiSearch.addEmoji(new EmojiSearch.CustomEmoji(filename, "*" + filename + "*", icon, "Smiles"));
+
+                File iconDef = new File(smilesDir, "icondef.xml");
+                if (iconDef.exists()) {
+                    try (FileInputStream fis = new FileInputStream(iconDef)) {
+                        Element root = XmlElementReader.read(fis);
+                        for (Element iconElement : root.getChildren()) {
+                            if ("icon".equals(iconElement.getName())) {
+                                List<String> texts = new ArrayList<>();
+                                for (Element text : iconElement.getChildren()) {
+                                    if ("text".equals(text.getName())) {
+                                        texts.add(text.getContent());
+                                    }
+                                }
+                                Element object = iconElement.findChild("object");
+                                if (object != null && !texts.isEmpty()) {
+                                    File file = new File(smilesDir, object.getContent());
+                                    if (file.exists() && file.canRead()) {
+                                        DownloadableFile df = new DownloadableFile(file.getAbsolutePath());
+                                        Drawable icon = fileBackend.getThumbnail(df, getResources(), (int) (getResources().getDisplayMetrics().density * 288), false);
+                                        Cid[] cids = fileBackend.calculateCids(new FileInputStream(df));
+                                        for (Cid cid : cids) {
+                                            saveCid(cid, file);
+                                        }
+                                        EmojiSearch.CustomEmoji ce = new EmojiSearch.CustomEmoji(texts.get(0), texts.get(0), icon, "Smiles");
+                                        for (int i = 1; i < texts.size(); i++) {
+                                            ce.addShortcode(texts.get(i));
+                                        }
+                                        emojiSearch.addEmoji(ce);
+                                    }
+                                }
                             }
                         }
-                    } catch (final Exception e) {
-                        Log.w(Config.LOGTAG, "rescanSmiles: " + e);
+                    } catch (Exception e) {
+                        Log.w(Config.LOGTAG, "rescanSmiles (icondef.xml): " + e);
+                    }
+                } else {
+                    for (File file : Files.fileTraverser().breadthFirst(smilesDir)) {
+                        try {
+                            if (file.isFile() && file.canRead() && !file.getName().equals("icondef.xml") && !file.getName().equals(".nomedia")) {
+                                DownloadableFile df = new DownloadableFile(file.getAbsolutePath());
+                                Drawable icon = fileBackend.getThumbnail(df, getResources(), (int) (getResources().getDisplayMetrics().density * 288), false);
+                                final String filename = Files.getNameWithoutExtension(df.getName());
+                                Cid[] cids = fileBackend.calculateCids(new FileInputStream(df));
+                                for (Cid cid : cids) {
+                                    saveCid(cid, file);
+                                }
+                                if (file.length() < 1024 * 1024) { // 1MB limit for smiles
+                                    emojiSearch.addEmoji(new EmojiSearch.CustomEmoji(filename, "*" + filename + "*", icon, "Smiles"));
+                                }
+                            }
+                        } catch (final Exception e) {
+                            Log.w(Config.LOGTAG, "rescanSmiles: " + e);
+                        }
                     }
                 }
             } catch (final Exception e) {

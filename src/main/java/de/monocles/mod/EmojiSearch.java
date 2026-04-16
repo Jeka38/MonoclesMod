@@ -21,6 +21,7 @@ import java.util.List;
 import java.util.PriorityQueue;
 import java.util.Set;
 import java.util.TreeSet;
+import java.util.regex.Pattern;
 
 import me.xdrop.fuzzywuzzy.FuzzySearch;
 import me.xdrop.fuzzywuzzy.model.BoundExtractedResult;
@@ -37,31 +38,42 @@ public class EmojiSearch {
     protected final Set<Emoji> emoji = new TreeSet<>();
 
     public EmojiSearch(Context context) {
-                /*      TODO: No emoji search needed since there already is an emoji keyboard
-        try {
-            final JSONArray data = new JSONArray(CharStreams.toString(new InputStreamReader(context.getResources().openRawResource(R.raw.emoji), "UTF-8")));
-            for (int i = 0; i < data.length(); i++) {
-                emoji.add(new Emoji(data.getJSONObject(i)));
+    }
+
+    private Pattern cachedPattern = null;
+
+    public synchronized Pattern getCustomEmojiPattern() {
+        if (cachedPattern != null) return cachedPattern;
+        List<String> allShortcodes = new ArrayList<>();
+        for (Emoji e : emoji) {
+            if (e instanceof CustomEmoji) {
+                allShortcodes.addAll(e.shortcodes);
             }
-        } catch (final JSONException | IOException e) {
-            throw new IllegalStateException("emoji.json invalid: " + e);
         }
-                 */
+        if (allShortcodes.isEmpty()) return null;
+        Collections.sort(allShortcodes, (a, b) -> Integer.compare(b.length(), a.length()));
+        StringBuilder sb = new StringBuilder();
+        for (int i = 0; i < allShortcodes.size(); i++) {
+            if (i > 0) sb.append("|");
+            sb.append(Pattern.quote(allShortcodes.get(i)));
+        }
+        cachedPattern = Pattern.compile(sb.toString());
+        return cachedPattern;
     }
 
     public synchronized void addEmoji(final Emoji one) {
         emoji.add(one);
+        cachedPattern = null;
     }
 
     public synchronized CustomEmoji findCustomEmoji(String q) {
-        if (q.startsWith("*") && q.endsWith("*")) {
-            q = q.substring(1, q.length() - 1);
-        }
         for (Emoji e : emoji) {
             if (e instanceof CustomEmoji) {
                 CustomEmoji ce = (CustomEmoji) e;
-                if (ce.shortcodes.get(0).equals(q) || ce.shortcodes.get(0).equals("*" + q + "*")) {
-                    return ce;
+                for (String shortcode : ce.shortcodes) {
+                    if (shortcode.equals(q)) {
+                        return ce;
+                    }
                 }
             }
         }
@@ -199,12 +211,16 @@ public class EmojiSearch {
             }
         }
 
+        public String getSource() {
+            return source;
+        }
+
+        public void addShortcode(String shortcode) {
+            this.shortcodes.add(shortcode);
+        }
+
         public SpannableStringBuilder toInsert() {
-            String shortcode = shortcodes.get(0);
-            if (!shortcode.startsWith("*") || !shortcode.endsWith("*")) {
-                shortcode = ":" + shortcode + ":";
-            }
-            SpannableStringBuilder builder = new SpannableStringBuilder(shortcode);
+            SpannableStringBuilder builder = new SpannableStringBuilder(source);
             builder.setSpan(new InlineImageSpan(icon, source), 0, builder.length(), Spannable.SPAN_EXCLUSIVE_EXCLUSIVE);
             return builder;
         }

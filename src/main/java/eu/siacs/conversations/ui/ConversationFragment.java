@@ -4016,7 +4016,6 @@ public class ConversationFragment extends XmppFragment
         if (dir.startsWith("content://")) {
             intent.putExtra("android.provider.extra.INITIAL_URI", Uri.parse(dir));
         } else {
-            new File(Environment.getExternalStoragePublicDirectory(Environment.DIRECTORY_DOCUMENTS) + File.separator + APP_DIRECTORY + File.separator + "Stickers").mkdirs();
             Uri uri;
             if (Build.VERSION.SDK_INT >= 29) {
                 Intent tmp = ((StorageManager) activity.getSystemService(Context.STORAGE_SERVICE)).getPrimaryStorageVolume().createOpenDocumentTreeIntent();

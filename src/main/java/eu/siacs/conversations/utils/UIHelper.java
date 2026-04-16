@@ -565,18 +565,19 @@ public class UIHelper {
 
     public static SpannableStringBuilder replaceEmojisWithSmiles(Context context, SpannableStringBuilder spannable, de.monocles.mod.EmojiSearch emojiSearch) {
         if (emojiSearch == null) return spannable;
+        Pattern pattern = emojiSearch.getCustomEmojiPattern();
+        if (pattern == null) return spannable;
         String text = spannable.toString();
-        Pattern pattern = Pattern.compile("\\*([^\\*\\s]+)\\*");
         Matcher matcher = pattern.matcher(text);
         while (matcher.find()) {
-            String shortcode = matcher.group(1);
-            de.monocles.mod.EmojiSearch.CustomEmoji ce = emojiSearch.findCustomEmoji(shortcode);
+            String match = matcher.group();
+            de.monocles.mod.EmojiSearch.CustomEmoji ce = emojiSearch.findCustomEmoji(match);
             if (ce != null) {
                 Drawable drawable = ce.toInsert().getSpans(0, 1, de.monocles.mod.InlineImageSpan.class)[0].getDrawable();
                 if (drawable != null) {
                     int size = (int) (context.getResources().getDisplayMetrics().density * 24);
                     drawable.setBounds(0, 0, size, size);
-                    de.monocles.mod.InlineImageSpan span = new de.monocles.mod.InlineImageSpan(drawable, matcher.group());
+                    de.monocles.mod.InlineImageSpan span = new de.monocles.mod.InlineImageSpan(drawable, match);
                     spannable.setSpan(span, matcher.start(), matcher.end(), Spanned.SPAN_EXCLUSIVE_EXCLUSIVE);
                 }
             }
