@@ -6981,8 +6981,10 @@ public class XmppConnectionService extends Service {
                 if (iconDef.exists()) {
                     try (FileInputStream fis = new FileInputStream(iconDef)) {
                         Element root = XmlElementReader.read(fis);
+                        int order = 0;
                         for (Element iconElement : root.getChildren()) {
                             if ("icon".equals(iconElement.getName())) {
+                                order++;
                                 List<String> texts = new ArrayList<>();
                                 for (Element text : iconElement.getChildren()) {
                                     if ("text".equals(text.getName())) {
@@ -6999,7 +7001,7 @@ public class XmppConnectionService extends Service {
                                         for (Cid cid : cids) {
                                             saveCid(cid, file);
                                         }
-                                        EmojiSearch.CustomEmoji ce = new EmojiSearch.CustomEmoji(texts.get(0), texts.get(0), icon, "Smiles");
+                                        EmojiSearch.CustomEmoji ce = new EmojiSearch.CustomEmoji(texts.get(0), texts.get(0), icon, "Smiles", order);
                                         for (int i = 1; i < texts.size(); i++) {
                                             ce.addShortcode(texts.get(i));
                                         }

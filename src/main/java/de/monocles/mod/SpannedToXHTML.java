@@ -130,7 +130,10 @@ public class SpannedToXHTML {
                 if (style[j] instanceof ImageSpan) {
                     String source = ((ImageSpan) style[j]).getSource();
                     if (source == null || source.length() == 0 || (source.charAt(0) != 'h' && source.charAt(0) != 'z')) {
-                        continue;
+                        if (source != null && !source.isEmpty()) {
+                            out.addChild(new TextNode(source));
+                        }
+                        continue outer;
                     }
                     if (source.charAt(0) == 'z') {
                         try {

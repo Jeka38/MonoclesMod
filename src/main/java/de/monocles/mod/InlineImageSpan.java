@@ -25,14 +25,15 @@ public class InlineImageSpan extends ImageSpan {
     public int getSize(final Paint paint, final CharSequence text, final int start, final int end, final Paint.FontMetricsInt fm) {
         paint.getFontMetricsInt(mTmpFontMetrics);
         final int fontHeight = Math.abs(mTmpFontMetrics.descent - mTmpFontMetrics.ascent);
-        float mRatio = fontHeight * 1.0f / dHeight;
+        float mRatio = fontHeight * 1.25f / dHeight;
         int mWidth = (int) (dWidth * mRatio);
         getDrawable().setBounds(0, 0, (int) dWidth, (int) dHeight);
         if (fm != null) {
-            fm.ascent = mTmpFontMetrics.ascent;
-            fm.descent = mTmpFontMetrics.descent;
-            fm.top = mTmpFontMetrics.top;
-            fm.bottom = mTmpFontMetrics.bottom;
+            int shift = (int) (fontHeight * 0.125f);
+            fm.ascent = mTmpFontMetrics.ascent - shift;
+            fm.descent = mTmpFontMetrics.descent + shift;
+            fm.top = mTmpFontMetrics.top - shift;
+            fm.bottom = mTmpFontMetrics.bottom + shift;
         }
         return mWidth;
     }
@@ -41,12 +42,12 @@ public class InlineImageSpan extends ImageSpan {
     public void draw(Canvas canvas, CharSequence text, int start, int end, float x, int top, int y, int bottom, Paint paint) {
         paint.getFontMetricsInt(mTmpFontMetrics);
         final int fontHeight = Math.abs(mTmpFontMetrics.descent - mTmpFontMetrics.ascent);
-        float mRatio = fontHeight * 1.0f / dHeight;
+        float mRatio = fontHeight * 1.25f / dHeight;
 
         Drawable b = getDrawable();
         canvas.save();
 
-        int transY = bottom - ((int) (dHeight * mRatio));
+        int transY = bottom - ((int) (dHeight * mRatio)) + (int) (fontHeight * 0.125f);
         if (mVerticalAlignment == ALIGN_BASELINE) {
             transY -= paint.getFontMetricsInt().descent;
         }

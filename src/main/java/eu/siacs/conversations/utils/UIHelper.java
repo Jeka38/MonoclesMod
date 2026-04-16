@@ -575,7 +575,7 @@ public class UIHelper {
             if (ce != null) {
                 Drawable drawable = ce.toInsert().getSpans(0, 1, de.monocles.mod.InlineImageSpan.class)[0].getDrawable();
                 if (drawable != null) {
-                    int size = (int) (context.getResources().getDisplayMetrics().density * 24);
+                    int size = (int) (context.getResources().getDisplayMetrics().density * 30);
                     drawable.setBounds(0, 0, size, size);
                     de.monocles.mod.InlineImageSpan span = new de.monocles.mod.InlineImageSpan(drawable, match);
                     spannable.setSpan(span, matcher.start(), matcher.end(), Spanned.SPAN_EXCLUSIVE_EXCLUSIVE);

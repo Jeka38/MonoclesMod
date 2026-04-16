@@ -81,6 +81,9 @@ public class EmojiSearch {
     }
 
     public synchronized List<Emoji> find(final String q) {
+        if (q == null || q.isEmpty()) {
+            return new ArrayList<>(emoji);
+        }
         final ResultPQ pq = new ResultPQ();
         for (Emoji e : emoji) {
             if (e.emoticonMatch(q)) {
@@ -203,7 +206,11 @@ public class EmojiSearch {
         protected final Drawable icon;
 
         public CustomEmoji(final String shortcode, final String source, final Drawable icon, final String tag) {
-            super(null, 999);
+            this(shortcode, source, icon, tag, 999);
+        }
+
+        public CustomEmoji(final String shortcode, final String source, final Drawable icon, final String tag, int order) {
+            super(null, order);
             shortcodes.add(shortcode);
             if (tag != null) tags.add(tag);
             this.source = source;
