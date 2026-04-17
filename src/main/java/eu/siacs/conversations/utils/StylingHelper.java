@@ -42,6 +42,7 @@ import android.text.style.BackgroundColorSpan;
 import android.text.style.ForegroundColorSpan;
 import android.text.style.RelativeSizeSpan;
 import android.text.style.StrikethroughSpan;
+import android.text.style.ImageSpan;
 import android.text.style.StyleSpan;
 import android.text.style.TypefaceSpan;
 import android.widget.EditText;
@@ -56,6 +57,7 @@ import java.util.List;
 
 import eu.siacs.conversations.R;
 import eu.siacs.conversations.entities.Message;
+import eu.siacs.conversations.ui.XmppActivity;
 import eu.siacs.conversations.ui.adapter.MessageAdapter;
 import eu.siacs.conversations.ui.text.QuoteSpan;
 
@@ -78,6 +80,9 @@ public class StylingHelper {
             for (ParcelableSpan span : editable.getSpans(0, end, clazz)) {
                 editable.removeSpan(span);
             }
+        }
+        for (ImageSpan span : editable.getSpans(0, end, ImageSpan.class)) {
+            editable.removeSpan(span);
         }
     }
 
@@ -266,6 +271,10 @@ public class StylingHelper {
                 editable.removeSpan(span);
             }
             format(editable, mEditText.getCurrentTextColor(), true);
+            XmppActivity activity = (XmppActivity) mAdapter.getActivity();
+            if (activity.xmppConnectionService != null && activity.xmppConnectionService.getBooleanPreference("enable_smiles", R.bool.enable_smiles)) {
+                UIHelper.replaceEmojisWithSmiles(activity, editable, activity.xmppConnectionService.emojiSearch());
+            }
             mAdapter.handleTextQuotes(mEditText, editable, false);
         }
     }

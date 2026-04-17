@@ -563,7 +563,7 @@ public class UIHelper {
         return concatNames(users, users.size());
     }
 
-    public static SpannableStringBuilder replaceEmojisWithSmiles(Context context, SpannableStringBuilder spannable, de.monocles.mod.EmojiSearch emojiSearch) {
+    public static <S extends Spannable> S replaceEmojisWithSmiles(Context context, S spannable, de.monocles.mod.EmojiSearch emojiSearch) {
         if (emojiSearch == null) return spannable;
         Pattern pattern = emojiSearch.getCustomEmojiPattern();
         if (pattern == null) return spannable;
