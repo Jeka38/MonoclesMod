@@ -760,6 +760,7 @@ public class ConversationFragment extends XmppFragment
                     binding.smilesview.setVisibility(VISIBLE);
                     binding.smilesButton.setVisibility(VISIBLE);
                     binding.smilesButtonSpacing.setVisibility(VISIBLE);
+                    binding.gifsview.setVisibility(GONE);
                 } else {
                     binding.emojiPicker.setVisibility(VISIBLE);
                     binding.emojisButton.setVisibility(VISIBLE);
@@ -825,6 +826,7 @@ public class ConversationFragment extends XmppFragment
         @Override
         public void onClick(View v) {
             binding.emojiPicker.setVisibility(GONE);
+            binding.smilesview.setVisibility(GONE);
             binding.gifsview.setVisibility(VISIBLE);
             backPressedLeaveEmojiPicker.setEnabled(true);
             binding.textinput.requestFocus();
