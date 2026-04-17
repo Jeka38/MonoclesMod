@@ -66,6 +66,12 @@ public class EmojiSearch {
         cachedPattern = null;
     }
 
+    public synchronized void replaceAll(List<Emoji> newEmojis) {
+        emoji.clear();
+        emoji.addAll(newEmojis);
+        cachedPattern = null;
+    }
+
     public synchronized CustomEmoji findCustomEmoji(String q) {
         for (Emoji e : emoji) {
             if (e instanceof CustomEmoji) {

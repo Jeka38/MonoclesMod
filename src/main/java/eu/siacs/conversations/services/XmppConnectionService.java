@@ -6963,8 +6963,12 @@ public class XmppConnectionService extends Service {
     }
 
     public void rescanSmiles() {
+        rescanSmiles(false);
+    }
+
+    public void rescanSmiles(boolean force) {
         long msToRescan = (mLastSmilesRescan + 600000L) - SystemClock.elapsedRealtime();
-        if (msToRescan > 0) return;
+        if (!force && msToRescan > 0) return;
         Log.d(Config.LOGTAG, "rescanSmiles");
 
         mLastSmilesRescan = SystemClock.elapsedRealtime();
@@ -6977,6 +6981,7 @@ public class XmppConnectionService extends Service {
                 }
                 FileUtils.createNoMedia(smilesDir);
 
+                List<EmojiSearch.Emoji> emojis = new ArrayList<>();
                 File iconDef = new File(smilesDir, "icondef.xml");
                 if (iconDef.exists()) {
                     try (FileInputStream fis = new FileInputStream(iconDef)) {
@@ -7005,7 +7010,7 @@ public class XmppConnectionService extends Service {
                                         for (int i = 1; i < texts.size(); i++) {
                                             ce.addShortcode(texts.get(i));
                                         }
-                                        emojiSearch.addEmoji(ce);
+                                        emojis.add(ce);
                                     }
                                 }
                             }
@@ -7025,7 +7030,7 @@ public class XmppConnectionService extends Service {
                                     saveCid(cid, file);
                                 }
                                 if (file.length() < 1024 * 1024) { // 1MB limit for smiles
-                                    emojiSearch.addEmoji(new EmojiSearch.CustomEmoji(filename, "*" + filename + "*", icon, "Smiles"));
+                                    emojis.add(new EmojiSearch.CustomEmoji(filename, "*" + filename + "*", icon, "Smiles"));
                                 }
                             }
                         } catch (final Exception e) {
@@ -7033,6 +7038,7 @@ public class XmppConnectionService extends Service {
                         }
                     }
                 }
+                emojiSearch.replaceAll(emojis);
             } catch (final Exception e) {
                 Log.w(Config.LOGTAG, "rescanSmiles: " + e);
             }

@@ -218,7 +218,7 @@ public class SettingsActivity extends XmppActivity implements OnSharedPreference
                     }
                     Toast.makeText(this, R.string.smiles_imported, Toast.LENGTH_LONG).show();
                     if (xmppConnectionService != null) {
-                        xmppConnectionService.rescanSmiles();
+                        xmppConnectionService.rescanSmiles(true);
                     }
                 } catch (IOException e) {
                     Toast.makeText(this, "Failed to import smiles", Toast.LENGTH_LONG).show();
