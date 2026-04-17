@@ -363,7 +363,7 @@
                         </RelativeLayout>
 
                         <LinearLayout
-                            android:id="@+id/emojis_sticker_layout"
+                            android:id="@+id/media_picker_layout"
                             android:layout_width="match_parent"
                             android:layout_height="0dp"
                             android:layout_below="@+id/textformat"
@@ -379,7 +379,7 @@
                                 android:visibility="visible" />
 
                             <de.monocles.mod.GridView
-                                android:id="@+id/stickersview"
+                                android:id="@+id/smilesview"
                                 android:layout_width="match_parent"
                                 android:layout_height="match_parent"
                                 android:layout_marginLeft="4dp"
@@ -428,17 +428,20 @@
                                     android:layout_width="20dp"
                                     android:layout_height="wrap_content" />
 
+                                <View
+                                    android:id="@+id/smilesButtonSpacing"
+                                    android:layout_width="20dp"
+                                    android:layout_height="wrap_content"
+                                    android:visibility="gone" />
+
                                 <TextView
-                                    android:id="@+id/stickers_button"
+                                    android:id="@+id/smilesButton"
                                     android:layout_width="wrap_content"
                                     android:layout_height="wrap_content"
                                     android:gravity="bottom|center_horizontal"
-                                    android:text="@string/stickers"
-                                    android:textSize="16sp" />
-
-                                <View
-                                    android:layout_width="20dp"
-                                    android:layout_height="wrap_content" />
+                                    android:text="@string/smiles"
+                                    android:textSize="16sp"
+                                    android:visibility="gone" />
 
                                 <TextView
                                     android:id="@+id/gifs_button"
@@ -492,15 +495,6 @@
                                     android:gravity="center"
                                     android:text=">"
                                     android:textSize="18sp"
-                                    android:visibility="visible" />
-
-                                <ImageButton
-                                    android:id="@+id/bold"
-                                    android:layout_width="42dp"
-                                    android:layout_height="42dp"
-                                    android:background="?attr/selectableItemBackgroundBorderless"
-                                    android:contentDescription="@string/bold"
-                                    android:src="?attr/ic_bold"
                                     android:visibility="visible" />
 
                                 <ImageButton

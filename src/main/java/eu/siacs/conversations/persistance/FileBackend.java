@@ -140,6 +140,7 @@ public class FileBackend {
     public static final String SENT_IMAGES = "Images" + File.separator + "Sent";
     public static final String VIDEOS = "Videos";
     public static final String SENT_VIDEOS = "Videos" + File.separator + "Sent";
+    public static final String SMILES = "Smiles";
 
     public static final AtomicInteger STORAGE_INDEX = new AtomicInteger(0);
     private static final float IGNORE_PADDING = 0.15f;

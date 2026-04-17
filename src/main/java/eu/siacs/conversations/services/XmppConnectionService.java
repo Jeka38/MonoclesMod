@@ -200,6 +200,7 @@ import eu.siacs.conversations.ui.interfaces.OnMediaLoaded;
 import eu.siacs.conversations.ui.interfaces.OnSearchResultsAvailable;
 import eu.siacs.conversations.utils.Compatibility;
 import eu.siacs.conversations.utils.ConversationsFileObserver;
+import eu.siacs.conversations.utils.FileUtils;
 import eu.siacs.conversations.utils.CryptoHelper;
 import eu.siacs.conversations.utils.EasyOnboardingInvite;
 import eu.siacs.conversations.utils.ExceptionHelper;
@@ -218,6 +219,7 @@ import eu.siacs.conversations.utils.TranscoderStrategies;
 import eu.siacs.conversations.utils.WakeLockHelper;
 import eu.siacs.conversations.utils.XmppUri;
 import eu.siacs.conversations.xml.Element;
+import eu.siacs.conversations.xml.XmlElementReader;
 import eu.siacs.conversations.xml.LocalizedContent;
 import eu.siacs.conversations.xmpp.InvalidJid;
 import eu.siacs.conversations.xmpp.OnBindListener;
@@ -311,11 +313,11 @@ public class XmppConnectionService extends Service {
     public DatabaseBackend databaseBackend;
     private Multimap<String, String> mutedMucUsers;
     private final ReplacingSerialSingleThreadExecutor mContactMergerExecutor = new ReplacingSerialSingleThreadExecutor("ContactMerger");
-    private final ReplacingSerialSingleThreadExecutor mStickerScanExecutor = new ReplacingSerialSingleThreadExecutor("StickerScan");
+    private final ReplacingSerialSingleThreadExecutor mSmilesScanExecutor = new ReplacingSerialSingleThreadExecutor("SmilesScan");
     private long mLastActivity = 0;
     private long mLastMucPing = 0;
     private Map<String, Message> mScheduledMessages = new HashMap<>();
-    private long mLastStickerRescan = 0;
+    private long mLastSmilesRescan = 0;
     public final FileBackend fileBackend = new FileBackend(this);
     private MemorizingTrustManager mMemorizingTrustManager;
     private final NotificationService mNotificationService = new NotificationService(this);
@@ -613,11 +615,6 @@ public class XmppConnectionService extends Service {
 
     private final BroadcastReceiver mInternalScreenEventReceiver = new InternalEventReceiver();
 
-    //Stickerspaths
-    private File[] filesStickers;
-    private String[] filesPathsStickers;
-    private String[] filesNamesStickers;
-    File dirStickers = new File(Environment.getExternalStoragePublicDirectory(Environment.DIRECTORY_DOCUMENTS) + File.separator + APP_DIRECTORY + File.separator + "Stickers");
     //Gifspaths
     private File[] files;
     private String[] filesPaths;
@@ -664,24 +661,6 @@ public class XmppConnectionService extends Service {
         }
     }
 
-    public void LoadStickers() {
-        if (!hasStoragePermission(this)) return;
-        // Load and show Stickers
-        if (!dirStickers.exists()) {
-            dirStickers.mkdir();
-        }
-        if (dirStickers.listFiles() != null) {
-            if (dirStickers.isDirectory() && dirStickers.listFiles() != null) {
-                filesStickers = dirStickers.listFiles();
-                filesPathsStickers = new String[filesStickers.length];
-                filesNamesStickers = new String[filesStickers.length];
-                for (int i = 0; i < filesStickers.length; i++) {
-                    filesPathsStickers[i] = filesStickers[i].getAbsolutePath();
-                    filesNamesStickers[i] = filesStickers[i].getName();
-                }
-            }
-        }
-    }
 
     public void LoadGifs() {
         if (!hasStoragePermission(this)) return;
@@ -1900,7 +1879,7 @@ public class XmppConnectionService extends Service {
                 ContextCompat.RECEIVER_EXPORTED);
         mForceDuringOnCreate.set(false);
         toggleForegroundService();
-        rescanStickers();
+        rescanSmiles();
         internalPingExecutor.scheduleAtFixedRate(this::manageAccountConnectionStatesInternal,120,120,TimeUnit.SECONDS);
         //start export log service every day at given time
         ScheduleAutomaticExport();
@@ -6979,22 +6958,73 @@ public class XmppConnectionService extends Service {
     }
 
 
-    private File stickerDir() {
-        return new File(Environment.getExternalStoragePublicDirectory(Environment.DIRECTORY_DOCUMENTS) + File.separator + APP_DIRECTORY + File.separator + "Stickers");
+    private File smilesDir() {
+        return new File(Environment.getExternalStoragePublicDirectory(Environment.DIRECTORY_DOCUMENTS) + File.separator + APP_DIRECTORY + File.separator + FileBackend.SMILES);
     }
 
-    public void rescanStickers() {
-        long msToRescan = (mLastStickerRescan + 600000L) - SystemClock.elapsedRealtime();
-        if (msToRescan > 0) return;
-        Log.d(Config.LOGTAG, "rescanStickers");
+    public void rescanSmiles() {
+        rescanSmiles(false);
+    }
 
-        mLastStickerRescan = SystemClock.elapsedRealtime();
-        mStickerScanExecutor.execute(() -> {
+    public void rescanSmiles(boolean force) {
+        long msToRescan = (mLastSmilesRescan + 600000L) - SystemClock.elapsedRealtime();
+        if (!force && msToRescan > 0) return;
+        Log.d(Config.LOGTAG, "rescanSmiles");
+
+        mLastSmilesRescan = SystemClock.elapsedRealtime();
+        mSmilesScanExecutor.execute(() -> {
             Thread.currentThread().setPriority(Thread.MIN_PRIORITY);
             try {
-                for (File file : Files.fileTraverser().breadthFirst(stickerDir())) {
+                final File smilesDir = smilesDir();
+                if (!smilesDir.exists()) {
+                    smilesDir.mkdirs();
+                }
+                FileUtils.createNoMedia(smilesDir);
+
+                List<EmojiSearch.Emoji> emojis = new ArrayList<>();
+                HashSet<String> filenamesInList = new HashSet<>();
+                File iconDef = new File(smilesDir, "icondef.xml");
+                if (iconDef.exists()) {
+                    try (FileInputStream fis = new FileInputStream(iconDef)) {
+                        Element root = XmlElementReader.read(fis);
+                        int order = 0;
+                        for (Element iconElement : root.getChildren()) {
+                            if ("icon".equals(iconElement.getName())) {
+                                order++;
+                                List<String> texts = new ArrayList<>();
+                                for (Element text : iconElement.getChildren()) {
+                                    if ("text".equals(text.getName())) {
+                                        texts.add(text.getContent());
+                                    }
+                                }
+                                Element object = iconElement.findChild("object");
+                                if (object != null && !texts.isEmpty()) {
+                                    File file = new File(smilesDir, object.getContent());
+                                    if (file.exists() && file.canRead()) {
+                                        DownloadableFile df = new DownloadableFile(file.getAbsolutePath());
+                                        Drawable icon = fileBackend.getThumbnail(df, getResources(), (int) (getResources().getDisplayMetrics().density * 288), false);
+                                        Cid[] cids = fileBackend.calculateCids(new FileInputStream(df));
+                                        for (Cid cid : cids) {
+                                            saveCid(cid, file);
+                                        }
+                                        EmojiSearch.CustomEmoji ce = new EmojiSearch.CustomEmoji(texts.get(0), texts.get(0), icon, "Smiles", order);
+                                        for (int i = 1; i < texts.size(); i++) {
+                                            ce.addShortcode(texts.get(i));
+                                        }
+                                        emojis.add(ce);
+                                        filenamesInList.add(file.getName());
+                                    }
+                                }
+                            }
+                        }
+                    } catch (Exception e) {
+                        Log.w(Config.LOGTAG, "rescanSmiles (icondef.xml): " + e);
+                    }
+                }
+                for (File file : Files.fileTraverser().breadthFirst(smilesDir)) {
                     try {
-                        if (file.isFile() && file.canRead()) {
+                        if (file.isFile() && file.canRead() && !file.getName().equals("icondef.xml") && !file.getName().equals(".nomedia")) {
+                            if (filenamesInList.contains(file.getName())) continue;
                             DownloadableFile df = new DownloadableFile(file.getAbsolutePath());
                             Drawable icon = fileBackend.getThumbnail(df, getResources(), (int) (getResources().getDisplayMetrics().density * 288), false);
                             final String filename = Files.getNameWithoutExtension(df.getName());
@@ -7002,16 +7032,18 @@ public class XmppConnectionService extends Service {
                             for (Cid cid : cids) {
                                 saveCid(cid, file);
                             }
-                            if (file.length() < 129000) {
-                                emojiSearch.addEmoji(new EmojiSearch.CustomEmoji(filename, cids[0].toString(), icon, file.getParentFile().getName()));
+                            if (file.length() < 1024 * 1024) { // 1MB limit for smiles
+                                emojis.add(new EmojiSearch.CustomEmoji(filename, "*" + filename + "*", icon, "Smiles"));
+                                filenamesInList.add(file.getName());
                             }
                         }
                     } catch (final Exception e) {
-                        Log.w(Config.LOGTAG, "rescanStickers: " + e);
+                        Log.w(Config.LOGTAG, "rescanSmiles: " + e);
                     }
                 }
+                emojiSearch.replaceAll(emojis);
             } catch (final Exception e) {
-                Log.w(Config.LOGTAG, "rescanStickers: " + e);
+                Log.w(Config.LOGTAG, "rescanSmiles: " + e);
             }
         });
     }

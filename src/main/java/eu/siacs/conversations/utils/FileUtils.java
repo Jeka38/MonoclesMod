@@ -172,6 +172,19 @@ public class FileUtils {
         return "com.android.providers.media.documents".equals(uri.getAuthority());
     }
 
+    public static void createNoMedia(File directory) {
+        final File noMedia = new File(directory, ".nomedia");
+        if (!noMedia.exists()) {
+            try {
+                if (noMedia.createNewFile()) {
+                    Log.d(Config.LOGTAG, "created nomedia file " + noMedia.getAbsolutePath());
+                }
+            } catch (Exception e) {
+                Log.d(Config.LOGTAG, "could not create nomedia file");
+            }
+        }
+    }
+
     public static String getExtension(Context context, Uri uri) {
         String extension;
         //Check uri format to avoid null

@@ -21,6 +21,7 @@ import java.util.List;
 import java.util.PriorityQueue;
 import java.util.Set;
 import java.util.TreeSet;
+import java.util.regex.Pattern;
 
 import me.xdrop.fuzzywuzzy.FuzzySearch;
 import me.xdrop.fuzzywuzzy.model.BoundExtractedResult;
@@ -37,23 +38,58 @@ public class EmojiSearch {
     protected final Set<Emoji> emoji = new TreeSet<>();
 
     public EmojiSearch(Context context) {
-                /*      TODO: No emoji search needed since there already is an emoji keyboard
-        try {
-            final JSONArray data = new JSONArray(CharStreams.toString(new InputStreamReader(context.getResources().openRawResource(R.raw.emoji), "UTF-8")));
-            for (int i = 0; i < data.length(); i++) {
-                emoji.add(new Emoji(data.getJSONObject(i)));
+    }
+
+    private Pattern cachedPattern = null;
+
+    public synchronized Pattern getCustomEmojiPattern() {
+        if (cachedPattern != null) return cachedPattern;
+        List<String> allShortcodes = new ArrayList<>();
+        for (Emoji e : emoji) {
+            if (e instanceof CustomEmoji) {
+                allShortcodes.addAll(e.shortcodes);
             }
-        } catch (final JSONException | IOException e) {
-            throw new IllegalStateException("emoji.json invalid: " + e);
         }
-                 */
+        if (allShortcodes.isEmpty()) return null;
+        Collections.sort(allShortcodes, (a, b) -> Integer.compare(b.length(), a.length()));
+        StringBuilder sb = new StringBuilder();
+        for (int i = 0; i < allShortcodes.size(); i++) {
+            if (i > 0) sb.append("|");
+            sb.append(Pattern.quote(allShortcodes.get(i)));
+        }
+        cachedPattern = Pattern.compile(sb.toString());
+        return cachedPattern;
     }
 
     public synchronized void addEmoji(final Emoji one) {
         emoji.add(one);
+        cachedPattern = null;
+    }
+
+    public synchronized void replaceAll(List<Emoji> newEmojis) {
+        emoji.clear();
+        emoji.addAll(newEmojis);
+        cachedPattern = null;
+    }
+
+    public synchronized CustomEmoji findCustomEmoji(String q) {
+        for (Emoji e : emoji) {
+            if (e instanceof CustomEmoji) {
+                CustomEmoji ce = (CustomEmoji) e;
+                for (String shortcode : ce.shortcodes) {
+                    if (shortcode.equals(q)) {
+                        return ce;
+                    }
+                }
+            }
+        }
+        return null;
     }
 
     public synchronized List<Emoji> find(final String q) {
+        if (q == null || q.isEmpty()) {
+            return new ArrayList<>(emoji);
+        }
         final ResultPQ pq = new ResultPQ();
         for (Emoji e : emoji) {
             if (e.emoticonMatch(q)) {
@@ -68,8 +104,10 @@ public class EmojiSearch {
             for (Emoji e : emoji) {
                 if (e.shortcodeMatch(r.getReferent().uniquePart())) {
                     // hack see https://stackoverflow.com/questions/76880072/imagespan-with-emojicompat
-                    e.shortcodes.clear();
-                    e.shortcodes.addAll(r.getReferent().shortcodes);
+                    if (e != r.getReferent()) {
+                        e.shortcodes.clear();
+                        e.shortcodes.addAll(r.getReferent().shortcodes);
+                    }
 
                     pq.addTopK(e, r.getScore() - 1, 999);
                 }
@@ -174,7 +212,11 @@ public class EmojiSearch {
         protected final Drawable icon;
 
         public CustomEmoji(final String shortcode, final String source, final Drawable icon, final String tag) {
-            super(null, 999);
+            this(shortcode, source, icon, tag, 999);
+        }
+
+        public CustomEmoji(final String shortcode, final String source, final Drawable icon, final String tag, int order) {
+            super(null, order);
             shortcodes.add(shortcode);
             if (tag != null) tags.add(tag);
             this.source = source;
@@ -184,8 +226,16 @@ public class EmojiSearch {
             }
         }
 
+        public String getSource() {
+            return source;
+        }
+
+        public void addShortcode(String shortcode) {
+            this.shortcodes.add(shortcode);
+        }
+
         public SpannableStringBuilder toInsert() {
-            SpannableStringBuilder builder = new SpannableStringBuilder(":" + shortcodes.get(0) + ":");
+            SpannableStringBuilder builder = new SpannableStringBuilder(source);
             builder.setSpan(new InlineImageSpan(icon, source), 0, builder.length(), Spannable.SPAN_EXCLUSIVE_EXCLUSIVE);
             return builder;
         }
@@ -205,17 +255,28 @@ public class EmojiSearch {
 
         @Override
         public View getView(int position, View view, ViewGroup parent) {
-            EmojiSearchRowBinding binding = DataBindingUtil.inflate(LayoutInflater.from(parent.getContext()), R.layout.emoji_search_row, parent, false);
-            if (getItem(position) instanceof CustomEmoji) {
-                binding.nonunicode.setText(getItem(position).toInsert());
+            EmojiSearchRowBinding binding;
+            if (view == null) {
+                binding = DataBindingUtil.inflate(LayoutInflater.from(parent.getContext()), R.layout.emoji_search_row, parent, false);
+                binding.getRoot().setTag(binding);
+            } else {
+                binding = (EmojiSearchRowBinding) view.getTag();
+            }
+            Emoji emoji = getItem(position);
+            if (emoji instanceof CustomEmoji) {
+                binding.nonunicode.setText(emoji.toInsert());
                 binding.nonunicode.setVisibility(View.VISIBLE);
                 binding.unicode.setVisibility(View.GONE);
             } else {
-                binding.unicode.setText(getItem(position).toInsert());
+                binding.unicode.setText(emoji.toInsert());
                 binding.unicode.setVisibility(View.VISIBLE);
                 binding.nonunicode.setVisibility(View.GONE);
             }
-            binding.shortcode.setText(getItem(position).shortcodes.get(0));
+            if (emoji != null && !emoji.shortcodes.isEmpty()) {
+                binding.shortcode.setText(emoji.shortcodes.get(0));
+            } else {
+                binding.shortcode.setText("");
+            }
             return binding.getRoot();
         }
 
