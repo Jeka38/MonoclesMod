@@ -106,6 +106,7 @@ import eu.siacs.conversations.entities.Account;
 import eu.siacs.conversations.entities.Contact;
 import eu.siacs.conversations.entities.Conversation;
 import eu.siacs.conversations.entities.Conversational;
+import eu.siacs.conversations.entities.Message;
 import eu.siacs.conversations.entities.MucOptions;
 import eu.siacs.conversations.persistance.FileBackend;
 import eu.siacs.conversations.services.XmppConnectionService;
@@ -741,6 +742,7 @@ public class ConversationsActivity extends XmppActivity implements OnConversatio
         final MenuItem qrCodeScanMenuItem = menu.findItem(R.id.action_scan_qr_code);
         final MenuItem inviteUser = menu.findItem(R.id.action_invite_user);
         final MenuItem markAllChatsAsRead = menu.findItem(R.id.action_mark_all_chats_as_read); // Новый пункт меню
+        final MenuItem unreadMentions = menu.findItem(R.id.action_unread_mentions);
         if (qrCodeScanMenuItem != null) {
             if (isCameraFeatureAvailable()) {
                 Fragment fragment = getFragmentManager().findFragmentById(R.id.main_fragment);
@@ -754,9 +756,11 @@ public class ConversationsActivity extends XmppActivity implements OnConversatio
         if (xmppConnectionServiceBound && xmppConnectionService.getAccounts().size() > 0) {
             inviteUser.setVisible(true);
             markAllChatsAsRead.setVisible(xmppConnectionService.getConversations().stream().anyMatch(c -> c.unreadCount() > 0));
+            unreadMentions.setVisible(xmppConnectionService.getConversations().stream().anyMatch(c -> c.getLatestUnreadMention() != null));
         } else {
             inviteUser.setVisible(false);
             markAllChatsAsRead.setVisible(false);
+            if (unreadMentions != null) unreadMentions.setVisible(false);
         }
 
         return super.onCreateOptionsMenu(menu);
@@ -971,6 +975,24 @@ public class ConversationsActivity extends XmppActivity implements OnConversatio
                 break;
             case R.id.action_mark_all_chats_as_read:
                 markAllChatsAsRead();
+                return true;
+            case R.id.action_unread_mentions:
+                Conversation latestMentionConv = null;
+                Message latestMention = null;
+                for (Conversation c : xmppConnectionService.getConversations()) {
+                    Message m = c.getLatestUnreadMention();
+                    if (m != null) {
+                        if (latestMention == null || m.getTimeSent() > latestMention.getTimeSent()) {
+                            latestMention = m;
+                            latestMentionConv = c;
+                        }
+                    }
+                }
+                if (latestMentionConv != null && latestMention != null) {
+                    Bundle b = new Bundle();
+                    b.putString(EXTRA_MESSAGE_UUID, latestMention.getUuid());
+                    openConversation(latestMentionConv, b);
+                }
                 return true;
         }
         return super.onOptionsItemSelected(item);

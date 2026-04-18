@@ -1949,5 +1949,30 @@ public class Message extends AbstractEntity implements AvatarService.Avatarable 
         return ++resendCount;
     }
 
+    public boolean isMention() {
+        if (this.conversation instanceof Conversation conversation) {
+            if (getStatus() > STATUS_RECEIVED || isRead() || getType() == TYPE_STATUS) {
+                return false;
+            }
+            if (isPrivateMessage()) {
+                return true;
+            }
+            final String body = getBody();
+            if (body == null) {
+                return false;
+            }
+            final String nick = conversation.getMucOptions().getActualNick();
+            if (nick != null && Pattern.compile("(?<=(^|\\s))" + Pattern.quote(nick) + "(?=\\s|$|\\p{Punct})", Pattern.CASE_INSENSITIVE).matcher(body).find()) {
+                return true;
+            }
+            final String name = conversation.getMucOptions().getActualName();
+            if (name != null && Pattern.compile("(?<=(^|\\s))" + Pattern.quote(name) + "(?=\\s|$|\\p{Punct})", Pattern.CASE_INSENSITIVE).matcher(body).find()) {
+                return true;
+            }
+            return isAttention();
+        }
+        return false;
+    }
+
     public static class PlainTextSpan {}
 }

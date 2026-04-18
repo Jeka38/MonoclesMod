@@ -1686,6 +1686,21 @@ public class Conversation extends AbstractEntity implements Blockable, Comparabl
         }
     }
 
+    public Message getLatestUnreadMention() {
+        synchronized (this.messages) {
+            for (int i = this.messages.size() - 1; i >= 0; --i) {
+                final Message message = messages.get(i);
+                if (message.isMention()) {
+                    return message;
+                }
+                if (message.isRead()) {
+                    break;
+                }
+            }
+        }
+        return null;
+    }
+
     public int unreadCount() {
         synchronized (this.messages) {
             int count = 0;

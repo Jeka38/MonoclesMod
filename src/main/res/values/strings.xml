@@ -1510,4 +1510,5 @@
     <string name="schedule_message_title">Schedule message</string>
     <string name="pref_message_autocomplete">Mention autocomplete</string>
     <string name="pref_message_autocomplete_summary">Use \"@\" in a chat room to autocomplete and list users</string>
+    <string name="unread_mentions">Unread mentions</string>
 </resources>
