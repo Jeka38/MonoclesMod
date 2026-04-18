@@ -3740,6 +3740,7 @@ public class ConversationFragment extends XmppFragment
         disableEncrpytionForExceptions();
         binding.messagesView.post(this::fireReadEvent);
         updateChatBG();
+        setupEmojiSearch();
     }
 
     private void disableEncrpytionForExceptions() {
