@@ -6987,7 +6987,7 @@ public class XmppConnectionService extends Service {
                 if (iconDef.exists()) {
                     try (FileInputStream fis = new FileInputStream(iconDef)) {
                         Element root = XmlElementReader.read(fis);
-                        int order = 0;
+                        int order = 1000;
                         for (Element iconElement : root.getChildren()) {
                             if ("icon".equals(iconElement.getName())) {
                                 order++;

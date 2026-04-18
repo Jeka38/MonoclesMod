@@ -1,0 +1,277 @@
+<?xml version='1.0' encoding='UTF-8'?>
+<icondef>
+	<meta>
+		<name>Kolobok/QIP Dark (QIP like format)</name>
+		<version>1.0.1</version>
+		<description>Kolobok/QIP smile iconset for dark background</description>
+		<creation>2008-07-29</creation>
+		<home>http://www.kolobok.us</home>
+		<author email='aiwan@yandex.ru'>Aiwan</author>
+		<author email='nailgun@xcore.net.ru'>Nailgun</author>
+	</meta>
+
+  <icon>
+    <text>O:-)</text>
+    <text>O=)</text>
+    <object mime='image/gif'>aa.gif</object>
+  </icon>
+
+  <icon>
+    <text>:-)</text>
+    <text>:)</text>
+    <text>=)</text>
+    <object mime='image/gif'>ab.gif</object>
+  </icon>
+
+  <icon>
+    <text>:-(</text>
+    <text>:(</text>
+    <text>;(</text>
+    <object mime='image/gif'>ac.gif</object>
+  </icon>
+
+  <icon>
+    <text>;-)</text>
+    <text>;)</text>
+    <object mime='image/gif'>ad.gif</object>
+  </icon>
+
+  <icon>
+    <text>:-P</text>
+    <object mime='image/gif'>ae.gif</object>
+  </icon>
+
+  <icon>
+    <text>8-)</text>
+    <object mime='image/gif'>af.gif</object>
+  </icon>
+
+  <icon>
+    <text>:-D</text>
+    <object mime='image/gif'>ag.gif</object>
+  </icon>
+
+  <icon>
+    <text>:-[</text>
+    <object mime='image/gif'>ah.gif</object>
+  </icon>
+
+  <icon>
+    <text>=-O</text>
+    <object mime='image/gif'>ai.gif</object>
+  </icon>
+
+  <icon>
+    <text>:-*</text>
+    <object mime='image/gif'>aj.gif</object>
+  </icon>
+
+  <icon>
+    <text>:'(</text>
+    <object mime='image/gif'>ak.gif</object>
+  </icon>
+
+  <icon>
+    <text>:-X</text>
+    <text>:-x</text>
+    <object mime='image/gif'>al.gif</object>
+  </icon>
+
+  <icon>
+    <text>&gt;:o</text>
+    <object mime='image/gif'>am.gif</object>
+  </icon>
+
+  <icon>
+    <text>:-|</text>
+    <object mime='image/gif'>an.gif</object>
+  </icon>
+
+  <icon>
+    <text>:-\</text>
+    <text>:-/</text>
+    <object mime='image/gif'>ao.gif</object>
+  </icon>
+
+  <icon>
+    <text>*JOKINGLY*</text>
+    <object mime='image/gif'>ap.gif</object>
+  </icon>
+
+  <icon>
+    <text>]:-&gt;</text>
+    <object mime='image/gif'>aq.gif</object>
+  </icon>
+
+  <icon>
+    <text>[:-}</text>
+    <object mime='image/gif'>ar.gif</object>
+  </icon>
+
+  <icon>
+    <text>*KISSED*</text>
+    <object mime='image/gif'>as.gif</object>
+  </icon>
+
+  <icon>
+    <text>:-!</text>
+    <object mime='image/gif'>at.gif</object>
+  </icon>
+
+  <icon>
+    <text>*TIRED*</text>
+    <object mime='image/gif'>au.gif</object>
+  </icon>
+
+  <icon>
+    <text>*STOP*</text>
+    <object mime='image/gif'>av.gif</object>
+  </icon>
+
+  <icon>
+    <text>*KISSING*</text>
+    <object mime='image/gif'>aw.gif</object>
+  </icon>
+
+  <icon>
+    <text>@}-&gt;--</text>
+    <object mime='image/gif'>ax.gif</object>
+  </icon>
+
+  <icon>
+    <text>*THUMBS UP*</text>
+    <text>(Y)</text>
+    <object mime='image/gif'>ay.gif</object>
+  </icon>
+
+  <icon>
+    <text>*DRINK*</text>
+    <object mime='image/gif'>az.gif</object>
+  </icon>
+
+  <icon>
+    <text>*IN LOVE*</text>
+    <object mime='image/gif'>ba.gif</object>
+  </icon>
+
+  <icon>
+    <text>@=</text>
+    <object mime='image/gif'>bb.gif</object>
+  </icon>
+
+  <icon>
+    <text>*HELP*</text>
+    <object mime='image/gif'>bc.gif</object>
+  </icon>
+
+  <icon>
+    <text>\m/</text>
+    <object mime='image/gif'>bd.gif</object>
+  </icon>
+
+  <icon>
+    <text>%)</text>
+    <object mime='image/gif'>be.gif</object>
+  </icon>
+
+  <icon>
+    <text>*OK*</text>
+    <object mime='image/gif'>bf.gif</object>
+  </icon>
+
+  <icon>
+    <text>*WASSUP*</text>
+    <text>*SUP*</text>
+    <object mime='image/gif'>bg.gif</object>
+  </icon>
+
+  <icon>
+    <text>*SORRY*</text>
+    <object mime='image/gif'>bh.gif</object>
+  </icon>
+
+  <icon>
+    <text>*BRAVO*</text>
+    <object mime='image/gif'>bi.gif</object>
+  </icon>
+
+  <icon>
+    <text>*ROFL*</text>
+    <text>*LOL*</text>
+    <object mime='image/gif'>bj.gif</object>
+  </icon>
+
+  <icon>
+    <text>*PARDON*</text>
+    <object mime='image/gif'>bk.gif</object>
+  </icon>
+
+  <icon>
+    <text>*NO*</text>
+    <text>(N)</text>
+    <object mime='image/gif'>bl.gif</object>
+  </icon>
+
+  <icon>
+    <text>*CRAZY*</text>
+    <object mime='image/gif'>bm.gif</object>
+  </icon>
+
+  <icon>
+    <text>*DONT_KNOW*</text>
+    <text>*UNKNOWN*</text>
+    <object mime='image/gif'>bn.gif</object>
+  </icon>
+
+  <icon>
+    <text>*DANCE*</text>
+    <object mime='image/gif'>bo.gif</object>
+  </icon>
+
+  <icon>
+    <text>*YAHOO*</text>
+    <text>*YAHOO!*</text>
+    <object mime='image/gif'>bp.gif</object>
+  </icon>
+
+  <icon>
+    <text>*HI*</text>
+    <text>*PREVED*</text>
+    <text>*PRIVET*</text>
+    <text>*HELLO*</text>
+    <object mime='image/gif'>bq.gif</object>
+  </icon>
+
+  <icon>
+    <text>*BYE*</text>
+    <object mime='image/gif'>br.gif</object>
+  </icon>
+
+  <icon>
+    <text>*YES*</text>
+    <object mime='image/gif'>bs.gif</object>
+  </icon>
+
+  <icon>
+    <text>;D</text>
+    <text>*ACUTE*</text>
+    <object mime='image/gif'>bt.gif</object>
+  </icon>
+
+  <icon>
+    <text>*WALL*</text>
+    <text>*DASH*</text>
+    <object mime='image/gif'>bu.gif</object>
+  </icon>
+
+  <icon>
+    <text>*WRITE*</text>
+    <text>*MAIL*</text>
+    <object mime='image/gif'>bv.gif</object>
+  </icon>
+
+  <icon>
+    <text>*SCRATCH*</text>
+    <object mime='image/gif'>bw.gif</object>
+  </icon>
+</icondef>

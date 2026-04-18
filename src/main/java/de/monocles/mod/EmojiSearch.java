@@ -5,6 +5,7 @@ import android.content.Context;
 import android.graphics.drawable.Drawable;
 import android.text.Spannable;
 import android.text.SpannableStringBuilder;
+import android.util.Log;
 import android.view.LayoutInflater;
 import android.view.View;
 import android.view.ViewGroup;
@@ -30,12 +31,11 @@ import org.json.JSONArray;
 import org.json.JSONException;
 import org.json.JSONObject;
 
-import java.io.BufferedReader;
 import java.io.InputStream;
-import java.io.InputStreamReader;
-import java.util.stream.Collectors;
 
 import eu.siacs.conversations.R;
+import eu.siacs.conversations.xml.Element;
+import eu.siacs.conversations.xml.XmlElementReader;
 import eu.siacs.conversations.databinding.EmojiSearchRowBinding;
 import eu.siacs.conversations.utils.ReplacingSerialSingleThreadExecutor;
 
@@ -48,17 +48,37 @@ public class EmojiSearch {
     }
 
     private void loadStandardEmojis(Context context) {
-        try (InputStream is = context.getResources().openRawResource(R.raw.emoji);
-             BufferedReader reader = new BufferedReader(new InputStreamReader(is))) {
-            String json = reader.lines().collect(Collectors.joining());
-            JSONArray array = new JSONArray(json);
-            for (int i = 0; i < array.length(); i++) {
-                Emoji e = new Emoji(array.getJSONObject(i));
-                standardEmojis.add(e);
-                addEmoji(e);
+        try (InputStream is = context.getResources().openRawResource(R.raw.smiles_icondef)) {
+            Element root = XmlElementReader.read(is);
+            int order = 0;
+            for (Element iconElement : root.getChildren()) {
+                if ("icon".equals(iconElement.getName())) {
+                    order++;
+                    List<String> texts = new ArrayList<>();
+                    for (Element text : iconElement.getChildren()) {
+                        if ("text".equals(text.getName())) {
+                            texts.add(text.getContent());
+                        }
+                    }
+                    Element object = iconElement.findChild("object");
+                    if (object != null && !texts.isEmpty()) {
+                        String filename = object.getContent();
+                        String resName = filename.contains(".") ? filename.substring(0, filename.lastIndexOf('.')) : filename;
+                        int resId = context.getResources().getIdentifier(resName, "raw", context.getPackageName());
+                        if (resId != 0) {
+                            Drawable icon = context.getResources().getDrawable(resId, null);
+                            CustomEmoji ce = new CustomEmoji(texts.get(0), texts.get(0), icon, "Standard", order);
+                            for (int i = 1; i < texts.size(); i++) {
+                                ce.addShortcode(texts.get(i));
+                            }
+                            standardEmojis.add(ce);
+                            addEmoji(ce);
+                        }
+                    }
+                }
             }
         } catch (Exception e) {
-            // ignore
+            Log.e("EmojiSearch", "Failed to load standard emojis", e);
         }
     }
 
