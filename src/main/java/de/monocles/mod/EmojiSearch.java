@@ -263,7 +263,12 @@ public class EmojiSearch {
 
         public CustomEmoji(final String shortcode, final String source, final Drawable icon, final String tag, int order) {
             super(null, order);
-            shortcodes.add(shortcode);
+            if (shortcode != null) {
+                shortcodes.add(shortcode);
+            }
+            if (source != null && !shortcodes.contains(source)) {
+                shortcodes.add(source);
+            }
             if (tag != null) tags.add(tag);
             this.source = source;
             this.icon = icon;
