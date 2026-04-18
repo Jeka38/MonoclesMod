@@ -172,6 +172,18 @@ public class FileUtils {
         return "com.android.providers.media.documents".equals(uri.getAuthority());
     }
 
+    public static void deleteContents(File directory) {
+        File[] files = directory.listFiles();
+        if (files != null) {
+            for (File file : files) {
+                if (file.isDirectory()) {
+                    deleteContents(file);
+                }
+                file.delete();
+            }
+        }
+    }
+
     public static void createNoMedia(File directory) {
         final File noMedia = new File(directory, ".nomedia");
         if (!noMedia.exists()) {
