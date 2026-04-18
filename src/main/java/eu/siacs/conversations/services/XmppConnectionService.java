@@ -7042,6 +7042,7 @@ public class XmppConnectionService extends Service {
                     }
                 }
                 emojiSearch.replaceAll(emojis);
+                updateConversationUi();
             } catch (final Exception e) {
                 Log.w(Config.LOGTAG, "rescanSmiles: " + e);
             }
