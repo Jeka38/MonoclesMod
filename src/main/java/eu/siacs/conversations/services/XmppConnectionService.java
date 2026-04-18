@@ -5653,6 +5653,22 @@ public class XmppConnectionService extends Service {
         return count;
     }
 
+    public Message getLatestUnreadMention() {
+        Message latestMention = null;
+        for (Conversation conversation : getConversations()) {
+            if (conversation.unreadCount() == 0) {
+                continue;
+            }
+            Message mention = conversation.getLatestUnreadMention(this);
+            if (mention != null) {
+                if (latestMention == null || mention.getTimeSent() > latestMention.getTimeSent()) {
+                    latestMention = mention;
+                }
+            }
+        }
+        return latestMention;
+    }
+
     public void vibrate() {
         try {
             final boolean vibrateInChat = getBooleanPreference("vibrate_in_chat", R.bool.vibrate_in_chat);
@@ -6973,7 +6989,7 @@ public class XmppConnectionService extends Service {
 
         mLastSmilesRescan = SystemClock.elapsedRealtime();
         mSmilesScanExecutor.execute(() -> {
-            Thread.currentThread().setPriority(Thread.MIN_PRIORITY);
+            Thread.currentThread().setPriority(force ? Thread.NORM_PRIORITY : Thread.MIN_PRIORITY);
             try {
                 final File smilesDir = smilesDir();
                 if (!smilesDir.exists()) {

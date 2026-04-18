@@ -192,42 +192,48 @@ public class SettingsActivity extends XmppActivity implements OnSharedPreference
         // Import Smiles from ZIP
         if (requestCode == REQUEST_IMPORT_SMILES) {
             if (resultCode == RESULT_OK && data != null && data.getData() != null) {
-                Uri zipUri = data.getData();
-                try (InputStream is = getContentResolver().openInputStream(zipUri);
-                     java.util.zip.ZipInputStream zis = new java.util.zip.ZipInputStream(is)) {
-                    File smilesFolder = new File(Environment.getExternalStoragePublicDirectory(Environment.DIRECTORY_DOCUMENTS) + File.separator + APP_DIRECTORY + File.separator + FileBackend.SMILES);
-                    if (!smilesFolder.exists()) {
-                        smilesFolder.mkdirs();
-                    }
-                    FileUtils.deleteContents(smilesFolder);
-                    FileUtils.createNoMedia(smilesFolder);
-                    java.util.zip.ZipEntry entry;
-                    while ((entry = zis.getNextEntry()) != null) {
-                        if (entry.isDirectory()) continue;
-                        String name = entry.getName();
-                        if (name.contains("/")) {
-                            name = name.substring(name.lastIndexOf("/") + 1);
+                final Uri zipUri = data.getData();
+                new Thread(() -> {
+                    try (InputStream is = getContentResolver().openInputStream(zipUri);
+                         java.util.zip.ZipInputStream zis = new java.util.zip.ZipInputStream(is)) {
+                        File smilesFolder = new File(Environment.getExternalStoragePublicDirectory(Environment.DIRECTORY_DOCUMENTS) + File.separator + APP_DIRECTORY + File.separator + FileBackend.SMILES);
+                        if (!smilesFolder.exists()) {
+                            smilesFolder.mkdirs();
                         }
-                        if (name.isEmpty()) continue;
-                        File outFile = new File(smilesFolder, name);
-                        try (FileOutputStream fos = new FileOutputStream(outFile)) {
-                            byte[] buffer = new byte[4096];
-                            int len;
-                            while ((len = zis.read(buffer)) > 0) {
-                                fos.write(buffer, 0, len);
+                        FileUtils.deleteContents(smilesFolder);
+                        FileUtils.createNoMedia(smilesFolder);
+                        if (xmppConnectionService != null) {
+                            xmppConnectionService.getDrawableCache().evictAll();
+                            xmppConnectionService.emojiSearch().replaceAll(new ArrayList<>());
+                        }
+                        java.util.zip.ZipEntry entry;
+                        while ((entry = zis.getNextEntry()) != null) {
+                            if (entry.isDirectory()) continue;
+                            String name = entry.getName();
+                            if (name.contains("/")) {
+                                name = name.substring(name.lastIndexOf("/") + 1);
                             }
+                            if (name.isEmpty()) continue;
+                            File outFile = new File(smilesFolder, name);
+                            try (FileOutputStream fos = new FileOutputStream(outFile)) {
+                                byte[] buffer = new byte[4096];
+                                int len;
+                                while ((len = zis.read(buffer)) > 0) {
+                                    fos.write(buffer, 0, len);
+                                }
+                            }
+                            zis.closeEntry();
                         }
-                        zis.closeEntry();
+                        if (xmppConnectionService != null) {
+                            xmppConnectionService.getDrawableCache().evictAll();
+                            xmppConnectionService.rescanSmiles(true);
+                        }
+                        runOnUiThread(() -> Toast.makeText(this, R.string.smiles_imported, Toast.LENGTH_LONG).show());
+                    } catch (IOException e) {
+                        runOnUiThread(() -> Toast.makeText(this, "Failed to import smiles", Toast.LENGTH_LONG).show());
+                        Log.e(Config.LOGTAG, "Failed to import smiles", e);
                     }
-                    Toast.makeText(this, R.string.smiles_imported, Toast.LENGTH_LONG).show();
-                    if (xmppConnectionService != null) {
-                        xmppConnectionService.getDrawableCache().evictAll();
-                        xmppConnectionService.rescanSmiles(true);
-                    }
-                } catch (IOException e) {
-                    Toast.makeText(this, "Failed to import smiles", Toast.LENGTH_LONG).show();
-                    Log.e(Config.LOGTAG, "Failed to import smiles", e);
-                }
+                }).start();
             }
         }
 
