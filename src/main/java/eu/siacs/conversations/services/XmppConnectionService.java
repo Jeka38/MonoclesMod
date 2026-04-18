@@ -6987,7 +6987,7 @@ public class XmppConnectionService extends Service {
                 if (iconDef.exists()) {
                     try (FileInputStream fis = new FileInputStream(iconDef)) {
                         Element root = XmlElementReader.read(fis);
-                        int order = 0;
+                        int order = 1000;
                         for (Element iconElement : root.getChildren()) {
                             if ("icon".equals(iconElement.getName())) {
                                 order++;
@@ -7033,7 +7033,7 @@ public class XmppConnectionService extends Service {
                                 saveCid(cid, file);
                             }
                             if (file.length() < 1024 * 1024) { // 1MB limit for smiles
-                                emojis.add(new EmojiSearch.CustomEmoji(filename, "*" + filename + "*", icon, "Smiles"));
+                                emojis.add(new EmojiSearch.CustomEmoji(filename, "*" + filename + "*", icon, "Smiles", 9999));
                                 filenamesInList.add(file.getName());
                             }
                         }
@@ -7042,6 +7042,7 @@ public class XmppConnectionService extends Service {
                     }
                 }
                 emojiSearch.replaceAll(emojis);
+                updateConversationUi();
             } catch (final Exception e) {
                 Log.w(Config.LOGTAG, "rescanSmiles: " + e);
             }

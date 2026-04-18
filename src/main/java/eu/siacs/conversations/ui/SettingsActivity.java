@@ -40,6 +40,7 @@ import androidx.core.content.ContextCompat;
 import androidx.exifinterface.media.ExifInterface;
 
 import eu.siacs.conversations.utils.CameraUtils;
+import eu.siacs.conversations.utils.FileUtils;
 
 import java.io.Closeable;
 import java.io.File;
@@ -198,6 +199,8 @@ public class SettingsActivity extends XmppActivity implements OnSharedPreference
                     if (!smilesFolder.exists()) {
                         smilesFolder.mkdirs();
                     }
+                    FileUtils.deleteContents(smilesFolder);
+                    FileUtils.createNoMedia(smilesFolder);
                     java.util.zip.ZipEntry entry;
                     while ((entry = zis.getNextEntry()) != null) {
                         if (entry.isDirectory()) continue;
@@ -218,6 +221,7 @@ public class SettingsActivity extends XmppActivity implements OnSharedPreference
                     }
                     Toast.makeText(this, R.string.smiles_imported, Toast.LENGTH_LONG).show();
                     if (xmppConnectionService != null) {
+                        xmppConnectionService.getDrawableCache().evictAll();
                         xmppConnectionService.rescanSmiles(true);
                     }
                 } catch (IOException e) {
