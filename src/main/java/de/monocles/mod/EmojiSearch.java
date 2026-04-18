@@ -30,14 +30,36 @@ import org.json.JSONArray;
 import org.json.JSONException;
 import org.json.JSONObject;
 
+import java.io.BufferedReader;
+import java.io.InputStream;
+import java.io.InputStreamReader;
+import java.util.stream.Collectors;
+
 import eu.siacs.conversations.R;
 import eu.siacs.conversations.databinding.EmojiSearchRowBinding;
 import eu.siacs.conversations.utils.ReplacingSerialSingleThreadExecutor;
 
 public class EmojiSearch {
     protected final Set<Emoji> emoji = new TreeSet<>();
+    private final List<Emoji> standardEmojis = new ArrayList<>();
 
     public EmojiSearch(Context context) {
+        loadStandardEmojis(context);
+    }
+
+    private void loadStandardEmojis(Context context) {
+        try (InputStream is = context.getResources().openRawResource(R.raw.emoji);
+             BufferedReader reader = new BufferedReader(new InputStreamReader(is))) {
+            String json = reader.lines().collect(Collectors.joining());
+            JSONArray array = new JSONArray(json);
+            for (int i = 0; i < array.length(); i++) {
+                Emoji e = new Emoji(array.getJSONObject(i));
+                standardEmojis.add(e);
+                addEmoji(e);
+            }
+        } catch (Exception e) {
+            // ignore
+        }
     }
 
     private Pattern cachedPattern = null;
@@ -68,6 +90,7 @@ public class EmojiSearch {
 
     public synchronized void replaceAll(List<Emoji> newEmojis) {
         emoji.clear();
+        emoji.addAll(standardEmojis);
         emoji.addAll(newEmojis);
         cachedPattern = null;
     }
@@ -153,7 +176,7 @@ public class EmojiSearch {
 
         public Emoji(JSONObject o) throws JSONException {
             unicode = o.getString("unicode");
-            order = o.getInt("order");
+            order = o.getInt("order") + 10000;
             final JSONArray rawTags = o.getJSONArray("tags");
             for (int i = 0; i < rawTags.length(); i++) {
                 tags.add(rawTags.getString(i));
