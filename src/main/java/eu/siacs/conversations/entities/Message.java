@@ -67,6 +67,7 @@ import eu.siacs.conversations.utils.Patterns;
 import eu.siacs.conversations.utils.UIHelper;
 import eu.siacs.conversations.utils.XmppUri;
 import eu.siacs.conversations.xml.Namespace;
+import eu.siacs.conversations.services.NotificationService;
 import eu.siacs.conversations.services.XmppConnectionService;
 import eu.siacs.conversations.xmpp.Jid;
 import io.ipfs.cid.Cid;
@@ -172,6 +173,7 @@ public class Message extends AbstractEntity implements AvatarService.Avatarable 
     private String WebUri = null;
     private Boolean isEmojisOnly = null;
     private Boolean treatAsDownloadable = null;
+    private Boolean isMention = null;
     private FileParams fileParams = null;
     private List<MucOptions.User> counterparts;
     private WeakReference<MucOptions.User> user;
@@ -667,6 +669,51 @@ public class Message extends AbstractEntity implements AvatarService.Avatarable 
             }
         }
 
+        return false;
+    }
+
+    public boolean isMention(XmppConnectionService service) {
+        if (isRead() || getStatus() != STATUS_RECEIVED || getType() == TYPE_STATUS) {
+            return false;
+        }
+        if (isMention != null) {
+            return isMention;
+        }
+        if (conversation.getMode() == Conversational.MODE_SINGLE) {
+            this.isMention = true;
+            return true;
+        }
+        if (conversation instanceof Conversation) {
+            final Conversation conversation = (Conversation) this.conversation;
+            final boolean muted = service != null && service.isMucUserMuted(new MucOptions.User(null, conversation.getJid(), getOccupantId(), null, null));
+            if (muted) {
+                this.isMention = false;
+                return false;
+            }
+            if (isAttention()) {
+                this.isMention = true;
+                return true;
+            }
+            if (isPrivateMessage()) {
+                this.isMention = true;
+                return true;
+            }
+            final String nick = conversation.getMucOptions().getActualNick();
+            final String name = conversation.getMucOptions().getActualName();
+            if (getBody() == null) {
+                this.isMention = false;
+                return false;
+            }
+            if (nick != null && NotificationService.generateNickHighlightPattern(nick).matcher(getBody()).find()) {
+                this.isMention = true;
+                return true;
+            }
+            if (name != null && NotificationService.generateNickHighlightPattern(name).matcher(getBody()).find()) {
+                this.isMention = true;
+                return true;
+            }
+        }
+        this.isMention = false;
         return false;
     }
 

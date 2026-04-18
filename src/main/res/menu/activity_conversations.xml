@@ -2,6 +2,12 @@
     xmlns:app="http://schemas.android.com/apk/res-auto">
 
     <item
+        android:id="@+id/action_latest_mention"
+        android:icon="?attr/icon_notifications"
+        android:orderInCategory="10"
+        android:title="@string/unread_mentions"
+        app:showAsAction="always" />
+    <item
         android:icon="?attr/icon_search"
         android:orderInCategory="11"
         android:title="@string/search_messages"

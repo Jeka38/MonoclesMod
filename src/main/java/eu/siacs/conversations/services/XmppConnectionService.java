@@ -5653,6 +5653,22 @@ public class XmppConnectionService extends Service {
         return count;
     }
 
+    public Message getLatestUnreadMention() {
+        Message latestMention = null;
+        for (Conversation conversation : getConversations()) {
+            if (conversation.unreadCount() == 0) {
+                continue;
+            }
+            Message mention = conversation.getLatestUnreadMention(this);
+            if (mention != null) {
+                if (latestMention == null || mention.getTimeSent() > latestMention.getTimeSent()) {
+                    latestMention = mention;
+                }
+            }
+        }
+        return latestMention;
+    }
+
     public void vibrate() {
         try {
             final boolean vibrateInChat = getBooleanPreference("vibrate_in_chat", R.bool.vibrate_in_chat);

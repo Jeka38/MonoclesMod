@@ -1706,6 +1706,21 @@ public class Conversation extends AbstractEntity implements Blockable, Comparabl
         }
     }
 
+    public Message getLatestUnreadMention(XmppConnectionService service) {
+        synchronized (this.messages) {
+            for (int i = this.messages.size() - 1; i >= 0; --i) {
+                final Message message = messages.get(i);
+                if (message.isRead()) {
+                    break;
+                }
+                if (message.isMention(service)) {
+                    return message;
+                }
+            }
+        }
+        return null;
+    }
+
     public int failedCount() {
         synchronized (this.messages) {
             int count = 0;
