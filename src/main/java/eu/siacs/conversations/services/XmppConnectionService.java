@@ -6989,7 +6989,7 @@ public class XmppConnectionService extends Service {
 
         mLastSmilesRescan = SystemClock.elapsedRealtime();
         mSmilesScanExecutor.execute(() -> {
-            Thread.currentThread().setPriority(Thread.MIN_PRIORITY);
+            Thread.currentThread().setPriority(force ? Thread.NORM_PRIORITY : Thread.MIN_PRIORITY);
             try {
                 final File smilesDir = smilesDir();
                 if (!smilesDir.exists()) {
