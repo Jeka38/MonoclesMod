@@ -261,7 +261,11 @@ public class SettingsActivity extends XmppActivity implements OnSharedPreference
                             }
                             if (name.isEmpty()) continue;
                             String lowerName = name.toLowerCase();
-                            if (!(lowerName.endsWith(".png") || lowerName.endsWith(".webp") || lowerName.endsWith(".jpg") || lowerName.endsWith(".jpeg"))) {
+                            if (!(lowerName.endsWith(".png")
+                                    || lowerName.endsWith(".webp")
+                                    || lowerName.endsWith(".jpg")
+                                    || lowerName.endsWith(".jpeg")
+                                    || lowerName.endsWith(".xml"))) {
                                 continue;
                             }
                             File outFile = new File(iconsFolder, name);

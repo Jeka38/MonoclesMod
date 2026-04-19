@@ -7,14 +7,23 @@ import android.util.Pair;
 import android.widget.ImageView;
 
 import java.io.File;
+import java.io.FileInputStream;
+import java.io.InputStream;
 import java.util.ArrayList;
+import java.util.HashSet;
+import java.util.List;
 import java.util.Locale;
 import java.util.Map;
+import java.util.Set;
 
 import eu.siacs.conversations.R;
 import eu.siacs.conversations.entities.Contact;
 import eu.siacs.conversations.entities.MucOptions;
+import eu.siacs.conversations.entities.Presence;
+import eu.siacs.conversations.entities.ServiceDiscoveryResult;
 import eu.siacs.conversations.xmpp.Jid;
+import org.xmlpull.v1.XmlPullParser;
+import org.xmlpull.v1.XmlPullParserFactory;
 
 public final class ClientIconUtils {
     public static final String CLIENT_ICONS_DIRECTORY = "client_icons";
@@ -27,8 +36,7 @@ public final class ClientIconUtils {
             return false;
         }
         final Pair<Map<String, String>, Map<String, String>> typeAndName = contact.getPresences().toTypeAndNameMap();
-        final String selectedName = getClientNameForResource(typeAndName, contact.getLastResource());
-        if (applyCustomIcon(imageView, selectedName)) {
+        if (applyCustomIcon(imageView, contact, contact.getLastResource())) {
             return true;
         }
         final Integer iconRes = getIconForResource(typeAndName, contact.getLastResource());
@@ -53,8 +61,7 @@ public final class ClientIconUtils {
         if (fullJid != null && !TextUtils.isEmpty(fullJid.getResource())) {
             resource = fullJid.getResource();
         }
-        final String selectedName = getClientNameForResource(typeAndName, resource);
-        if (applyCustomIcon(imageView, selectedName)) {
+        if (applyCustomIcon(imageView, contact, resource)) {
             return true;
         }
         final Integer iconRes = getIconForResource(typeAndName, resource);
@@ -120,17 +127,6 @@ public final class ClientIconUtils {
         return null;
     }
 
-    private static String getClientNameForResource(final Pair<Map<String, String>, Map<String, String>> typeAndName, final String resource) {
-        final Map<String, String> names = typeAndName.second;
-        if (names.isEmpty()) {
-            return null;
-        }
-        if (!TextUtils.isEmpty(resource) && names.containsKey(resource)) {
-            return names.get(resource);
-        }
-        return names.values().iterator().next();
-    }
-
     private static Integer getIconRes(final String rawType, final String rawName) {
         if (TextUtils.isEmpty(rawType)) {
             return inferIconByClientName(rawName);
@@ -169,15 +165,23 @@ public final class ClientIconUtils {
         return null;
     }
 
-    private static boolean applyCustomIcon(final ImageView imageView, final String clientName) {
-        if (TextUtils.isEmpty(clientName)) {
-            return false;
-        }
+    private static boolean applyCustomIcon(final ImageView imageView, final Contact contact, final String resource) {
         final File iconsDir = new File(imageView.getContext().getFilesDir(), CLIENT_ICONS_DIRECTORY);
         if (!iconsDir.isDirectory()) {
             return false;
         }
-        final File match = findBestIconFile(iconsDir, normalize(clientName));
+        final File iconDefFile = findIconDefFile(iconsDir);
+        final Set<String> candidates = buildXep0115Candidates(contact, resource);
+        File match = null;
+        if (iconDefFile != null && !candidates.isEmpty()) {
+            match = findByIconDef(iconsDir, iconDefFile, candidates);
+        }
+        if (match == null) {
+            final String clientName = inferClientName(contact, resource);
+            if (!TextUtils.isEmpty(clientName)) {
+                match = findBestIconFile(iconsDir, normalize(clientName));
+            }
+        }
         if (match == null) {
             return false;
         }
@@ -187,6 +191,159 @@ public final class ClientIconUtils {
         }
         imageView.setImageBitmap(bitmap);
         return true;
+    }
+
+    private static String inferClientName(final Contact contact, final String resource) {
+        final Pair<Map<String, String>, Map<String, String>> typeAndName = contact.getPresences().toTypeAndNameMap();
+        final Map<String, String> names = typeAndName.second;
+        if (names.isEmpty()) {
+            return null;
+        }
+        if (!TextUtils.isEmpty(resource) && names.containsKey(resource)) {
+            return names.get(resource);
+        }
+        return names.values().iterator().next();
+    }
+
+    private static Set<String> buildXep0115Candidates(final Contact contact, final String resource) {
+        final Set<String> candidates = new HashSet<>();
+        final Presence primary = getPresence(contact, resource);
+        if (primary != null) {
+            addCandidate(candidates, primary.getNode());
+            addCandidate(candidates, primary.getVer());
+            addCandidate(candidates, primary.getHash());
+            final ServiceDiscoveryResult disco = primary.getServiceDiscoveryResult();
+            if (disco != null && !disco.getIdentities().isEmpty()) {
+                final ServiceDiscoveryResult.Identity identity = disco.getIdentities().get(0);
+                addCandidate(candidates, identity.getName());
+                addCandidate(candidates, identity.getType());
+                addCandidate(candidates, identity.getCategory());
+            }
+        }
+        addCandidate(candidates, resource);
+        final String fallbackName = inferClientName(contact, resource);
+        addCandidate(candidates, fallbackName);
+        return candidates;
+    }
+
+    private static Presence getPresence(final Contact contact, final String resource) {
+        if (!TextUtils.isEmpty(resource)) {
+            final Presence direct = contact.getPresences().get(resource);
+            if (direct != null) {
+                return direct;
+            }
+        }
+        for (Map.Entry<String, Presence> entry : contact.getPresences().getPresencesMap().entrySet()) {
+            if (entry.getValue() != null) {
+                return entry.getValue();
+            }
+        }
+        return null;
+    }
+
+    private static void addCandidate(final Set<String> candidates, final String value) {
+        if (!TextUtils.isEmpty(value)) {
+            candidates.add(normalize(value));
+        }
+    }
+
+    private static File findByIconDef(final File iconsDir, final File iconDefFile, final Set<String> candidates) {
+        final List<IconDefEntry> entries = parseIconDef(iconDefFile);
+        for (IconDefEntry entry : entries) {
+            for (String matcher : entry.matchers) {
+                for (String candidate : candidates) {
+                    if (candidate.contains(matcher) || matcher.contains(candidate)) {
+                        final File resolved = resolveIconFile(iconsDir, entry.fileName);
+                        if (resolved != null) {
+                            return resolved;
+                        }
+                    }
+                }
+            }
+        }
+        return null;
+    }
+
+    private static File resolveIconFile(final File iconsDir, final String fileName) {
+        if (TextUtils.isEmpty(fileName)) {
+            return null;
+        }
+        final File direct = new File(iconsDir, fileName);
+        if (direct.isFile()) {
+            return direct;
+        }
+        final String justName = fileName.contains("/") ? fileName.substring(fileName.lastIndexOf('/') + 1) : fileName;
+        final File fallback = new File(iconsDir, justName);
+        return fallback.isFile() ? fallback : null;
+    }
+
+    private static File findIconDefFile(final File iconsDir) {
+        final File direct = new File(iconsDir, "icondef.xml");
+        if (direct.isFile()) {
+            return direct;
+        }
+        final File[] files = iconsDir.listFiles();
+        if (files == null) {
+            return null;
+        }
+        for (File file : files) {
+            if (file.isFile() && file.getName().toLowerCase(Locale.ROOT).endsWith(".xml")) {
+                return file;
+            }
+        }
+        return null;
+    }
+
+    private static List<IconDefEntry> parseIconDef(final File iconDefFile) {
+        final ArrayList<IconDefEntry> entries = new ArrayList<>();
+        try (InputStream inputStream = new FileInputStream(iconDefFile)) {
+            final XmlPullParserFactory factory = XmlPullParserFactory.newInstance();
+            final XmlPullParser parser = factory.newPullParser();
+            parser.setInput(inputStream, "UTF-8");
+            IconDefEntry current = null;
+            String currentTag = null;
+            int event = parser.getEventType();
+            while (event != XmlPullParser.END_DOCUMENT) {
+                if (event == XmlPullParser.START_TAG) {
+                    final String tag = parser.getName();
+                    if ("icon".equalsIgnoreCase(tag)) {
+                        current = new IconDefEntry();
+                    } else if (current != null) {
+                        currentTag = tag.toLowerCase(Locale.ROOT);
+                    }
+                } else if (event == XmlPullParser.TEXT) {
+                    if (current != null && currentTag != null) {
+                        final String text = parser.getText();
+                        if ("object".equals(currentTag)) {
+                            current.fileName = text == null ? null : text.trim();
+                        } else {
+                            final String normalized = normalize(text);
+                            if (!TextUtils.isEmpty(normalized)) {
+                                current.matchers.add(normalized);
+                            }
+                        }
+                    }
+                } else if (event == XmlPullParser.END_TAG) {
+                    final String tag = parser.getName();
+                    if ("icon".equalsIgnoreCase(tag) && current != null) {
+                        if (!TextUtils.isEmpty(current.fileName) && !current.matchers.isEmpty()) {
+                            entries.add(current);
+                        }
+                        current = null;
+                    }
+                    currentTag = null;
+                }
+                event = parser.next();
+            }
+        } catch (Exception ignore) {
+            // fallback to generic name matching
+        }
+        return entries;
+    }
+
+    private static class IconDefEntry {
+        String fileName;
+        final Set<String> matchers = new HashSet<>();
     }
 
     private static File findBestIconFile(final File dir, final String normalizedClientName) {
