@@ -265,6 +265,7 @@ public class ConversationFragment extends XmppFragment
     private CountDownLatch outputFileWrittenLatch = new CountDownLatch(1);
 
     private final Handler mHandler = new Handler();
+    private final Handler mEmojiSearchHandler = new Handler(Looper.getMainLooper());
     private final Runnable mTickExecutor = new Runnable() {
         @Override
         public void run() {
@@ -776,6 +777,7 @@ public class ConversationFragment extends XmppFragment
                 });
 
                 updateMediaPickerTabs();
+                setupEmojiSearch();
             }
         }
     };
@@ -789,6 +791,7 @@ public class ConversationFragment extends XmppFragment
             backPressedLeaveEmojiPicker.setEnabled(true);
             binding.textinput.requestFocus();
             updateMediaPickerTabs();
+            setupEmojiSearch();
         }
     };
 
@@ -2110,13 +2113,12 @@ public class ConversationFragment extends XmppFragment
         if (emojiSearch == null && activity != null && activity.xmppConnectionService != null) {
             emojiSearch = activity.xmppConnectionService.emojiSearch();
         }
-        if (emojiSearch == null || binding.smilesview == null) return;
+        if (emojiSearch == null || binding == null || binding.smilesview == null || binding.smilesview.getVisibility() != VISIBLE) return;
 
         final Pattern lastColonPattern = Pattern.compile("");
         Editable s = binding.textinput.getText();
-        Handler emojiDebounce = new Handler(Looper.getMainLooper());
-        emojiDebounce.removeCallbacksAndMessages(null);
-        emojiDebounce.postDelayed(() -> {
+        mEmojiSearchHandler.removeCallbacksAndMessages(null);
+        mEmojiSearchHandler.postDelayed(() -> {
             Matcher lastColonMatcher = lastColonPattern.matcher(s);
             int lastColon = 0;
             while (lastColonMatcher.find()) lastColon = lastColonMatcher.end();
@@ -4942,6 +4944,7 @@ public class ConversationFragment extends XmppFragment
                 }
                 this.messageListAdapter.notifyDataSetChanged();
                 updateChatMsgHint();
+                setupEmojiSearch();
                 if (notifyConversationRead && activity != null) {
                     binding.messagesView.post(this::fireReadEvent);
                 }

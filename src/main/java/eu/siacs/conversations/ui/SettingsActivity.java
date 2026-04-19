@@ -205,6 +205,7 @@ public class SettingsActivity extends XmppActivity implements OnSharedPreference
                         if (xmppConnectionService != null) {
                             xmppConnectionService.getDrawableCache().evictAll();
                             xmppConnectionService.emojiSearch().replaceAll(new ArrayList<>());
+                            xmppConnectionService.updateConversationUi();
                         }
                         java.util.zip.ZipEntry entry;
                         while ((entry = zis.getNextEntry()) != null) {
