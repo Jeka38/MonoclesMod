@@ -155,11 +155,10 @@ public class UserAdapter extends ListAdapter<MucOptions.User, UserAdapter.ViewHo
         }
         final SharedPreferences preferences = PreferenceManager.getDefaultSharedPreferences(viewHolder.binding.getRoot().getContext());
         final boolean showClientIcons = preferences.getBoolean(SettingsActivity.SHOW_CLIENT_ICONS, viewHolder.binding.getRoot().getResources().getBoolean(R.bool.show_client_icons));
-        final Integer iconRes = showClientIcons ? ClientIconUtils.getMucUserClientIconRes(user) : null;
-        if (iconRes == null) {
+        final boolean applied = showClientIcons && ClientIconUtils.applyMucUserClientIcon(viewHolder.binding.clientIcon, user);
+        if (!applied) {
             viewHolder.binding.clientIcon.setVisibility(View.GONE);
         } else {
-            viewHolder.binding.clientIcon.setImageResource(iconRes);
             viewHolder.binding.clientIcon.setVisibility(View.VISIBLE);
         }
     }

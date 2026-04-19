@@ -425,6 +425,10 @@
             android:summary="@string/import_own_smiles_summary"
             android:key="import_own_smiles" />
         <Preference
+            android:title="@string/import_client_icons"
+            android:summary="@string/import_client_icons_summary"
+            android:key="import_client_icons" />
+        <Preference
             android:title="@string/clear_blocked_media"
             android:key="clear_blocked_media" />
         <SwitchPreference

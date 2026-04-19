@@ -1590,6 +1590,11 @@
     <string name="import_own_gifs_summary">Импортируйте свои собственные GIF-файлы. Они будут отсортированы по имени файла.</string>
     <string name="import_own_smiles">Импортировать Смайлы</string>
     <string name="import_own_smiles_summary">Импортировать смайлы из ZIP архива</string>
+    <string name="import_client_icons">Импорт иконок клиентов</string>
+    <string name="import_client_icons_summary">Импортировать набор иконок клиентов из ZIP (например full-clients22.zip)</string>
+    <string name="select_client_icons_zip">Выберите ZIP архив с иконками клиентов</string>
+    <string name="client_icons_import_done">Иконки клиентов импортированы</string>
+    <string name="client_icons_import_failed">Не удалось импортировать иконки клиентов</string>
     <string name="failed_to_delete_gif">Не удалось удалить GIF</string>
     <string name="pref_accept_invites_from_strangers">Приглашения от незнакомцев</string>
     <string name="pref_accept_invites_from_strangers_summary">Принимайте приглашения в групповые чаты от незнакомцев</string>

@@ -158,11 +158,10 @@ public class ListItemAdapter extends ArrayAdapter<ListItem> {
             viewHolder.clientIcon.setVisibility(View.GONE);
             return;
         }
-        final Integer iconRes = ClientIconUtils.getRosterClientIconRes((Contact) item);
-        if (iconRes == null) {
+        final boolean applied = ClientIconUtils.applyRosterClientIcon(viewHolder.clientIcon, (Contact) item);
+        if (!applied) {
             viewHolder.clientIcon.setVisibility(View.GONE);
         } else {
-            viewHolder.clientIcon.setImageResource(iconRes);
             viewHolder.clientIcon.setVisibility(View.VISIBLE);
         }
     }

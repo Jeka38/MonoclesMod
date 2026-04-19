@@ -72,6 +72,7 @@ import eu.siacs.conversations.persistance.FileBackend;
 import eu.siacs.conversations.services.ExportBackupService;
 import eu.siacs.conversations.services.MemorizingTrustManager;
 import eu.siacs.conversations.ui.util.StyledAttributes;
+import eu.siacs.conversations.ui.util.ClientIconUtils;
 import eu.siacs.conversations.utils.ChatBackgroundHelper;
 import eu.siacs.conversations.utils.Compatibility;
 import eu.siacs.conversations.utils.ThemeHelper;
@@ -138,6 +139,7 @@ public class SettingsActivity extends XmppActivity implements OnSharedPreference
     public static final int REQUEST_IMPORT_SETTINGS = 0xbf8703;
     public static final int REQUEST_IMPORT_GIFS = 0xbf8706;
     public static final int REQUEST_IMPORT_SMILES = 0xbf8707;
+    public static final int REQUEST_IMPORT_CLIENT_ICONS = 0xbf8708;
 
     Preference multiAccountPreference;
     Preference autoMessageExpiryPreference;
@@ -237,6 +239,54 @@ public class SettingsActivity extends XmppActivity implements OnSharedPreference
                     }
                 }).start();
             }
+        }
+
+        if (requestCode == REQUEST_IMPORT_CLIENT_ICONS) {
+            if (resultCode == RESULT_OK && data != null && data.getData() != null) {
+                final Uri zipUri = data.getData();
+                new Thread(() -> {
+                    try (InputStream is = getContentResolver().openInputStream(zipUri);
+                         java.util.zip.ZipInputStream zis = new java.util.zip.ZipInputStream(is)) {
+                        final File iconsFolder = new File(getFilesDir(), ClientIconUtils.CLIENT_ICONS_DIRECTORY);
+                        if (!iconsFolder.exists()) {
+                            iconsFolder.mkdirs();
+                        }
+                        FileUtils.deleteContents(iconsFolder);
+                        java.util.zip.ZipEntry entry;
+                        while ((entry = zis.getNextEntry()) != null) {
+                            if (entry.isDirectory()) continue;
+                            String name = entry.getName();
+                            if (name.contains("/")) {
+                                name = name.substring(name.lastIndexOf("/") + 1);
+                            }
+                            if (name.isEmpty()) continue;
+                            String lowerName = name.toLowerCase();
+                            if (!(lowerName.endsWith(".png") || lowerName.endsWith(".webp") || lowerName.endsWith(".jpg") || lowerName.endsWith(".jpeg"))) {
+                                continue;
+                            }
+                            File outFile = new File(iconsFolder, name);
+                            try (FileOutputStream fos = new FileOutputStream(outFile)) {
+                                byte[] buffer = new byte[4096];
+                                int read;
+                                while ((read = zis.read(buffer)) > 0) {
+                                    fos.write(buffer, 0, read);
+                                }
+                            }
+                            zis.closeEntry();
+                        }
+                        runOnUiThread(() -> {
+                            Toast.makeText(this, R.string.client_icons_import_done, Toast.LENGTH_LONG).show();
+                            if (xmppConnectionService != null) {
+                                xmppConnectionService.updateConversationUi();
+                            }
+                        });
+                    } catch (Exception e) {
+                        runOnUiThread(() -> Toast.makeText(this, R.string.client_icons_import_failed, Toast.LENGTH_LONG).show());
+                        Log.e(Config.LOGTAG, "Failed to import client icons", e);
+                    }
+                }).start();
+            }
+            return;
         }
 
         // Import GIFs
@@ -918,6 +968,18 @@ public class SettingsActivity extends XmppActivity implements OnSharedPreference
             );
         }
 
+        final Preference importClientIcons = mSettingsFragment.findPreference("import_client_icons");
+        if (importClientIcons != null) {
+            importClientIcons.setOnPreferenceClickListener(
+                    preference -> {
+                        if (hasStoragePermission(REQUEST_IMPORT_CLIENT_ICONS)) {
+                            importClientIcons();
+                        }
+                        return true;
+                    }
+            );
+        }
+
 
         final Preference importOwnGifs = mSettingsFragment.findPreference("import_own_gifs");
         if (importOwnGifs != null) {
@@ -960,6 +1022,12 @@ public class SettingsActivity extends XmppActivity implements OnSharedPreference
         Intent intent = new Intent(Intent.ACTION_GET_CONTENT);
         intent.setType("application/zip");
         startActivityForResult(Intent.createChooser(intent, "Select ZIP archive"), REQUEST_IMPORT_SMILES);
+    }
+
+    private void importClientIcons() {
+        Intent intent = new Intent(Intent.ACTION_GET_CONTENT);
+        intent.setType("application/zip");
+        startActivityForResult(Intent.createChooser(intent, getString(R.string.select_client_icons_zip)), REQUEST_IMPORT_CLIENT_ICONS);
     }
 
     private void updateTheme() {
