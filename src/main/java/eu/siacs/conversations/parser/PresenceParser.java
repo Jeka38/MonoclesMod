@@ -83,6 +83,10 @@ public class PresenceParser extends AbstractParser implements
                     if (item != null && !from.isBareJid()) {
                         mucOptions.setError(MucOptions.Error.NONE);
                         MucOptions.User user = parseItem(conversation, item, from, occupantId, nick == null ? null : nick.getContent(), hats);
+                        final Element caps = packet.findChild("c", "http://jabber.org/protocol/caps");
+                        final String show = packet.findChildContent("show");
+                        final String presenceStatus = packet.findChildContent("status");
+                        user.setPresence(Presence.parse(show, caps, presenceStatus));
                         final String itemNick = item.getAttribute("nick");
                         if (itemNick != null) {
                             user.setNick(itemNick);

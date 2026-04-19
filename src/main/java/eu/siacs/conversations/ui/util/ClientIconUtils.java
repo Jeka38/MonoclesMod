@@ -56,6 +56,11 @@ public final class ClientIconUtils {
         if (user == null) {
             return false;
         }
+        final Integer occupantIcon = inferIconFromMucPresence(user);
+        if (occupantIcon != null) {
+            imageView.setImageResource(occupantIcon);
+            return true;
+        }
         Contact contact = user.getContact();
         if (contact == null && user.getRealJid() != null) {
             contact = user.getAccount().getRoster().getContact(user.getRealJid());
@@ -83,6 +88,10 @@ public final class ClientIconUtils {
     public static Integer getMucUserClientIconRes(final MucOptions.User user) {
         if (user == null) {
             return null;
+        }
+        final Integer occupantIcon = inferIconFromMucPresence(user);
+        if (occupantIcon != null) {
+            return occupantIcon;
         }
         Contact contact = user.getContact();
         if (contact == null && user.getRealJid() != null) {
@@ -455,6 +464,18 @@ public final class ClientIconUtils {
 
     private static Integer inferIconFromPresence(final Contact contact, final String resource) {
         final Presence presence = getPresence(contact, resource);
+        if (presence == null) {
+            return null;
+        }
+        final Integer nodeIcon = inferIconByClientName(presence.getNode());
+        if (nodeIcon != null) {
+            return nodeIcon;
+        }
+        return inferIconByClientName(presence.getVer());
+    }
+
+    private static Integer inferIconFromMucPresence(final MucOptions.User user) {
+        final Presence presence = user.getPresence();
         if (presence == null) {
             return null;
         }
