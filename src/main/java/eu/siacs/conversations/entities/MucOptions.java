@@ -885,6 +885,7 @@ public class MucOptions {
         protected Set<Hat> hats;
         protected String occupantId;
         protected boolean online = true;
+        protected Presence presence;
 
         public User(MucOptions options, Jid fullJid, final String occupantId, final String nick, final Set<Hat> hats) {
             this.options = options;
@@ -1106,6 +1107,14 @@ public class MucOptions {
 
         public boolean isOnline() {
             return fullJid != null && online;
+        }
+
+        public Presence getPresence() {
+            return presence;
+        }
+
+        public void setPresence(final Presence presence) {
+            this.presence = presence;
         }
     }
 }

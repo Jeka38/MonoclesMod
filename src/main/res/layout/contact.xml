@@ -69,7 +69,6 @@
                     android:layout_height="16dp"
                     android:layout_marginStart="4dp"
                     android:contentDescription="@string/client_icon"
-                    android:tint="?android:attr/textColorSecondary"
                     android:visibility="gone" />
             </LinearLayout>
 

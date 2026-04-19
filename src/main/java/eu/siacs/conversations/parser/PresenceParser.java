@@ -1,6 +1,7 @@
 package eu.siacs.conversations.parser;
 
 import android.util.Log;
+import android.text.TextUtils;
 
 import org.openintents.openpgp.util.OpenPgpUtils;
 
@@ -82,6 +83,10 @@ public class PresenceParser extends AbstractParser implements
                     if (item != null && !from.isBareJid()) {
                         mucOptions.setError(MucOptions.Error.NONE);
                         MucOptions.User user = parseItem(conversation, item, from, occupantId, nick == null ? null : nick.getContent(), hats);
+                        final Element caps = packet.findChild("c", "http://jabber.org/protocol/caps");
+                        final String show = packet.findChildContent("show");
+                        final String presenceStatus = packet.findChildContent("status");
+                        user.setPresence(Presence.parse(show, caps, presenceStatus));
                         final String itemNick = item.getAttribute("nick");
                         if (itemNick != null) {
                             user.setNick(itemNick);
@@ -168,6 +173,7 @@ public class PresenceParser extends AbstractParser implements
                                 }
                             }
                         }
+                        syncMucPresenceToRealJidContact(account, from, user, packet);
                         boolean isNew = mucOptions.updateUser(user);
                         if (isNew && !isSelf && mucOptions.online() && !codes.contains(MucOptions.STATUS_CODE_CHANGED_NICK)) {
                             String body = mXmppConnectionService.getString(R.string.muc_occupant_joined, from.getResource());
@@ -303,6 +309,10 @@ public class PresenceParser extends AbstractParser implements
                         mucOptions.updateUser(user);
                     }
                     MucOptions.User user = mucOptions.deleteUser(from);
+                    if (user != null && user.getRealJid() != null) {
+                        final Contact contact = conversation.getAccount().getRoster().getContact(user.getRealJid());
+                        contact.removePresence(from.getResource());
+                    }
                     final boolean isSelf = codes.contains(MucOptions.STATUS_CODE_SELF_PRESENCE) || fullJidMatchesOther;
                     if (user != null && !isSelf && !codes.contains(MucOptions.STATUS_CODE_CHANGED_NICK)) {
                         String body = mXmppConnectionService.getString(R.string.muc_occupant_left, from.getResource());
@@ -402,6 +412,29 @@ public class PresenceParser extends AbstractParser implements
                 options.onRenameListener.onFailure();
             }
             options.onRenameListener = null;
+        }
+    }
+
+    private void syncMucPresenceToRealJidContact(
+            final Account account,
+            final Jid from,
+            final MucOptions.User user,
+            final PresencePacket packet) {
+        if (from == null || from.isBareJid() || user == null || user.getRealJid() == null) {
+            return;
+        }
+        final Contact contact = account.getRoster().getContact(user.getRealJid());
+        final Element caps = packet.findChild("c", "http://jabber.org/protocol/caps");
+        final String show = packet.findChildContent("show");
+        final String message = packet.findChildContent("status");
+        final Presence presence = Presence.parse(show, caps, message);
+        final String resource = from.getResource();
+        contact.updatePresence(resource, presence);
+        contact.setLastResource(resource);
+        if (presence.hasCaps()) {
+            mXmppConnectionService.fetchCaps(account, user.getRealJid(), presence);
+        } else if (TextUtils.isEmpty(contact.getSoftwareVersion())) {
+            mXmppConnectionService.fetchVersion(account, user.getRealJid());
         }
     }
 

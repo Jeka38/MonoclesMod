@@ -33,13 +33,16 @@ import java.util.Set;
 import de.monocles.mod.Util;
 import eu.siacs.conversations.R;
 import eu.siacs.conversations.databinding.ConversationListRowBinding;
+import eu.siacs.conversations.entities.Contact;
 import eu.siacs.conversations.entities.Conversation;
 import eu.siacs.conversations.entities.Conversational;
 import eu.siacs.conversations.entities.Message;
 import eu.siacs.conversations.entities.MucOptions;
 import eu.siacs.conversations.services.AttachFileToConversationRunnable;
+import eu.siacs.conversations.ui.SettingsActivity;
 import eu.siacs.conversations.ui.XmppActivity;
 import eu.siacs.conversations.ui.util.AvatarWorkerTask;
+import eu.siacs.conversations.ui.util.ClientIconUtils;
 import eu.siacs.conversations.ui.util.StyledAttributes;
 import eu.siacs.conversations.utils.IrregularUnicodeDetector;
 import eu.siacs.conversations.utils.MimeUtils;
@@ -64,6 +67,7 @@ public class ConversationAdapter
     private OnConversationClickListener listener;
     private boolean hasInternetConnection = false;
     private String readmarkervalue;
+    private boolean showClientIcons = false;
 
     public ConversationAdapter(XmppActivity activity, List<Conversation> conversations) {
         this.activity = activity;
@@ -71,6 +75,7 @@ public class ConversationAdapter
         SharedPreferences sharedPref = PreferenceManager.getDefaultSharedPreferences(activity);
         this.readmarkervalue = sharedPref.getString("readmarker_style", "blue_readmarkers");
         this.collapsedGroups.addAll(sharedPref.getStringSet("collapsed_groups", new HashSet<>()));
+        this.showClientIcons = sharedPref.getBoolean(SettingsActivity.SHOW_CLIENT_ICONS, activity.getResources().getBoolean(R.bool.show_client_icons));
         updateItems();
     }
 
@@ -468,6 +473,20 @@ public class ConversationAdapter
                 default:
                     viewHolder.binding.indicatorReceived.setVisibility(View.GONE);
             }
+        }
+        bindClientIcon(viewHolder, conversation);
+    }
+
+    private void bindClientIcon(ConversationViewHolder viewHolder, Conversation conversation) {
+        if (!showClientIcons || conversation.getMode() != Conversation.MODE_SINGLE) {
+            viewHolder.binding.clientIcon.setVisibility(View.GONE);
+            return;
+        }
+        final boolean applied = ClientIconUtils.applyRosterClientIcon(viewHolder.binding.clientIcon, conversation.getContact());
+        if (!applied) {
+            viewHolder.binding.clientIcon.setVisibility(View.GONE);
+        } else {
+            viewHolder.binding.clientIcon.setVisibility(View.VISIBLE);
         }
     }
 
