@@ -113,13 +113,15 @@
                                         android:layout_marginBottom="4dp"
                                         android:textAppearance="@style/TextAppearance.Conversations.Subhead" />
 
-                                    <TextView
+                                    <ImageView
                                         android:id="@+id/resource"
-                                        android:layout_width="wrap_content"
-                                        android:layout_height="wrap_content"
+                                        android:layout_width="24dp"
+                                        android:layout_height="24dp"
                                         android:layout_marginTop="4dp"
                                         android:layout_marginBottom="4dp"
-                                        android:textAppearance="@style/TextAppearance.Conversations.Status" />
+                                        android:contentDescription="@string/client_icon"
+                                        android:tint="?android:attr/textColorSecondary"
+                                        android:visibility="gone" />
                                 </LinearLayout>
 
                             </RelativeLayout>
