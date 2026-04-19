@@ -22,13 +22,17 @@ public class LockscreenHandler extends AppCompatActivity implements ComponentCal
     public void onTrimMemory(int i) {
         super.onTrimMemory(i);
         ActivityManager am = (ActivityManager) this.getSystemService(ACTIVITY_SERVICE);
+        if (am == null) {
+            return;
+        }
         List<ActivityManager.RunningTaskInfo> taskInfo = am.getRunningTasks(1);
+        if (taskInfo == null || taskInfo.isEmpty() || taskInfo.get(0).topActivity == null) {
+            return;
+        }
         Log.d("Activity", "CURRENT Activity ::" + taskInfo.get(0).topActivity.getClassName());
 
-        if (taskInfo.size() > 0) {
-            ComponentName componentInfo = taskInfo.get(0).topActivity;
-            packageName = componentInfo.getPackageName();
-        }
+        ComponentName componentInfo = taskInfo.get(0).topActivity;
+        packageName = componentInfo.getPackageName();
         if (!packageName.equals(getPackageName()) && i == ComponentCallbacks2.TRIM_MEMORY_UI_HIDDEN) {
             // We're in the Background
             WentToBackground = true;
@@ -39,6 +43,7 @@ public class LockscreenHandler extends AppCompatActivity implements ComponentCal
     @Override
     protected void onResume() {
         super.onResume();
+        EasylockSP.init(getApplicationContext());
 
         if (WentToBackground && EasylockSP.getString("password", null) != null) {
             // We're in the foreground & password != null
