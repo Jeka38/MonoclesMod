@@ -50,12 +50,25 @@
                     android:paddingStart="@dimen/avatar_item_distance"
                     android:paddingLeft="@dimen/avatar_item_distance">
 
+                    <ImageView
+                        android:id="@+id/client_icon"
+                        android:layout_width="18dp"
+                        android:layout_height="18dp"
+                        android:layout_alignParentStart="true"
+                        android:layout_alignParentLeft="true"
+                        android:layout_centerVertical="true"
+                        android:layout_marginEnd="8dp"
+                        android:layout_marginRight="8dp"
+                        android:tint="?android:attr/textColorSecondary"
+                        android:visibility="gone" />
+
                     <TextView
                         android:id="@+id/conversation_name"
                         android:layout_width="wrap_content"
                         android:layout_height="wrap_content"
-                        android:layout_alignStart="@+id/conversation_lastwrapper"
-                        android:layout_alignLeft="@+id/conversation_lastwrapper"
+                        android:layout_toEndOf="@+id/client_icon"
+                        android:layout_toRightOf="@+id/client_icon"
+                        android:layout_alignWithParentIfMissing="true"
                         android:layout_toStartOf="@+id/failed_count"
                         android:layout_toLeftOf="@+id/failed_count"
                         android:ellipsize="end"
@@ -68,6 +81,9 @@
                         android:id="@+id/conversation_lastwrapper"
                         android:layout_width="match_parent"
                         android:layout_height="wrap_content"
+                        android:layout_toEndOf="@+id/client_icon"
+                        android:layout_toRightOf="@+id/client_icon"
+                        android:layout_alignWithParentIfMissing="true"
                         android:layout_below="@id/conversation_name"
                         android:layout_marginTop="4dp">
 
