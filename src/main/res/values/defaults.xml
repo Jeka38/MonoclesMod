@@ -36,6 +36,7 @@
     <bool name="display_enter_key">true</bool>
     <bool name="show_dynamic_tags">true</bool>
     <bool name="presence_colored_names">false</bool>
+    <bool name="show_client_icons">false</bool>
     <bool name="use_max_brightness">false</bool>
     <bool name="auto_rotate">false</bool>
     <bool name="use_invidious">false</bool>

@@ -928,6 +928,9 @@
     <string name="pref_use_colored_muc_names_summary">Раскрасить ники в конференциях как фон аватара по умолчанию.</string>
     <string name="pref_use_colored_names_to_indicate_status">Расцветка имен показывает статус</string>
     <string name="pref_use_colored_names_to_indicate_status_summary">Раскрасить имена контактов для индикации статуса контакта</string>
+    <string name="pref_show_client_icons">Показывать иконки клиентов</string>
+    <string name="pref_show_client_icons_summary">Показывать иконки клиентов контактов в ростере и списке участников</string>
+    <string name="client_icon">Иконка клиента</string>
     <string name="pref_use_i2p">Соединение через I2P</string>
     <string name="pref_use_i2p_summary">Направить все соединения через сеть I2P. Требуется I2P клиент</string>
     <string name="pref_use_proxy65">Использовать Proxy65 для передачи файлов</string>

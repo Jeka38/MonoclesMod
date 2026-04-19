@@ -99,6 +99,7 @@ public class SettingsActivity extends XmppActivity implements OnSharedPreference
     public static final String THEME = "theme";
     public static final String THEME_COLOR = "theme_color";
     public static final String SHOW_DYNAMIC_TAGS = "show_dynamic_tags";
+    public static final String SHOW_CLIENT_ICONS = "show_client_icons";
     public static final String OMEMO_SETTING = "omemo";
     public static final String SHOW_FOREGROUND_SERVICE = "show_foreground_service";
     public static final String USE_BUNDLED_EMOJIS = "use_bundled_emoji";

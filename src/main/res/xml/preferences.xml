@@ -212,6 +212,11 @@
             android:summary="@string/pref_use_colored_names_to_indicate_status_summary"
             android:title="@string/pref_use_colored_names_to_indicate_status" />
         <SwitchPreference
+            android:defaultValue="@bool/show_client_icons"
+            android:key="show_client_icons"
+            android:summary="@string/pref_show_client_icons_summary"
+            android:title="@string/pref_show_client_icons" />
+        <SwitchPreference
             android:defaultValue="@bool/prefer_xmpp_avatar"
             android:key="prefer_xmpp_avatar"
             android:summary="@string/pref_prefer_xmpp_avatar_summary"
