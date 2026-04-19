@@ -55,7 +55,12 @@ public final class ClientIconUtils {
         if (contact == null && user.getRealJid() != null) {
             contact = user.getAccount().getRoster().getContact(user.getRealJid());
         }
-        return applyRosterClientIcon(imageView, contact);
+        final boolean applied = applyRosterClientIcon(imageView, contact);
+        if (applied) {
+            return true;
+        }
+        imageView.setImageResource(R.drawable.ic_client_pc);
+        return true;
     }
 
     public static Integer getRosterClientIconRes(final Contact contact) {
@@ -74,7 +79,8 @@ public final class ClientIconUtils {
         if (contact == null && user.getRealJid() != null) {
             contact = user.getAccount().getRoster().getContact(user.getRealJid());
         }
-        return getRosterClientIconRes(contact);
+        final Integer icon = getRosterClientIconRes(contact);
+        return icon != null ? icon : R.drawable.ic_client_pc;
     }
 
     private static Integer getIconForResource(final Pair<Map<String, String>, Map<String, String>> typeAndName, final String resource, final String softwareVersion) {
