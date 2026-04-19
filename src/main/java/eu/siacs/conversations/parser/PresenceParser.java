@@ -1,6 +1,7 @@
 package eu.siacs.conversations.parser;
 
 import android.util.Log;
+import android.text.TextUtils;
 
 import org.openintents.openpgp.util.OpenPgpUtils;
 
@@ -428,6 +429,8 @@ public class PresenceParser extends AbstractParser implements
         contact.setLastResource(resource);
         if (presence.hasCaps()) {
             mXmppConnectionService.fetchCaps(account, user.getRealJid(), presence);
+        } else if (TextUtils.isEmpty(contact.getSoftwareVersion())) {
+            mXmppConnectionService.fetchVersion(account, user.getRealJid());
         }
     }
 
