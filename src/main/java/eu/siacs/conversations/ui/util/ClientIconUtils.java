@@ -137,16 +137,16 @@ public final class ClientIconUtils {
         }
         switch (rawType.toLowerCase(Locale.ROOT)) {
             case "phone":
-                return R.drawable.ic_client_phone;
+                return R.drawable.client_phone;
             case "tablet":
-                return R.drawable.ic_client_tablet;
+                return R.drawable.client_tablet;
             case "web":
-                return R.drawable.ic_client_web;
+                return R.drawable.client_web;
             case "console":
-                return R.drawable.ic_client_console;
+                return R.drawable.client_console;
             case "pc":
             default:
-                return R.drawable.ic_client_pc;
+                return R.drawable.client_pc;
         }
     }
 
@@ -370,13 +370,13 @@ public final class ClientIconUtils {
         if (name.contains("android") || name.contains("quicksy") || name.contains("conversations")
                 || name.contains("monocles") || name.contains("cheogram") || name.contains("yaxim")
                 || name.contains("blabber")) {
-            return R.drawable.ic_client_phone;
+            return R.drawable.client_phone;
         } else if (name.contains("web") || name.contains("browser")) {
-            return R.drawable.ic_client_web;
+            return R.drawable.client_web;
         } else if (name.contains("gajim") || name.contains("psi") || name.contains("pidgin")
                 || name.contains("dino") || name.contains("kaidan") || name.contains("poezio")
                 || name.contains("profanity") || name.contains("beagle")) {
-            return R.drawable.ic_client_pc;
+            return R.drawable.client_pc;
         }
         return null;
     }
