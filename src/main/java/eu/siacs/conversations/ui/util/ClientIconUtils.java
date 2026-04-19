@@ -132,8 +132,12 @@ public final class ClientIconUtils {
     }
 
     private static Integer getIconRes(final String rawType, final String rawName) {
+        final Integer clientSpecific = inferIconByClientName(rawName);
+        if (clientSpecific != null) {
+            return clientSpecific;
+        }
         if (TextUtils.isEmpty(rawType)) {
-            return inferIconByClientName(rawName);
+            return null;
         }
         switch (rawType.toLowerCase(Locale.ROOT)) {
             case "phone":
