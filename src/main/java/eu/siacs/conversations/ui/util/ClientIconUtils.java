@@ -35,6 +35,11 @@ public final class ClientIconUtils {
         if (contact == null) {
             return false;
         }
+        final Integer capsIcon = inferIconFromPresence(contact, contact.getLastResource());
+        if (capsIcon != null) {
+            imageView.setImageResource(capsIcon);
+            return true;
+        }
         final Pair<Map<String, String>, Map<String, String>> typeAndName = contact.getPresences().toTypeAndNameMap();
         if (applyCustomIcon(imageView, contact, contact.getLastResource())) {
             return true;
@@ -66,6 +71,10 @@ public final class ClientIconUtils {
     public static Integer getRosterClientIconRes(final Contact contact) {
         if (contact == null) {
             return null;
+        }
+        final Integer capsIcon = inferIconFromPresence(contact, contact.getLastResource());
+        if (capsIcon != null) {
+            return capsIcon;
         }
         final Pair<Map<String, String>, Map<String, String>> typeAndName = contact.getPresences().toTypeAndNameMap();
         return getIconForResource(typeAndName, contact.getLastResource(), contact.getSoftwareVersion());
@@ -442,6 +451,18 @@ public final class ClientIconUtils {
             }
         }
         return null;
+    }
+
+    private static Integer inferIconFromPresence(final Contact contact, final String resource) {
+        final Presence presence = getPresence(contact, resource);
+        if (presence == null) {
+            return null;
+        }
+        final Integer nodeIcon = inferIconByClientName(presence.getNode());
+        if (nodeIcon != null) {
+            return nodeIcon;
+        }
+        return inferIconByClientName(presence.getVer());
     }
 
     private static void addCandidate(final Set<String> candidates, final String value) {
