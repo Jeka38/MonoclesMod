@@ -427,7 +427,7 @@ public class PresenceParser extends AbstractParser implements
         contact.updatePresence(resource, presence);
         contact.setLastResource(resource);
         if (presence.hasCaps()) {
-            mXmppConnectionService.fetchCaps(account, from, presence);
+            mXmppConnectionService.fetchCaps(account, user.getRealJid(), presence);
         }
     }
 
