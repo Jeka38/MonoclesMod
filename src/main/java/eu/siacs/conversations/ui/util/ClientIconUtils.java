@@ -51,27 +51,11 @@ public final class ClientIconUtils {
         if (user == null) {
             return false;
         }
-        String resource = null;
-        final Jid fullJid = user.getFullJid();
-        if (fullJid != null && !TextUtils.isEmpty(fullJid.getResource())) {
-            resource = fullJid.getResource();
-        }
         Contact contact = user.getContact();
         if (contact == null && user.getRealJid() != null) {
             contact = user.getAccount().getRoster().getContact(user.getRealJid());
         }
-        if (contact == null) {
-            final Integer inferredFromResource = inferIconByClientName(resource);
-            imageView.setImageResource(inferredFromResource != null ? inferredFromResource : R.drawable.ic_client_pc);
-            return true;
-        }
-        final Pair<Map<String, String>, Map<String, String>> typeAndName = contact.getPresences().toTypeAndNameMap();
-        if (applyCustomIcon(imageView, contact, resource)) {
-            return true;
-        }
-        final Integer iconRes = getIconForResource(typeAndName, resource, contact.getSoftwareVersion());
-        imageView.setImageResource(iconRes != null ? iconRes : R.drawable.ic_client_pc);
-        return true;
+        return applyRosterClientIcon(imageView, contact);
     }
 
     public static Integer getRosterClientIconRes(final Contact contact) {
@@ -86,26 +70,11 @@ public final class ClientIconUtils {
         if (user == null) {
             return null;
         }
-        final Jid fullJid = user.getFullJid();
-        final String resource = (fullJid != null && !TextUtils.isEmpty(fullJid.getResource())) ? fullJid.getResource() : null;
         Contact contact = user.getContact();
         if (contact == null && user.getRealJid() != null) {
             contact = user.getAccount().getRoster().getContact(user.getRealJid());
         }
-        if (contact == null) {
-            final Integer inferredFromResource = inferIconByClientName(resource);
-            return inferredFromResource != null ? inferredFromResource : R.drawable.ic_client_pc;
-        }
-        final Pair<Map<String, String>, Map<String, String>> typeAndName = contact.getPresences().toTypeAndNameMap();
-        if (!TextUtils.isEmpty(resource)) {
-            final Integer icon = getIconForResource(typeAndName, resource, contact.getSoftwareVersion());
-            if (icon != null) {
-                return icon;
-            }
-        }
-
-        final Integer fallback = getIconForResource(typeAndName, contact.getLastResource(), contact.getSoftwareVersion());
-        return fallback != null ? fallback : R.drawable.ic_client_pc;
+        return getRosterClientIconRes(contact);
     }
 
     private static Integer getIconForResource(final Pair<Map<String, String>, Map<String, String>> typeAndName, final String resource, final String softwareVersion) {
@@ -115,10 +84,6 @@ public final class ClientIconUtils {
             final Integer icon = getIconRes(types.get(resource), names.get(resource));
             if (icon != null) {
                 return icon;
-            }
-            final Integer resourceIcon = inferIconByClientName(resource);
-            if (resourceIcon != null) {
-                return resourceIcon;
             }
         }
         if (types.isEmpty() && names.isEmpty() && TextUtils.isEmpty(softwareVersion)) {
