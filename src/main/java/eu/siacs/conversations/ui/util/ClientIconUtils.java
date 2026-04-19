@@ -51,19 +51,24 @@ public final class ClientIconUtils {
         if (user == null) {
             return false;
         }
-        Contact contact = user.getContact();
-        if (contact == null && user.getRealJid() != null) {
-            contact = user.getAccount().getRoster().getContact(user.getRealJid());
-        }
-        if (contact == null) {
-            return false;
-        }
-        final Pair<Map<String, String>, Map<String, String>> typeAndName = contact.getPresences().toTypeAndNameMap();
         String resource = null;
         final Jid fullJid = user.getFullJid();
         if (fullJid != null && !TextUtils.isEmpty(fullJid.getResource())) {
             resource = fullJid.getResource();
         }
+        Contact contact = user.getContact();
+        if (contact == null && user.getRealJid() != null) {
+            contact = user.getAccount().getRoster().getContact(user.getRealJid());
+        }
+        if (contact == null) {
+            final Integer inferredFromResource = inferIconByClientName(resource);
+            if (inferredFromResource == null) {
+                return false;
+            }
+            imageView.setImageResource(inferredFromResource);
+            return true;
+        }
+        final Pair<Map<String, String>, Map<String, String>> typeAndName = contact.getPresences().toTypeAndNameMap();
         if (applyCustomIcon(imageView, contact, resource)) {
             return true;
         }
@@ -87,17 +92,18 @@ public final class ClientIconUtils {
         if (user == null) {
             return null;
         }
+        final Jid fullJid = user.getFullJid();
+        final String resource = (fullJid != null && !TextUtils.isEmpty(fullJid.getResource())) ? fullJid.getResource() : null;
         Contact contact = user.getContact();
         if (contact == null && user.getRealJid() != null) {
             contact = user.getAccount().getRoster().getContact(user.getRealJid());
         }
         if (contact == null) {
-            return null;
+            return inferIconByClientName(resource);
         }
         final Pair<Map<String, String>, Map<String, String>> typeAndName = contact.getPresences().toTypeAndNameMap();
-        final Jid fullJid = user.getFullJid();
-        if (fullJid != null && !TextUtils.isEmpty(fullJid.getResource())) {
-            final Integer icon = getIconForResource(typeAndName, fullJid.getResource(), contact.getSoftwareVersion());
+        if (!TextUtils.isEmpty(resource)) {
+            final Integer icon = getIconForResource(typeAndName, resource, contact.getSoftwareVersion());
             if (icon != null) {
                 return icon;
             }
@@ -109,14 +115,18 @@ public final class ClientIconUtils {
     private static Integer getIconForResource(final Pair<Map<String, String>, Map<String, String>> typeAndName, final String resource, final String softwareVersion) {
         final Map<String, String> types = typeAndName.first;
         final Map<String, String> names = typeAndName.second;
-        if (types.isEmpty() && names.isEmpty() && TextUtils.isEmpty(softwareVersion)) {
-            return null;
-        }
         if (!TextUtils.isEmpty(resource)) {
             final Integer icon = getIconRes(types.get(resource), names.get(resource));
             if (icon != null) {
                 return icon;
             }
+            final Integer resourceIcon = inferIconByClientName(resource);
+            if (resourceIcon != null) {
+                return resourceIcon;
+            }
+        }
+        if (types.isEmpty() && names.isEmpty() && TextUtils.isEmpty(softwareVersion)) {
+            return null;
         }
         final Integer versionIcon = inferIconByClientName(softwareVersion);
         if (versionIcon != null) {
