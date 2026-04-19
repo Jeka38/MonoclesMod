@@ -51,7 +51,10 @@ public final class ClientIconUtils {
         if (user == null) {
             return false;
         }
-        final Contact contact = user.getContact();
+        Contact contact = user.getContact();
+        if (contact == null && user.getRealJid() != null) {
+            contact = user.getAccount().getRoster().getContact(user.getRealJid());
+        }
         if (contact == null) {
             return false;
         }
@@ -84,7 +87,10 @@ public final class ClientIconUtils {
         if (user == null) {
             return null;
         }
-        final Contact contact = user.getContact();
+        Contact contact = user.getContact();
+        if (contact == null && user.getRealJid() != null) {
+            contact = user.getAccount().getRoster().getContact(user.getRealJid());
+        }
         if (contact == null) {
             return null;
         }
