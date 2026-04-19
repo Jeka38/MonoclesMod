@@ -62,10 +62,7 @@ public final class ClientIconUtils {
         }
         if (contact == null) {
             final Integer inferredFromResource = inferIconByClientName(resource);
-            if (inferredFromResource == null) {
-                return false;
-            }
-            imageView.setImageResource(inferredFromResource);
+            imageView.setImageResource(inferredFromResource != null ? inferredFromResource : R.drawable.ic_client_pc);
             return true;
         }
         final Pair<Map<String, String>, Map<String, String>> typeAndName = contact.getPresences().toTypeAndNameMap();
@@ -73,10 +70,7 @@ public final class ClientIconUtils {
             return true;
         }
         final Integer iconRes = getIconForResource(typeAndName, resource, contact.getSoftwareVersion());
-        if (iconRes == null) {
-            return false;
-        }
-        imageView.setImageResource(iconRes);
+        imageView.setImageResource(iconRes != null ? iconRes : R.drawable.ic_client_pc);
         return true;
     }
 
@@ -99,7 +93,8 @@ public final class ClientIconUtils {
             contact = user.getAccount().getRoster().getContact(user.getRealJid());
         }
         if (contact == null) {
-            return inferIconByClientName(resource);
+            final Integer inferredFromResource = inferIconByClientName(resource);
+            return inferredFromResource != null ? inferredFromResource : R.drawable.ic_client_pc;
         }
         final Pair<Map<String, String>, Map<String, String>> typeAndName = contact.getPresences().toTypeAndNameMap();
         if (!TextUtils.isEmpty(resource)) {
@@ -109,7 +104,8 @@ public final class ClientIconUtils {
             }
         }
 
-        return getIconForResource(typeAndName, contact.getLastResource(), contact.getSoftwareVersion());
+        final Integer fallback = getIconForResource(typeAndName, contact.getLastResource(), contact.getSoftwareVersion());
+        return fallback != null ? fallback : R.drawable.ic_client_pc;
     }
 
     private static Integer getIconForResource(final Pair<Map<String, String>, Map<String, String>> typeAndName, final String resource, final String softwareVersion) {
