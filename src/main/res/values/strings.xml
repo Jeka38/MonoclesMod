@@ -293,6 +293,9 @@
     <string name="pref_use_indicate_received_summary">Received messages will be marked with a tick if supported</string>
     <string name="pref_use_send_button_to_indicate_status_summary">Colorize send button to indicate contact status</string>
     <string name="pref_use_colored_names_to_indicate_status_summary">Colorize contact names to indicate contact status</string>
+    <string name="pref_show_client_icons">Show client icons</string>
+    <string name="pref_show_client_icons_summary">Show contact client icons in roster and participants list</string>
+    <string name="client_icon">Client icon</string>
     <string name="pref_expert_options_other">Other</string>
     <string name="pref_autojoin">Synchronize with bookmarks</string>
     <string name="pref_autojoin_summary">Join and leave rooms according to auto-join flag in your bookmarks.</string>
@@ -1464,6 +1467,11 @@
     <string name="import_own_gifs_summary">Import your own GIFs. They will be sorted by the filename.</string>
     <string name="import_own_smiles">Import Smiles</string>
     <string name="import_own_smiles_summary">Import smiles from a ZIP archive</string>
+    <string name="import_client_icons">Import client icons</string>
+    <string name="import_client_icons_summary">Import client icon set from ZIP (e.g. full-clients22.zip)</string>
+    <string name="select_client_icons_zip">Select ZIP archive with client icons</string>
+    <string name="client_icons_import_done">Client icons imported</string>
+    <string name="client_icons_import_failed">Failed to import client icons</string>
     <string name="pref_accept_invites_from_strangers">Invites from strangers</string>
     <string name="pref_accept_invites_from_strangers_summary">Accept invites to group chats from strangers</string>
     <string name="rtp_state_contact_offline">No online resource to call</string>

@@ -90,6 +90,7 @@ public class Contact implements ListItem, Blockable {
     private boolean mActive = false;
     private long mLastseen = 0;
     private String mLastPresence = null;
+    private String softwareVersion = null;
     private RtpCapability.Capability rtpCapability;
 
     public Contact(Contact other) {
@@ -712,6 +713,14 @@ public class Contact implements ListItem, Blockable {
 
     public String getLastResource() {
         return this.mLastPresence;
+    }
+
+    public void setSoftwareVersion(String version) {
+        this.softwareVersion = version;
+    }
+
+    public String getSoftwareVersion() {
+        return this.softwareVersion;
     }
 
     public String getServerName() {

@@ -87,6 +87,7 @@ import eu.siacs.conversations.ui.util.GridManager;
 import eu.siacs.conversations.ui.util.JidDialog;
 import eu.siacs.conversations.ui.util.ShareUtil;
 import eu.siacs.conversations.ui.util.SoftKeyboardUtils;
+import eu.siacs.conversations.ui.util.ClientIconUtils;
 import eu.siacs.conversations.utils.Compatibility;
 import eu.siacs.conversations.utils.Emoticons;
 import eu.siacs.conversations.utils.IrregularUnicodeDetector;
@@ -827,12 +828,11 @@ public class ContactDetailsActivity extends OmemoActivity implements OnAccountUp
                     binding.statusMessage.setText(builder);
                 }
             }
-            String resources = contact.getPresences().getMostAvailableResource();
-            if (resources.isEmpty()) {
-                binding.resource.setVisibility(View.GONE);
-            } else {
+            final boolean hasClientIcon = ClientIconUtils.applyRosterClientIcon(binding.resource, contact);
+            if (hasClientIcon) {
                 binding.resource.setVisibility(View.VISIBLE);
-                binding.resource.setText(resources);
+            } else {
+                binding.resource.setVisibility(View.GONE);
             }
             if (contact.getOption(Contact.Options.FROM)) {
                 binding.detailsSendPresence.setText(R.string.send_presence_updates);

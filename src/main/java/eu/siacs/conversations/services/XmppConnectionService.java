@@ -6443,9 +6443,27 @@ public class XmppConnectionService extends Service {
                     }
                 } else {
                     Log.d(Config.LOGTAG, account.getJid().asBareJid() + ": unable to fetch caps from " + jid);
+                    fetchVersion(account, jid);
                 }
             });
         }
+    }
+
+    public void fetchVersion(Account account, final Jid jid) {
+        final IqPacket request = new IqPacket(IqPacket.TYPE.GET);
+        request.setTo(jid);
+        request.query("jabber:iq:version");
+        sendIqPacket(account, request, (a, response) -> {
+            if (response.getType() == IqPacket.TYPE.RESULT) {
+                Element query = response.query("jabber:iq:version");
+                String name = query.findChildContent("name");
+                if (name != null) {
+                    Contact contact = a.getRoster().getContact(jid);
+                    contact.setSoftwareVersion(name);
+                    updateConversationUi();
+                }
+            }
+        });
     }
 
 

@@ -22,9 +22,11 @@ import java.util.List;
 import eu.siacs.conversations.R;
 import eu.siacs.conversations.databinding.ContactBinding;
 import eu.siacs.conversations.entities.ListItem;
+import eu.siacs.conversations.entities.Contact;
 import eu.siacs.conversations.ui.SettingsActivity;
 import eu.siacs.conversations.ui.XmppActivity;
 import eu.siacs.conversations.ui.util.AvatarWorkerTask;
+import eu.siacs.conversations.ui.util.ClientIconUtils;
 import eu.siacs.conversations.ui.util.StyledAttributes;
 import eu.siacs.conversations.utils.IrregularUnicodeDetector;
 import eu.siacs.conversations.utils.UIHelper;
@@ -37,6 +39,7 @@ public class ListItemAdapter extends ArrayAdapter<ListItem> {
     protected static XmppActivity activity;
     private boolean showDynamicTags = false;
     private boolean showPresenceColoredNames = false;
+    private boolean showClientIcons = false;
     private OnTagClickedListener mOnTagClickedListener = null;
     protected int color = 0;
     protected boolean offline = false;
@@ -60,6 +63,7 @@ public class ListItemAdapter extends ArrayAdapter<ListItem> {
         SharedPreferences preferences = PreferenceManager.getDefaultSharedPreferences(activity);
         this.showDynamicTags = preferences.getBoolean(SettingsActivity.SHOW_DYNAMIC_TAGS, activity.getResources().getBoolean(R.bool.show_dynamic_tags));
         this.showPresenceColoredNames = preferences.getBoolean("presence_colored_names", activity.getResources().getBoolean(R.bool.presence_colored_names));
+        this.showClientIcons = preferences.getBoolean(SettingsActivity.SHOW_CLIENT_ICONS, activity.getResources().getBoolean(R.bool.show_client_icons));
     }
 
     @Override
@@ -145,7 +149,21 @@ public class ListItemAdapter extends ArrayAdapter<ListItem> {
         } else {
             viewHolder.activeIndicator.setVisibility(View.GONE);
         }
+        bindClientIcon(viewHolder, item);
         return view;
+    }
+
+    private void bindClientIcon(final ViewHolder viewHolder, final ListItem item) {
+        if (!showClientIcons || !(item instanceof Contact)) {
+            viewHolder.clientIcon.setVisibility(View.GONE);
+            return;
+        }
+        final boolean applied = ClientIconUtils.applyRosterClientIcon(viewHolder.clientIcon, (Contact) item);
+        if (!applied) {
+            viewHolder.clientIcon.setVisibility(View.GONE);
+        } else {
+            viewHolder.clientIcon.setVisibility(View.VISIBLE);
+        }
     }
 
     public void setOnTagClickedListener(OnTagClickedListener listener) {
@@ -163,6 +181,7 @@ public class ListItemAdapter extends ArrayAdapter<ListItem> {
         private ImageView avatar;
         private FlowLayout tags;
         private ImageView activeIndicator;
+        private ImageView clientIcon;
         private View inner;
 
 
@@ -177,6 +196,7 @@ public class ListItemAdapter extends ArrayAdapter<ListItem> {
             viewHolder.avatar = binding.contactPhoto;
             viewHolder.tags = binding.tags;
             viewHolder.activeIndicator = binding.userActiveIndicator;
+            viewHolder.clientIcon = binding.clientIcon;
             viewHolder.inner = binding.inner;
             binding.getRoot().setTag(viewHolder);
             return viewHolder;

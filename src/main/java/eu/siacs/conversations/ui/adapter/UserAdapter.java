@@ -4,6 +4,7 @@ import android.app.PendingIntent;
 import android.content.Context;
 import android.content.IntentSender;
 import android.graphics.drawable.Drawable;
+import android.content.SharedPreferences;
 import android.view.ContextMenu;
 import android.view.LayoutInflater;
 import android.view.View;
@@ -28,12 +29,14 @@ import eu.siacs.conversations.databinding.ContactBinding;
 import eu.siacs.conversations.entities.Contact;
 import eu.siacs.conversations.entities.MucOptions;
 import eu.siacs.conversations.services.XmppConnectionService;
-import eu.siacs.conversations.ui.ConferenceDetailsActivity;
+import eu.siacs.conversations.ui.SettingsActivity;
 import eu.siacs.conversations.ui.XmppActivity;
 import eu.siacs.conversations.ui.util.AvatarWorkerTask;
+import eu.siacs.conversations.ui.util.ClientIconUtils;
 import eu.siacs.conversations.ui.util.MucDetailsContextMenuHelper;
 import eu.siacs.conversations.utils.Compatibility;
 import eu.siacs.conversations.xmpp.Jid;
+import android.preference.PreferenceManager;
 
 public class UserAdapter extends ListAdapter<MucOptions.User, UserAdapter.ViewHolder> implements View.OnCreateContextMenuListener {
 
@@ -149,6 +152,14 @@ public class UserAdapter extends ListAdapter<MucOptions.User, UserAdapter.ViewHo
         if (viewHolder.binding.tags.getChildCount() < 1) {
             viewHolder.binding.contactJid.setVisibility(View.VISIBLE);
             viewHolder.binding.tags.setVisibility(View.GONE);
+        }
+        final SharedPreferences preferences = PreferenceManager.getDefaultSharedPreferences(viewHolder.binding.getRoot().getContext());
+        final boolean showClientIcons = preferences.getBoolean(SettingsActivity.SHOW_CLIENT_ICONS, viewHolder.binding.getRoot().getResources().getBoolean(R.bool.show_client_icons));
+        final boolean applied = showClientIcons && ClientIconUtils.applyMucUserClientIcon(viewHolder.binding.clientIcon, user);
+        if (!applied) {
+            viewHolder.binding.clientIcon.setVisibility(View.GONE);
+        } else {
+            viewHolder.binding.clientIcon.setVisibility(View.VISIBLE);
         }
     }
 

@@ -928,6 +928,9 @@
     <string name="pref_use_colored_muc_names_summary">Раскрасить ники в конференциях как фон аватара по умолчанию.</string>
     <string name="pref_use_colored_names_to_indicate_status">Расцветка имен показывает статус</string>
     <string name="pref_use_colored_names_to_indicate_status_summary">Раскрасить имена контактов для индикации статуса контакта</string>
+    <string name="pref_show_client_icons">Показывать иконки клиентов</string>
+    <string name="pref_show_client_icons_summary">Показывать иконки клиентов контактов в ростере и списке участников</string>
+    <string name="client_icon">Иконка клиента</string>
     <string name="pref_use_i2p">Соединение через I2P</string>
     <string name="pref_use_i2p_summary">Направить все соединения через сеть I2P. Требуется I2P клиент</string>
     <string name="pref_use_proxy65">Использовать Proxy65 для передачи файлов</string>
@@ -1587,6 +1590,11 @@
     <string name="import_own_gifs_summary">Импортируйте свои собственные GIF-файлы. Они будут отсортированы по имени файла.</string>
     <string name="import_own_smiles">Импортировать Смайлы</string>
     <string name="import_own_smiles_summary">Импортировать смайлы из ZIP архива</string>
+    <string name="import_client_icons">Импорт иконок клиентов</string>
+    <string name="import_client_icons_summary">Импортировать набор иконок клиентов из ZIP (например full-clients22.zip)</string>
+    <string name="select_client_icons_zip">Выберите ZIP архив с иконками клиентов</string>
+    <string name="client_icons_import_done">Иконки клиентов импортированы</string>
+    <string name="client_icons_import_failed">Не удалось импортировать иконки клиентов</string>
     <string name="failed_to_delete_gif">Не удалось удалить GIF</string>
     <string name="pref_accept_invites_from_strangers">Приглашения от незнакомцев</string>
     <string name="pref_accept_invites_from_strangers_summary">Принимайте приглашения в групповые чаты от незнакомцев</string>
