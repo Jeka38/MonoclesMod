@@ -35,6 +35,11 @@ public final class ClientIconUtils {
         if (contact == null) {
             return false;
         }
+        final Integer capsIcon = inferIconFromPresence(contact, contact.getLastResource());
+        if (capsIcon != null) {
+            imageView.setImageResource(capsIcon);
+            return true;
+        }
         final Pair<Map<String, String>, Map<String, String>> typeAndName = contact.getPresences().toTypeAndNameMap();
         if (applyCustomIcon(imageView, contact, contact.getLastResource())) {
             return true;
@@ -51,30 +56,30 @@ public final class ClientIconUtils {
         if (user == null) {
             return false;
         }
-        final Contact contact = user.getContact();
-        if (contact == null) {
-            return false;
-        }
-        final Pair<Map<String, String>, Map<String, String>> typeAndName = contact.getPresences().toTypeAndNameMap();
-        String resource = null;
-        final Jid fullJid = user.getFullJid();
-        if (fullJid != null && !TextUtils.isEmpty(fullJid.getResource())) {
-            resource = fullJid.getResource();
-        }
-        if (applyCustomIcon(imageView, contact, resource)) {
+        final Integer occupantIcon = inferIconFromMucPresence(user);
+        if (occupantIcon != null) {
+            imageView.setImageResource(occupantIcon);
             return true;
         }
-        final Integer iconRes = getIconForResource(typeAndName, resource, contact.getSoftwareVersion());
-        if (iconRes == null) {
-            return false;
+        Contact contact = user.getContact();
+        if (contact == null && user.getRealJid() != null) {
+            contact = user.getAccount().getRoster().getContact(user.getRealJid());
         }
-        imageView.setImageResource(iconRes);
+        final boolean applied = applyRosterClientIcon(imageView, contact);
+        if (applied) {
+            return true;
+        }
+        imageView.setImageResource(R.drawable.ic_client_pc);
         return true;
     }
 
     public static Integer getRosterClientIconRes(final Contact contact) {
         if (contact == null) {
             return null;
+        }
+        final Integer capsIcon = inferIconFromPresence(contact, contact.getLastResource());
+        if (capsIcon != null) {
+            return capsIcon;
         }
         final Pair<Map<String, String>, Map<String, String>> typeAndName = contact.getPresences().toTypeAndNameMap();
         return getIconForResource(typeAndName, contact.getLastResource(), contact.getSoftwareVersion());
@@ -84,33 +89,29 @@ public final class ClientIconUtils {
         if (user == null) {
             return null;
         }
-        final Contact contact = user.getContact();
-        if (contact == null) {
-            return null;
+        final Integer occupantIcon = inferIconFromMucPresence(user);
+        if (occupantIcon != null) {
+            return occupantIcon;
         }
-        final Pair<Map<String, String>, Map<String, String>> typeAndName = contact.getPresences().toTypeAndNameMap();
-        final Jid fullJid = user.getFullJid();
-        if (fullJid != null && !TextUtils.isEmpty(fullJid.getResource())) {
-            final Integer icon = getIconForResource(typeAndName, fullJid.getResource(), contact.getSoftwareVersion());
-            if (icon != null) {
-                return icon;
-            }
+        Contact contact = user.getContact();
+        if (contact == null && user.getRealJid() != null) {
+            contact = user.getAccount().getRoster().getContact(user.getRealJid());
         }
-
-        return getIconForResource(typeAndName, contact.getLastResource(), contact.getSoftwareVersion());
+        final Integer icon = getRosterClientIconRes(contact);
+        return icon != null ? icon : R.drawable.ic_client_pc;
     }
 
     private static Integer getIconForResource(final Pair<Map<String, String>, Map<String, String>> typeAndName, final String resource, final String softwareVersion) {
         final Map<String, String> types = typeAndName.first;
         final Map<String, String> names = typeAndName.second;
-        if (types.isEmpty() && names.isEmpty() && TextUtils.isEmpty(softwareVersion)) {
-            return null;
-        }
         if (!TextUtils.isEmpty(resource)) {
             final Integer icon = getIconRes(types.get(resource), names.get(resource));
             if (icon != null) {
                 return icon;
             }
+        }
+        if (types.isEmpty() && names.isEmpty() && TextUtils.isEmpty(softwareVersion)) {
+            return null;
         }
         final Integer versionIcon = inferIconByClientName(softwareVersion);
         if (versionIcon != null) {
@@ -132,8 +133,12 @@ public final class ClientIconUtils {
     }
 
     private static Integer getIconRes(final String rawType, final String rawName) {
+        final Integer clientSpecific = inferIconByClientName(rawName);
+        if (clientSpecific != null) {
+            return clientSpecific;
+        }
         if (TextUtils.isEmpty(rawType)) {
-            return inferIconByClientName(rawName);
+            return null;
         }
         switch (rawType.toLowerCase(Locale.ROOT)) {
             case "phone":
@@ -455,6 +460,30 @@ public final class ClientIconUtils {
             }
         }
         return null;
+    }
+
+    private static Integer inferIconFromPresence(final Contact contact, final String resource) {
+        final Presence presence = getPresence(contact, resource);
+        if (presence == null) {
+            return null;
+        }
+        final Integer nodeIcon = inferIconByClientName(presence.getNode());
+        if (nodeIcon != null) {
+            return nodeIcon;
+        }
+        return inferIconByClientName(presence.getVer());
+    }
+
+    private static Integer inferIconFromMucPresence(final MucOptions.User user) {
+        final Presence presence = user.getPresence();
+        if (presence == null) {
+            return null;
+        }
+        final Integer nodeIcon = inferIconByClientName(presence.getNode());
+        if (nodeIcon != null) {
+            return nodeIcon;
+        }
+        return inferIconByClientName(presence.getVer());
     }
 
     private static void addCandidate(final Set<String> candidates, final String value) {
