@@ -6457,9 +6457,14 @@ public class XmppConnectionService extends Service {
             if (response.getType() == IqPacket.TYPE.RESULT) {
                 Element query = response.query("jabber:iq:version");
                 String name = query.findChildContent("name");
+                String version = query.findChildContent("version");
                 if (name != null) {
                     Contact contact = a.getRoster().getContact(jid);
-                    contact.setSoftwareVersion(name);
+                    if (version != null) {
+                        contact.setSoftwareVersion(name + "\n" + version);
+                    } else {
+                        contact.setSoftwareVersion(name);
+                    }
                     updateConversationUi();
                 }
             }

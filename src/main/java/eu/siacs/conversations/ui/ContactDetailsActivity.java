@@ -835,7 +835,7 @@ public class ContactDetailsActivity extends OmemoActivity implements OnAccountUp
                 binding.clientInfoLayout.setVisibility(View.VISIBLE);
                 binding.resource.setVisibility(hasClientIcon ? View.VISIBLE : View.GONE);
                 binding.clientVersion.setVisibility(TextUtils.isEmpty(softwareVersion) ? View.GONE : View.VISIBLE);
-                binding.clientVersion.setText(softwareVersion);
+                binding.clientVersion.setText(getString(R.string.software_version, softwareVersion));
             } else {
                 binding.clientInfoLayout.setVisibility(View.GONE);
             }
