@@ -92,20 +92,13 @@ public class UserAdapter extends ListAdapter<MucOptions.User, UserAdapter.ViewHo
             selectedUser = user;
             return false;
         });
-        final String name = user.getNick();
-        final Contact contact = user.getContact();
+        String name = user.getNick();
+        if (name != null && name.contains("@")) {
+            name = name.substring(name.indexOf("@") + 1);
+        }
         viewHolder.binding.contactJid.setVisibility(View.GONE);
         viewHolder.binding.contactJid.setText("");
-        if (contact != null) {
-            final String displayName = contact.getDisplayName();
-            viewHolder.binding.contactDisplayName.setText(displayName);
-            if (name != null && !name.equals(displayName)) {
-                viewHolder.binding.contactJid.setVisibility(View.VISIBLE);
-                viewHolder.binding.contactJid.setText(name);
-            }
-        } else {
-            viewHolder.binding.contactDisplayName.setText(name == null ? "" : name);
-        }
+        viewHolder.binding.contactDisplayName.setText(name == null ? "" : name);
         if (advancedMode && user.getPgpKeyId() != 0) {
             viewHolder.binding.key.setVisibility(View.VISIBLE);
             viewHolder.binding.key.setOnClickListener(v -> {
@@ -150,7 +143,6 @@ public class UserAdapter extends ListAdapter<MucOptions.User, UserAdapter.ViewHo
         }
 
         if (viewHolder.binding.tags.getChildCount() < 1) {
-            viewHolder.binding.contactJid.setVisibility(View.VISIBLE);
             viewHolder.binding.tags.setVisibility(View.GONE);
         }
         final SharedPreferences preferences = PreferenceManager.getDefaultSharedPreferences(viewHolder.binding.getRoot().getContext());
