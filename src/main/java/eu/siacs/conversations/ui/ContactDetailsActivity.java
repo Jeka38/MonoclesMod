@@ -12,6 +12,7 @@ import android.content.pm.PackageManager;
 import android.graphics.drawable.Drawable;
 import android.net.Uri;
 import android.os.Build;
+import android.text.TextUtils;
 import android.os.Bundle;
 import android.preference.PreferenceManager;
 import android.provider.ContactsContract.CommonDataKinds;
@@ -77,6 +78,7 @@ import eu.siacs.conversations.entities.ListItem;
 import eu.siacs.conversations.services.NotificationService;
 import eu.siacs.conversations.services.XmppConnectionService;
 import eu.siacs.conversations.services.XmppConnectionService.OnAccountUpdate;
+import eu.siacs.conversations.services.XmppConnectionService.OnConversationUpdate;
 import eu.siacs.conversations.services.XmppConnectionService.OnRosterUpdate;
 import eu.siacs.conversations.ui.adapter.MediaAdapter;
 import eu.siacs.conversations.ui.interfaces.OnMediaLoaded;
@@ -105,7 +107,7 @@ import eu.siacs.conversations.xmpp.jingle.OngoingRtpSession;
 import eu.siacs.conversations.xmpp.jingle.RtpCapability;
 import me.drakeet.support.toast.ToastCompat;
 
-public class ContactDetailsActivity extends OmemoActivity implements OnAccountUpdate, OnRosterUpdate, OnUpdateBlocklist, OnKeyStatusUpdated, OnMediaLoaded {
+public class ContactDetailsActivity extends OmemoActivity implements OnAccountUpdate, OnRosterUpdate, OnConversationUpdate, OnUpdateBlocklist, OnKeyStatusUpdated, OnMediaLoaded {
     public static final String ACTION_VIEW_CONTACT = "view_contact";
     private final int REQUEST_SYNC_CONTACTS = 0x28cf;
     private Contact contact;
@@ -259,6 +261,11 @@ public class ContactDetailsActivity extends OmemoActivity implements OnAccountUp
 
     @Override
     public void onRosterUpdate(final XmppConnectionService.UpdateRosterReason reason, final Contact contact) {
+        refreshUi();
+    }
+
+    @Override
+    public void onConversationUpdate() {
         refreshUi();
     }
 
@@ -829,6 +836,18 @@ public class ContactDetailsActivity extends OmemoActivity implements OnAccountUp
                 }
             }
             final boolean hasClientIcon = ClientIconUtils.applyRosterClientIcon(binding.resource, contact);
+            final String softwareVersion = contact.getSoftwareVersion();
+            if (TextUtils.isEmpty(softwareVersion)) {
+                binding.clientVersion.setVisibility(View.GONE);
+            } else {
+                binding.clientVersion.setText(softwareVersion);
+                binding.clientVersion.setVisibility(View.VISIBLE);
+            }
+            if (hasClientIcon || !TextUtils.isEmpty(softwareVersion)) {
+                binding.clientInfoLayout.setVisibility(View.VISIBLE);
+            } else {
+                binding.clientInfoLayout.setVisibility(View.GONE);
+            }
             if (hasClientIcon) {
                 binding.resource.setVisibility(View.VISIBLE);
             } else {
@@ -1046,6 +1065,10 @@ public class ContactDetailsActivity extends OmemoActivity implements OnAccountUp
                 this.binding.showMedia.setOnClickListener((v) -> MediaBrowserActivity.launch(this, contact));
             }
             this.mIndividualNotifications = xmppConnectionService.hasIndividualNotification(mConversation);
+
+            if (contact.isActive() && contact.getSoftwareVersion() == null) {
+                xmppConnectionService.fetchVersion(account, contact.getJid());
+            }
 
             final VcardAdapter items = new VcardAdapter();
             binding.profileItems.setAdapter(items);
