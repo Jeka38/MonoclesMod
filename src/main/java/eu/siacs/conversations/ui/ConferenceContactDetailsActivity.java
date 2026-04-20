@@ -1,6 +1,7 @@
 package eu.siacs.conversations.ui;
 
 import android.os.Bundle;
+import android.text.TextUtils;
 import android.view.View;
 import android.widget.TextView;
 
@@ -11,13 +12,16 @@ import androidx.databinding.DataBindingUtil;
 import eu.siacs.conversations.R;
 import eu.siacs.conversations.databinding.ActivityMucContactDetailsBinding;
 import eu.siacs.conversations.entities.Account;
+import eu.siacs.conversations.entities.Contact;
 import eu.siacs.conversations.entities.Conversation;
 import eu.siacs.conversations.entities.MucOptions;
+import eu.siacs.conversations.services.XmppConnectionService;
 import eu.siacs.conversations.ui.util.AvatarWorkerTask;
+import eu.siacs.conversations.ui.util.ClientIconUtils;
 import eu.siacs.conversations.utils.IrregularUnicodeDetector;
 import eu.siacs.conversations.xmpp.Jid;
 
-public class ConferenceContactDetailsActivity extends XmppActivity {
+public class ConferenceContactDetailsActivity extends XmppActivity implements XmppConnectionService.OnConversationUpdate, XmppConnectionService.OnMucRosterUpdate {
     public static final String ACTION_VIEW_CONTACT = "view_contact";
 
     private Conversation mConversation;
@@ -30,6 +34,16 @@ public class ConferenceContactDetailsActivity extends XmppActivity {
     protected void refreshUiReal() {
         invalidateOptionsMenu();
         populateView();
+    }
+
+    @Override
+    public void onConversationUpdate() {
+        refreshUi();
+    }
+
+    @Override
+    public void onMucRosterUpdate() {
+        refreshUi();
     }
 
     @Override
@@ -84,6 +98,28 @@ public class ConferenceContactDetailsActivity extends XmppActivity {
         }
         binding.contactDisplayName.setText(user.getName());
         binding.jid.setText(IrregularUnicodeDetector.style(this, contactJid));
+        final boolean hasClientIcon = ClientIconUtils.applyMucUserClientIcon(binding.resource, user);
+        String softwareVersion = null;
+        final Contact contact = user.getContact();
+        if (contact != null) {
+            softwareVersion = contact.getSoftwareVersion();
+        }
+        if (TextUtils.isEmpty(softwareVersion)) {
+            binding.clientVersion.setVisibility(View.GONE);
+        } else {
+            binding.clientVersion.setText(softwareVersion);
+            binding.clientVersion.setVisibility(View.VISIBLE);
+        }
+        if (hasClientIcon || !TextUtils.isEmpty(softwareVersion)) {
+            binding.clientInfoLayout.setVisibility(View.VISIBLE);
+        } else {
+            binding.clientInfoLayout.setVisibility(View.GONE);
+        }
+        if (hasClientIcon) {
+            binding.resource.setVisibility(View.VISIBLE);
+        } else {
+            binding.resource.setVisibility(View.GONE);
+        }
         String account = accountJid.asBareJid().toEscapedString();
         binding.detailsAccount.setText(getString(R.string.using_account, account));
         AvatarWorkerTask.loadAvatar(user, binding.detailsContactBadge, R.dimen.avatar_on_details_screen_size);
@@ -107,6 +143,12 @@ public class ConferenceContactDetailsActivity extends XmppActivity {
             this.mConversation = xmppConnectionService.findConversation(account, contactJid, false);
             final MucOptions mucOptions = ((Conversation) this.mConversation).getMucOptions();
             this.user = mucOptions.findUserByFullJid(contactJid);
+            if (this.user != null) {
+                final Contact contact = user.getContact();
+                if (user.isOnline() && contact != null && contact.getSoftwareVersion() == null) {
+                    xmppConnectionService.fetchVersion(account, user.getRealJid());
+                }
+            }
             populateView();
         }
     }
