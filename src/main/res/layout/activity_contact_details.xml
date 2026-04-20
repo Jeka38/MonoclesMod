@@ -113,14 +113,31 @@
                                         android:layout_marginBottom="4dp"
                                         android:textAppearance="@style/TextAppearance.Conversations.Subhead" />
 
-                                    <ImageView
-                                        android:id="@+id/resource"
-                                        android:layout_width="24dp"
-                                        android:layout_height="24dp"
+                                    <LinearLayout
+                                        android:id="@+id/client_info_layout"
+                                        android:layout_width="wrap_content"
+                                        android:layout_height="wrap_content"
                                         android:layout_marginTop="4dp"
                                         android:layout_marginBottom="4dp"
-                                        android:contentDescription="@string/client_icon"
-                                        android:visibility="gone" />
+                                        android:layout_gravity="center_horizontal"
+                                        android:orientation="horizontal"
+                                        android:visibility="gone"
+                                        android:gravity="center_vertical">
+
+                                        <ImageView
+                                            android:id="@+id/resource"
+                                            android:layout_width="24dp"
+                                            android:layout_height="24dp"
+                                            android:contentDescription="@string/client_icon" />
+
+                                        <TextView
+                                            android:id="@+id/client_version"
+                                            android:layout_width="wrap_content"
+                                            android:layout_height="wrap_content"
+                                            android:layout_marginStart="8dp"
+                                            android:layout_marginLeft="8dp"
+                                            android:textAppearance="@style/TextAppearance.Conversations.Subhead" />
+                                    </LinearLayout>
                                 </LinearLayout>
 
                             </RelativeLayout>

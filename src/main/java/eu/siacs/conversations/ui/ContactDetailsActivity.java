@@ -13,6 +13,7 @@ import android.graphics.drawable.Drawable;
 import android.net.Uri;
 import android.os.Build;
 import android.os.Bundle;
+import android.text.TextUtils;
 import android.preference.PreferenceManager;
 import android.provider.ContactsContract.CommonDataKinds;
 import android.provider.ContactsContract.Contacts;
@@ -105,7 +106,7 @@ import eu.siacs.conversations.xmpp.jingle.OngoingRtpSession;
 import eu.siacs.conversations.xmpp.jingle.RtpCapability;
 import me.drakeet.support.toast.ToastCompat;
 
-public class ContactDetailsActivity extends OmemoActivity implements OnAccountUpdate, OnRosterUpdate, OnUpdateBlocklist, OnKeyStatusUpdated, OnMediaLoaded {
+public class ContactDetailsActivity extends OmemoActivity implements OnAccountUpdate, OnRosterUpdate, OnUpdateBlocklist, OnKeyStatusUpdated, OnMediaLoaded, XmppConnectionService.OnConversationUpdate {
     public static final String ACTION_VIEW_CONTACT = "view_contact";
     private final int REQUEST_SYNC_CONTACTS = 0x28cf;
     private Contact contact;
@@ -829,10 +830,14 @@ public class ContactDetailsActivity extends OmemoActivity implements OnAccountUp
                 }
             }
             final boolean hasClientIcon = ClientIconUtils.applyRosterClientIcon(binding.resource, contact);
-            if (hasClientIcon) {
-                binding.resource.setVisibility(View.VISIBLE);
+            final String softwareVersion = contact.getSoftwareVersion();
+            if (hasClientIcon || !TextUtils.isEmpty(softwareVersion)) {
+                binding.clientInfoLayout.setVisibility(View.VISIBLE);
+                binding.resource.setVisibility(hasClientIcon ? View.VISIBLE : View.GONE);
+                binding.clientVersion.setVisibility(TextUtils.isEmpty(softwareVersion) ? View.GONE : View.VISIBLE);
+                binding.clientVersion.setText(softwareVersion);
             } else {
-                binding.resource.setVisibility(View.GONE);
+                binding.clientInfoLayout.setVisibility(View.GONE);
             }
             if (contact.getOption(Contact.Options.FROM)) {
                 binding.detailsSendPresence.setText(R.string.send_presence_updates);
@@ -1036,6 +1041,9 @@ public class ContactDetailsActivity extends OmemoActivity implements OnAccountUp
             }
             this.mConversation = xmppConnectionService.findConversation(account, contactJid, false);
             this.contact = account.getRoster().getContact(contactJid);
+            if (this.contact.showInRoster() && TextUtils.isEmpty(this.contact.getSoftwareVersion())) {
+                xmppConnectionService.fetchVersion(account, contact.getJid().asBareJid());
+            }
             if (mPendingFingerprintVerificationUri != null) {
                 processFingerprintVerification(mPendingFingerprintVerificationUri);
                 mPendingFingerprintVerificationUri = null;
@@ -1117,6 +1125,11 @@ public class ContactDetailsActivity extends OmemoActivity implements OnAccountUp
             mMediaAdapter.setAttachments(attachments.subList(0, Math.min(limit, attachments.size())));
             binding.mediaWrapper.setVisibility(attachments.size() > 0 ? View.VISIBLE : View.GONE);
         });
+    }
+
+    @Override
+    public void onConversationUpdate() {
+        refreshUi();
     }
 
     class VcardAdapter extends ArrayAdapter<Element> {
