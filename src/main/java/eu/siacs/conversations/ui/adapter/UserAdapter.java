@@ -75,6 +75,15 @@ public class UserAdapter extends ListAdapter<MucOptions.User, UserAdapter.ViewHo
         return new ViewHolder(DataBindingUtil.inflate(LayoutInflater.from(viewGroup.getContext()), R.layout.contact, viewGroup, false));
     }
 
+    private boolean isAffiliationList = false;
+
+    public void setAffiliationList(boolean affiliationList) {
+        if (isAffiliationList != affiliationList) {
+            isAffiliationList = affiliationList;
+            notifyDataSetChanged();
+        }
+    }
+
     @Override
     public void onBindViewHolder(@NonNull ViewHolder viewHolder, int position) {
         final MucOptions.User user = getItem(position);
@@ -82,12 +91,17 @@ public class UserAdapter extends ListAdapter<MucOptions.User, UserAdapter.ViewHo
         viewHolder.binding.getRoot().setOnClickListener(v -> {
             final XmppActivity activity = XmppActivity.find(v);
             if (activity != null) {
-                final String nick = user.getNick();
-                activity.highlightInMuc(user.getConversation(), nick != null ? nick : user.getComparableName());
+                if (isAffiliationList) {
+                    selectedUser = user;
+                    v.showContextMenu();
+                } else {
+                    final String nick = user.getNick();
+                    activity.highlightInMuc(user.getConversation(), nick != null ? nick : user.getComparableName());
+                }
             }
         });
         viewHolder.binding.getRoot().setTag(user);
-        viewHolder.binding.getRoot().setOnCreateContextMenuListener(this);
+        viewHolder.binding.getRoot().setOnCreateContextMenuListener((menu, v, menuInfo) -> onCreateContextMenu(menu, v, menuInfo, isAffiliationList));
         viewHolder.binding.getRoot().setOnLongClickListener(v -> {
             selectedUser = user;
             return false;
@@ -96,9 +110,22 @@ public class UserAdapter extends ListAdapter<MucOptions.User, UserAdapter.ViewHo
         if (name != null && name.contains("@")) {
             name = name.substring(name.indexOf("@") + 1);
         }
+        if (name == null || name.isEmpty()) {
+            final Contact contact = user.getContact();
+            if (contact != null) {
+                name = contact.getDisplayName();
+            } else if (user.getRealJid() != null) {
+                name = user.getRealJid().asBareJid().toEscapedString();
+            }
+        }
         viewHolder.binding.contactDisplayName.setText(name == null ? "" : name);
-        viewHolder.binding.contactJid.setVisibility(View.GONE);
-        viewHolder.binding.contactJid.setText("");
+        if (isAffiliationList && user.getRealJid() != null) {
+            viewHolder.binding.contactJid.setText(user.getRealJid().asBareJid().toEscapedString());
+            viewHolder.binding.contactJid.setVisibility(View.VISIBLE);
+        } else {
+            viewHolder.binding.contactJid.setVisibility(View.GONE);
+            viewHolder.binding.contactJid.setText("");
+        }
         if (advancedMode && user.getPgpKeyId() != 0) {
             viewHolder.binding.key.setVisibility(View.VISIBLE);
             viewHolder.binding.key.setOnClickListener(v -> {
@@ -162,7 +189,11 @@ public class UserAdapter extends ListAdapter<MucOptions.User, UserAdapter.ViewHo
 
     @Override
     public void onCreateContextMenu(ContextMenu menu, View v, ContextMenu.ContextMenuInfo menuInfo) {
-        MucDetailsContextMenuHelper.onCreateContextMenu(menu, v);
+        onCreateContextMenu(menu, v, menuInfo, false);
+    }
+
+    public void onCreateContextMenu(ContextMenu menu, View v, ContextMenu.ContextMenuInfo menuInfo, boolean isAffiliationList) {
+        MucDetailsContextMenuHelper.onCreateContextMenu(menu, v, isAffiliationList);
     }
 
     protected class ViewHolder extends RecyclerView.ViewHolder {

@@ -15,8 +15,10 @@ import android.widget.EditText;
 
 import androidx.appcompat.widget.Toolbar;
 import androidx.annotation.NonNull;
+import androidx.appcompat.app.AlertDialog;
 import androidx.databinding.DataBindingUtil;
 
+import com.google.android.material.tabs.TabLayout;
 import com.google.common.collect.Collections2;
 import com.google.common.collect.Lists;
 import com.google.common.collect.Ordering;
@@ -39,6 +41,7 @@ import me.drakeet.support.toast.ToastCompat;
 
 public class MucUsersActivity extends XmppActivity implements XmppConnectionService.OnMucRosterUpdate, XmppConnectionService.OnAffiliationChanged, MenuItem.OnActionExpandListener, TextWatcher {
 
+    private ActivityMucUsersBinding binding;
     private UserAdapter userAdapter;
 
     private Conversation mConversation = null;
@@ -46,6 +49,23 @@ public class MucUsersActivity extends XmppActivity implements XmppConnectionServ
     private EditText mSearchEditText;
 
     private ArrayList<MucOptions.User> allUsers = new ArrayList<>();
+
+    private enum Tab {
+        OCCUPANTS(R.string.participants),
+        OWNERS(R.string.owner),
+        ADMINS(R.string.admin),
+        MODERATORS(R.string.moderator),
+        MEMBERS(R.string.member),
+        OUTCASTS(R.string.outcast);
+
+        final int resId;
+
+        Tab(int resId) {
+            this.resId = resId;
+        }
+    }
+
+    private Tab mSelectedTab = Tab.OCCUPANTS;
 
     @Override
     protected void refreshUiReal() {
@@ -58,7 +78,8 @@ public class MucUsersActivity extends XmppActivity implements XmppConnectionServ
         if (uuid != null) {
             mConversation = xmppConnectionService.findConversationByUuid(uuid);
             if (mConversation != null) {
-                xmppConnectionService.fetchConferenceMembers(mConversation); // Вызов метода через сервис
+                xmppConnectionService.fetchConferenceMembers(mConversation);
+                updateFabVisibility();
             }
         }
         loadAndSubmitUsers();
@@ -67,7 +88,7 @@ public class MucUsersActivity extends XmppActivity implements XmppConnectionServ
 
     private void loadAndSubmitUsers() {
         if (mConversation != null) {
-            allUsers = mConversation.getMucOptions().getUsers(true, mConversation.getMucOptions().getSelf().getAffiliation().ranks(MucOptions.Affiliation.ADMIN));
+            allUsers = mConversation.getMucOptions().getUsers(true, true);
             submitFilteredList(mSearchEditText != null ? mSearchEditText.getText().toString() : null);
         }
     }
@@ -75,7 +96,26 @@ public class MucUsersActivity extends XmppActivity implements XmppConnectionServ
     private void submitFilteredList(final String search) {
         List<MucOptions.User> filteredUsers = new ArrayList<>(allUsers);
 
-        filteredUsers.removeIf(user -> !user.isOnline());
+        switch (mSelectedTab) {
+            case OCCUPANTS:
+                filteredUsers.removeIf(user -> !user.isOnline());
+                break;
+            case OWNERS:
+                filteredUsers.removeIf(user -> user.getAffiliation() != MucOptions.Affiliation.OWNER);
+                break;
+            case ADMINS:
+                filteredUsers.removeIf(user -> user.getAffiliation() != MucOptions.Affiliation.ADMIN);
+                break;
+            case MODERATORS:
+                filteredUsers.removeIf(user -> user.getRole() != MucOptions.Role.MODERATOR);
+                break;
+            case MEMBERS:
+                filteredUsers.removeIf(user -> user.getAffiliation() != MucOptions.Affiliation.MEMBER);
+                break;
+            case OUTCASTS:
+                filteredUsers.removeIf(user -> user.getAffiliation() != MucOptions.Affiliation.OUTCAST);
+                break;
+        }
 
         if (TextUtils.isEmpty(search)) {
             userAdapter.submitList(Ordering.natural().immutableSortedCopy(filteredUsers));
@@ -104,7 +144,7 @@ public class MucUsersActivity extends XmppActivity implements XmppConnectionServ
 
     @Override
     public boolean onContextItemSelected(@NonNull MenuItem item) {
-        if (!MucDetailsContextMenuHelper.onContextItemSelected(item, userAdapter.getSelectedUser(), this)) {
+        if (!MucDetailsContextMenuHelper.onContextItemSelected(item, userAdapter.getSelectedUser(), this, null, mSelectedTab != Tab.OCCUPANTS)) {
             return super.onContextItemSelected(item);
         }
         return true;
@@ -113,11 +153,95 @@ public class MucUsersActivity extends XmppActivity implements XmppConnectionServ
     @Override
     protected void onCreate(final Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
-        ActivityMucUsersBinding binding = DataBindingUtil.setContentView(this, R.layout.activity_muc_users);
+        binding = DataBindingUtil.setContentView(this, R.layout.activity_muc_users);
         setSupportActionBar((Toolbar) binding.toolbar.getRoot());
         configureActionBar(getSupportActionBar(), true);
         this.userAdapter = new UserAdapter(getPreferences().getBoolean("advanced_muc_mode", false));
         binding.list.setAdapter(this.userAdapter);
+
+        for (Tab tab : Tab.values()) {
+            binding.tabLayout.addTab(binding.tabLayout.newTab().setText(tab.resId));
+        }
+
+        binding.tabLayout.addOnTabSelectedListener(new TabLayout.OnTabSelectedListener() {
+            @Override
+            public void onTabSelected(TabLayout.Tab tab) {
+                mSelectedTab = Tab.values()[tab.getPosition()];
+                userAdapter.setAffiliationList(mSelectedTab != Tab.OCCUPANTS);
+                updateFabVisibility();
+                loadAndSubmitUsers();
+            }
+
+            @Override
+            public void onTabUnselected(TabLayout.Tab tab) {
+            }
+
+            @Override
+            public void onTabReselected(TabLayout.Tab tab) {
+            }
+        });
+
+        binding.fab.setOnClickListener(v -> showAddJidDialog());
+    }
+
+    private void updateFabVisibility() {
+        if (mConversation == null) {
+            binding.fab.hide();
+            return;
+        }
+        final MucOptions.Affiliation affiliation = mConversation.getMucOptions().getSelf().getAffiliation();
+        boolean canManage = false;
+        switch (mSelectedTab) {
+            case OWNERS:
+            case ADMINS:
+                canManage = affiliation == MucOptions.Affiliation.OWNER;
+                break;
+            case MODERATORS:
+                canManage = false;
+                break;
+            case MEMBERS:
+            case OUTCASTS:
+                canManage = affiliation.ranks(MucOptions.Affiliation.ADMIN);
+                break;
+            default:
+                canManage = false;
+                break;
+        }
+        if (canManage) {
+            binding.fab.show();
+        } else {
+            binding.fab.hide();
+        }
+    }
+
+    private void showAddJidDialog() {
+        final EditText input = new EditText(this);
+        input.setHint(R.string.account_settings_jabber_id);
+        new AlertDialog.Builder(this)
+                .setTitle(R.string.add)
+                .setView(input)
+                .setPositiveButton(R.string.add, (dialog, which) -> {
+                    final String jidString = input.getText().toString().trim();
+                    try {
+                        final Jid jid = Jid.of(jidString);
+                        MucOptions.Affiliation affiliation = MucOptions.Affiliation.NONE;
+                        switch (mSelectedTab) {
+                            case OWNERS: affiliation = MucOptions.Affiliation.OWNER; break;
+                            case ADMINS: affiliation = MucOptions.Affiliation.ADMIN; break;
+                            case MEMBERS: affiliation = MucOptions.Affiliation.MEMBER; break;
+                            case OUTCASTS: affiliation = MucOptions.Affiliation.OUTCAST; break;
+                        }
+                        if (affiliation != MucOptions.Affiliation.NONE) {
+                            xmppConnectionService.changeAffiliationInConference(mConversation, jid, affiliation, this);
+                        } else if (mSelectedTab == Tab.MODERATORS) {
+                            xmppConnectionService.changeRoleInConference(mConversation, jid.toString(), MucOptions.Role.MODERATOR);
+                        }
+                    } catch (IllegalArgumentException e) {
+                        displayToast(getString(R.string.invalid_jid));
+                    }
+                })
+                .setNegativeButton(R.string.cancel, null)
+                .show();
     }
 
 
@@ -132,7 +256,7 @@ public class MucUsersActivity extends XmppActivity implements XmppConnectionServ
 
     @Override
     public void onAffiliationChangedSuccessful(Jid jid) {
-
+        loadAndSubmitUsers();
     }
 
     @Override

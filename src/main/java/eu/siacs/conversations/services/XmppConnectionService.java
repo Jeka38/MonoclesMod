@@ -4190,13 +4190,7 @@ public class XmppConnectionService extends Service {
 
                             MucOptions.User user = AbstractParser.parseItem(conversation, child);
                             if (!user.realJidMatchesAccount()) {
-                                boolean isMember = user.getAffiliation() == MucOptions.Affiliation.MEMBER;
-                                boolean isOnline = user.isOnline();
-
-                                // Фильтруем офлайн "member"
-                                if (!isMember || isOnline) {
-                                    boolean isNew = conversation.getMucOptions().updateUser(user);
-                                }
+                                boolean isNew = conversation.getMucOptions().updateUser(user);
                             }
                         }
                     }

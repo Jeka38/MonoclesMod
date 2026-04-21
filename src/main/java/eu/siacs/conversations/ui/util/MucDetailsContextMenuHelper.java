@@ -49,9 +49,14 @@ public final class MucDetailsContextMenuHelper {
     private static final int ACTION_REMOVE_ADMIN = 4;
     private static final int ACTION_GRANT_OWNER = 5;
     private static final int ACTION_REMOVE_OWNER = 6;
+    private static final int ACTION_REMOVE_FROM_LIST = 7;
     private static int titleColor = 0xff0091ea;
 
     public static void onCreateContextMenu(ContextMenu menu, View v) {
+        onCreateContextMenu(menu, v, false);
+    }
+
+    public static void onCreateContextMenu(ContextMenu menu, View v, boolean isAffiliationList) {
         final XmppActivity activity = XmppActivity.find(v);
         final Object tag = v.getTag();
         if (tag instanceof MucOptions.User && activity != null) {
@@ -67,11 +72,15 @@ public final class MucDetailsContextMenuHelper {
                 name = user.getNick();
             }
             menu.setHeaderTitle(name);
-            MucDetailsContextMenuHelper.configureMucDetailsContextMenu(activity, menu, user.getConversation(), user);
+            MucDetailsContextMenuHelper.configureMucDetailsContextMenu(activity, menu, user.getConversation(), user, false, null, isAffiliationList);
         }
     }
 
     public static Pair<CharSequence[], Integer[]> getPermissionsChoices(Activity activity, Conversation conversation, User user) {
+        return getPermissionsChoices(activity, conversation, user, false);
+    }
+
+    public static Pair<CharSequence[], Integer[]> getPermissionsChoices(Activity activity, Conversation conversation, User user, boolean isAffiliationList) {
         ArrayList<CharSequence> items = new ArrayList<>();
         ArrayList<Integer> actions = new ArrayList<>();
         final User self = conversation.getMucOptions().getSelf();
@@ -106,6 +115,10 @@ public final class MucDetailsContextMenuHelper {
                 actions.add(ACTION_REMOVE_OWNER);
             }
         }
+        if (isAffiliationList && user.getAffiliation() != MucOptions.Affiliation.NONE && ((self.getAffiliation().ranks(MucOptions.Affiliation.ADMIN) && self.getAffiliation().outranks(user.getAffiliation())) || self.getAffiliation() == MucOptions.Affiliation.OWNER)) {
+            items.add(activity.getString(R.string.remove_from_channel)); // Use existing string
+            actions.add(ACTION_REMOVE_FROM_LIST);
+        }
         return new Pair<>(items.toArray(new CharSequence[items.size()]), actions.toArray(new Integer[actions.size()]));
     }
 
@@ -114,6 +127,10 @@ public final class MucDetailsContextMenuHelper {
     }
 
     public static void configureMucDetailsContextMenu(XmppActivity activity, Menu menu, Conversation conversation, User user, boolean forceContextMenu, String username) {
+        configureMucDetailsContextMenu(activity, menu, conversation, user, forceContextMenu, username, false);
+    }
+
+    public static void configureMucDetailsContextMenu(XmppActivity activity, Menu menu, Conversation conversation, User user, boolean forceContextMenu, String username, boolean isAffiliationList) {
         final boolean advancedMode = PreferenceManager.getDefaultSharedPreferences(activity).getBoolean("advanced_muc_mode", false);
         final MucOptions mucOptions = conversation.getMucOptions();
         final boolean isGroupChat = mucOptions.isPrivateAndNonAnonymous();
@@ -193,7 +210,7 @@ public final class MucDetailsContextMenuHelper {
                     managePermissionsVisible = true;
                 }
             }
-            managePermissions.setVisible(managePermissionsVisible);
+            managePermissions.setVisible(managePermissionsVisible || isAffiliationList);
             sendPrivateMessage.setVisible(true);
             sendPrivateMessage.setEnabled(mucOptions.allowPm());
             shareContactDetails.setVisible(user.isOnline() && !isGroupChat && mucOptions.allowPm() && user.getRole().ranks(MucOptions.Role.VISITOR));
@@ -228,6 +245,10 @@ public final class MucDetailsContextMenuHelper {
     }
 
     public static boolean onContextItemSelected(MenuItem item, User user, XmppActivity activity, final String fingerprint) {
+        return onContextItemSelected(item, user, activity, fingerprint, false);
+    }
+
+    public static boolean onContextItemSelected(MenuItem item, User user, XmppActivity activity, final String fingerprint, boolean isAffiliationList) {
         final Conversation conversation = user.getConversation();
         final XmppConnectionService.OnAffiliationChanged onAffiliationChanged = activity instanceof XmppConnectionService.OnAffiliationChanged ? (XmppConnectionService.OnAffiliationChanged) activity : null;
         final Jid jid = user.getRealJid();
@@ -283,7 +304,7 @@ public final class MucDetailsContextMenuHelper {
                   activity.showAddToRosterDialog(contact);
                   return true;
             case R.id.manage_permissions:
-                Pair<CharSequence[], Integer[]> choices = getPermissionsChoices(activity, conversation, user);
+                Pair<CharSequence[], Integer[]> choices = getPermissionsChoices(activity, conversation, user, isAffiliationList);
                 int[] selected = new int[] { -1 };
                 new AlertDialog.Builder(activity)
                         .setTitle(R.string.manage_permission)
@@ -311,6 +332,7 @@ public final class MucDetailsContextMenuHelper {
                                     activity.xmppConnectionService.changeAffiliationInConference(conversation, jid, MucOptions.Affiliation.OWNER, onAffiliationChanged);
                                     break;
                                 case ACTION_REMOVE_MEMBERSHIP:
+                                case ACTION_REMOVE_FROM_LIST:
                                     activity.xmppConnectionService.changeAffiliationInConference(conversation, jid, MucOptions.Affiliation.NONE, onAffiliationChanged);
                                     break;
                             }
