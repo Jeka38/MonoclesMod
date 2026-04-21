@@ -94,7 +94,7 @@
 
                                             <LinearLayout
                                                 android:id="@+id/client_info_layout"
-                                                android:layout_width="wrap_content"
+                                                android:layout_width="match_parent"
                                                 android:layout_height="wrap_content"
                                                 android:layout_marginTop="4dp"
                                                 android:gravity="center_vertical"
@@ -109,8 +109,9 @@
 
                                                 <TextView
                                                     android:id="@+id/client_version"
-                                                    android:layout_width="wrap_content"
+                                                    android:layout_width="0dp"
                                                     android:layout_height="wrap_content"
+                                                    android:layout_weight="1"
                                                     android:layout_marginStart="8dp"
                                                     android:layout_marginLeft="8dp"
                                                     android:textAppearance="@style/TextAppearance.Conversations.Caption"

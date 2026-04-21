@@ -66,6 +66,33 @@
                             android:textIsSelectable="true"
                             android:visibility="gone" />
 
+                        <LinearLayout
+                            android:id="@+id/client_info_layout"
+                            android:layout_width="wrap_content"
+                            android:layout_height="wrap_content"
+                            android:layout_gravity="center_horizontal"
+                            android:layout_marginTop="4dp"
+                            android:gravity="center_vertical"
+                            android:orientation="horizontal"
+                            android:visibility="gone">
+
+                            <ImageView
+                                android:id="@+id/resource"
+                                android:layout_width="24dp"
+                                android:layout_height="24dp"
+                                android:contentDescription="@string/client_icon" />
+
+                            <TextView
+                                android:id="@+id/client_version"
+                                android:layout_width="0dp"
+                                android:layout_height="wrap_content"
+                                android:layout_weight="1"
+                                android:layout_marginStart="8dp"
+                                android:layout_marginLeft="8dp"
+                                android:textAppearance="@style/TextAppearance.Conversations.Caption"
+                                android:visibility="gone" />
+                        </LinearLayout>
+
                         <com.wefika.flowlayout.FlowLayout
                             android:id="@+id/tags"
                             android:layout_width="match_parent"

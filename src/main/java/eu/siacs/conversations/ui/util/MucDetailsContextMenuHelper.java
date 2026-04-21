@@ -268,7 +268,7 @@ public final class MucDetailsContextMenuHelper {
                 return true;
             case R.id.action_contact_details:
                 if (contact != null) {
-                    activity.switchToContactDetails(contact, fingerprint);
+                    activity.switchToContactDetails(contact, fingerprint, user.getFullJid());
                 }
                 return true;
             case R.id.action_muc_contact_details:

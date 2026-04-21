@@ -702,10 +702,17 @@ public abstract class XmppActivity extends ActionBarActivity {
     }
 
     public void switchToContactDetails(Contact contact, String messageFingerprint) {
+        switchToContactDetails(contact, messageFingerprint, null);
+    }
+
+    public void switchToContactDetails(Contact contact, String messageFingerprint, Jid fullJid) {
         Intent intent = new Intent(this, ContactDetailsActivity.class);
         intent.setAction(ContactDetailsActivity.ACTION_VIEW_CONTACT);
         intent.putExtra(EXTRA_ACCOUNT, contact.getAccount().getJid().asBareJid().toEscapedString());
         intent.putExtra("contact", contact.getJid().toEscapedString());
+        if (fullJid != null) {
+            intent.putExtra("full_jid", fullJid.toEscapedString());
+        }
         intent.putExtra("fingerprint", messageFingerprint);
         startActivity(intent);
         overridePendingTransition(R.animator.fade_in, R.animator.fade_out);

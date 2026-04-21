@@ -159,6 +159,7 @@ public class ContactDetailsActivity extends OmemoActivity implements OnAccountUp
     };
     private Jid accountJid;
     private Jid contactJid;
+    private Jid fullJid;
     private boolean showDynamicTags = false;
     private boolean showLastSeen = false;
     private boolean showInactiveOmemo = false;
@@ -304,6 +305,11 @@ public class ContactDetailsActivity extends OmemoActivity implements OnAccountUp
             }
             try {
                 this.contactJid = Jid.ofEscaped(getIntent().getExtras().getString("contact"));
+            } catch (final IllegalArgumentException ignored) {
+            }
+            try {
+                final String f = getIntent().getExtras().getString("full_jid");
+                this.fullJid = f != null ? Jid.ofEscaped(f) : null;
             } catch (final IllegalArgumentException ignored) {
             }
         }
@@ -911,7 +917,7 @@ public class ContactDetailsActivity extends OmemoActivity implements OnAccountUp
             }
         }
 
-        binding.jid.setText(IrregularUnicodeDetector.style(this, contact.getJid()));
+        binding.jid.setText(IrregularUnicodeDetector.style(this, fullJid != null ? fullJid : contact.getJid()));
         String account;
         if (Config.DOMAIN_LOCK != null) {
             account = contact.getAccount().getJid().getEscapedLocal();
@@ -1068,8 +1074,8 @@ public class ContactDetailsActivity extends OmemoActivity implements OnAccountUp
             this.mIndividualNotifications = xmppConnectionService.hasIndividualNotification(mConversation);
 
             if (contact.getSoftwareVersion() == null) {
-                Jid queryJid = contactJid.isFullJid() ? contactJid : contact.getJid().withResource(contact.getLastResource());
-                if (queryJid.isFullJid()) {
+                Jid queryJid = fullJid != null ? fullJid : (contactJid.isFullJid() ? contactJid : contact.getJid().withResource(contact.getLastResource()));
+                if (queryJid != null && queryJid.isFullJid()) {
                     xmppConnectionService.fetchVersion(account, queryJid);
                 }
             }
