@@ -61,6 +61,14 @@ public final class ClientIconUtils {
             imageView.setImageResource(occupantIcon);
             return true;
         }
+        final String softwareVersion = user.getSoftwareVersion();
+        if (!TextUtils.isEmpty(softwareVersion)) {
+            final Integer icon = inferIconByClientName(softwareVersion);
+            if (icon != null) {
+                imageView.setImageResource(icon);
+                return true;
+            }
+        }
         Contact contact = user.getContact();
         if (contact == null && user.getRealJid() != null) {
             contact = user.getAccount().getRoster().getContact(user.getRealJid());
@@ -428,6 +436,10 @@ public final class ClientIconUtils {
     public static String getSoftwareVersion(final MucOptions.User user) {
         if (user == null) {
             return null;
+        }
+        final String softwareVersion = user.getSoftwareVersion();
+        if (!TextUtils.isEmpty(softwareVersion)) {
+            return softwareVersion;
         }
         final Contact contact = user.getContact();
         if (contact != null) {

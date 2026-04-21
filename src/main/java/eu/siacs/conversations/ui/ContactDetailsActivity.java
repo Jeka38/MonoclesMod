@@ -835,24 +835,6 @@ public class ContactDetailsActivity extends OmemoActivity implements OnAccountUp
                     binding.statusMessage.setText(builder);
                 }
             }
-            final boolean hasClientIcon = ClientIconUtils.applyRosterClientIcon(binding.resource, contact);
-            final String softwareVersion = ClientIconUtils.getSoftwareVersion(contact);
-            if (TextUtils.isEmpty(softwareVersion)) {
-                binding.clientVersion.setVisibility(View.GONE);
-            } else {
-                binding.clientVersion.setText(softwareVersion);
-                binding.clientVersion.setVisibility(View.VISIBLE);
-            }
-            if (hasClientIcon || !TextUtils.isEmpty(softwareVersion)) {
-                binding.clientInfoLayout.setVisibility(View.VISIBLE);
-            } else {
-                binding.clientInfoLayout.setVisibility(View.GONE);
-            }
-            if (hasClientIcon) {
-                binding.resource.setVisibility(View.VISIBLE);
-            } else {
-                binding.resource.setVisibility(View.GONE);
-            }
             if (contact.getOption(Contact.Options.FROM)) {
                 binding.detailsSendPresence.setText(R.string.send_presence_updates);
                 binding.detailsSendPresence.setChecked(true);
@@ -896,6 +878,25 @@ public class ContactDetailsActivity extends OmemoActivity implements OnAccountUp
             binding.detailsSendPresence.setVisibility(View.GONE);
             binding.detailsReceivePresence.setVisibility(View.GONE);
             binding.statusMessage.setVisibility(View.GONE);
+        }
+
+        final boolean hasClientIcon = ClientIconUtils.applyRosterClientIcon(binding.resource, contact);
+        final String softwareVersion = ClientIconUtils.getSoftwareVersion(contact);
+        if (TextUtils.isEmpty(softwareVersion)) {
+            binding.clientVersion.setVisibility(View.GONE);
+        } else {
+            binding.clientVersion.setText(softwareVersion);
+            binding.clientVersion.setVisibility(View.VISIBLE);
+        }
+        if (hasClientIcon || !TextUtils.isEmpty(softwareVersion)) {
+            binding.clientInfoLayout.setVisibility(View.VISIBLE);
+        } else {
+            binding.clientInfoLayout.setVisibility(View.GONE);
+        }
+        if (hasClientIcon) {
+            binding.resource.setVisibility(View.VISIBLE);
+        } else {
+            binding.resource.setVisibility(View.GONE);
         }
 
         if (contact.isBlocked() && !this.showDynamicTags) {
