@@ -79,6 +79,7 @@ public class MucUsersActivity extends XmppActivity implements XmppConnectionServ
             mConversation = xmppConnectionService.findConversationByUuid(uuid);
             if (mConversation != null) {
                 xmppConnectionService.fetchConferenceMembers(mConversation);
+                updateTabsVisibility();
                 updateFabVisibility();
             }
         }
@@ -184,6 +185,21 @@ public class MucUsersActivity extends XmppActivity implements XmppConnectionServ
         binding.fab.setOnClickListener(v -> showAddJidDialog());
     }
 
+    private void updateTabsVisibility() {
+        if (mConversation == null) {
+            binding.tabLayout.setVisibility(View.GONE);
+            return;
+        }
+        final MucOptions.Affiliation affiliation = mConversation.getMucOptions().getSelf().getAffiliation();
+        if (affiliation.ranks(MucOptions.Affiliation.ADMIN)) {
+            binding.tabLayout.setVisibility(View.VISIBLE);
+        } else {
+            binding.tabLayout.setVisibility(View.GONE);
+            mSelectedTab = Tab.OCCUPANTS;
+            userAdapter.setAffiliationList(false);
+        }
+    }
+
     private void updateFabVisibility() {
         if (mConversation == null) {
             binding.fab.hide();
@@ -247,6 +263,8 @@ public class MucUsersActivity extends XmppActivity implements XmppConnectionServ
 
     @Override
     public void onMucRosterUpdate() {
+        updateTabsVisibility();
+        updateFabVisibility();
         loadAndSubmitUsers();
     }
 
