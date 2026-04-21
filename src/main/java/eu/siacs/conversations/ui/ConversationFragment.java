@@ -348,6 +348,7 @@ public class ConversationFragment extends XmppFragment
     private final SimpleDateFormat df = new SimpleDateFormat("yyyy-MM-dd  hh:mm (z)", Locale.US);
 
     private boolean reInitRequiredOnStart = true;
+    private boolean mJustSwitched = false;
     private int identiconWidth = -1;
     private File savingAsGif = null;
     private MediaPreviewAdapter mediaPreviewAdapter;
@@ -3759,6 +3760,10 @@ public class ConversationFragment extends XmppFragment
     }
     private void fireReadEvent() {
         if (activity != null && this.conversation != null) {
+            if (mJustSwitched) {
+                mJustSwitched = false;
+                return;
+            }
             String uuid = scrolledToBottom() ? null : getLastVisibleMessageUuid();
             if (uuid != null || scrolledToBottom()) {
                 activity.onConversationRead(this.conversation, uuid);
@@ -4395,10 +4400,17 @@ public class ConversationFragment extends XmppFragment
             return false;
         }
         final Conversation originalConversation = this.conversation;
+        final boolean changedConversation = originalConversation != conversation;
+        if (changedConversation) {
+            this.mJustSwitched = true;
+        }
         this.conversation = conversation;
         //once we set the conversation all is good and it will automatically do the right thing in onStart()
         if (this.activity == null || this.binding == null) {
             return false;
+        }
+        if (changedConversation) {
+            resetUnreadMessagesCount();
         }
         updateinputfield(canSendMeCommand());
         if (activity != null) {
@@ -4420,7 +4432,7 @@ public class ConversationFragment extends XmppFragment
 
         setupIme();
 
-        final boolean scrolledToBottomAndNoPending = this.scrolledToBottom() && pendingScrollState.peek() == null;
+        final boolean scrolledToBottomAndNoPending = !changedConversation && this.scrolledToBottom() && pendingScrollState.peek() == null;
 
         this.binding.textSendButton.setContentDescription(activity.getString(R.string.send_message_to_x, conversation.getName()));
         this.binding.textinput.setKeyboardListener(null);
@@ -4449,7 +4461,9 @@ public class ConversationFragment extends XmppFragment
             synchronized (this.messageList) {
                 Log.d(Config.LOGTAG, "jump to first unread message");
                 final Message first = conversation.getFirstUnreadMessage();
-                resetUnreadMessagesCount();
+                if (!changedConversation) {
+                    resetUnreadMessagesCount();
+                }
                 final int bottom = Math.max(0, this.messageList.size() - 1);
                 final int pos;
                 final boolean jumpToBottom;
