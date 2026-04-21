@@ -6457,9 +6457,23 @@ public class XmppConnectionService extends Service {
             if (response.getType() == IqPacket.TYPE.RESULT) {
                 Element query = response.query("jabber:iq:version");
                 String name = query.findChildContent("name");
+                String version = query.findChildContent("version");
+                String os = query.findChildContent("os");
                 if (name != null) {
-                    Contact contact = a.getRoster().getContact(jid);
-                    contact.setSoftwareVersion(name);
+                    String fullVersion = name + (version != null ? " " + version : "") + (os != null ? " (" + os + ")" : "");
+                    a.getRoster().getContact(jid).setSoftwareVersion(fullVersion);
+                    if (jid.isFullJid()) {
+                        Conversation conversation = findConversation(account, jid.asBareJid(), false);
+                        if (conversation != null && conversation.getMode() == Conversation.MODE_MULTI) {
+                            MucOptions.User user = conversation.getMucOptions().findUserByFullJid(jid);
+                            if (user != null) {
+                                user.setSoftwareVersion(fullVersion);
+                                if (user.getRealJid() != null) {
+                                    a.getRoster().getContact(user.getRealJid()).setSoftwareVersion(fullVersion);
+                                }
+                            }
+                        }
+                    }
                     updateConversationUi();
                 }
             }

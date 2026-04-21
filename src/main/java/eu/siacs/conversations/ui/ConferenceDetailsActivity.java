@@ -62,6 +62,7 @@ import eu.siacs.conversations.services.XmppConnectionService.OnMucRosterUpdate;
 import eu.siacs.conversations.ui.adapter.MediaAdapter;
 import eu.siacs.conversations.ui.adapter.UserPreviewAdapter;
 import eu.siacs.conversations.ui.interfaces.OnMediaLoaded;
+import eu.siacs.conversations.ui.util.ClientIconUtils;
 import eu.siacs.conversations.ui.util.Attachment;
 import eu.siacs.conversations.ui.util.AvatarWorkerTask;
 import eu.siacs.conversations.ui.util.GridManager;
@@ -617,6 +618,12 @@ public class ConferenceDetailsActivity extends XmppActivity implements OnConvers
                     this.binding.leaveMuc.setText(groupChat ? R.string.action_end_conversation_muc : R.string.action_end_conversation_channel);
                 }
                 this.mIndividualNotifications = xmppConnectionService.hasIndividualNotification(mConversation);
+                final Account account = mConversation.getAccount();
+                final Jid jid = mConversation.getJid().asBareJid();
+                final Contact contact = account.getRoster().getContact(jid);
+                if (contact.getSoftwareVersion() == null) {
+                    xmppConnectionService.fetchVersion(account, jid);
+                }
                 updateView();
             }
         }
@@ -650,6 +657,27 @@ public class ConferenceDetailsActivity extends XmppActivity implements OnConvers
         this.binding.editMucNameButton.setVisibility((self.getAffiliation().ranks(MucOptions.Affiliation.OWNER) || mucOptions.canChangeSubject() || (bookmark != null && connection != null && connection.getFeatures().bookmarks2())) ? View.VISIBLE : View.GONE);
         this.binding.detailsAccount.setText(getString(R.string.using_account, account));
         this.binding.jid.setText(mConversation.getJid().asBareJid().toEscapedString());
+        final Jid jid = mConversation.getJid().asBareJid();
+        final Contact contact = mConversation.getAccount().getRoster().getContact(jid);
+        final boolean hasClientIcon = ClientIconUtils.applyRosterClientIcon(binding.resource, contact);
+        final String softwareVersion = ClientIconUtils.getSoftwareVersion(contact);
+        if (android.text.TextUtils.isEmpty(softwareVersion)) {
+            binding.clientVersion.setVisibility(View.GONE);
+        } else {
+            binding.clientVersion.setText(softwareVersion);
+            binding.clientVersion.setVisibility(View.VISIBLE);
+        }
+        if (hasClientIcon || !android.text.TextUtils.isEmpty(softwareVersion)) {
+            binding.clientInfoLayout.setVisibility(View.VISIBLE);
+        } else {
+            binding.clientInfoLayout.setVisibility(View.GONE);
+        }
+        if (hasClientIcon) {
+            binding.resource.setVisibility(View.VISIBLE);
+        } else {
+            binding.resource.setVisibility(View.GONE);
+        }
+
         if (xmppConnectionService.multipleAccounts()) {
             this.binding.detailsAccount.setVisibility(View.VISIBLE);
         } else {

@@ -12,6 +12,7 @@ import android.content.pm.PackageManager;
 import android.graphics.drawable.Drawable;
 import android.net.Uri;
 import android.os.Build;
+import android.text.TextUtils;
 import android.os.Bundle;
 import android.preference.PreferenceManager;
 import android.provider.ContactsContract.CommonDataKinds;
@@ -77,6 +78,7 @@ import eu.siacs.conversations.entities.ListItem;
 import eu.siacs.conversations.services.NotificationService;
 import eu.siacs.conversations.services.XmppConnectionService;
 import eu.siacs.conversations.services.XmppConnectionService.OnAccountUpdate;
+import eu.siacs.conversations.services.XmppConnectionService.OnConversationUpdate;
 import eu.siacs.conversations.services.XmppConnectionService.OnRosterUpdate;
 import eu.siacs.conversations.ui.adapter.MediaAdapter;
 import eu.siacs.conversations.ui.interfaces.OnMediaLoaded;
@@ -105,7 +107,7 @@ import eu.siacs.conversations.xmpp.jingle.OngoingRtpSession;
 import eu.siacs.conversations.xmpp.jingle.RtpCapability;
 import me.drakeet.support.toast.ToastCompat;
 
-public class ContactDetailsActivity extends OmemoActivity implements OnAccountUpdate, OnRosterUpdate, OnUpdateBlocklist, OnKeyStatusUpdated, OnMediaLoaded {
+public class ContactDetailsActivity extends OmemoActivity implements OnAccountUpdate, OnRosterUpdate, OnConversationUpdate, OnUpdateBlocklist, OnKeyStatusUpdated, OnMediaLoaded {
     public static final String ACTION_VIEW_CONTACT = "view_contact";
     private final int REQUEST_SYNC_CONTACTS = 0x28cf;
     private Contact contact;
@@ -157,6 +159,7 @@ public class ContactDetailsActivity extends OmemoActivity implements OnAccountUp
     };
     private Jid accountJid;
     private Jid contactJid;
+    private Jid fullJid;
     private boolean showDynamicTags = false;
     private boolean showLastSeen = false;
     private boolean showInactiveOmemo = false;
@@ -263,6 +266,11 @@ public class ContactDetailsActivity extends OmemoActivity implements OnAccountUp
     }
 
     @Override
+    public void onConversationUpdate() {
+        refreshUi();
+    }
+
+    @Override
     public void onAccountUpdate() {
         refreshUi();
     }
@@ -297,6 +305,11 @@ public class ContactDetailsActivity extends OmemoActivity implements OnAccountUp
             }
             try {
                 this.contactJid = Jid.ofEscaped(getIntent().getExtras().getString("contact"));
+            } catch (final IllegalArgumentException ignored) {
+            }
+            try {
+                final String f = getIntent().getExtras().getString("full_jid");
+                this.fullJid = f != null ? Jid.ofEscaped(f) : null;
             } catch (final IllegalArgumentException ignored) {
             }
         }
@@ -828,12 +841,6 @@ public class ContactDetailsActivity extends OmemoActivity implements OnAccountUp
                     binding.statusMessage.setText(builder);
                 }
             }
-            final boolean hasClientIcon = ClientIconUtils.applyRosterClientIcon(binding.resource, contact);
-            if (hasClientIcon) {
-                binding.resource.setVisibility(View.VISIBLE);
-            } else {
-                binding.resource.setVisibility(View.GONE);
-            }
             if (contact.getOption(Contact.Options.FROM)) {
                 binding.detailsSendPresence.setText(R.string.send_presence_updates);
                 binding.detailsSendPresence.setChecked(true);
@@ -879,6 +886,25 @@ public class ContactDetailsActivity extends OmemoActivity implements OnAccountUp
             binding.statusMessage.setVisibility(View.GONE);
         }
 
+        final boolean hasClientIcon = ClientIconUtils.applyRosterClientIcon(binding.resource, contact);
+        final String softwareVersion = ClientIconUtils.getSoftwareVersion(contact);
+        if (TextUtils.isEmpty(softwareVersion)) {
+            binding.clientVersion.setVisibility(View.GONE);
+        } else {
+            binding.clientVersion.setText(softwareVersion);
+            binding.clientVersion.setVisibility(View.VISIBLE);
+        }
+        if (hasClientIcon || !TextUtils.isEmpty(softwareVersion)) {
+            binding.clientInfoLayout.setVisibility(View.VISIBLE);
+        } else {
+            binding.clientInfoLayout.setVisibility(View.GONE);
+        }
+        if (hasClientIcon) {
+            binding.resource.setVisibility(View.VISIBLE);
+        } else {
+            binding.resource.setVisibility(View.GONE);
+        }
+
         if (contact.isBlocked() && !this.showDynamicTags) {
             binding.detailsLastseen.setVisibility(View.VISIBLE);
             binding.detailsLastseen.setText(R.string.contact_blocked);
@@ -891,7 +917,7 @@ public class ContactDetailsActivity extends OmemoActivity implements OnAccountUp
             }
         }
 
-        binding.jid.setText(IrregularUnicodeDetector.style(this, contact.getJid()));
+        binding.jid.setText(IrregularUnicodeDetector.style(this, fullJid != null ? fullJid : contact.getJid()));
         String account;
         if (Config.DOMAIN_LOCK != null) {
             account = contact.getAccount().getJid().getEscapedLocal();
@@ -1046,6 +1072,13 @@ public class ContactDetailsActivity extends OmemoActivity implements OnAccountUp
                 this.binding.showMedia.setOnClickListener((v) -> MediaBrowserActivity.launch(this, contact));
             }
             this.mIndividualNotifications = xmppConnectionService.hasIndividualNotification(mConversation);
+
+            if (contact.getSoftwareVersion() == null) {
+                Jid queryJid = fullJid != null ? fullJid : (contactJid.isFullJid() ? contactJid : contact.getJid().withResource(contact.getLastResource()));
+                if (queryJid != null && queryJid.isFullJid()) {
+                    xmppConnectionService.fetchVersion(account, queryJid);
+                }
+            }
 
             final VcardAdapter items = new VcardAdapter();
             binding.profileItems.setAdapter(items);
