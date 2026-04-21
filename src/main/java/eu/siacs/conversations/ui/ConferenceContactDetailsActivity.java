@@ -99,11 +99,7 @@ public class ConferenceContactDetailsActivity extends XmppActivity implements Xm
         binding.contactDisplayName.setText(user.getName());
         binding.jid.setText(IrregularUnicodeDetector.style(this, contactJid));
         final boolean hasClientIcon = ClientIconUtils.applyMucUserClientIcon(binding.resource, user);
-        String softwareVersion = null;
-        final Contact contact = user.getContact();
-        if (contact != null) {
-            softwareVersion = contact.getSoftwareVersion();
-        }
+        final String softwareVersion = ClientIconUtils.getSoftwareVersion(user);
         if (TextUtils.isEmpty(softwareVersion)) {
             binding.clientVersion.setVisibility(View.GONE);
         } else {
@@ -141,12 +137,14 @@ public class ConferenceContactDetailsActivity extends XmppActivity implements Xm
                 return;
             }
             this.mConversation = xmppConnectionService.findConversation(account, contactJid, false);
+            if (mConversation == null) {
+                return;
+            }
             final MucOptions mucOptions = ((Conversation) this.mConversation).getMucOptions();
             this.user = mucOptions.findUserByFullJid(contactJid);
-            if (this.user != null) {
-                final Contact contact = user.getContact();
-                if (user.isOnline() && contact != null && contact.getSoftwareVersion() == null) {
-                    xmppConnectionService.fetchVersion(account, user.getRealJid());
+            if (this.user != null && user.isOnline()) {
+                if (user.getSoftwareVersion() == null) {
+                    xmppConnectionService.fetchVersion(account, contactJid);
                 }
             }
             populateView();

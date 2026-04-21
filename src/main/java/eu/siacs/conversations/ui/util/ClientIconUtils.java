@@ -414,7 +414,43 @@ public final class ClientIconUtils {
         return true;
     }
 
-    private static String inferClientName(final Contact contact, final String resource) {
+    public static String getSoftwareVersion(final Contact contact) {
+        if (contact == null) {
+            return null;
+        }
+        final String version = contact.getSoftwareVersion();
+        if (!TextUtils.isEmpty(version)) {
+            return version;
+        }
+        return inferClientName(contact, contact.getLastResource());
+    }
+
+    public static String getSoftwareVersion(final MucOptions.User user) {
+        if (user == null) {
+            return null;
+        }
+        final Contact contact = user.getContact();
+        if (contact != null) {
+            final String version = contact.getSoftwareVersion();
+            if (!TextUtils.isEmpty(version)) {
+                return version;
+            }
+        }
+        final Presence presence = user.getPresence();
+        if (presence != null) {
+            final ServiceDiscoveryResult disco = presence.getServiceDiscoveryResult();
+            if (disco != null) {
+                for (ServiceDiscoveryResult.Identity identity : disco.getIdentities()) {
+                    if (!TextUtils.isEmpty(identity.getName())) {
+                        return identity.getName();
+                    }
+                }
+            }
+        }
+        return null;
+    }
+
+    public static String inferClientName(final Contact contact, final String resource) {
         final Pair<Map<String, String>, Map<String, String>> typeAndName = contact.getPresences().toTypeAndNameMap();
         final Map<String, String> names = typeAndName.second;
         if (names.isEmpty()) {

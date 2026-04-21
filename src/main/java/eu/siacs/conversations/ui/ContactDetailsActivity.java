@@ -836,7 +836,7 @@ public class ContactDetailsActivity extends OmemoActivity implements OnAccountUp
                 }
             }
             final boolean hasClientIcon = ClientIconUtils.applyRosterClientIcon(binding.resource, contact);
-            final String softwareVersion = contact.getSoftwareVersion();
+            final String softwareVersion = ClientIconUtils.getSoftwareVersion(contact);
             if (TextUtils.isEmpty(softwareVersion)) {
                 binding.clientVersion.setVisibility(View.GONE);
             } else {
@@ -1066,8 +1066,8 @@ public class ContactDetailsActivity extends OmemoActivity implements OnAccountUp
             }
             this.mIndividualNotifications = xmppConnectionService.hasIndividualNotification(mConversation);
 
-            if (contact.isActive() && contact.getSoftwareVersion() == null) {
-                xmppConnectionService.fetchVersion(account, contact.getJid());
+            if (contact.isActive() && contact.getSoftwareVersion() == null && contact.getLastResource() != null) {
+                xmppConnectionService.fetchVersion(account, contact.getJid().withResource(contact.getLastResource()));
             }
 
             final VcardAdapter items = new VcardAdapter();

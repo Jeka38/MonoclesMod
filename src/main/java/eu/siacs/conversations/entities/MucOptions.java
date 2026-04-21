@@ -886,6 +886,7 @@ public class MucOptions {
         protected String occupantId;
         protected boolean online = true;
         protected Presence presence;
+        private String softwareVersion;
 
         public User(MucOptions options, Jid fullJid, final String occupantId, final String nick, final Set<Hat> hats) {
             this.options = options;
@@ -913,6 +914,14 @@ public class MucOptions {
 
         public void setNick(String nick) {
             this.nick = nick;
+        }
+
+        public String getSoftwareVersion() {
+            return softwareVersion;
+        }
+
+        public void setSoftwareVersion(String version) {
+            this.softwareVersion = version;
         }
 
         public Role getRole() {
