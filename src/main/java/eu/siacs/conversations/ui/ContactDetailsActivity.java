@@ -1067,8 +1067,11 @@ public class ContactDetailsActivity extends OmemoActivity implements OnAccountUp
             }
             this.mIndividualNotifications = xmppConnectionService.hasIndividualNotification(mConversation);
 
-            if (contact.isActive() && contact.getSoftwareVersion() == null && contact.getLastResource() != null) {
-                xmppConnectionService.fetchVersion(account, contact.getJid().withResource(contact.getLastResource()));
+            if (contact.getSoftwareVersion() == null) {
+                Jid queryJid = contactJid.isFullJid() ? contactJid : contact.getJid().withResource(contact.getLastResource());
+                if (queryJid.isFullJid()) {
+                    xmppConnectionService.fetchVersion(account, queryJid);
+                }
             }
 
             final VcardAdapter items = new VcardAdapter();

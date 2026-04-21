@@ -6461,24 +6461,18 @@ public class XmppConnectionService extends Service {
                 String os = query.findChildContent("os");
                 if (name != null) {
                     String fullVersion = name + (version != null ? " " + version : "") + (os != null ? " (" + os + ")" : "");
+                    a.getRoster().getContact(jid).setSoftwareVersion(fullVersion);
                     if (jid.isFullJid()) {
                         Conversation conversation = findConversation(account, jid.asBareJid(), false);
                         if (conversation != null && conversation.getMode() == Conversation.MODE_MULTI) {
                             MucOptions.User user = conversation.getMucOptions().findUserByFullJid(jid);
                             if (user != null) {
                                 user.setSoftwareVersion(fullVersion);
-                                final Contact contact = user.getContact();
-                                if (contact != null) {
-                                    contact.setSoftwareVersion(fullVersion);
+                                if (user.getRealJid() != null) {
+                                    a.getRoster().getContact(user.getRealJid()).setSoftwareVersion(fullVersion);
                                 }
                             }
-                        } else {
-                            Contact contact = a.getRoster().getContact(jid);
-                            contact.setSoftwareVersion(fullVersion);
                         }
-                    } else {
-                        Contact contact = a.getRoster().getContact(jid);
-                        contact.setSoftwareVersion(fullVersion);
                     }
                     updateConversationUi();
                 }
