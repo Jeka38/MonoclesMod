@@ -402,7 +402,7 @@ public class MucOptions {
     }
 
     public ArrayList<User> getUsers(boolean includeOffline) {
-        return getUsers(true, false);
+        return getUsers(includeOffline, false);
     }
 
     public ArrayList<User> getUsers(boolean includeOffline, boolean includeOutcast) {

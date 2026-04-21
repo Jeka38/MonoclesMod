@@ -79,8 +79,7 @@ public class MucUsersActivity extends XmppActivity implements XmppConnectionServ
         List<MucOptions.User> filteredUsers = new ArrayList<>(allUsers);
 
         if (hideOfflineUsers) {
-            filteredUsers.removeIf(user ->
-                    user.getContact() != null && !user.isOnline());
+            filteredUsers.removeIf(user -> !user.isOnline());
         }
 
         if (TextUtils.isEmpty(search)) {
