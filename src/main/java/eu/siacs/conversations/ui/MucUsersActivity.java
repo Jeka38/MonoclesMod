@@ -47,9 +47,6 @@ public class MucUsersActivity extends XmppActivity implements XmppConnectionServ
 
     private ArrayList<MucOptions.User> allUsers = new ArrayList<>();
 
-    private boolean hideOfflineUsers = true;
-
-
     @Override
     protected void refreshUiReal() {
     }
@@ -78,9 +75,7 @@ public class MucUsersActivity extends XmppActivity implements XmppConnectionServ
     private void submitFilteredList(final String search) {
         List<MucOptions.User> filteredUsers = new ArrayList<>(allUsers);
 
-        if (hideOfflineUsers) {
-            filteredUsers.removeIf(user -> !user.isOnline());
-        }
+        filteredUsers.removeIf(user -> !user.isOnline());
 
         if (TextUtils.isEmpty(search)) {
             userAdapter.submitList(Ordering.natural().immutableSortedCopy(filteredUsers));
@@ -102,24 +97,6 @@ public class MucUsersActivity extends XmppActivity implements XmppConnectionServ
 
     @Override
     public boolean onOptionsItemSelected(@NonNull MenuItem item) {
-        if (item.getItemId() == R.id.action_toggle_offline) {
-            // Проверка роли пользователя перед выполнением действий
-            if (mConversation != null) {
-                MucOptions.Affiliation affiliation = mConversation.getMucOptions().getSelf().getAffiliation();
-                if (affiliation != MucOptions.Affiliation.ADMIN && affiliation != MucOptions.Affiliation.OWNER) {
-                    return false; // Игнорируем нажатие
-                }
-            }
-
-            hideOfflineUsers = !hideOfflineUsers;
-
-            // Меняем иконку
-            item.setIcon(hideOfflineUsers ? R.drawable.ic_visibility_off : R.drawable.ic_visibility);
-
-            // Обновляем список пользователей
-            submitFilteredList(mSearchEditText != null ? mSearchEditText.getText().toString() : null);
-            return true;
-        }
         return super.onOptionsItemSelected(item);
     }
 
@@ -173,17 +150,6 @@ public class MucUsersActivity extends XmppActivity implements XmppConnectionServ
         mSearchEditText.addTextChangedListener(this);
         mSearchEditText.setHint(R.string.search_participants);
         menuSearchView.setOnActionExpandListener(this);
-
-        // Проверка роли пользователя и скрытие кнопки
-        if (mConversation != null) {
-            MucOptions.Affiliation affiliation = mConversation.getMucOptions().getSelf().getAffiliation();
-            if (affiliation != MucOptions.Affiliation.ADMIN && affiliation != MucOptions.Affiliation.OWNER) {
-                MenuItem toggleOfflineItem = menu.findItem(R.id.action_toggle_offline);
-                if (toggleOfflineItem != null) {
-                    toggleOfflineItem.setVisible(false);
-                }
-            }
-        }
 
         return true;
     }
