@@ -290,6 +290,9 @@ public class ContactDetailsActivity extends OmemoActivity implements OnAccountUp
 
     @Override
     protected String getShareableUri(boolean http) {
+        if (contact == null) {
+            return "";
+        }
         if (http) {
             return "https://monocles.chat/chat/" + XmppUri.lameUrlEncode(contact.getJid().asBareJid().toEscapedString());
         } else {
@@ -301,22 +304,32 @@ public class ContactDetailsActivity extends OmemoActivity implements OnAccountUp
     protected void onCreate(final Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
         showInactiveOmemo = savedInstanceState != null && savedInstanceState.getBoolean("show_inactive_omemo", false);
-        if (getIntent().getAction().equals(ACTION_VIEW_CONTACT)) {
-            try {
-                this.accountJid = Jid.ofEscaped(getIntent().getExtras().getString(EXTRA_ACCOUNT));
-            } catch (final IllegalArgumentException ignored) {
-            }
-            try {
-                this.contactJid = Jid.ofEscaped(getIntent().getExtras().getString("contact"));
-            } catch (final IllegalArgumentException ignored) {
-            }
-            try {
-                final String f = getIntent().getExtras().getString("full_jid");
-                this.fullJid = f != null ? Jid.ofEscaped(f) : null;
-            } catch (final IllegalArgumentException ignored) {
+        final Intent intent = getIntent();
+        if (intent == null) {
+            return;
+        }
+        final String action = intent.getAction();
+        if (ACTION_VIEW_CONTACT.equals(action)) {
+            final Bundle extras = intent.getExtras();
+            if (extras != null) {
+                try {
+                    final String a = extras.getString(EXTRA_ACCOUNT);
+                    this.accountJid = a != null ? Jid.ofEscaped(a) : null;
+                } catch (final IllegalArgumentException ignored) {
+                }
+                try {
+                    final String c = extras.getString("contact");
+                    this.contactJid = c != null ? Jid.ofEscaped(c) : null;
+                } catch (final IllegalArgumentException ignored) {
+                }
+                try {
+                    final String f = extras.getString("full_jid");
+                    this.fullJid = f != null ? Jid.ofEscaped(f) : null;
+                } catch (final IllegalArgumentException ignored) {
+                }
             }
         }
-        this.messageFingerprint = getIntent().getStringExtra("fingerprint");
+        this.messageFingerprint = intent.getStringExtra("fingerprint");
         this.binding = DataBindingUtil.setContentView(this, R.layout.activity_contact_details);
         setSupportActionBar((Toolbar) binding.toolbar.getRoot());
         configureActionBar(getSupportActionBar());
@@ -580,27 +593,25 @@ public class ContactDetailsActivity extends OmemoActivity implements OnAccountUp
                 if (mConversation == null) {
                     break;
                 }
-                Intent messageNotificationIntent = null;
                 if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
                     final String time = String.valueOf(xmppConnectionService.getIndividualNotificationPreference(mConversation));
-                    messageNotificationIntent = new Intent(Settings.ACTION_CHANNEL_NOTIFICATION_SETTINGS)
+                    Intent messageNotificationIntent = new Intent(Settings.ACTION_CHANNEL_NOTIFICATION_SETTINGS)
                             .putExtra(Settings.EXTRA_APP_PACKAGE, this.getPackageName())
                             .putExtra(Settings.EXTRA_CHANNEL_ID, NotificationService.INDIVIDUAL_NOTIFICATION_PREFIX + NotificationService.MESSAGES_CHANNEL_ID + "_" + mConversation.getUuid() + "_" + time);
+                    startActivity(messageNotificationIntent);
                 }
-                startActivity(messageNotificationIntent);
                 break;
             case R.id.action_call_notifications:
                 if (mConversation == null) {
                     break;
                 }
-                Intent callNotificationIntent = null;
                 if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
                     final String time = String.valueOf(xmppConnectionService.getIndividualNotificationPreference(mConversation));
-                    callNotificationIntent = new Intent(Settings.ACTION_CHANNEL_NOTIFICATION_SETTINGS)
+                    Intent callNotificationIntent = new Intent(Settings.ACTION_CHANNEL_NOTIFICATION_SETTINGS)
                             .putExtra(Settings.EXTRA_APP_PACKAGE, this.getPackageName())
                             .putExtra(Settings.EXTRA_CHANNEL_ID, NotificationService.INDIVIDUAL_NOTIFICATION_PREFIX + NotificationService.INCOMING_CALLS_CHANNEL_ID + "_" + mConversation.getUuid() + "_" + time);
+                    startActivity(callNotificationIntent);
                 }
-                startActivity(callNotificationIntent);
                 break;
         }
         return super.onOptionsItemSelected(menuItem);
@@ -630,11 +641,13 @@ public class ContactDetailsActivity extends OmemoActivity implements OnAccountUp
 
     @Override
     public boolean onPrepareOptionsMenu(Menu menu) {
+        if (menu == null) {
+            return super.onPrepareOptionsMenu(menu);
+        }
         MenuItem menuItemIndividualNotifications = menu.findItem(R.id.action_activate_individual_notifications);
-        menuItemIndividualNotifications.setChecked(mIndividualNotifications);
-        menuItemIndividualNotifications.setVisible(Compatibility.runsTwentySix());
-        if (mConversation == null) {
-            return true;
+        if (menuItemIndividualNotifications != null) {
+            menuItemIndividualNotifications.setChecked(mIndividualNotifications);
+            menuItemIndividualNotifications.setVisible(mConversation != null && Compatibility.runsTwentySix());
         }
         return true;
     }
@@ -677,6 +690,12 @@ public class ContactDetailsActivity extends OmemoActivity implements OnAccountUp
                 menuCallNotification.setVisible(false);
                 menuMessageNotification.setVisible(false);
             }
+        } else {
+            menuCall.setVisible(false);
+            menuOngoingCall.setVisible(false);
+            menuVideoCall.setVisible(false);
+            menuCallNotification.setVisible(false);
+            menuMessageNotification.setVisible(false);
         }
         final XmppConnection connection = contact.getAccount().getXmppConnection();
         if (connection != null && connection.getFeatures().blocking()) {
@@ -1101,8 +1120,8 @@ public class ContactDetailsActivity extends OmemoActivity implements OnAccountUp
             }
             this.mIndividualNotifications = xmppConnectionService.hasIndividualNotification(mConversation);
 
-            if (contact.getSoftwareVersion() == null) {
-                Jid queryJid = fullJid != null ? fullJid : (contactJid.isFullJid() ? contactJid : contact.getJid().withResource(contact.getLastResource()));
+            if (contact != null && contact.getSoftwareVersion() == null) {
+                Jid queryJid = fullJid != null ? fullJid : (contactJid != null && contactJid.isFullJid() ? contactJid : contact.getJid().withResource(contact.getLastResource()));
                 if (queryJid != null && queryJid.isFullJid()) {
                     xmppConnectionService.fetchVersion(account, queryJid);
                 }

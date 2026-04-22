@@ -1,5 +1,6 @@
 package eu.siacs.conversations.ui;
 
+import android.content.Intent;
 import android.os.Bundle;
 import android.text.TextUtils;
 import android.view.View;
@@ -49,14 +50,20 @@ public class ConferenceContactDetailsActivity extends XmppActivity implements Xm
     @Override
     protected void onCreate(final Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
-        if (getIntent().getAction().equals(ACTION_VIEW_CONTACT)) {
-            try {
-                this.accountJid = Jid.ofEscaped(getIntent().getExtras().getString(EXTRA_ACCOUNT));
-            } catch (final IllegalArgumentException ignored) {
-            }
-            try {
-                this.contactJid = Jid.ofEscaped(getIntent().getExtras().getString("user"));
-            } catch (final IllegalArgumentException ignored) {
+        final Intent intent = getIntent();
+        if (intent != null && ACTION_VIEW_CONTACT.equals(intent.getAction())) {
+            final Bundle extras = intent.getExtras();
+            if (extras != null) {
+                try {
+                    final String a = extras.getString(EXTRA_ACCOUNT);
+                    this.accountJid = a != null ? Jid.ofEscaped(a) : null;
+                } catch (final IllegalArgumentException ignored) {
+                }
+                try {
+                    final String u = extras.getString("user");
+                    this.contactJid = u != null ? Jid.ofEscaped(u) : null;
+                } catch (final IllegalArgumentException ignored) {
+                }
             }
         }
         this.binding = DataBindingUtil.setContentView(this, R.layout.activity_muc_contact_details);
@@ -79,16 +86,18 @@ public class ConferenceContactDetailsActivity extends XmppActivity implements Xm
     }
 
     private void populateView() {
-        if (getSupportActionBar() != null) {
-            final ActionBar ab = getSupportActionBar();
-            if (ab != null) {
-                ab.setCustomView(R.layout.ab_title);
-                ab.setDisplayShowCustomEnabled(true);
-                TextView abtitle = findViewById(android.R.id.text1);
-                TextView absubtitle = findViewById(android.R.id.text2);
+        final ActionBar ab = getSupportActionBar();
+        if (ab != null) {
+            ab.setCustomView(R.layout.ab_title);
+            ab.setDisplayShowCustomEnabled(true);
+            TextView abtitle = findViewById(android.R.id.text1);
+            TextView absubtitle = findViewById(android.R.id.text2);
+            if (abtitle != null) {
                 abtitle.setText(R.string.contact_details);
                 abtitle.setSelected(true);
                 abtitle.setClickable(false);
+            }
+            if (absubtitle != null) {
                 absubtitle.setVisibility(View.GONE);
                 absubtitle.setClickable(false);
             }
