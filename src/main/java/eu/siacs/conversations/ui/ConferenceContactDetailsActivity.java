@@ -97,7 +97,14 @@ public class ConferenceContactDetailsActivity extends XmppActivity implements Xm
             return;
         }
         binding.contactDisplayName.setText(user.getName());
-        binding.jid.setText(IrregularUnicodeDetector.style(this, contactJid));
+        if (user.getRealJid() != null) {
+            binding.jid.setText(IrregularUnicodeDetector.style(this, user.getRealJid().asBareJid()));
+            binding.mucJid.setText(IrregularUnicodeDetector.style(this, contactJid));
+            binding.mucJid.setVisibility(View.VISIBLE);
+        } else {
+            binding.jid.setText(IrregularUnicodeDetector.style(this, contactJid));
+            binding.mucJid.setVisibility(View.GONE);
+        }
         final boolean hasClientIcon = ClientIconUtils.applyMucUserClientIcon(binding.resource, user);
         final String softwareVersion = ClientIconUtils.getSoftwareVersion(user);
         if (TextUtils.isEmpty(softwareVersion)) {
