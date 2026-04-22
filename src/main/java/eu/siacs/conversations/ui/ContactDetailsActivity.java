@@ -210,6 +210,9 @@ public class ContactDetailsActivity extends OmemoActivity implements OnAccountUp
     private OnClickListener mNotifyStatusClickListener = new OnClickListener() {
         @Override
         public void onClick(View v) {
+            if (mConversation == null) {
+                return;
+            }
             final AlertDialog.Builder builder = new AlertDialog.Builder(ContactDetailsActivity.this);
             builder.setTitle(R.string.pref_notification_settings);
             String[] choices = {
@@ -394,13 +397,19 @@ public class ContactDetailsActivity extends OmemoActivity implements OnAccountUp
                 finish();
                 break;
             case R.id.action_audio_call:
-                CallManager.checkPermissionAndTriggerAudioCall(this, mConversation);
+                if (mConversation != null) {
+                    CallManager.checkPermissionAndTriggerAudioCall(this, mConversation);
+                }
                 break;
             case R.id.action_video_call:
-                CallManager.checkPermissionAndTriggerVideoCall(this, mConversation);
+                if (mConversation != null) {
+                    CallManager.checkPermissionAndTriggerVideoCall(this, mConversation);
+                }
                 break;
             case R.id.action_ongoing_call:
-                CallManager.returnToOngoingCall(this, mConversation);
+                if (mConversation != null) {
+                    CallManager.returnToOngoingCall(this, mConversation);
+                }
                 break;
             case R.id.action_share_http:
                 shareLink(true);
@@ -532,6 +541,9 @@ public class ContactDetailsActivity extends OmemoActivity implements OnAccountUp
                 BlockContactDialog.show(this, contact);
                 break;
             case R.id.action_activate_individual_notifications:
+                if (mConversation == null) {
+                    break;
+                }
                 if (!menuItem.isChecked()) {
                     this.mIndividualNotifications = true;
                 } else {
@@ -542,13 +554,17 @@ public class ContactDetailsActivity extends OmemoActivity implements OnAccountUp
                         removeIndividualNotificationDialog.setPositiveButton(R.string.yes, (dialog, which) -> {
                             this.mIndividualNotifications = false;
                             try {
-                                xmppConnectionService.getNotificationService().cleanNotificationChannels(this, mConversation.getUuid());
+                                if (mConversation != null) {
+                                    xmppConnectionService.getNotificationService().cleanNotificationChannels(this, mConversation.getUuid());
+                                }
                             } catch (Exception e) {
                                 e.printStackTrace();
                             }
                             menuItem.setChecked(this.mIndividualNotifications);
-                            xmppConnectionService.setIndividualNotificationPreference(mConversation, !mIndividualNotifications);
-                            xmppConnectionService.updateNotificationChannels();
+                            if (mConversation != null) {
+                                xmppConnectionService.setIndividualNotificationPreference(mConversation, !mIndividualNotifications);
+                                xmppConnectionService.updateNotificationChannels();
+                            }
                             invalidateOptionsMenu();
                             refreshUi();
                         });
@@ -565,6 +581,9 @@ public class ContactDetailsActivity extends OmemoActivity implements OnAccountUp
                 refreshUi();
                 break;
             case R.id.action_message_notifications:
+                if (mConversation == null) {
+                    break;
+                }
                 Intent messageNotificationIntent = null;
                 if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
                     final String time = String.valueOf(xmppConnectionService.getIndividualNotificationPreference(mConversation));
@@ -572,9 +591,14 @@ public class ContactDetailsActivity extends OmemoActivity implements OnAccountUp
                             .putExtra(Settings.EXTRA_APP_PACKAGE, this.getPackageName())
                             .putExtra(Settings.EXTRA_CHANNEL_ID, NotificationService.INDIVIDUAL_NOTIFICATION_PREFIX + NotificationService.MESSAGES_CHANNEL_ID + "_" + mConversation.getUuid() + "_" + time);
                 }
-                startActivity(messageNotificationIntent);
+                if (messageNotificationIntent != null) {
+                    startActivity(messageNotificationIntent);
+                }
                 break;
             case R.id.action_call_notifications:
+                if (mConversation == null) {
+                    break;
+                }
                 Intent callNotificationIntent = null;
                 if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
                     final String time = String.valueOf(xmppConnectionService.getIndividualNotificationPreference(mConversation));
@@ -582,7 +606,9 @@ public class ContactDetailsActivity extends OmemoActivity implements OnAccountUp
                             .putExtra(Settings.EXTRA_APP_PACKAGE, this.getPackageName())
                             .putExtra(Settings.EXTRA_CHANNEL_ID, NotificationService.INDIVIDUAL_NOTIFICATION_PREFIX + NotificationService.INCOMING_CALLS_CHANNEL_ID + "_" + mConversation.getUuid() + "_" + time);
                 }
-                startActivity(callNotificationIntent);
+                if (callNotificationIntent != null) {
+                    startActivity(callNotificationIntent);
+                }
                 break;
         }
         return super.onOptionsItemSelected(menuItem);
