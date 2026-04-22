@@ -544,13 +544,17 @@ public class ConferenceDetailsActivity extends XmppActivity implements OnConvers
 
     @Override
     public boolean onPrepareOptionsMenu(Menu menu) {
+        if (menu == null) {
+            return super.onPrepareOptionsMenu(menu);
+        }
         MenuItem menuItemAdvancedMode = menu.findItem(R.id.action_advanced_mode);
-        menuItemAdvancedMode.setChecked(mAdvancedMode);
+        if (menuItemAdvancedMode != null) {
+            menuItemAdvancedMode.setChecked(mAdvancedMode);
+        }
         MenuItem menuItemIndividualNotifications = menu.findItem(R.id.action_activate_individual_notifications);
-        menuItemIndividualNotifications.setChecked(mIndividualNotifications);
-        menuItemIndividualNotifications.setVisible(Compatibility.runsTwentySix());
-        if (mConversation == null) {
-            return true;
+        if (menuItemIndividualNotifications != null) {
+            menuItemIndividualNotifications.setChecked(mIndividualNotifications);
+            menuItemIndividualNotifications.setVisible(mConversation != null && Compatibility.runsTwentySix());
         }
         return true;
     }
@@ -560,12 +564,16 @@ public class ConferenceDetailsActivity extends XmppActivity implements OnConvers
         final boolean groupChat = mConversation != null && mConversation.isPrivateAndNonAnonymous();
         getMenuInflater().inflate(R.menu.muc_details, menu);
         final MenuItem share = menu.findItem(R.id.action_share);
-        share.setVisible(!groupChat);
+        if (share != null) {
+            share.setVisible(!groupChat);
+        }
         final MenuItem menuMessageNotification = menu.findItem(R.id.action_message_notifications);
-        if (Compatibility.runsTwentySix() && xmppConnectionServiceBound) {
-            menuMessageNotification.setVisible(xmppConnectionService.hasIndividualNotification(mConversation));
-        } else {
-            menuMessageNotification.setVisible(false);
+        if (menuMessageNotification != null) {
+            if (mConversation != null && Compatibility.runsTwentySix() && xmppConnectionServiceBound) {
+                menuMessageNotification.setVisible(xmppConnectionService.hasIndividualNotification(mConversation));
+            } else {
+                menuMessageNotification.setVisible(false);
+            }
         }
         return super.onCreateOptionsMenu(menu);
     }
@@ -603,8 +611,12 @@ public class ConferenceDetailsActivity extends XmppActivity implements OnConvers
             mPendingConferenceInvite.execute(this);
             mPendingConferenceInvite = null;
         }
-        if (getIntent().getAction().equals(ACTION_VIEW_MUC)) {
-            this.uuid = getIntent().getExtras().getString("uuid");
+        final Intent intent = getIntent();
+        if (intent != null && ACTION_VIEW_MUC.equals(intent.getAction())) {
+            final Bundle extras = intent.getExtras();
+            if (extras != null) {
+                this.uuid = extras.getString("uuid");
+            }
         }
         if (uuid != null) {
             this.mConversation = xmppConnectionService.findConversationByUuid(uuid);

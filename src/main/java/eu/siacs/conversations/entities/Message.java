@@ -1,4 +1,5 @@
 package eu.siacs.conversations.entities;
+import eu.siacs.conversations.utils.LogHelper;
 
 import android.content.ContentValues;
 import android.database.Cursor;
@@ -300,7 +301,7 @@ public class Message extends AbstractEntity implements AvatarService.Avatarable 
                     payloads.add(xmlReader.readElement(tag));
                 }
             } catch (IOException e) {
-                Log.e(Config.LOGTAG, "Failed to parse: " + payloadsStr, e);
+                LogHelper.e(Config.LOGTAG, "Failed to parse: " + payloadsStr, e);
             }
         }
 
@@ -420,7 +421,7 @@ public class Message extends AbstractEntity implements AvatarService.Avatarable 
         try {
             values.put(EDITED, Edit.toJson(edits, retractId != null || deleted));
         } catch (JSONException e) {
-            Log.e(Config.LOGTAG, "error persisting json for edits", e);
+            LogHelper.e(Config.LOGTAG, "error persisting json for edits", e);
         }
         values.put(OOB, oob ? 1 : 0);
         values.put(ERROR_MESSAGE, errorMessage);
@@ -1659,7 +1660,7 @@ public class Message extends AbstractEntity implements AvatarService.Avatarable 
                             String durationS = file.findChildContent("duration", "https://schema.org/");
                             if (durationS != null) runtime = (int)(Duration.parse(durationS).toMillis() / 1000L);
                         } catch (final NumberFormatException e) {
-                            Log.w(Config.LOGTAG, "Trouble parsing as number: " + e);
+                            LogHelper.w(Config.LOGTAG, "Trouble parsing as number: " + e);
                         }
                     }
 

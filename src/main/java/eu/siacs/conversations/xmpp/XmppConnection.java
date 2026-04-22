@@ -10,6 +10,7 @@ import android.os.SystemClock;
 import android.security.KeyChain;
 import android.util.Base64;
 import android.util.Log;
+import eu.siacs.conversations.utils.LogHelper;
 import android.util.Pair;
 import android.util.SparseArray;
 
@@ -446,7 +447,7 @@ public class XmppConnection implements Runnable {
                     return;
                 }
                 if (results.size() == 0) {
-                    Log.e(
+                    LogHelper.e(
                             Config.LOGTAG,
                             account.getJid().asBareJid() + ": Resolver results were empty");
                     return;
@@ -789,7 +790,7 @@ public class XmppConnection implements Runnable {
             } else if (nextTag.isStart("presence", Namespace.JABBER_CLIENT)) {
                 processPresence(nextTag);
             } else {
-                Log.e(
+                LogHelper.e(
                         Config.LOGTAG,
                         account.getJid().asBareJid()
                                 + ": Encountered unknown stream element"
@@ -826,7 +827,7 @@ public class XmppConnection implements Runnable {
             response.setContent(currentLoginInfo.saslMechanism.getResponse(challenge.getContent(), sslSocketOrNull(socket)));
         } catch (final SaslMechanism.AuthenticationException e) {
             // TODO: Send auth abort tag.
-            Log.e(Config.LOGTAG, e.toString());
+            LogHelper.e(Config.LOGTAG, e.toString());
             throw new StateChangingException(Account.State.UNAUTHORIZED);
         }
         tagWriter.writeElement(response);
@@ -856,7 +857,7 @@ public class XmppConnection implements Runnable {
         try {
             currentLoginInfo.success(challenge, sslSocketOrNull(socket));
         } catch (final SaslMechanism.AuthenticationException e) {
-            Log.e(Config.LOGTAG, account.getJid().asBareJid() + ": authentication failure ", e);
+            LogHelper.e(Config.LOGTAG, account.getJid().asBareJid() + ": authentication failure ", e);
             throw new StateChangingException(Account.State.UNAUTHORIZED);
         }
         Log.d(
@@ -980,7 +981,7 @@ public class XmppConnection implements Runnable {
                     this.account.resetFastToken();
                 }
             } else if (this.hashTokenRequest != null) {
-                Log.w(
+                LogHelper.w(
                         Config.LOGTAG,
                         account.getJid().asBareJid()
                                 + ": no response to our hashed token request "
@@ -1237,7 +1238,7 @@ public class XmppConnection implements Runnable {
 
     private boolean acknowledgeStanzaUpTo(final int serverCount) {
         if (serverCount > stanzasSent) {
-            Log.e(
+            LogHelper.e(
                     Config.LOGTAG,
                     "server acknowledged more stanzas than we sent. serverCount="
                             + serverCount
@@ -1331,7 +1332,7 @@ public class XmppConnection implements Runnable {
         final IqPacket packet = (IqPacket) processPacket(currentTag, PACKET_IQ);
 
         if (!packet.valid()) {
-            Log.e(
+            LogHelper.e(
                     Config.LOGTAG,
                     "encountered invalid iq from='"
                             + packet.getFrom()
@@ -1365,7 +1366,7 @@ public class XmppConnection implements Runnable {
                             }
                             packetCallbacks.remove(packet.getId());
                         } else {
-                            Log.e(
+                            LogHelper.e(
                                     Config.LOGTAG,
                                     account.getJid().asBareJid().toString()
                                             + ": ignoring spoofed iq packet");
@@ -1378,7 +1379,7 @@ public class XmppConnection implements Runnable {
                             }
                             packetCallbacks.remove(packet.getId());
                         } else {
-                            Log.e(
+                            LogHelper.e(
                                     Config.LOGTAG,
                                     account.getJid().asBareJid().toString()
                                             + ": ignoring spoofed iq packet");
@@ -1402,7 +1403,7 @@ public class XmppConnection implements Runnable {
     private void processMessage(final Tag currentTag) throws IOException {
         final MessagePacket packet = (MessagePacket) processPacket(currentTag, PACKET_MESSAGE);
         if (!packet.valid()) {
-            Log.e(
+            LogHelper.e(
                     Config.LOGTAG,
                     "encountered invalid message from='"
                             + packet.getFrom()
@@ -1424,7 +1425,7 @@ public class XmppConnection implements Runnable {
     private void processPresence(final Tag currentTag) throws IOException {
         final PresencePacket packet = (PresencePacket) processPacket(currentTag, PACKET_PRESENCE);
         if (!packet.valid()) {
-            Log.e(
+            LogHelper.e(
                     Config.LOGTAG,
                     "encountered invalid presence from='"
                             + packet.getFrom()
@@ -1731,7 +1732,7 @@ public class XmppConnection implements Runnable {
         }
         final int pinnedMechanism = account.getPinnedMechanismPriority();
         if (pinnedMechanism > saslMechanism.getPriority()) {
-            Log.e(
+            LogHelper.e(
                     Config.LOGTAG,
                     "Auth failed. Authentication mechanism "
                             + saslMechanism.getMechanism()

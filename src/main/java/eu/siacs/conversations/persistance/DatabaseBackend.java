@@ -1,4 +1,5 @@
 package eu.siacs.conversations.persistance;
+import eu.siacs.conversations.utils.LogHelper;
 
 import static eu.siacs.conversations.ui.util.UpdateHelper.moveData_PAM_monocles;
 
@@ -856,7 +857,7 @@ public class DatabaseBackend extends SQLiteOpenHelper {
             try {
                 newJid = Jid.of(cursor.getString(cursor.getColumnIndex(Conversation.CONTACTJID))).toString();
             } catch (IllegalArgumentException ignored) {
-                Log.e(Config.LOGTAG, "Failed to migrate Conversation CONTACTJID "
+                LogHelper.e(Config.LOGTAG, "Failed to migrate Conversation CONTACTJID "
                         + cursor.getString(cursor.getColumnIndex(Conversation.CONTACTJID))
                         + ": " + ignored + ". Skipping...");
                 continue;
@@ -879,7 +880,7 @@ public class DatabaseBackend extends SQLiteOpenHelper {
             try {
                 newJid = Jid.of(cursor.getString(cursor.getColumnIndex(Contact.JID))).toString();
             } catch (final IllegalArgumentException e) {
-                Log.e(Config.LOGTAG, "Failed to migrate Contact JID "
+                LogHelper.e(Config.LOGTAG, "Failed to migrate Contact JID "
                         + cursor.getString(cursor.getColumnIndex(Contact.JID))
                         + ":  Skipping...", e);
                 continue;
@@ -908,7 +909,7 @@ public class DatabaseBackend extends SQLiteOpenHelper {
                         null
                 ).getDomain().toEscapedString();
             } catch (IllegalArgumentException ignored) {
-                Log.e(Config.LOGTAG, "Failed to migrate Account SERVER "
+                LogHelper.e(Config.LOGTAG, "Failed to migrate Account SERVER "
                         + cursor.getString(cursor.getColumnIndex(Account.SERVER))
                         + ": " + ignored + ". Skipping...");
                 continue;
@@ -972,7 +973,7 @@ public class DatabaseBackend extends SQLiteOpenHelper {
 
     public WebxdcUpdate findLastWebxdcUpdate(Message message) {
         if (message.getThread() == null) {
-            Log.w(Config.LOGTAG, "WebXDC message with no thread!");
+            LogHelper.w(Config.LOGTAG, "WebXDC message with no thread!");
             return null;
         }
 
@@ -1133,7 +1134,7 @@ public class DatabaseBackend extends SQLiteOpenHelper {
             try {
                 return Message.fromCursor(cursor, conversation);
             } catch (Exception e) {
-                Log.e(Config.LOGTAG, "unable to restore message");
+                LogHelper.e(Config.LOGTAG, "unable to restore message");
             }
         }
         cursor.close();
@@ -1174,7 +1175,7 @@ public class DatabaseBackend extends SQLiteOpenHelper {
                 if (ids.contains(m.getServerMsgId())) result.put(m.getServerMsgId(), m);
                 if (ids.contains(m.getRemoteMsgId())) result.put(m.getRemoteMsgId(), m);
             } catch (Exception e) {
-                Log.e(Config.LOGTAG, "unable to restore message");
+                LogHelper.e(Config.LOGTAG, "unable to restore message");
             }
         }
         cursor.close();
@@ -1228,7 +1229,7 @@ public class DatabaseBackend extends SQLiteOpenHelper {
                 }
                 list.add(0, m);
             } catch (Exception e) {
-                Log.e(Config.LOGTAG, "unable to restore message", e);
+                LogHelper.e(Config.LOGTAG, "unable to restore message", e);
             }
         }
         for (final var parent : getMessageFuzzyIds(conversation, replyIds).entrySet()) {

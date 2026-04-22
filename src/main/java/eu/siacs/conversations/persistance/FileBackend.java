@@ -1,4 +1,5 @@
 package eu.siacs.conversations.persistance;
+import eu.siacs.conversations.utils.LogHelper;
 
 import static eu.siacs.conversations.utils.StorageHelper.getConversationsDirectory;
 import static eu.siacs.conversations.utils.StorageHelper.getGlobalAudiosPath;
@@ -1132,7 +1133,7 @@ public class FileBackend {
             float ratio = (float) options.outHeight / options.outWidth;
             return ratio > (21.0f / 9.0f) || ratio < (9.0f / 21.0f);
         } catch (final Exception e) {
-            Log.w(Config.LOGTAG, "unable to detect image bounds", e);
+            LogHelper.w(Config.LOGTAG, "unable to detect image bounds", e);
             return false;
         }
     }
@@ -1197,11 +1198,11 @@ public class FileBackend {
         if (height < 1) height = bounds == null || bounds.bottom < 1 ? 256 : bounds.bottom;
 
         if (width < 1) {
-            Log.w(Config.LOGTAG, "Drawable with no width: " + drawable);
+            LogHelper.w(Config.LOGTAG, "Drawable with no width: " + drawable);
             width = 48;
         }
         if (height < 1) {
-            Log.w(Config.LOGTAG, "Drawable with no height: " + drawable);
+            LogHelper.w(Config.LOGTAG, "Drawable with no height: " + drawable);
             height = 48;
         }
 
@@ -2385,7 +2386,7 @@ public class FileBackend {
             SVG svg = SVG.getFromInputStream(new FileInputStream(file));
             return drawSVG(svg, size);
         } catch (final IOException | SVGParseException | IllegalArgumentException e) {
-            Log.w(Config.LOGTAG, "Could not parse SVG: " + e);
+            LogHelper.w(Config.LOGTAG, "Could not parse SVG: " + e);
             return null;
         }
     }
@@ -2407,7 +2408,7 @@ public class FileBackend {
 
             return new SVGDrawable(output);
         } catch (final SVGParseException e) {
-            Log.w(Config.LOGTAG, "Could not parse SVG: " + e);
+            LogHelper.w(Config.LOGTAG, "Could not parse SVG: " + e);
             return null;
         }
     }
@@ -2589,7 +2590,7 @@ public class FileBackend {
             // delete the original file
             new File(inputPath + File.separator + inputFile).delete();
         } catch (Exception e) {
-            Log.e(Config.LOGTAG, e.getMessage());
+            LogHelper.e(Config.LOGTAG, e.getMessage());
         }
     }
 

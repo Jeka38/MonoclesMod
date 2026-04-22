@@ -194,13 +194,17 @@ public class VerifyOTRActivity extends XmppActivity implements XmppConnectionSer
     }
 
     protected boolean handleIntent(Intent intent) {
-        if (intent != null && intent.getAction().equals(ACTION_VERIFY_CONTACT)) {
+        if (intent != null && ACTION_VERIFY_CONTACT.equals(intent.getAction())) {
             this.mAccount = extractAccount(intent);
             if (this.mAccount == null) {
                 return false;
             }
+            final Bundle extras = intent.getExtras();
+            if (extras == null) {
+                return false;
+            }
             try {
-                this.mConversation = this.xmppConnectionService.find(this.mAccount, Jid.of(intent.getExtras().getString("contact")));
+                this.mConversation = this.xmppConnectionService.find(this.mAccount, Jid.of(extras.getString("contact")));
                 if (this.mConversation == null) {
                     return false;
                 }
