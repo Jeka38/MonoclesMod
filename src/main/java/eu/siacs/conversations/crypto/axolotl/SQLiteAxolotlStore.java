@@ -1,4 +1,5 @@
 package eu.siacs.conversations.crypto.axolotl;
+import eu.siacs.conversations.utils.LogHelper;
 
 import android.util.Log;
 import android.util.LruCache;
@@ -124,7 +125,7 @@ public class SQLiteAxolotlStore implements SignalProtocolStore {
             if (success) {
                 mXmppConnectionService.databaseBackend.updateAccount(account);
             } else {
-                Log.e(Config.LOGTAG, AxolotlService.getLogprefix(account) + "Failed to write new key to the database!");
+                LogHelper.e(Config.LOGTAG, AxolotlService.getLogprefix(account) + "Failed to write new key to the database!");
             }
         }
         return reg_id;
@@ -136,7 +137,7 @@ public class SQLiteAxolotlStore implements SignalProtocolStore {
         if (prekeyIdString != null) {
             prekey_id = Integer.valueOf(prekeyIdString);
         } else {
-            Log.w(Config.LOGTAG, AxolotlService.getLogprefix(account) + "Could not retrieve current prekey id for account " + account.getJid());
+            LogHelper.w(Config.LOGTAG, AxolotlService.getLogprefix(account) + "Could not retrieve current prekey id for account " + account.getJid());
             prekey_id = 0;
         }
         return prekey_id;
@@ -369,7 +370,7 @@ public class SQLiteAxolotlStore implements SignalProtocolStore {
         if (success) {
             mXmppConnectionService.databaseBackend.updateAccount(account);
         } else {
-            Log.e(Config.LOGTAG, AxolotlService.getLogprefix(account) + "Failed to write new prekey id to the database!");
+            LogHelper.e(Config.LOGTAG, AxolotlService.getLogprefix(account) + "Failed to write new prekey id to the database!");
         }
     }
 

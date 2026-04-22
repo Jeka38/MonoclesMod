@@ -1,4 +1,5 @@
 package eu.siacs.conversations.crypto.axolotl;
+import eu.siacs.conversations.utils.LogHelper;
 
 import static eu.siacs.conversations.utils.Random.SECURE_RANDOM;
 
@@ -435,12 +436,12 @@ public class AxolotlService implements OnAdvancedStreamFeaturesLoaded {
         Log.d(Config.LOGTAG, AxolotlService.getLogprefix(account) + "publishing own device ids");
         if (deviceIdsCopy.isEmpty()) {
             if (numPublishTriesOnEmptyPep >= publishTriesThreshold) {
-                Log.w(Config.LOGTAG, getLogprefix(account) + "Own device publish attempt threshold exceeded, aborting...");
+                LogHelper.w(Config.LOGTAG, getLogprefix(account) + "Own device publish attempt threshold exceeded, aborting...");
                 pepBroken = true;
                 return;
             } else {
                 numPublishTriesOnEmptyPep++;
-                Log.w(Config.LOGTAG, getLogprefix(account) + "Own device list empty, attempting to publish (try " + numPublishTriesOnEmptyPep + ")");
+                LogHelper.w(Config.LOGTAG, getLogprefix(account) + "Own device list empty, attempting to publish (try " + numPublishTriesOnEmptyPep + ")");
             }
         } else {
             numPublishTriesOnEmptyPep = 0;
@@ -562,7 +563,7 @@ public class AxolotlService implements OnAdvancedStreamFeaturesLoaded {
                     Element error = packet.findChild("error");
                     if (error == null || !error.hasChild("item-not-found")) {
                         pepBroken = true;
-                        Log.w(Config.LOGTAG, AxolotlService.getLogprefix(account) + "request for device bundles came back with something other than item-not-found" + packet);
+                        LogHelper.w(Config.LOGTAG, AxolotlService.getLogprefix(account) + "request for device bundles came back with something other than item-not-found" + packet);
                         return;
                     }
                 }
@@ -571,12 +572,12 @@ public class AxolotlService implements OnAdvancedStreamFeaturesLoaded {
                 Map<Integer, ECPublicKey> keys = mXmppConnectionService.getIqParser().preKeyPublics(packet);
                 boolean flush = false;
                 if (bundle == null) {
-                    Log.w(Config.LOGTAG, AxolotlService.getLogprefix(account) + "Received invalid bundle:" + packet);
+                    LogHelper.w(Config.LOGTAG, AxolotlService.getLogprefix(account) + "Received invalid bundle:" + packet);
                     bundle = new PreKeyBundle(-1, -1, -1, null, -1, null, null, null);
                     flush = true;
                 }
                 if (keys == null) {
-                    Log.w(Config.LOGTAG, AxolotlService.getLogprefix(account) + "Received invalid prekeys:" + packet);
+                    LogHelper.w(Config.LOGTAG, AxolotlService.getLogprefix(account) + "Received invalid prekeys:" + packet);
                 }
                 try {
                     boolean changed = false;
@@ -650,7 +651,7 @@ public class AxolotlService implements OnAdvancedStreamFeaturesLoaded {
                         }
                     }
                 } catch (InvalidKeyException e) {
-                    Log.e(Config.LOGTAG, AxolotlService.getLogprefix(account) + "Failed to publish bundle " + getOwnDeviceId() + ", reason: " + e.getMessage());
+                    LogHelper.e(Config.LOGTAG, AxolotlService.getLogprefix(account) + "Failed to publish bundle " + getOwnDeviceId() + ", reason: " + e.getMessage());
                 }
             }
         });
@@ -940,7 +941,7 @@ public class AxolotlService implements OnAdvancedStreamFeaturesLoaded {
                 final List<PreKeyBundle> preKeyBundleList = parser.preKeys(packet);
                 final PreKeyBundle bundle = parser.bundle(packet);
                 if (preKeyBundleList.isEmpty() || bundle == null) {
-                    Log.e(Config.LOGTAG, AxolotlService.getLogprefix(account) + "preKey IQ packet invalid: " + packet);
+                    LogHelper.e(Config.LOGTAG, AxolotlService.getLogprefix(account) + "preKey IQ packet invalid: " + packet);
                     fetchStatusMap.put(address, FetchStatus.ERROR);
                     finishBuildingSessionsFromPEP(address);
                     if (callback != null) {
@@ -992,7 +993,7 @@ public class AxolotlService implements OnAdvancedStreamFeaturesLoaded {
                         sessionSettableFuture.set(session);
                     }
                 } catch (UntrustedIdentityException | InvalidKeyException e) {
-                    Log.e(Config.LOGTAG, AxolotlService.getLogprefix(account) + "Error building session for " + address + ": "
+                    LogHelper.e(Config.LOGTAG, AxolotlService.getLogprefix(account) + "Error building session for " + address + ": "
                             + e.getClass().getName() + ", " + e.getMessage());
                     fetchStatusMap.put(address, FetchStatus.ERROR);
                     finishBuildingSessionsFromPEP(address);
@@ -1056,7 +1057,7 @@ public class AxolotlService implements OnAdvancedStreamFeaturesLoaded {
                 }
             } else {
                 mXmppConnectionService.keyStatusUpdated(FetchStatus.ERROR);
-                Log.w(Config.LOGTAG, AxolotlService.getLogprefix(account) + "Have no target devices in PEP!");
+                LogHelper.w(Config.LOGTAG, AxolotlService.getLogprefix(account) + "Have no target devices in PEP!");
             }
         }
         Set<Integer> ownIds = this.deviceIds.get(account.getJid().asBareJid());
@@ -1200,7 +1201,7 @@ public class AxolotlService implements OnAdvancedStreamFeaturesLoaded {
         try {
             axolotlMessage.encrypt(content);
         } catch (CryptoFailedException e) {
-            Log.w(Config.LOGTAG, getLogprefix(account) + "Failed to encrypt message: " + e.getMessage());
+            LogHelper.w(Config.LOGTAG, getLogprefix(account) + "Failed to encrypt message: " + e.getMessage());
             return null;
         }
 
@@ -1437,17 +1438,17 @@ public class AxolotlService implements OnAdvancedStreamFeaturesLoaded {
             }
         } catch (NotEncryptedForThisDeviceException e) {
             if (account.getJid().asBareJid().equals(message.getFrom().asBareJid()) && message.getSenderDeviceId() == ownDeviceId) {
-                Log.w(Config.LOGTAG, getLogprefix(account) + "Reflected omemo message received");
+                LogHelper.w(Config.LOGTAG, getLogprefix(account) + "Reflected omemo message received");
             } else {
                 throw e;
             }
         } catch (final BrokenSessionException e) {
             throw e;
         } catch (final OutdatedSenderException e) {
-            Log.e(Config.LOGTAG, account.getJid().asBareJid() + ": " + e.getMessage());
+            LogHelper.e(Config.LOGTAG, account.getJid().asBareJid() + ": " + e.getMessage());
             throw e;
         } catch (CryptoFailedException e) {
-            Log.w(Config.LOGTAG, getLogprefix(account) + "Failed to decrypt message from " + message.getFrom(), e);
+            LogHelper.w(Config.LOGTAG, getLogprefix(account) + "Failed to decrypt message from " + message.getFrom(), e);
         }
 
         if (session.isFresh() && plaintextMessage != null) {
@@ -1458,7 +1459,7 @@ public class AxolotlService implements OnAdvancedStreamFeaturesLoaded {
     }
 
     public void reportBrokenSessionException(BrokenSessionException e, boolean postpone) {
-        Log.e(Config.LOGTAG, account.getJid().asBareJid() + ": broken session with " + e.getSignalProtocolAddress().toString() + " detected", e);
+        LogHelper.e(Config.LOGTAG, account.getJid().asBareJid() + ": broken session with " + e.getSignalProtocolAddress().toString() + " detected", e);
         if (postpone) {
             postponedHealing.add(e.getSignalProtocolAddress());
         } else {
@@ -1578,7 +1579,7 @@ public class AxolotlService implements OnAdvancedStreamFeaturesLoaded {
             if (session.getIdentityKey() != null) {
                 return verifySessionWithPEP(session);
             } else {
-                Log.e(Config.LOGTAG, account.getJid().asBareJid() + ": identity key was empty after reloading for x509 verification");
+                LogHelper.e(Config.LOGTAG, account.getJid().asBareJid() + ": identity key was empty after reloading for x509 verification");
             }
         }
         return Futures.immediateFuture(session);

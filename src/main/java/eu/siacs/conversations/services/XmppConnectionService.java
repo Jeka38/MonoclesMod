@@ -81,6 +81,7 @@ import android.security.KeyChain;
 import android.text.TextUtils;
 import android.util.DisplayMetrics;
 import android.util.Log;
+import eu.siacs.conversations.utils.LogHelper;
 import android.util.LruCache;
 import android.util.Pair;
 
@@ -1768,6 +1769,7 @@ public class XmppConnectionService extends Service {
         toggleForegroundService();
         this.destroyed = false;
         OmemoSetting.load(this);
+        LogHelper.init(getApplicationContext());
         ExceptionHelper.init(getApplicationContext());
         try {
             Security.insertProviderAt(Conscrypt.newProvider(), 1);
