@@ -1083,7 +1083,8 @@ public class ContactDetailsActivity extends OmemoActivity implements OnAccountUp
             this.mIndividualNotifications = xmppConnectionService.hasIndividualNotification(mConversation);
 
             if (contact.getSoftwareVersion() == null) {
-                Jid queryJid = fullJid != null ? fullJid : (contactJid.isFullJid() ? contactJid : contact.getJid().withResource(contact.getLastResource()));
+                String lastResource = contact.getLastResource();
+                Jid queryJid = fullJid != null ? fullJid : (contactJid.isFullJid() ? contactJid : (lastResource != null ? contact.getJid().withResource(lastResource) : null));
                 if (queryJid != null && queryJid.isFullJid()) {
                     xmppConnectionService.fetchVersion(account, queryJid);
                 }

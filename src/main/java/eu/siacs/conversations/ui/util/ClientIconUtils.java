@@ -426,7 +426,11 @@ public final class ClientIconUtils {
         if (contact == null) {
             return null;
         }
-        return contact.getSoftwareVersion();
+        final String version = contact.getSoftwareVersion();
+        if (!TextUtils.isEmpty(version)) {
+            return version;
+        }
+        return inferClientName(contact, contact.getLastResource());
     }
 
     public static String getSoftwareVersion(final MucOptions.User user) {
@@ -439,7 +443,21 @@ public final class ClientIconUtils {
         }
         final Contact contact = user.getContact();
         if (contact != null) {
-            return contact.getSoftwareVersion();
+            final String version = contact.getSoftwareVersion();
+            if (!TextUtils.isEmpty(version)) {
+                return version;
+            }
+        }
+        final Presence presence = user.getPresence();
+        if (presence != null) {
+            final ServiceDiscoveryResult disco = presence.getServiceDiscoveryResult();
+            if (disco != null) {
+                for (ServiceDiscoveryResult.Identity identity : disco.getIdentities()) {
+                    if (!TextUtils.isEmpty(identity.getName())) {
+                        return identity.getName();
+                    }
+                }
+            }
         }
         return null;
     }
