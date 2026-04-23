@@ -695,19 +695,24 @@ public class ContactDetailsActivity extends OmemoActivity implements OnAccountUp
             return;
         }
         if (binding.editTags.getVisibility() != View.GONE) return;
-        int ic_notifications = getThemeResource(R.attr.icon_notifications, R.drawable.ic_notifications_black_24dp);
-        int ic_notifications_off = getThemeResource(R.attr.icon_notifications_off, R.drawable.ic_notifications_off_black_24dp);
-        int ic_notifications_paused = getThemeResource(R.attr.icon_notifications_paused, R.drawable.ic_notifications_paused_black_24dp);
-        long mutedTill = mConversation.getLongAttribute(Conversation.ATTRIBUTE_MUTED_TILL, 0);
-        if (mutedTill == Long.MAX_VALUE) {
-            mNotifyStatusText.setText(R.string.notify_never);
-            mNotifyStatusButton.setImageResource(ic_notifications_off);
-        } else if (System.currentTimeMillis() < mutedTill) {
-            mNotifyStatusText.setText(R.string.notify_paused);
-            mNotifyStatusButton.setImageResource(ic_notifications_paused);
+        if (mConversation != null) {
+            binding.contactSettings.setVisibility(View.VISIBLE);
+            int ic_notifications = getThemeResource(R.attr.icon_notifications, R.drawable.ic_notifications_black_24dp);
+            int ic_notifications_off = getThemeResource(R.attr.icon_notifications_off, R.drawable.ic_notifications_off_black_24dp);
+            int ic_notifications_paused = getThemeResource(R.attr.icon_notifications_paused, R.drawable.ic_notifications_paused_black_24dp);
+            long mutedTill = mConversation.getLongAttribute(Conversation.ATTRIBUTE_MUTED_TILL, 0);
+            if (mutedTill == Long.MAX_VALUE) {
+                mNotifyStatusText.setText(R.string.notify_never);
+                mNotifyStatusButton.setImageResource(ic_notifications_off);
+            } else if (System.currentTimeMillis() < mutedTill) {
+                mNotifyStatusText.setText(R.string.notify_paused);
+                mNotifyStatusButton.setImageResource(ic_notifications_paused);
+            } else {
+                mNotifyStatusButton.setImageResource(ic_notifications);
+                mNotifyStatusText.setText(R.string.notify_on_all_messages);
+            }
         } else {
-            mNotifyStatusButton.setImageResource(ic_notifications);
-            mNotifyStatusText.setText(R.string.notify_on_all_messages);
+            binding.contactSettings.setVisibility(View.GONE);
         }
 
         TextView abtitle = binding.detailsContactName;
@@ -1024,17 +1029,21 @@ public class ContactDetailsActivity extends OmemoActivity implements OnAccountUp
             }
         }
 
-        final List<Conversation.Thread> recentThreads = mConversation.recentThreads();
-        if (recentThreads.isEmpty()) {
-            this.binding.recentThreadsWrapper.setVisibility(View.GONE);
-        } else {
-
-            if (xmppConnectionService != null && xmppConnectionService.getBooleanPreference("show_thread_feature", R.bool.show_thread_feature)) {
-                this.binding.recentThreadsWrapper.setVisibility(View.VISIBLE);
-            } else {
+        if (mConversation != null) {
+            final List<Conversation.Thread> recentThreads = mConversation.recentThreads();
+            if (recentThreads.isEmpty()) {
                 this.binding.recentThreadsWrapper.setVisibility(View.GONE);
+            } else {
+
+                if (xmppConnectionService != null && xmppConnectionService.getBooleanPreference("show_thread_feature", R.bool.show_thread_feature)) {
+                    this.binding.recentThreadsWrapper.setVisibility(View.VISIBLE);
+                } else {
+                    this.binding.recentThreadsWrapper.setVisibility(View.GONE);
+                }
+                Util.justifyListViewHeightBasedOnChildren(binding.recentThreads);
             }
-            Util.justifyListViewHeightBasedOnChildren(binding.recentThreads);
+        } else {
+            this.binding.recentThreadsWrapper.setVisibility(View.GONE);
         }
 
     }
@@ -1074,7 +1083,8 @@ public class ContactDetailsActivity extends OmemoActivity implements OnAccountUp
             this.mIndividualNotifications = xmppConnectionService.hasIndividualNotification(mConversation);
 
             if (contact.getSoftwareVersion() == null) {
-                Jid queryJid = fullJid != null ? fullJid : (contactJid.isFullJid() ? contactJid : contact.getJid().withResource(contact.getLastResource()));
+                String lastResource = contact.getLastResource();
+                Jid queryJid = fullJid != null ? fullJid : (contactJid.isFullJid() ? contactJid : (lastResource != null ? contact.getJid().withResource(lastResource) : null));
                 if (queryJid != null && queryJid.isFullJid()) {
                     xmppConnectionService.fetchVersion(account, queryJid);
                 }
