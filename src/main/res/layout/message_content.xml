@@ -30,11 +30,12 @@
 
     <TextView
         android:id="@+id/message_body"
-        android:layout_width="wrap_content"
+        android:layout_width="match_parent"
         android:layout_height="wrap_content"
-        android:autoLink="web"
+        android:autoLink="none"
+        android:breakStrategy="simple"
         android:longClickable="false"
-        android:textIsSelectable="true"
+        android:textIsSelectable="false"
         android:textAppearance="@style/TextAppearance.Conversations.Body1"
         android:visibility="gone" />
 
@@ -44,10 +45,12 @@
         app:trimMode="trimModeLength"
         app:colorClickableText="?attr/colorAccent"
         android:id="@+id/message_body_collapsable"
-        android:layout_width="wrap_content"
+        android:layout_width="match_parent"
         android:layout_height="wrap_content"
-        android:autoLink="web"
+        android:autoLink="none"
+        android:breakStrategy="simple"
         android:longClickable="false"
+        android:textIsSelectable="false"
         android:textAppearance="@style/TextAppearance.Conversations.Body1"
         android:visibility="gone" />
 

@@ -726,6 +726,8 @@ public class MessageAdapter extends ArrayAdapter<Message> {
 
     private void displayTextMessage(final ViewHolder viewHolder,
                                     final Message message, boolean darkBackground, int type) {
+        viewHolder.messageBody.setMinWidth(0);
+        viewHolder.messageBody.setMaxWidth(Integer.MAX_VALUE);
         viewHolder.download_button.setVisibility(View.GONE);
         viewHolder.richlinkview.setVisibility(View.GONE);
         viewHolder.transfer.setVisibility(View.GONE);
@@ -1188,9 +1190,9 @@ public class MessageAdapter extends ArrayAdapter<Message> {
     }
 
     private void displayAudioMessage(ViewHolder viewHolder, Message message, boolean darkBackground, final int type) {
+        displayTextMessage(viewHolder, message, darkBackground, type);
         final Resources res = activity.getResources();
         viewHolder.messageBody.setWidth((int) res.getDimension(R.dimen.audio_player_width));
-        displayTextMessage(viewHolder, message, darkBackground, type);
         showImages(false, viewHolder);
         viewHolder.richlinkview.setVisibility(GONE);
         viewHolder.transfer.setVisibility(GONE);
