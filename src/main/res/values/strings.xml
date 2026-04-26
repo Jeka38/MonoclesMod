@@ -294,7 +294,7 @@
     <string name="pref_use_send_button_to_indicate_status_summary">Colorize send button to indicate contact status</string>
     <string name="pref_use_colored_names_to_indicate_status_summary">Colorize contact names to indicate contact status</string>
     <string name="pref_show_client_icons">Show client icons</string>
-    <string name="pref_show_client_icons_summary">Show contact client icons in roster and participants list</string>
+    <string name="pref_show_client_icons_summary">Show client icons. To use your own pack, copy files to Internal storage/Documents/monocles mod/Icons</string>
     <string name="client_icon">Client icon</string>
     <string name="pref_expert_options_other">Other</string>
     <string name="pref_autojoin">Synchronize with bookmarks</string>
@@ -882,7 +882,7 @@
     <string name="pref_play_gif_inside">Directly play animated images</string>
     <string name="pref_play_gif_inside_summary">Directly play animated images for avatars, status messages and image messages.</string>
     <string name="pref_enable_smiles">Enable Smiles</string>
-    <string name="pref_enable_smiles_summary">Replace standard emoji picker with custom smiles</string>
+    <string name="pref_enable_smiles_summary">Replace standard emoji picker with custom smiles from Internal storage/Documents/monocles mod/Smiles</string>
     <string name="smiles">Smiles</string>
     <string name="smiles_imported">Smiles imported</string>
     <string name="open_with">Open with…</string>

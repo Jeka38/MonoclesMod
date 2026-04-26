@@ -28,7 +28,8 @@ import org.xmlpull.v1.XmlPullParser;
 import org.xmlpull.v1.XmlPullParserFactory;
 
 public final class ClientIconUtils {
-    public static final String CLIENT_ICONS_DIRECTORY = "client_icons";
+    public static final String CLIENT_ICONS_DIRECTORY = "Icons";
+    public static final String LEGACY_CLIENT_ICONS_DIRECTORY = "client_icons";
 
     private ClientIconUtils() {
     }
@@ -434,7 +435,15 @@ public final class ClientIconUtils {
                                 + File.separator
                                 + CLIENT_ICONS_DIRECTORY);
         dirs.add(externalDir);
+        dirs.add(
+                new File(
+                        Environment.getExternalStoragePublicDirectory(Environment.DIRECTORY_DOCUMENTS)
+                                + File.separator
+                                + FileBackend.APP_DIRECTORY
+                                + File.separator
+                                + LEGACY_CLIENT_ICONS_DIRECTORY));
         dirs.add(new File(imageView.getContext().getFilesDir(), CLIENT_ICONS_DIRECTORY));
+        dirs.add(new File(imageView.getContext().getFilesDir(), LEGACY_CLIENT_ICONS_DIRECTORY));
         return dirs;
     }
 
