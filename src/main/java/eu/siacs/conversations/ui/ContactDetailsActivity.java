@@ -914,15 +914,15 @@ public class ContactDetailsActivity extends OmemoActivity implements OnAccountUp
             binding.clientVersion.setText(softwareVersion);
             binding.clientVersion.setVisibility(View.VISIBLE);
         }
-        if (hasClientIcon || !TextUtils.isEmpty(softwareVersion)) {
+        if (!hasClientIcon) {
+            binding.resource.setImageResource(R.drawable.ic_client_pc);
+            hasClientIcon = true;
+        }
+        binding.resource.setVisibility(View.VISIBLE);
+        if (!TextUtils.isEmpty(softwareVersion)) {
             binding.clientInfoLayout.setVisibility(View.VISIBLE);
         } else {
             binding.clientInfoLayout.setVisibility(View.GONE);
-        }
-        if (hasClientIcon) {
-            binding.resource.setVisibility(View.VISIBLE);
-        } else {
-            binding.resource.setVisibility(View.GONE);
         }
 
         if (contact.isBlocked() && !this.showDynamicTags) {

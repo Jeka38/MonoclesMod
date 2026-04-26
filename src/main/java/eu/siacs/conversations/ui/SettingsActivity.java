@@ -40,7 +40,6 @@ import androidx.core.content.ContextCompat;
 import androidx.exifinterface.media.ExifInterface;
 
 import eu.siacs.conversations.utils.CameraUtils;
-import eu.siacs.conversations.utils.FileUtils;
 
 import java.io.Closeable;
 import java.io.File;
@@ -72,7 +71,6 @@ import eu.siacs.conversations.persistance.FileBackend;
 import eu.siacs.conversations.services.ExportBackupService;
 import eu.siacs.conversations.services.MemorizingTrustManager;
 import eu.siacs.conversations.ui.util.StyledAttributes;
-import eu.siacs.conversations.ui.util.ClientIconUtils;
 import eu.siacs.conversations.utils.ChatBackgroundHelper;
 import eu.siacs.conversations.utils.Compatibility;
 import eu.siacs.conversations.utils.ThemeHelper;
@@ -138,8 +136,6 @@ public class SettingsActivity extends XmppActivity implements OnSharedPreference
     public static final int REQUEST_CREATE_BACKUP = 0xbf8701;
     public static final int REQUEST_IMPORT_SETTINGS = 0xbf8703;
     public static final int REQUEST_IMPORT_GIFS = 0xbf8706;
-    public static final int REQUEST_IMPORT_SMILES = 0xbf8707;
-    public static final int REQUEST_IMPORT_CLIENT_ICONS = 0xbf8708;
 
     Preference multiAccountPreference;
     Preference autoMessageExpiryPreference;
@@ -190,108 +186,6 @@ public class SettingsActivity extends XmppActivity implements OnSharedPreference
     @Override
     protected void onActivityResult(int requestCode, int resultCode, Intent data) {
         super.onActivityResult(requestCode, resultCode, data);
-
-
-        // Import Smiles from ZIP
-        if (requestCode == REQUEST_IMPORT_SMILES) {
-            if (resultCode == RESULT_OK && data != null && data.getData() != null) {
-                final Uri zipUri = data.getData();
-                new Thread(() -> {
-                    try (InputStream is = getContentResolver().openInputStream(zipUri);
-                         java.util.zip.ZipInputStream zis = new java.util.zip.ZipInputStream(is)) {
-                        File smilesFolder = new File(Environment.getExternalStoragePublicDirectory(Environment.DIRECTORY_DOCUMENTS) + File.separator + APP_DIRECTORY + File.separator + FileBackend.SMILES);
-                        if (!smilesFolder.exists()) {
-                            smilesFolder.mkdirs();
-                        }
-                        FileUtils.deleteContents(smilesFolder);
-                        FileUtils.createNoMedia(smilesFolder);
-                        if (xmppConnectionService != null) {
-                            xmppConnectionService.getDrawableCache().evictAll();
-                            xmppConnectionService.emojiSearch().replaceAll(new ArrayList<>());
-                            xmppConnectionService.updateConversationUi();
-                        }
-                        java.util.zip.ZipEntry entry;
-                        while ((entry = zis.getNextEntry()) != null) {
-                            if (entry.isDirectory()) continue;
-                            String name = entry.getName();
-                            if (name.contains("/")) {
-                                name = name.substring(name.lastIndexOf("/") + 1);
-                            }
-                            if (name.isEmpty()) continue;
-                            File outFile = new File(smilesFolder, name);
-                            try (FileOutputStream fos = new FileOutputStream(outFile)) {
-                                byte[] buffer = new byte[4096];
-                                int len;
-                                while ((len = zis.read(buffer)) > 0) {
-                                    fos.write(buffer, 0, len);
-                                }
-                            }
-                            zis.closeEntry();
-                        }
-                        if (xmppConnectionService != null) {
-                            xmppConnectionService.getDrawableCache().evictAll();
-                            xmppConnectionService.rescanSmiles(true);
-                        }
-                        runOnUiThread(() -> Toast.makeText(this, R.string.smiles_imported, Toast.LENGTH_LONG).show());
-                    } catch (IOException e) {
-                        runOnUiThread(() -> Toast.makeText(this, "Failed to import smiles", Toast.LENGTH_LONG).show());
-                        Log.e(Config.LOGTAG, "Failed to import smiles", e);
-                    }
-                }).start();
-            }
-        }
-
-        if (requestCode == REQUEST_IMPORT_CLIENT_ICONS) {
-            if (resultCode == RESULT_OK && data != null && data.getData() != null) {
-                final Uri zipUri = data.getData();
-                new Thread(() -> {
-                    try (InputStream is = getContentResolver().openInputStream(zipUri);
-                         java.util.zip.ZipInputStream zis = new java.util.zip.ZipInputStream(is)) {
-                        final File iconsFolder = new File(getFilesDir(), ClientIconUtils.CLIENT_ICONS_DIRECTORY);
-                        if (!iconsFolder.exists()) {
-                            iconsFolder.mkdirs();
-                        }
-                        FileUtils.deleteContents(iconsFolder);
-                        java.util.zip.ZipEntry entry;
-                        while ((entry = zis.getNextEntry()) != null) {
-                            if (entry.isDirectory()) continue;
-                            String name = entry.getName();
-                            if (name.contains("/")) {
-                                name = name.substring(name.lastIndexOf("/") + 1);
-                            }
-                            if (name.isEmpty()) continue;
-                            String lowerName = name.toLowerCase();
-                            if (!(lowerName.endsWith(".png")
-                                    || lowerName.endsWith(".webp")
-                                    || lowerName.endsWith(".jpg")
-                                    || lowerName.endsWith(".jpeg")
-                                    || lowerName.endsWith(".xml"))) {
-                                continue;
-                            }
-                            File outFile = new File(iconsFolder, name);
-                            try (FileOutputStream fos = new FileOutputStream(outFile)) {
-                                byte[] buffer = new byte[4096];
-                                int read;
-                                while ((read = zis.read(buffer)) > 0) {
-                                    fos.write(buffer, 0, read);
-                                }
-                            }
-                            zis.closeEntry();
-                        }
-                        runOnUiThread(() -> {
-                            Toast.makeText(this, R.string.client_icons_import_done, Toast.LENGTH_LONG).show();
-                            if (xmppConnectionService != null) {
-                                xmppConnectionService.updateConversationUi();
-                            }
-                        });
-                    } catch (Exception e) {
-                        runOnUiThread(() -> Toast.makeText(this, R.string.client_icons_import_failed, Toast.LENGTH_LONG).show());
-                        Log.e(Config.LOGTAG, "Failed to import client icons", e);
-                    }
-                }).start();
-            }
-            return;
-        }
 
         // Import GIFs
         if(requestCode == REQUEST_IMPORT_GIFS) {
@@ -960,31 +854,6 @@ public class SettingsActivity extends XmppActivity implements OnSharedPreference
         }
 
 
-        final Preference importOwnSmiles = mSettingsFragment.findPreference("import_own_smiles");
-        if (importOwnSmiles != null) {
-            importOwnSmiles.setOnPreferenceClickListener(
-                    preference -> {
-                        if (hasStoragePermission(REQUEST_IMPORT_SMILES)) {
-                            importSmiles();
-                        }
-                        return true;
-                    }
-            );
-        }
-
-        final Preference importClientIcons = mSettingsFragment.findPreference("import_client_icons");
-        if (importClientIcons != null) {
-            importClientIcons.setOnPreferenceClickListener(
-                    preference -> {
-                        if (hasStoragePermission(REQUEST_IMPORT_CLIENT_ICONS)) {
-                            importClientIcons();
-                        }
-                        return true;
-                    }
-            );
-        }
-
-
         final Preference importOwnGifs = mSettingsFragment.findPreference("import_own_gifs");
         if (importOwnGifs != null) {
             importOwnGifs.setOnPreferenceClickListener(
@@ -1020,18 +889,6 @@ public class SettingsActivity extends XmppActivity implements OnSharedPreference
         //**These following line is the important one!
         intent.putExtra(Intent.EXTRA_ALLOW_MULTIPLE, true);
         startActivityForResult(Intent.createChooser(intent, "Select GIFs"), REQUEST_IMPORT_GIFS); //REQUEST_IMPORT_STICKERS is simply a global int used to check the calling intent in onActivityResult
-    }
-
-    private void importSmiles() {
-        Intent intent = new Intent(Intent.ACTION_GET_CONTENT);
-        intent.setType("application/zip");
-        startActivityForResult(Intent.createChooser(intent, "Select ZIP archive"), REQUEST_IMPORT_SMILES);
-    }
-
-    private void importClientIcons() {
-        Intent intent = new Intent(Intent.ACTION_GET_CONTENT);
-        intent.setType("application/zip");
-        startActivityForResult(Intent.createChooser(intent, getString(R.string.select_client_icons_zip)), REQUEST_IMPORT_CLIENT_ICONS);
     }
 
     private void updateTheme() {
