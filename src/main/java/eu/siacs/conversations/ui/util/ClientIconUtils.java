@@ -2,6 +2,7 @@ package eu.siacs.conversations.ui.util;
 
 import android.graphics.Bitmap;
 import android.graphics.BitmapFactory;
+import android.os.Environment;
 import android.text.TextUtils;
 import android.util.Pair;
 import android.widget.ImageView;
@@ -21,6 +22,7 @@ import eu.siacs.conversations.entities.Contact;
 import eu.siacs.conversations.entities.MucOptions;
 import eu.siacs.conversations.entities.Presence;
 import eu.siacs.conversations.entities.ServiceDiscoveryResult;
+import eu.siacs.conversations.persistance.FileBackend;
 import eu.siacs.conversations.xmpp.Jid;
 import org.xmlpull.v1.XmlPullParser;
 import org.xmlpull.v1.XmlPullParserFactory;
@@ -395,31 +397,45 @@ public final class ClientIconUtils {
     }
 
     private static boolean applyCustomIcon(final ImageView imageView, final Contact contact, final String resource) {
-        final File iconsDir = new File(imageView.getContext().getFilesDir(), CLIENT_ICONS_DIRECTORY);
-        if (!iconsDir.isDirectory()) {
-            return false;
-        }
-        final File iconDefFile = findIconDefFile(iconsDir);
         final Set<String> candidates = buildXep0115Candidates(contact, resource);
-        File match = null;
-        if (iconDefFile != null && !candidates.isEmpty()) {
-            match = findByIconDef(iconsDir, iconDefFile, candidates);
-        }
-        if (match == null) {
-            final String clientName = inferClientName(contact, resource);
-            if (!TextUtils.isEmpty(clientName)) {
+        final String clientName = inferClientName(contact, resource);
+        for (final File iconsDir : getIconDirectories(imageView)) {
+            if (!iconsDir.isDirectory()) {
+                continue;
+            }
+            final File iconDefFile = findIconDefFile(iconsDir);
+            File match = null;
+            if (iconDefFile != null && !candidates.isEmpty()) {
+                match = findByIconDef(iconsDir, iconDefFile, candidates);
+            }
+            if (match == null && !TextUtils.isEmpty(clientName)) {
                 match = findBestIconFile(iconsDir, normalize(clientName));
             }
+            if (match == null) {
+                continue;
+            }
+            final Bitmap bitmap = BitmapFactory.decodeFile(match.getAbsolutePath());
+            if (bitmap == null) {
+                continue;
+            }
+            imageView.setImageBitmap(bitmap);
+            return true;
         }
-        if (match == null) {
-            return false;
-        }
-        final Bitmap bitmap = BitmapFactory.decodeFile(match.getAbsolutePath());
-        if (bitmap == null) {
-            return false;
-        }
-        imageView.setImageBitmap(bitmap);
-        return true;
+        return false;
+    }
+
+    private static List<File> getIconDirectories(final ImageView imageView) {
+        final ArrayList<File> dirs = new ArrayList<>();
+        final File externalDir =
+                new File(
+                        Environment.getExternalStoragePublicDirectory(Environment.DIRECTORY_DOCUMENTS)
+                                + File.separator
+                                + FileBackend.APP_DIRECTORY
+                                + File.separator
+                                + CLIENT_ICONS_DIRECTORY);
+        dirs.add(externalDir);
+        dirs.add(new File(imageView.getContext().getFilesDir(), CLIENT_ICONS_DIRECTORY));
+        return dirs;
     }
 
     public static String getSoftwareVersion(final Contact contact) {

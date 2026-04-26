@@ -247,10 +247,17 @@ public class SettingsActivity extends XmppActivity implements OnSharedPreference
                 new Thread(() -> {
                     try (InputStream is = getContentResolver().openInputStream(zipUri);
                          java.util.zip.ZipInputStream zis = new java.util.zip.ZipInputStream(is)) {
-                        final File iconsFolder = new File(getFilesDir(), ClientIconUtils.CLIENT_ICONS_DIRECTORY);
+                        final File iconsFolder =
+                                new File(
+                                        Environment.getExternalStoragePublicDirectory(Environment.DIRECTORY_DOCUMENTS)
+                                                + File.separator
+                                                + APP_DIRECTORY
+                                                + File.separator
+                                                + ClientIconUtils.CLIENT_ICONS_DIRECTORY);
                         if (!iconsFolder.exists()) {
                             iconsFolder.mkdirs();
                         }
+                        FileUtils.createNoMedia(iconsFolder);
                         FileUtils.deleteContents(iconsFolder);
                         java.util.zip.ZipEntry entry;
                         while ((entry = zis.getNextEntry()) != null) {
