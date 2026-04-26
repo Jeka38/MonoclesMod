@@ -30,7 +30,7 @@
 
     <TextView
         android:id="@+id/message_body"
-        android:layout_width="wrap_content"
+        android:layout_width="match_parent"
         android:layout_height="wrap_content"
         android:autoLink="none"
         android:breakStrategy="simple"
@@ -45,7 +45,7 @@
         app:trimMode="trimModeLength"
         app:colorClickableText="?attr/colorAccent"
         android:id="@+id/message_body_collapsable"
-        android:layout_width="wrap_content"
+        android:layout_width="match_parent"
         android:layout_height="wrap_content"
         android:autoLink="none"
         android:breakStrategy="simple"

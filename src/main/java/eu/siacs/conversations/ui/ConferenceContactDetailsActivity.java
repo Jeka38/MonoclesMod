@@ -79,6 +79,9 @@ public class ConferenceContactDetailsActivity extends XmppActivity implements Xm
     }
 
     private void populateView() {
+        if (mConversation != null && contactJid != null) {
+            this.user = mConversation.getMucOptions().findUserByFullJid(contactJid);
+        }
         if (getSupportActionBar() != null) {
             final ActionBar ab = getSupportActionBar();
             if (ab != null) {
@@ -153,6 +156,10 @@ public class ConferenceContactDetailsActivity extends XmppActivity implements Xm
                 if (user.getSoftwareVersion() == null) {
                     xmppConnectionService.fetchVersion(account, contactJid);
                 }
+            }
+            final MucOptions.User self = mucOptions.getSelf();
+            if (self.getRole() == MucOptions.Role.MODERATOR || self.getAffiliation().ranks(MucOptions.Affiliation.ADMIN)) {
+                xmppConnectionService.fetchConferenceMembers(mConversation);
             }
             populateView();
         }
