@@ -421,10 +421,6 @@
             android:summary="@string/import_own_gifs_summary"
             android:key="import_own_gifs" />
         <Preference
-            android:title="@string/import_own_smiles"
-            android:summary="@string/import_own_smiles_summary"
-            android:key="import_own_smiles" />
-        <Preference
             android:title="@string/import_client_icons"
             android:summary="@string/import_client_icons_summary"
             android:key="import_client_icons" />
