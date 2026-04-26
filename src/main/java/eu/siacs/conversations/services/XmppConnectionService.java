@@ -120,6 +120,7 @@ import com.google.common.base.Optional;
 
 import eu.siacs.conversations.utils.Emoticons;
 import java.io.FileInputStream;
+import java.io.FileOutputStream;
 import java.io.IOException;
 import java.io.File;
 import java.security.Security;
@@ -7006,6 +7007,48 @@ public class XmppConnectionService extends Service {
         return new File(Environment.getExternalStoragePublicDirectory(Environment.DIRECTORY_DOCUMENTS) + File.separator + APP_DIRECTORY + File.separator + FileBackend.SMILES);
     }
 
+    private void migrateLegacySmilesDirectory(final File targetSmilesDir) {
+        final File[] legacyCandidates = new File[]{
+                new File(Environment.getExternalStorageDirectory(), APP_DIRECTORY + File.separator + FileBackend.SMILES),
+                new File(Environment.getExternalStorageDirectory(), "Monocles Messenger" + File.separator + FileBackend.SMILES),
+                new File(Environment.getExternalStoragePublicDirectory(Environment.DIRECTORY_DOCUMENTS), "Monocles Messenger" + File.separator + FileBackend.SMILES)
+        };
+        final File[] existingTargetFiles = targetSmilesDir.listFiles();
+        if (existingTargetFiles != null && existingTargetFiles.length > 1) {
+            return;
+        }
+        for (final File legacySmilesDir : legacyCandidates) {
+            if (!legacySmilesDir.exists() || !legacySmilesDir.isDirectory()) {
+                continue;
+            }
+            final File[] legacyFiles = legacySmilesDir.listFiles();
+            if (legacyFiles == null || legacyFiles.length == 0) {
+                continue;
+            }
+            Log.d(Config.LOGTAG, "rescanSmiles: migrate legacy smiles from " + legacySmilesDir.getAbsolutePath());
+            for (final File legacyFile : legacyFiles) {
+                if (!legacyFile.isFile() || !legacyFile.canRead()) {
+                    continue;
+                }
+                final File targetFile = new File(targetSmilesDir, legacyFile.getName());
+                if (targetFile.exists()) {
+                    continue;
+                }
+                try {
+                    if (!legacyFile.renameTo(targetFile)) {
+                        try (FileInputStream in = new FileInputStream(legacyFile);
+                             FileOutputStream out = new FileOutputStream(targetFile)) {
+                            FileBackend.copyStream(in, out);
+                        }
+                    }
+                } catch (final Exception e) {
+                    Log.w(Config.LOGTAG, "rescanSmiles: failed to migrate " + legacyFile.getName() + ": " + e);
+                }
+            }
+            break;
+        }
+    }
+
     public void rescanSmiles() {
         rescanSmiles(false);
     }
@@ -7024,6 +7067,7 @@ public class XmppConnectionService extends Service {
                     smilesDir.mkdirs();
                 }
                 FileUtils.createNoMedia(smilesDir);
+                migrateLegacySmilesDirectory(smilesDir);
 
                 List<EmojiSearch.Emoji> emojis = new ArrayList<>();
                 HashSet<String> filenamesInList = new HashSet<>();
