@@ -56,8 +56,10 @@ import java.util.ArrayList;
 import java.util.Collection;
 import java.util.Collections;
 import java.util.Comparator;
+import java.util.LinkedHashSet;
 import java.util.List;
 import java.util.Map;
+import java.util.Set;
 import java.util.concurrent.atomic.AtomicInteger;
 import java.util.regex.Pattern;
 import java.util.stream.Collectors;
@@ -162,6 +164,7 @@ public class ContactDetailsActivity extends OmemoActivity implements OnAccountUp
     private Jid contactJid;
     private Jid fullJid;
     private boolean showBareJidFromConference = false;
+    private MucOptions.User conferenceUser;
     private boolean showDynamicTags = false;
     private boolean showLastSeen = false;
     private boolean showInactiveOmemo = false;
@@ -893,8 +896,18 @@ public class ContactDetailsActivity extends OmemoActivity implements OnAccountUp
             binding.statusMessage.setVisibility(View.GONE);
         }
 
-        final boolean hasClientIcon = ClientIconUtils.applyRosterClientIcon(binding.resource, contact);
-        final String softwareVersion = ClientIconUtils.getSoftwareVersion(contact);
+        boolean hasClientIcon = false;
+        String softwareVersion = null;
+        if (conferenceUser != null) {
+            hasClientIcon = ClientIconUtils.applyMucUserClientIcon(binding.resource, conferenceUser);
+            softwareVersion = ClientIconUtils.getSoftwareVersion(conferenceUser);
+        }
+        if (TextUtils.isEmpty(softwareVersion)) {
+            softwareVersion = ClientIconUtils.getSoftwareVersion(contact);
+            if (!hasClientIcon) {
+                hasClientIcon = ClientIconUtils.applyRosterClientIcon(binding.resource, contact);
+            }
+        }
         if (TextUtils.isEmpty(softwareVersion)) {
             binding.clientVersion.setVisibility(View.GONE);
         } else {
@@ -1080,12 +1093,14 @@ public class ContactDetailsActivity extends OmemoActivity implements OnAccountUp
             this.mConversation = xmppConnectionService.findConversation(account, contactJid, false);
             this.contact = account.getRoster().getContact(contactJid);
             this.showBareJidFromConference = false;
+            this.conferenceUser = null;
             if (fullJid != null) {
                 final Conversation conferenceConversation = xmppConnectionService.findConversation(account, fullJid.asBareJid(), false);
                 if (conferenceConversation != null
                         && conferenceConversation.getMode() == Conversation.MODE_MULTI
                         && conferenceConversation.getMucOptions().getSelf() != null) {
                     this.showBareJidFromConference = conferenceConversation.getMucOptions().getSelf().getAffiliation().ranks(MucOptions.Affiliation.ADMIN);
+                    this.conferenceUser = conferenceConversation.getMucOptions().findUserByFullJid(fullJid);
                 }
             }
             if (mPendingFingerprintVerificationUri != null) {
@@ -1099,16 +1114,22 @@ public class ContactDetailsActivity extends OmemoActivity implements OnAccountUp
             }
             this.mIndividualNotifications = xmppConnectionService.hasIndividualNotification(mConversation);
 
-            if (contact.getSoftwareVersion() == null) {
+            if (contact.getSoftwareVersion() == null || (conferenceUser != null && TextUtils.isEmpty(conferenceUser.getSoftwareVersion()))) {
                 String lastResource = contact.getLastResource();
-                final Jid queryJid;
-                if (fullJid != null && !showBareJidFromConference) {
-                    queryJid = fullJid;
-                } else {
-                    queryJid = contactJid.isFullJid() ? contactJid : (lastResource != null ? contact.getJid().withResource(lastResource) : null);
+                final Set<Jid> queryJids = new LinkedHashSet<>();
+                if (fullJid != null && fullJid.isFullJid()) {
+                    queryJids.add(fullJid);
                 }
-                if (queryJid != null && queryJid.isFullJid()) {
-                    xmppConnectionService.fetchVersion(account, queryJid);
+                if (contactJid.isFullJid()) {
+                    queryJids.add(contactJid);
+                }
+                if (lastResource != null) {
+                    queryJids.add(contact.getJid().withResource(lastResource));
+                }
+                for (final Jid queryJid : queryJids) {
+                    if (queryJid != null && queryJid.isFullJid()) {
+                        xmppConnectionService.fetchVersion(account, queryJid);
+                    }
                 }
             }
 
