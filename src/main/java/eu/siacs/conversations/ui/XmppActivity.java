@@ -1004,6 +1004,29 @@ public abstract class XmppActivity extends ActionBarActivity {
         }
     }
 
+    @Override
+    public void onRequestPermissionsResult(
+            int requestCode, @NonNull String[] permissions, @NonNull int[] grantResults) {
+        super.onRequestPermissionsResult(requestCode, permissions, grantResults);
+        if (xmppConnectionService == null || grantResults.length == 0) {
+            return;
+        }
+        for (int i = 0; i < permissions.length && i < grantResults.length; i++) {
+            if (grantResults[i] != PackageManager.PERMISSION_GRANTED) {
+                continue;
+            }
+            final String permission = permissions[i];
+            if (Manifest.permission.READ_EXTERNAL_STORAGE.equals(permission)
+                    || Manifest.permission.WRITE_EXTERNAL_STORAGE.equals(permission)
+                    || Manifest.permission.READ_MEDIA_IMAGES.equals(permission)
+                    || Manifest.permission.READ_MEDIA_VIDEO.equals(permission)
+                    || Manifest.permission.READ_MEDIA_AUDIO.equals(permission)) {
+                xmppConnectionService.rescanSmiles(true);
+                break;
+            }
+        }
+    }
+
     public boolean hasMicPermission(int requestCode) {
         if (checkSelfPermission(Manifest.permission.RECORD_AUDIO) != PackageManager.PERMISSION_GRANTED) {
             requestPermissions(new String[]{Manifest.permission.RECORD_AUDIO}, requestCode);
