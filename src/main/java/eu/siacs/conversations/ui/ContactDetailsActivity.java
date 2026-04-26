@@ -75,6 +75,7 @@ import eu.siacs.conversations.entities.Bookmark;
 import eu.siacs.conversations.entities.Contact;
 import eu.siacs.conversations.entities.Conversation;
 import eu.siacs.conversations.entities.ListItem;
+import eu.siacs.conversations.entities.MucOptions;
 import eu.siacs.conversations.services.NotificationService;
 import eu.siacs.conversations.services.XmppConnectionService;
 import eu.siacs.conversations.services.XmppConnectionService.OnAccountUpdate;
@@ -160,6 +161,7 @@ public class ContactDetailsActivity extends OmemoActivity implements OnAccountUp
     private Jid accountJid;
     private Jid contactJid;
     private Jid fullJid;
+    private boolean showBareJidFromConference = false;
     private boolean showDynamicTags = false;
     private boolean showLastSeen = false;
     private boolean showInactiveOmemo = false;
@@ -922,7 +924,13 @@ public class ContactDetailsActivity extends OmemoActivity implements OnAccountUp
             }
         }
 
-        binding.jid.setText(IrregularUnicodeDetector.style(this, fullJid != null ? fullJid : contact.getJid()));
+        final Jid displayedJid;
+        if (showBareJidFromConference) {
+            displayedJid = contact.getJid().asBareJid();
+        } else {
+            displayedJid = fullJid != null ? fullJid : contact.getJid();
+        }
+        binding.jid.setText(IrregularUnicodeDetector.style(this, displayedJid));
         String account;
         if (Config.DOMAIN_LOCK != null) {
             account = contact.getAccount().getJid().getEscapedLocal();
@@ -1071,6 +1079,15 @@ public class ContactDetailsActivity extends OmemoActivity implements OnAccountUp
             }
             this.mConversation = xmppConnectionService.findConversation(account, contactJid, false);
             this.contact = account.getRoster().getContact(contactJid);
+            this.showBareJidFromConference = false;
+            if (fullJid != null) {
+                final Conversation conferenceConversation = xmppConnectionService.findConversation(account, fullJid.asBareJid(), false);
+                if (conferenceConversation != null
+                        && conferenceConversation.getMode() == Conversation.MODE_MULTI
+                        && conferenceConversation.getMucOptions().getSelf() != null) {
+                    this.showBareJidFromConference = conferenceConversation.getMucOptions().getSelf().getAffiliation().ranks(MucOptions.Affiliation.ADMIN);
+                }
+            }
             if (mPendingFingerprintVerificationUri != null) {
                 processFingerprintVerification(mPendingFingerprintVerificationUri);
                 mPendingFingerprintVerificationUri = null;
