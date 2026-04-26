@@ -884,7 +884,6 @@
     <string name="pref_enable_smiles">Enable Smiles</string>
     <string name="pref_enable_smiles_summary">Replace standard emoji picker with custom smiles</string>
     <string name="smiles">Smiles</string>
-    <string name="smiles_imported">Smiles imported</string>
     <string name="open_with">Open with…</string>
     <string name="send_otr_message">Write message…</string>
     <string name="unknown_otr_fingerprint">Unknown OTR fingerprint</string>
@@ -1465,8 +1464,6 @@
     <string name="gif_imported">GIFs imported</string>
     <string name="import_own_gifs">Import own GIFs</string>
     <string name="import_own_gifs_summary">Import your own GIFs. They will be sorted by the filename.</string>
-    <string name="import_own_smiles">Import Smiles</string>
-    <string name="import_own_smiles_summary">Import smiles from a ZIP archive</string>
     <string name="import_client_icons">Import client icons</string>
     <string name="import_client_icons_summary">Import client icon set from ZIP (e.g. full-clients22.zip)</string>
     <string name="select_client_icons_zip">Select ZIP archive with client icons</string>

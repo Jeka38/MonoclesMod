@@ -7012,7 +7012,7 @@ public class XmppConnectionService extends Service {
 
     public void rescanSmiles(boolean force) {
         long msToRescan = (mLastSmilesRescan + 600000L) - SystemClock.elapsedRealtime();
-        if (!force && msToRescan > 0) return;
+        if (!force && mLastSmilesRescan != 0 && msToRescan > 0) return;
         Log.d(Config.LOGTAG, "rescanSmiles");
 
         mLastSmilesRescan = SystemClock.elapsedRealtime();
