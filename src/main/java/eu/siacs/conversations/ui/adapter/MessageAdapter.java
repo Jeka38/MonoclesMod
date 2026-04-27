@@ -752,36 +752,18 @@ public class MessageAdapter extends ArrayAdapter<Message> {
             String imageUrl = extractFirstImageUrl(trimmedBody);
 
             if (imageUrl != null && isDirectImageUrl(imageUrl)) {
-                viewHolder.images.setVisibility(View.VISIBLE);
-                viewHolder.image.setVisibility(View.VISIBLE);
-
+                viewHolder.images.setVisibility(View.GONE);
+                viewHolder.image.setImageDrawable(null);
                 final float target_size = activity.getResources().getDimension(R.dimen.image_preview_width);
-
-                LinearLayout.LayoutParams placeholderParams = new LinearLayout.LayoutParams(
-                        LinearLayout.LayoutParams.WRAP_CONTENT,
-                        LinearLayout.LayoutParams.WRAP_CONTENT
-                );
-                placeholderParams.setMargins(0, (int) (metrics.density * 4), 0, (int) (metrics.density * 4));
-                viewHolder.images.setLayoutParams(placeholderParams);
 
                 Glide.with(activity)
                         .load(imageUrl)
                         .override((int) target_size)
                         .centerInside()
-                        .placeholder(R.drawable.ic_image_grey600_48dp)
-                        .error(R.drawable.ic_error_404)
                         .listener(new RequestListener<Drawable>() {
                             @Override
                             public boolean onLoadFailed(@Nullable GlideException e, Object model, Target<Drawable> target, boolean isFirstResource) {
-                                viewHolder.images.setVisibility(View.VISIBLE);
-                                viewHolder.image.setVisibility(View.VISIBLE);
-
-                                imagePreviewLayout(120, 120, viewHolder.image);
-
-                                ViewGroup.LayoutParams params = viewHolder.image.getLayoutParams();
-                                LinearLayout.LayoutParams containerLayoutParams = new LinearLayout.LayoutParams(params.width, params.height);
-                                containerLayoutParams.setMargins(0, (int) (metrics.density * 4), 0, (int) (metrics.density * 4));
-                                viewHolder.images.setLayoutParams(containerLayoutParams);
+                                viewHolder.images.setVisibility(View.GONE);
                                 return false;
                             }
 
