@@ -70,6 +70,14 @@
                     android:layout_marginStart="4dp"
                     android:contentDescription="@string/client_icon"
                     android:visibility="gone" />
+
+                <TextView
+                    android:id="@+id/client_version"
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:layout_marginStart="4dp"
+                    android:textAppearance="@style/TextAppearance.Conversations.Body1.Secondary"
+                    android:visibility="gone" />
             </LinearLayout>
 
             <com.wefika.flowlayout.FlowLayout

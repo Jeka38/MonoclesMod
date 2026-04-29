@@ -3,6 +3,7 @@ package eu.siacs.conversations.ui.adapter;
 import android.content.SharedPreferences;
 import android.graphics.drawable.Drawable;
 import android.preference.PreferenceManager;
+import android.text.TextUtils;
 import android.view.LayoutInflater;
 import android.view.View;
 import android.view.ViewGroup;
@@ -156,13 +157,22 @@ public class ListItemAdapter extends ArrayAdapter<ListItem> {
     private void bindClientIcon(final ViewHolder viewHolder, final ListItem item) {
         if (!showClientIcons || !(item instanceof Contact)) {
             viewHolder.clientIcon.setVisibility(View.GONE);
+            viewHolder.clientVersion.setVisibility(View.GONE);
             return;
         }
         final boolean applied = ClientIconUtils.applyRosterClientIcon(viewHolder.clientIcon, (Contact) item);
+        final String version = ClientIconUtils.getSoftwareVersion((Contact) item);
         if (!applied) {
             viewHolder.clientIcon.setVisibility(View.GONE);
+            viewHolder.clientVersion.setVisibility(View.GONE);
         } else {
             viewHolder.clientIcon.setVisibility(View.VISIBLE);
+            if (!TextUtils.isEmpty(version)) {
+                viewHolder.clientVersion.setText(version);
+                viewHolder.clientVersion.setVisibility(View.VISIBLE);
+            } else {
+                viewHolder.clientVersion.setVisibility(View.GONE);
+            }
         }
     }
 
@@ -182,6 +192,7 @@ public class ListItemAdapter extends ArrayAdapter<ListItem> {
         private FlowLayout tags;
         private ImageView activeIndicator;
         private ImageView clientIcon;
+        private TextView clientVersion;
         private View inner;
 
 
@@ -197,6 +208,7 @@ public class ListItemAdapter extends ArrayAdapter<ListItem> {
             viewHolder.tags = binding.tags;
             viewHolder.activeIndicator = binding.userActiveIndicator;
             viewHolder.clientIcon = binding.clientIcon;
+            viewHolder.clientVersion = binding.clientVersion;
             viewHolder.inner = binding.inner;
             binding.getRoot().setTag(viewHolder);
             return viewHolder;

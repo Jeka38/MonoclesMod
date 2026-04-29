@@ -5,6 +5,7 @@ import android.content.Context;
 import android.content.IntentSender;
 import android.graphics.drawable.Drawable;
 import android.content.SharedPreferences;
+import android.text.TextUtils;
 import android.view.ContextMenu;
 import android.view.LayoutInflater;
 import android.view.View;
@@ -176,10 +177,18 @@ public class UserAdapter extends ListAdapter<MucOptions.User, UserAdapter.ViewHo
         final SharedPreferences preferences = PreferenceManager.getDefaultSharedPreferences(viewHolder.binding.getRoot().getContext());
         final boolean showClientIcons = preferences.getBoolean(SettingsActivity.SHOW_CLIENT_ICONS, viewHolder.binding.getRoot().getResources().getBoolean(R.bool.show_client_icons));
         final boolean applied = showClientIcons && ClientIconUtils.applyMucUserClientIcon(viewHolder.binding.clientIcon, user);
+        final String version = ClientIconUtils.getSoftwareVersion(user);
         if (!applied) {
             viewHolder.binding.clientIcon.setVisibility(View.GONE);
+            viewHolder.binding.clientVersion.setVisibility(View.GONE);
         } else {
             viewHolder.binding.clientIcon.setVisibility(View.VISIBLE);
+            if (!TextUtils.isEmpty(version)) {
+                viewHolder.binding.clientVersion.setText(version);
+                viewHolder.binding.clientVersion.setVisibility(View.VISIBLE);
+            } else {
+                viewHolder.binding.clientVersion.setVisibility(View.GONE);
+            }
         }
     }
 
