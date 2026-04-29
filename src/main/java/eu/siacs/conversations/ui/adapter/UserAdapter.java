@@ -176,6 +176,11 @@ public class UserAdapter extends ListAdapter<MucOptions.User, UserAdapter.ViewHo
         }
         final SharedPreferences preferences = PreferenceManager.getDefaultSharedPreferences(viewHolder.binding.getRoot().getContext());
         final boolean showClientIcons = preferences.getBoolean(SettingsActivity.SHOW_CLIENT_ICONS, viewHolder.binding.getRoot().getResources().getBoolean(R.bool.show_client_icons));
+        final XmppActivity activity = XmppActivity.find(viewHolder.binding.getRoot());
+        final XmppConnectionService service = activity == null ? null : activity.xmppConnectionService;
+        if (showClientIcons && user.isOnline() && user.getSoftwareVersion() == null && service != null && user.getFullJid() != null) {
+            service.fetchVersion(user.getAccount(), user.getFullJid());
+        }
         final boolean applied = showClientIcons && ClientIconUtils.applyMucUserClientIcon(viewHolder.binding.clientIcon, user);
         final String version = ClientIconUtils.getSoftwareVersion(user);
         if (!applied) {

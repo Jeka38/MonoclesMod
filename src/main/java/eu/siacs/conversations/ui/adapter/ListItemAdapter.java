@@ -160,7 +160,11 @@ public class ListItemAdapter extends ArrayAdapter<ListItem> {
             viewHolder.clientVersion.setVisibility(View.GONE);
             return;
         }
-        final boolean applied = ClientIconUtils.applyRosterClientIcon(viewHolder.clientIcon, (Contact) item);
+        final Contact contact = (Contact) item;
+        if (contact.getSoftwareVersion() == null && activity.xmppConnectionService != null) {
+            activity.xmppConnectionService.fetchVersion(contact.getAccount(), contact.getJid());
+        }
+        final boolean applied = ClientIconUtils.applyRosterClientIcon(viewHolder.clientIcon, contact);
         final String version = ClientIconUtils.getSoftwareVersion((Contact) item);
         if (!applied) {
             viewHolder.clientIcon.setVisibility(View.GONE);
