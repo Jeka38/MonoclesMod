@@ -733,6 +733,8 @@ public class MessageAdapter extends ArrayAdapter<Message> {
         viewHolder.messageBody.setVisibility(View.GONE);
         viewHolder.images.setVisibility(View.GONE);
 
+        viewHolder.messageBody.setMinWidth(0);
+        viewHolder.messageBody.setMaxWidth(Integer.MAX_VALUE);
         if (darkBackground) {
             viewHolder.messageBody.setTextAppearance(getContext(), R.style.TextAppearance_Conversations_Body1_OnDark);
         } else {
@@ -1178,9 +1180,9 @@ public class MessageAdapter extends ArrayAdapter<Message> {
     }
 
     private void displayAudioMessage(ViewHolder viewHolder, Message message, boolean darkBackground, final int type) {
+        displayTextMessage(viewHolder, message, darkBackground, type);
         final Resources res = activity.getResources();
         viewHolder.messageBody.setWidth((int) res.getDimension(R.dimen.audio_player_width));
-        displayTextMessage(viewHolder, message, darkBackground, type);
         showImages(false, viewHolder);
         viewHolder.richlinkview.setVisibility(GONE);
         viewHolder.transfer.setVisibility(GONE);
