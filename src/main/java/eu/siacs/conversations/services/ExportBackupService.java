@@ -559,6 +559,10 @@ public class ExportBackupService extends Service {
     private void writeToFile(Conversation conversation) {
         Jid accountJid = resolveAccountUuid(conversation.getAccountUuid());
         Jid contactJid = conversation.getJid();
+        if (accountJid == null || contactJid == null) {
+            Log.w(Config.LOGTAG, "Skipping log export because account or contact JID is missing");
+            return;
+        }
         final File dir = new File(getAppLogsDirectory(), accountJid.asBareJid().toString());
         dir.mkdirs();
 
@@ -591,7 +595,7 @@ public class ExportBackupService extends Service {
                     }
                 }
             }
-        } catch (IOException e) {
+        } catch (Exception e) {
             e.printStackTrace();
         } finally {
             try {
