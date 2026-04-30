@@ -50,23 +50,39 @@
                     android:paddingStart="@dimen/avatar_item_distance"
                     android:paddingLeft="@dimen/avatar_item_distance">
 
-                    <ImageView
-                        android:id="@+id/client_icon"
-                        android:layout_width="18dp"
-                        android:layout_height="18dp"
+                    <LinearLayout
+                        android:id="@+id/client_info"
+                        android:layout_width="wrap_content"
+                        android:layout_height="wrap_content"
                         android:layout_alignParentStart="true"
                         android:layout_alignParentLeft="true"
                         android:layout_centerVertical="true"
                         android:layout_marginEnd="8dp"
                         android:layout_marginRight="8dp"
-                        android:visibility="gone" />
+                        android:gravity="center_vertical"
+                        android:orientation="horizontal"
+                        android:visibility="gone">
+
+                        <ImageView
+                            android:id="@+id/client_icon"
+                            android:layout_width="16dp"
+                            android:layout_height="16dp"
+                            android:contentDescription="@string/client_icon" />
+
+                        <TextView
+                            android:id="@+id/client_version"
+                            android:layout_width="wrap_content"
+                            android:layout_height="wrap_content"
+                            android:layout_marginStart="4dp"
+                            android:textAppearance="@style/TextAppearance.Conversations.Body1.Secondary" />
+                    </LinearLayout>
 
                     <TextView
                         android:id="@+id/conversation_name"
                         android:layout_width="wrap_content"
                         android:layout_height="wrap_content"
-                        android:layout_toEndOf="@+id/client_icon"
-                        android:layout_toRightOf="@+id/client_icon"
+                        android:layout_toEndOf="@+id/client_info"
+                        android:layout_toRightOf="@+id/client_info"
                         android:layout_alignWithParentIfMissing="true"
                         android:layout_toStartOf="@+id/failed_count"
                         android:layout_toLeftOf="@+id/failed_count"
@@ -80,8 +96,8 @@
                         android:id="@+id/conversation_lastwrapper"
                         android:layout_width="match_parent"
                         android:layout_height="wrap_content"
-                        android:layout_toEndOf="@+id/client_icon"
-                        android:layout_toRightOf="@+id/client_icon"
+                        android:layout_toEndOf="@+id/client_info"
+                        android:layout_toRightOf="@+id/client_info"
                         android:layout_alignWithParentIfMissing="true"
                         android:layout_below="@id/conversation_name"
                         android:layout_marginTop="4dp">

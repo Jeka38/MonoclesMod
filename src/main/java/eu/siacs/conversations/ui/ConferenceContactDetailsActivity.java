@@ -97,7 +97,7 @@ public class ConferenceContactDetailsActivity extends XmppActivity implements Xm
             return;
         }
         binding.contactDisplayName.setText(user.getName());
-        binding.jid.setText(IrregularUnicodeDetector.style(this, contactJid));
+        binding.jid.setText(IrregularUnicodeDetector.style(this, contactJid.asBareJid()));
         final boolean hasClientIcon = ClientIconUtils.applyMucUserClientIcon(binding.resource, user);
         final String softwareVersion = ClientIconUtils.getSoftwareVersion(user);
         if (TextUtils.isEmpty(softwareVersion)) {

@@ -937,12 +937,7 @@ public class ContactDetailsActivity extends OmemoActivity implements OnAccountUp
             }
         }
 
-        final Jid displayedJid;
-        if (showBareJidFromConference) {
-            displayedJid = contact.getJid().asBareJid();
-        } else {
-            displayedJid = fullJid != null ? fullJid : contact.getJid();
-        }
+        final Jid displayedJid = contact.getJid().asBareJid();
         binding.jid.setText(IrregularUnicodeDetector.style(this, displayedJid));
         String account;
         if (Config.DOMAIN_LOCK != null) {

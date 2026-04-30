@@ -56,20 +56,36 @@
                 android:gravity="center_vertical"
                 android:orientation="horizontal">
 
+                <LinearLayout
+                    android:id="@+id/client_info"
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:layout_marginEnd="8dp"
+                    android:layout_marginRight="8dp"
+                    android:gravity="center_vertical"
+                    android:orientation="horizontal"
+                    android:visibility="gone">
+
+                    <ImageView
+                        android:id="@+id/client_icon"
+                        android:layout_width="16dp"
+                        android:layout_height="16dp"
+                        android:contentDescription="@string/client_icon" />
+
+                    <TextView
+                        android:id="@+id/client_version"
+                        android:layout_width="wrap_content"
+                        android:layout_height="wrap_content"
+                        android:layout_marginStart="4dp"
+                        android:textAppearance="@style/TextAppearance.Conversations.Body1.Secondary" />
+                </LinearLayout>
+
                 <TextView
                     android:id="@+id/contact_jid"
                     android:layout_width="wrap_content"
                     android:layout_height="wrap_content"
                     android:singleLine="true"
                     android:textAppearance="@style/TextAppearance.Conversations.Body1.Secondary" />
-
-                <ImageView
-                    android:id="@+id/client_icon"
-                    android:layout_width="16dp"
-                    android:layout_height="16dp"
-                    android:layout_marginStart="4dp"
-                    android:contentDescription="@string/client_icon"
-                    android:visibility="gone" />
             </LinearLayout>
 
             <com.wefika.flowlayout.FlowLayout
