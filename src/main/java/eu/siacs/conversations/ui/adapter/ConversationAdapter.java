@@ -484,21 +484,12 @@ public class ConversationAdapter
             return;
         }
         final Contact contact = conversation.getContact();
-        if (contact.getSoftwareVersion() == null && activity.xmppConnectionService != null) {
-            activity.xmppConnectionService.fetchVersion(contact.getAccount(), contact.getJid());
-        }
         final boolean applied = ClientIconUtils.applyRosterClientIcon(viewHolder.binding.clientIcon, contact);
-        final String version = ClientIconUtils.getSoftwareVersion(contact);
         if (!applied) {
             viewHolder.binding.clientInfo.setVisibility(View.GONE);
         } else {
             viewHolder.binding.clientInfo.setVisibility(View.VISIBLE);
-            if (!TextUtils.isEmpty(version)) {
-                viewHolder.binding.clientVersion.setText(version);
-                viewHolder.binding.clientVersion.setVisibility(View.VISIBLE);
-            } else {
-                viewHolder.binding.clientVersion.setVisibility(View.GONE);
-            }
+            viewHolder.binding.clientVersion.setVisibility(View.GONE);
         }
     }
 
