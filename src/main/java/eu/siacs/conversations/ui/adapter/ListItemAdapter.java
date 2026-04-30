@@ -156,8 +156,7 @@ public class ListItemAdapter extends ArrayAdapter<ListItem> {
 
     private void bindClientIcon(final ViewHolder viewHolder, final ListItem item) {
         if (!showClientIcons || !(item instanceof Contact)) {
-            viewHolder.clientIcon.setVisibility(View.GONE);
-            viewHolder.clientVersion.setVisibility(View.GONE);
+            viewHolder.clientInfo.setVisibility(View.GONE);
             return;
         }
         final Contact contact = (Contact) item;
@@ -165,12 +164,11 @@ public class ListItemAdapter extends ArrayAdapter<ListItem> {
             activity.xmppConnectionService.fetchVersion(contact.getAccount(), contact.getJid());
         }
         final boolean applied = ClientIconUtils.applyRosterClientIcon(viewHolder.clientIcon, contact);
-        final String version = ClientIconUtils.getSoftwareVersion((Contact) item);
+        final String version = ClientIconUtils.getSoftwareVersion(contact);
         if (!applied) {
-            viewHolder.clientIcon.setVisibility(View.GONE);
-            viewHolder.clientVersion.setVisibility(View.GONE);
+            viewHolder.clientInfo.setVisibility(View.GONE);
         } else {
-            viewHolder.clientIcon.setVisibility(View.VISIBLE);
+            viewHolder.clientInfo.setVisibility(View.VISIBLE);
             if (!TextUtils.isEmpty(version)) {
                 viewHolder.clientVersion.setText(version);
                 viewHolder.clientVersion.setVisibility(View.VISIBLE);
@@ -195,6 +193,7 @@ public class ListItemAdapter extends ArrayAdapter<ListItem> {
         private ImageView avatar;
         private FlowLayout tags;
         private ImageView activeIndicator;
+        private View clientInfo;
         private ImageView clientIcon;
         private TextView clientVersion;
         private View inner;
@@ -211,6 +210,7 @@ public class ListItemAdapter extends ArrayAdapter<ListItem> {
             viewHolder.avatar = binding.contactPhoto;
             viewHolder.tags = binding.tags;
             viewHolder.activeIndicator = binding.userActiveIndicator;
+            viewHolder.clientInfo = binding.clientInfo;
             viewHolder.clientIcon = binding.clientIcon;
             viewHolder.clientVersion = binding.clientVersion;
             viewHolder.inner = binding.inner;

@@ -6,6 +6,7 @@ import static eu.siacs.conversations.ui.util.MyLinkify.replaceYoutube;
 import android.content.SharedPreferences;
 import android.graphics.Typeface;
 import android.preference.PreferenceManager;
+import android.text.TextUtils;
 import android.text.Spannable;
 import android.text.SpannableString;
 import android.text.SpannableStringBuilder;
@@ -479,14 +480,25 @@ public class ConversationAdapter
 
     private void bindClientIcon(ConversationViewHolder viewHolder, Conversation conversation) {
         if (!showClientIcons || conversation.getMode() != Conversation.MODE_SINGLE) {
-            viewHolder.binding.clientIcon.setVisibility(View.GONE);
+            viewHolder.binding.clientInfo.setVisibility(View.GONE);
             return;
         }
-        final boolean applied = ClientIconUtils.applyRosterClientIcon(viewHolder.binding.clientIcon, conversation.getContact());
+        final Contact contact = conversation.getContact();
+        if (contact.getSoftwareVersion() == null && activity.xmppConnectionService != null) {
+            activity.xmppConnectionService.fetchVersion(contact.getAccount(), contact.getJid());
+        }
+        final boolean applied = ClientIconUtils.applyRosterClientIcon(viewHolder.binding.clientIcon, contact);
+        final String version = ClientIconUtils.getSoftwareVersion(contact);
         if (!applied) {
-            viewHolder.binding.clientIcon.setVisibility(View.GONE);
+            viewHolder.binding.clientInfo.setVisibility(View.GONE);
         } else {
-            viewHolder.binding.clientIcon.setVisibility(View.VISIBLE);
+            viewHolder.binding.clientInfo.setVisibility(View.VISIBLE);
+            if (!TextUtils.isEmpty(version)) {
+                viewHolder.binding.clientVersion.setText(version);
+                viewHolder.binding.clientVersion.setVisibility(View.VISIBLE);
+            } else {
+                viewHolder.binding.clientVersion.setVisibility(View.GONE);
+            }
         }
     }
 

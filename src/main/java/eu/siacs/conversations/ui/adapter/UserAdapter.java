@@ -184,10 +184,9 @@ public class UserAdapter extends ListAdapter<MucOptions.User, UserAdapter.ViewHo
         final boolean applied = showClientIcons && ClientIconUtils.applyMucUserClientIcon(viewHolder.binding.clientIcon, user);
         final String version = ClientIconUtils.getSoftwareVersion(user);
         if (!applied) {
-            viewHolder.binding.clientIcon.setVisibility(View.GONE);
-            viewHolder.binding.clientVersion.setVisibility(View.GONE);
+            viewHolder.binding.clientInfo.setVisibility(View.GONE);
         } else {
-            viewHolder.binding.clientIcon.setVisibility(View.VISIBLE);
+            viewHolder.binding.clientInfo.setVisibility(View.VISIBLE);
             if (!TextUtils.isEmpty(version)) {
                 viewHolder.binding.clientVersion.setText(version);
                 viewHolder.binding.clientVersion.setVisibility(View.VISIBLE);
