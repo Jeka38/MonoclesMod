@@ -106,11 +106,9 @@ public class ListItemAdapter extends ArrayAdapter<ListItem> {
             }
         }
         final Jid jid = item.getJid();
+        viewHolder.jid.setVisibility(View.GONE);
         if (jid != null) {
-            viewHolder.jid.setVisibility(View.VISIBLE);
             viewHolder.jid.setText(IrregularUnicodeDetector.style(activity, jid));
-        } else {
-            viewHolder.jid.setVisibility(View.GONE);
         }
         if (activity.xmppConnectionService != null && activity.xmppConnectionService.multipleAccounts() && activity.xmppConnectionService.showOwnAccounts()) {
             viewHolder.account.setVisibility(View.VISIBLE);
