@@ -17,6 +17,8 @@ import android.view.MenuItem;
 import android.view.View;
 import android.widget.Toast;
 
+import static eu.siacs.conversations.ui.util.ShareUtil.copyTextToClipboard;
+
 import androidx.appcompat.app.AlertDialog;
 import androidx.databinding.DataBindingUtil;
 
@@ -152,6 +154,18 @@ public final class MucDetailsContextMenuHelper {
         MenuItem sendPrivateMessage = menu.findItem(R.id.send_private_message);
         MenuItem shareContactDetails = menu.findItem(R.id.share_contact_details);
         MenuItem blockUnblockMUCUser = menu.findItem(R.id.context_muc_contact_block_unblock);
+
+        if (isAffiliationList) {
+            for (int i = 0; i < menu.size(); i++) {
+                menu.getItem(i).setVisible(false);
+            }
+            final MenuItem copyJid = menu.findItem(R.id.action_copy_jid);
+            final MenuItem removeFromList = menu.findItem(R.id.action_remove_from_list);
+            final boolean hasJid = user != null && user.getRealJid() != null;
+            if (copyJid != null) copyJid.setVisible(hasJid);
+            if (removeFromList != null) removeFromList.setVisible(hasJid);
+            return;
+        }
 
         MenuItem muteParticipant = menu.findItem(R.id.action_mute_participant);
         MenuItem unmuteParticipant = menu.findItem(R.id.action_unmute_participant);
@@ -303,6 +317,14 @@ public final class MucDetailsContextMenuHelper {
               case R.id.add_contact:        // TODO: Re add it later again
                   activity.showAddToRosterDialog(contact);
                   return true;
+            case R.id.action_copy_jid:
+                if (jid != null) {
+                    copyTextToClipboard(activity, jid.asBareJid().toEscapedString(), R.string.jabber_id_copied_to_clipboard);
+                }
+                return true;
+            case R.id.action_remove_from_list:
+                activity.xmppConnectionService.changeAffiliationInConference(conversation, jid, MucOptions.Affiliation.NONE, onAffiliationChanged);
+                return true;
             case R.id.manage_permissions:
                 Pair<CharSequence[], Integer[]> choices = getPermissionsChoices(activity, conversation, user, isAffiliationList);
                 int[] selected = new int[] { -1 };
