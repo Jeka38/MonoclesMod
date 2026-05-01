@@ -97,4 +97,9 @@
         android:orderInCategory="100"
         android:title="@string/change_role_affiliation"
         android:visible="false" />
+    <item
+        android:id="@+id/action_full_remove_from_lists"
+        android:orderInCategory="100"
+        android:title="@string/remove_from_all_lists"
+        android:visible="false" />
 </menu>

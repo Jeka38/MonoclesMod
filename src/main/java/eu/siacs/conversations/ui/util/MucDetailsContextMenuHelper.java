@@ -161,9 +161,11 @@ public final class MucDetailsContextMenuHelper {
             }
             final MenuItem copyJid = menu.findItem(R.id.action_copy_jid);
             final MenuItem changeRoleAffiliation = menu.findItem(R.id.action_remove_from_list);
+            final MenuItem fullRemoveFromLists = menu.findItem(R.id.action_full_remove_from_lists);
             final boolean hasJid = user != null && user.getRealJid() != null;
             if (copyJid != null) copyJid.setVisible(hasJid);
             if (changeRoleAffiliation != null) changeRoleAffiliation.setVisible(hasJid);
+            if (fullRemoveFromLists != null) fullRemoveFromLists.setVisible(hasJid);
             return;
         }
 
@@ -355,6 +357,12 @@ public final class MucDetailsContextMenuHelper {
                             }
                         })
                         .setNeutralButton(R.string.cancel, null).show();
+                return true;
+            case R.id.action_full_remove_from_lists:
+                activity.xmppConnectionService.changeAffiliationInConference(conversation, jid, MucOptions.Affiliation.NONE, onAffiliationChanged);
+                if (user.getRole() != MucOptions.Role.NONE) {
+                    activity.xmppConnectionService.changeRoleInConference(conversation, user.getName(), MucOptions.Role.NONE);
+                }
                 return true;
             case R.id.manage_permissions:
                 Pair<CharSequence[], Integer[]> choices = getPermissionsChoices(activity, conversation, user, isAffiliationList);
