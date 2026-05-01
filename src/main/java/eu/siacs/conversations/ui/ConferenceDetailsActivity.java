@@ -323,6 +323,15 @@ public class ConferenceDetailsActivity extends XmppActivity implements OnConvers
         this.binding.media.setAdapter(mMediaAdapter);
         //TODO: Implement recyclerview for users list and media list
         GridManager.setupLayoutManager(this, this.binding.media, R.dimen.media_size);
+        this.binding.manageMucListsButton.setOnClickListener(v -> {
+            if (mConversation == null) {
+                return;
+            }
+            final Intent intent = new Intent(this, ManageMucListsActivity.class);
+            intent.putExtra(MucUsersActivity.EXTRA_UUID, mConversation.getUuid());
+            startActivity(intent);
+        });
+
         this.binding.relatedMucs.setOnClickListener(v -> {
             final Intent intent = new Intent(this, ChannelDiscoveryActivity.class);
             intent.putExtra("services", new String[]{ mConversation.getJid().getDomain().toEscapedString(), mConversation.getAccount().getJid().toEscapedString() });
@@ -645,6 +654,7 @@ public class ConferenceDetailsActivity extends XmppActivity implements OnConvers
         }
         final MucOptions mucOptions = mConversation.getMucOptions();
         final User self = mucOptions.getSelf();
+        this.binding.manageMucListsButton.setVisibility(self.getAffiliation().ranks(MucOptions.Affiliation.ADMIN) ? View.VISIBLE : View.GONE);
         String account;
         if (Config.DOMAIN_LOCK != null) {
             account = mConversation.getAccount().getJid().getEscapedLocal();

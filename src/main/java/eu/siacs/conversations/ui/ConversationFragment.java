@@ -2671,7 +2671,7 @@ public class ConversationFragment extends XmppFragment
             startSearch();
         } else if (itemId == R.id.action_muc_participants) {
             Intent intent_user = new Intent(activity, MucUsersActivity.class);
-            intent_user.putExtra("uuid", conversation.getUuid());
+            intent_user.putExtra(MucUsersActivity.EXTRA_UUID, conversation.getUuid());
             activity.startActivity(intent_user);
         }
         else if (itemId == R.id.action_archive_chat) {
@@ -2698,7 +2698,7 @@ public class ConversationFragment extends XmppFragment
             activity.switchToMUCDetails(conversation);
         } else if (itemId == R.id.action_participants) {
             Intent intent1 = new Intent(activity, MucUsersActivity.class);
-            intent1.putExtra("uuid", conversation.getUuid());
+            intent1.putExtra(MucUsersActivity.EXTRA_UUID, conversation.getUuid());
             startActivity(intent1);
             activity.overridePendingTransition(R.animator.fade_in, R.animator.fade_out);
         } else if (itemId == R.id.action_contact_details) {
