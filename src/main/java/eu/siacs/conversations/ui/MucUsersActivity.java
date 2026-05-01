@@ -74,6 +74,7 @@ public class MucUsersActivity extends XmppActivity implements XmppConnectionServ
     private Tab mSelectedTab = Tab.OCCUPANTS;
     private boolean mManageMode = false;
     private String mInitialTabName = null;
+    private boolean mSingleListMode = false;
 
     @Override
     protected void refreshUiReal() {
@@ -165,6 +166,7 @@ public class MucUsersActivity extends XmppActivity implements XmppConnectionServ
         final Intent intent = getIntent();
         mManageMode = intent != null && intent.getBooleanExtra(EXTRA_MANAGE_MODE, false);
         mInitialTabName = intent == null ? null : intent.getStringExtra(EXTRA_INITIAL_TAB);
+        mSingleListMode = mManageMode && mInitialTabName != null;
         binding = DataBindingUtil.setContentView(this, R.layout.activity_muc_users);
         setSupportActionBar((Toolbar) binding.toolbar.getRoot());
         configureActionBar(getSupportActionBar(), true);
@@ -172,37 +174,42 @@ public class MucUsersActivity extends XmppActivity implements XmppConnectionServ
         binding.list.setAdapter(this.userAdapter);
 
         if (mManageMode) {
-            for (Tab tab : Tab.values()) {
-                if (tab == Tab.OCCUPANTS || tab == Tab.MODERATORS) {
-                    continue;
+            if (mSingleListMode) {
+                mSelectedTab = parseInitialTabOrDefault();
+                binding.tabLayout.setVisibility(View.GONE);
+            } else {
+                for (Tab tab : Tab.values()) {
+                    if (tab == Tab.OCCUPANTS || tab == Tab.MODERATORS) {
+                        continue;
+                    }
+                    binding.tabLayout.addTab(binding.tabLayout.newTab().setTag(tab).setText(tab.resId));
                 }
-                binding.tabLayout.addTab(binding.tabLayout.newTab().setTag(tab).setText(tab.resId));
             }
         } else {
             mSelectedTab = Tab.OCCUPANTS;
             binding.tabLayout.setVisibility(View.GONE);
         }
 
-        binding.tabLayout.addOnTabSelectedListener(new TabLayout.OnTabSelectedListener() {
-            @Override
-            public void onTabSelected(TabLayout.Tab tab) {
-                final Object tag = tab.getTag();
-                mSelectedTab = tag instanceof Tab ? (Tab) tag : (mManageMode ? Tab.MEMBERS : Tab.OCCUPANTS);
-                userAdapter.setAffiliationList(mSelectedTab != Tab.OCCUPANTS);
-                updateFabVisibility();
-                loadAndSubmitUsers();
-            }
+        if (mManageMode && !mSingleListMode) {
+            binding.tabLayout.addOnTabSelectedListener(new TabLayout.OnTabSelectedListener() {
+                @Override
+                public void onTabSelected(TabLayout.Tab tab) {
+                    final Object tag = tab.getTag();
+                    mSelectedTab = tag instanceof Tab ? (Tab) tag : Tab.MEMBERS;
+                    userAdapter.setAffiliationList(true);
+                    updateFabVisibility();
+                    loadAndSubmitUsers();
+                }
 
-            @Override
-            public void onTabUnselected(TabLayout.Tab tab) {
-            }
+                @Override
+                public void onTabUnselected(TabLayout.Tab tab) {
+                }
 
-            @Override
-            public void onTabReselected(TabLayout.Tab tab) {
-            }
-        });
+                @Override
+                public void onTabReselected(TabLayout.Tab tab) {
+                }
+            });
 
-        if (mManageMode) {
             selectInitialManageTab();
             binding.fab.setOnClickListener(v -> showAddJidDialog());
             binding.list.setOnTouchListener(new OnSwipeTouchListener(this) {
@@ -216,6 +223,10 @@ public class MucUsersActivity extends XmppActivity implements XmppConnectionServ
                     selectAdjacentTab(-1);
                 }
             });
+        } else if (mManageMode) {
+            binding.fab.setOnClickListener(v -> showAddJidDialog());
+            userAdapter.setAffiliationList(true);
+            updateFabVisibility();
         } else {
             binding.fab.hide();
         }
@@ -223,15 +234,21 @@ public class MucUsersActivity extends XmppActivity implements XmppConnectionServ
     }
 
 
-    private void selectInitialManageTab() {
-        Tab requested = null;
+    private Tab parseInitialTabOrDefault() {
         if (mInitialTabName != null) {
             try {
-                requested = Tab.valueOf(mInitialTabName);
+                final Tab initialTab = Tab.valueOf(mInitialTabName);
+                if (initialTab != Tab.OCCUPANTS && initialTab != Tab.MODERATORS) {
+                    return initialTab;
+                }
             } catch (IllegalArgumentException ignored) {
-                requested = null;
             }
         }
+        return Tab.MEMBERS;
+    }
+
+    private void selectInitialManageTab() {
+        final Tab requested = parseInitialTabOrDefault();
         for (int i = 0; i < binding.tabLayout.getTabCount(); ++i) {
             final TabLayout.Tab tab = binding.tabLayout.getTabAt(i);
             if (tab == null) {
@@ -257,7 +274,7 @@ public class MucUsersActivity extends XmppActivity implements XmppConnectionServ
         final MucOptions.Affiliation affiliation = mConversation.getMucOptions().getSelf().getAffiliation();
         if (mManageMode) {
             if (affiliation.ranks(MucOptions.Affiliation.ADMIN)) {
-                binding.tabLayout.setVisibility(View.VISIBLE);
+                binding.tabLayout.setVisibility(mSingleListMode ? View.GONE : View.VISIBLE);
             } else {
                 finish();
             }
