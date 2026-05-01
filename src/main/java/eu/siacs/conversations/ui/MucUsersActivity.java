@@ -170,12 +170,14 @@ public class MucUsersActivity extends XmppActivity implements XmppConnectionServ
         binding = DataBindingUtil.setContentView(this, R.layout.activity_muc_users);
         setSupportActionBar((Toolbar) binding.toolbar.getRoot());
         configureActionBar(getSupportActionBar(), true);
+        setTitle(R.string.group_chat_members);
         this.userAdapter = new UserAdapter(getPreferences().getBoolean("advanced_muc_mode", false));
         binding.list.setAdapter(this.userAdapter);
 
         if (mManageMode) {
             if (mSingleListMode) {
                 mSelectedTab = parseInitialTabOrDefault();
+                setTitleForCurrentList();
                 binding.tabLayout.setVisibility(View.GONE);
             } else {
                 for (Tab tab : Tab.values()) {
@@ -187,6 +189,7 @@ public class MucUsersActivity extends XmppActivity implements XmppConnectionServ
             }
         } else {
             mSelectedTab = Tab.OCCUPANTS;
+            setTitleForCurrentList();
             binding.tabLayout.setVisibility(View.GONE);
         }
 
@@ -196,6 +199,7 @@ public class MucUsersActivity extends XmppActivity implements XmppConnectionServ
                 public void onTabSelected(TabLayout.Tab tab) {
                     final Object tag = tab.getTag();
                     mSelectedTab = tag instanceof Tab ? (Tab) tag : Tab.MEMBERS;
+                    setTitleForCurrentList();
                     userAdapter.setAffiliationList(true);
                     updateFabVisibility();
                     loadAndSubmitUsers();
@@ -233,6 +237,25 @@ public class MucUsersActivity extends XmppActivity implements XmppConnectionServ
 
     }
 
+    private void setTitleForCurrentList() {
+        switch (mSelectedTab) {
+            case OWNERS:
+                setTitle(R.string.owner);
+                break;
+            case ADMINS:
+                setTitle(R.string.admin);
+                break;
+            case MEMBERS:
+                setTitle(R.string.member);
+                break;
+            case OUTCASTS:
+                setTitle(R.string.outcast);
+                break;
+            default:
+                setTitle(R.string.group_chat_members);
+                break;
+        }
+    }
 
     private Tab parseInitialTabOrDefault() {
         if (mInitialTabName != null) {

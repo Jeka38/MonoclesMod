@@ -1627,4 +1627,6 @@
     <string name="webxdc_store_hint_summary">Чтобы использовать приложения WebXDC с обновлениями статуса, вам необходимо отключить шифрование при отправке WebXDC. Пожалуйста, включите шифрование позже снова.</string>
     <string name="send_encrypted">Отправить зашифрованное</string>
     <string name="choose_webxdc">Выберите WebXDC</string>
+    <string name="manage_lists_users">Управление списками (пользователи)</string>
+    <string name="change_role_affiliation">Изменить роль/аффилиацию</string>
 </resources>
