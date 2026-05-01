@@ -171,11 +171,16 @@ public class MucUsersActivity extends XmppActivity implements XmppConnectionServ
         this.userAdapter = new UserAdapter(getPreferences().getBoolean("advanced_muc_mode", false));
         binding.list.setAdapter(this.userAdapter);
 
-        for (Tab tab : Tab.values()) {
-            if (mManageMode && (tab == Tab.OCCUPANTS || tab == Tab.MODERATORS)) {
-                continue;
+        if (mManageMode) {
+            for (Tab tab : Tab.values()) {
+                if (tab == Tab.OCCUPANTS || tab == Tab.MODERATORS) {
+                    continue;
+                }
+                binding.tabLayout.addTab(binding.tabLayout.newTab().setTag(tab).setText(tab.resId));
             }
-            binding.tabLayout.addTab(binding.tabLayout.newTab().setTag(tab).setText(tab.resId));
+        } else {
+            mSelectedTab = Tab.OCCUPANTS;
+            binding.tabLayout.setVisibility(View.GONE);
         }
 
         binding.tabLayout.addOnTabSelectedListener(new TabLayout.OnTabSelectedListener() {
@@ -199,20 +204,21 @@ public class MucUsersActivity extends XmppActivity implements XmppConnectionServ
 
         if (mManageMode) {
             selectInitialManageTab();
+            binding.fab.setOnClickListener(v -> showAddJidDialog());
+            binding.list.setOnTouchListener(new OnSwipeTouchListener(this) {
+                @Override
+                public void onSwipeLeft() {
+                    selectAdjacentTab(1);
+                }
+
+                @Override
+                public void onSwipeRight() {
+                    selectAdjacentTab(-1);
+                }
+            });
+        } else {
+            binding.fab.hide();
         }
-
-        binding.fab.setOnClickListener(v -> showAddJidDialog());
-        binding.list.setOnTouchListener(new OnSwipeTouchListener(this) {
-            @Override
-            public void onSwipeLeft() {
-                selectAdjacentTab(1);
-            }
-
-            @Override
-            public void onSwipeRight() {
-                selectAdjacentTab(-1);
-            }
-        });
 
     }
 
@@ -257,13 +263,9 @@ public class MucUsersActivity extends XmppActivity implements XmppConnectionServ
             }
             return;
         }
-        if (affiliation.ranks(MucOptions.Affiliation.ADMIN)) {
-            binding.tabLayout.setVisibility(View.VISIBLE);
-        } else {
-            binding.tabLayout.setVisibility(View.GONE);
-            mSelectedTab = Tab.OCCUPANTS;
-            userAdapter.setAffiliationList(false);
-        }
+        binding.tabLayout.setVisibility(View.GONE);
+        mSelectedTab = Tab.OCCUPANTS;
+        userAdapter.setAffiliationList(false);
     }
 
     private void updateFabVisibility() {
