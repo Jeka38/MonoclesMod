@@ -160,10 +160,10 @@ public final class MucDetailsContextMenuHelper {
                 menu.getItem(i).setVisible(false);
             }
             final MenuItem copyJid = menu.findItem(R.id.action_copy_jid);
-            final MenuItem removeFromList = menu.findItem(R.id.action_remove_from_list);
+            final MenuItem changeRoleAffiliation = menu.findItem(R.id.action_remove_from_list);
             final boolean hasJid = user != null && user.getRealJid() != null;
             if (copyJid != null) copyJid.setVisible(hasJid);
-            if (removeFromList != null) removeFromList.setVisible(hasJid);
+            if (changeRoleAffiliation != null) changeRoleAffiliation.setVisible(hasJid);
             return;
         }
 
@@ -323,7 +323,38 @@ public final class MucDetailsContextMenuHelper {
                 }
                 return true;
             case R.id.action_remove_from_list:
-                activity.xmppConnectionService.changeAffiliationInConference(conversation, jid, MucOptions.Affiliation.NONE, onAffiliationChanged);
+                Pair<CharSequence[], Integer[]> affiliationChoices = getPermissionsChoices(activity, conversation, user, true);
+                int[] selectedAffiliationAction = new int[] { -1 };
+                new AlertDialog.Builder(activity)
+                        .setTitle(R.string.change_role_affiliation)
+                        .setSingleChoiceItems(affiliationChoices.first, -1, (dialog, whichItem) -> selectedAffiliationAction[0] = whichItem)
+                        .setPositiveButton(R.string.ok, (dialog, whichButton) -> {
+                            switch (selectedAffiliationAction[0] >= 0 ? affiliationChoices.second[selectedAffiliationAction[0]] : -1) {
+                                case ACTION_BAN:
+                                    activity.xmppConnectionService.changeAffiliationInConference(conversation, jid, MucOptions.Affiliation.OUTCAST, onAffiliationChanged);
+                                    if (user.getRole() != MucOptions.Role.NONE) {
+                                        activity.xmppConnectionService.changeRoleInConference(conversation, user.getName(), MucOptions.Role.NONE);
+                                    }
+                                    maybeModerateRecent(activity, conversation, user);
+                                    break;
+                                case ACTION_GRANT_MEMBERSHIP:
+                                case ACTION_REMOVE_ADMIN:
+                                case ACTION_REMOVE_OWNER:
+                                    activity.xmppConnectionService.changeAffiliationInConference(conversation, jid, MucOptions.Affiliation.MEMBER, onAffiliationChanged);
+                                    break;
+                                case ACTION_GRANT_ADMIN:
+                                    activity.xmppConnectionService.changeAffiliationInConference(conversation, jid, MucOptions.Affiliation.ADMIN, onAffiliationChanged);
+                                    break;
+                                case ACTION_GRANT_OWNER:
+                                    activity.xmppConnectionService.changeAffiliationInConference(conversation, jid, MucOptions.Affiliation.OWNER, onAffiliationChanged);
+                                    break;
+                                case ACTION_REMOVE_MEMBERSHIP:
+                                case ACTION_REMOVE_FROM_LIST:
+                                    activity.xmppConnectionService.changeAffiliationInConference(conversation, jid, MucOptions.Affiliation.NONE, onAffiliationChanged);
+                                    break;
+                            }
+                        })
+                        .setNeutralButton(R.string.cancel, null).show();
                 return true;
             case R.id.manage_permissions:
                 Pair<CharSequence[], Integer[]> choices = getPermissionsChoices(activity, conversation, user, isAffiliationList);
