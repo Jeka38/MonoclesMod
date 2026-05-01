@@ -552,6 +552,9 @@
             android:exported="false"
             android:launchMode="singleTask" />
         <activity
+            android:name=".ui.ManageMucListsActivity"
+            android:exported="false" />
+        <activity
             android:name=".ui.MucUsersActivity"
             android:label="@string/group_chat_members"
             android:exported="false"

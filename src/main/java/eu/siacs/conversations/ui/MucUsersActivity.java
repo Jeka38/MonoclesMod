@@ -45,6 +45,7 @@ public class MucUsersActivity extends XmppActivity implements XmppConnectionServ
 
     public static final String EXTRA_UUID = "uuid";
     public static final String EXTRA_MANAGE_MODE = "manage_mode";
+    public static final String EXTRA_INITIAL_TAB = "initial_tab";
 
     private ActivityMucUsersBinding binding;
     private UserAdapter userAdapter;
@@ -72,6 +73,7 @@ public class MucUsersActivity extends XmppActivity implements XmppConnectionServ
 
     private Tab mSelectedTab = Tab.OCCUPANTS;
     private boolean mManageMode = false;
+    private String mInitialTabName = null;
 
     @Override
     protected void refreshUiReal() {
@@ -81,6 +83,7 @@ public class MucUsersActivity extends XmppActivity implements XmppConnectionServ
     protected void onBackendConnected() {
         final Intent intent = getIntent();
         mManageMode = intent != null && intent.getBooleanExtra(EXTRA_MANAGE_MODE, false);
+        mInitialTabName = intent == null ? null : intent.getStringExtra(EXTRA_INITIAL_TAB);
         final String uuid = intent == null ? null : intent.getStringExtra(EXTRA_UUID);
         if (uuid != null) {
             mConversation = xmppConnectionService.findConversationByUuid(uuid);
@@ -194,10 +197,7 @@ public class MucUsersActivity extends XmppActivity implements XmppConnectionServ
         });
 
         if (mManageMode) {
-            final TabLayout.Tab firstTab = binding.tabLayout.getTabAt(0);
-            if (firstTab != null) {
-                firstTab.select();
-            }
+            selectInitialManageTab();
         }
 
         binding.fab.setOnClickListener(v -> showAddJidDialog());
@@ -213,6 +213,33 @@ public class MucUsersActivity extends XmppActivity implements XmppConnectionServ
             }
         });
 
+    }
+
+
+    private void selectInitialManageTab() {
+        Tab requested = null;
+        if (mInitialTabName != null) {
+            try {
+                requested = Tab.valueOf(mInitialTabName);
+            } catch (IllegalArgumentException ignored) {
+                requested = null;
+            }
+        }
+        for (int i = 0; i < binding.tabLayout.getTabCount(); ++i) {
+            final TabLayout.Tab tab = binding.tabLayout.getTabAt(i);
+            if (tab == null) {
+                continue;
+            }
+            final Object tag = tab.getTag();
+            if (requested != null && tag == requested) {
+                tab.select();
+                return;
+            }
+        }
+        final TabLayout.Tab firstTab = binding.tabLayout.getTabAt(0);
+        if (firstTab != null) {
+            firstTab.select();
+        }
     }
 
     private void updateTabsVisibility() {

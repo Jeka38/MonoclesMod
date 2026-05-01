@@ -327,9 +327,8 @@ public class ConferenceDetailsActivity extends XmppActivity implements OnConvers
             if (mConversation == null) {
                 return;
             }
-            final Intent intent = new Intent(this, MucUsersActivity.class);
+            final Intent intent = new Intent(this, ManageMucListsActivity.class);
             intent.putExtra(MucUsersActivity.EXTRA_UUID, mConversation.getUuid());
-            intent.putExtra(MucUsersActivity.EXTRA_MANAGE_MODE, true);
             startActivity(intent);
         });
 
