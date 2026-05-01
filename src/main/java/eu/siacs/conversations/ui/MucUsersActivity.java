@@ -10,6 +10,7 @@ import android.view.Menu;
 import android.view.MenuItem;
 import android.view.View;
 import android.view.inputmethod.InputMethodManager;
+import android.view.ViewGroup;
 import android.widget.Button;
 import android.widget.EditText;
 
@@ -17,6 +18,9 @@ import androidx.appcompat.widget.Toolbar;
 import androidx.annotation.NonNull;
 import androidx.appcompat.app.AlertDialog;
 import androidx.databinding.DataBindingUtil;
+import androidx.recyclerview.widget.LinearLayoutManager;
+import androidx.recyclerview.widget.RecyclerView;
+import androidx.viewpager.widget.PagerAdapter;
 
 import com.google.android.material.tabs.TabLayout;
 import com.google.common.collect.Collections2;
@@ -42,7 +46,7 @@ import me.drakeet.support.toast.ToastCompat;
 public class MucUsersActivity extends XmppActivity implements XmppConnectionService.OnMucRosterUpdate, XmppConnectionService.OnAffiliationChanged, MenuItem.OnActionExpandListener, TextWatcher {
 
     private ActivityMucUsersBinding binding;
-    private UserAdapter userAdapter;
+    private final UserAdapter[] adapters = new UserAdapter[Tab.values().length];
 
     private Conversation mConversation = null;
 
@@ -50,7 +54,7 @@ public class MucUsersActivity extends XmppActivity implements XmppConnectionServ
 
     private ArrayList<MucOptions.User> allUsers = new ArrayList<>();
 
-    private enum Tab {
+    public enum Tab {
         OCCUPANTS(R.string.participants),
         OWNERS(R.string.owner),
         ADMINS(R.string.admin),
@@ -69,6 +73,9 @@ public class MucUsersActivity extends XmppActivity implements XmppConnectionServ
 
     @Override
     protected void refreshUiReal() {
+        updateTabsVisibility();
+        updateFabVisibility();
+        loadAndSubmitUsers();
     }
 
     @Override
@@ -95,9 +102,20 @@ public class MucUsersActivity extends XmppActivity implements XmppConnectionServ
     }
 
     private void submitFilteredList(final String search) {
+        for (Tab tab : Tab.values()) {
+            submitFilteredList(tab, search);
+        }
+    }
+
+    private void submitFilteredList(Tab tab, final String search) {
+        UserAdapter userAdapter = adapters[tab.ordinal()];
+        if (userAdapter == null) {
+            return;
+        }
+
         List<MucOptions.User> filteredUsers = new ArrayList<>(allUsers);
 
-        switch (mSelectedTab) {
+        switch (tab) {
             case OCCUPANTS:
                 filteredUsers.removeIf(user -> !user.isOnline());
                 break;
@@ -138,14 +156,20 @@ public class MucUsersActivity extends XmppActivity implements XmppConnectionServ
 
     @Override
     public boolean onOptionsItemSelected(@NonNull MenuItem item) {
+        if (item.getItemId() == R.id.action_add) {
+            showAddJidDialog();
+            return true;
+        }
         return super.onOptionsItemSelected(item);
     }
 
-
-
     @Override
     public boolean onContextItemSelected(@NonNull MenuItem item) {
-        if (!MucDetailsContextMenuHelper.onContextItemSelected(item, userAdapter.getSelectedUser(), this, null, mSelectedTab != Tab.OCCUPANTS)) {
+        UserAdapter adapter = adapters[mSelectedTab.ordinal()];
+        if (adapter == null) {
+            return super.onContextItemSelected(item);
+        }
+        if (!MucDetailsContextMenuHelper.onContextItemSelected(item, adapter.getSelectedUser(), this, null, mSelectedTab != Tab.OCCUPANTS)) {
             return super.onContextItemSelected(item);
         }
         return true;
@@ -157,32 +181,74 @@ public class MucUsersActivity extends XmppActivity implements XmppConnectionServ
         binding = DataBindingUtil.setContentView(this, R.layout.activity_muc_users);
         setSupportActionBar((Toolbar) binding.toolbar.getRoot());
         configureActionBar(getSupportActionBar(), true);
-        this.userAdapter = new UserAdapter(getPreferences().getBoolean("advanced_muc_mode", false));
-        binding.list.setAdapter(this.userAdapter);
 
-        for (Tab tab : Tab.values()) {
-            binding.tabLayout.addTab(binding.tabLayout.newTab().setText(tab.resId));
-        }
+        binding.viewPager.setAdapter(new MucUsersPagerAdapter());
+        binding.viewPager.setOffscreenPageLimit(Tab.values().length);
+        binding.tabLayout.setupWithViewPager(binding.viewPager);
 
-        binding.tabLayout.addOnTabSelectedListener(new TabLayout.OnTabSelectedListener() {
+        binding.tabLayout.addOnTabSelectedListener(new TabLayout.ViewPagerOnTabSelectedListener(binding.viewPager) {
             @Override
             public void onTabSelected(TabLayout.Tab tab) {
+                super.onTabSelected(tab);
                 mSelectedTab = Tab.values()[tab.getPosition()];
-                userAdapter.setAffiliationList(mSelectedTab != Tab.OCCUPANTS);
                 updateFabVisibility();
-                loadAndSubmitUsers();
-            }
-
-            @Override
-            public void onTabUnselected(TabLayout.Tab tab) {
-            }
-
-            @Override
-            public void onTabReselected(TabLayout.Tab tab) {
+                invalidateOptionsMenu();
             }
         });
 
         binding.fab.setOnClickListener(v -> showAddJidDialog());
+    }
+
+    private class MucUsersPagerAdapter extends PagerAdapter {
+
+        @Override
+        public int getCount() {
+            if (mConversation == null) {
+                return 0;
+            }
+            final MucOptions.Affiliation affiliation = mConversation.getMucOptions().getSelf().getAffiliation();
+            if (affiliation.ranks(MucOptions.Affiliation.ADMIN)) {
+                return Tab.values().length;
+            } else {
+                return 1;
+            }
+        }
+
+        @Override
+        public int getItemPosition(@NonNull Object object) {
+            return POSITION_NONE;
+        }
+
+        @Override
+        public boolean isViewFromObject(@NonNull View view, @NonNull Object object) {
+            return view == object;
+        }
+
+        @NonNull
+        @Override
+        public Object instantiateItem(@NonNull ViewGroup container, int position) {
+            RecyclerView recyclerView = new RecyclerView(container.getContext());
+            recyclerView.setLayoutManager(new LinearLayoutManager(container.getContext()));
+            Tab tab = Tab.values()[position];
+            UserAdapter adapter = new UserAdapter(getPreferences().getBoolean("advanced_muc_mode", false));
+            adapter.setAffiliationList(tab != Tab.OCCUPANTS);
+            adapters[position] = adapter;
+            recyclerView.setAdapter(adapter);
+            container.addView(recyclerView);
+            submitFilteredList(tab, mSearchEditText != null ? mSearchEditText.getText().toString() : null);
+            return recyclerView;
+        }
+
+        @Override
+        public void destroyItem(@NonNull ViewGroup container, int position, @NonNull Object object) {
+            container.removeView((View) object);
+            adapters[position] = null;
+        }
+
+        @Override
+        public CharSequence getPageTitle(int position) {
+            return getString(Tab.values()[position].resId);
+        }
     }
 
     private void updateTabsVisibility() {
@@ -190,13 +256,16 @@ public class MucUsersActivity extends XmppActivity implements XmppConnectionServ
             binding.tabLayout.setVisibility(View.GONE);
             return;
         }
+        if (binding.viewPager.getAdapter() != null) {
+            binding.viewPager.getAdapter().notifyDataSetChanged();
+        }
         final MucOptions.Affiliation affiliation = mConversation.getMucOptions().getSelf().getAffiliation();
         if (affiliation.ranks(MucOptions.Affiliation.ADMIN)) {
             binding.tabLayout.setVisibility(View.VISIBLE);
         } else {
             binding.tabLayout.setVisibility(View.GONE);
             mSelectedTab = Tab.OCCUPANTS;
-            userAdapter.setAffiliationList(false);
+            binding.viewPager.setCurrentItem(Tab.OCCUPANTS.ordinal());
         }
     }
 
@@ -285,6 +354,31 @@ public class MucUsersActivity extends XmppActivity implements XmppConnectionServ
     @Override
     public boolean onCreateOptionsMenu(final Menu menu) {
         getMenuInflater().inflate(R.menu.muc_users_activity, menu);
+
+        final MenuItem addAction = menu.findItem(R.id.action_add);
+        if (mConversation != null) {
+            final MucOptions.Affiliation affiliation = mConversation.getMucOptions().getSelf().getAffiliation();
+            boolean canManage = false;
+            switch (mSelectedTab) {
+                case OWNERS:
+                case ADMINS:
+                    canManage = affiliation == MucOptions.Affiliation.OWNER;
+                    break;
+                case MODERATORS:
+                    canManage = false;
+                    break;
+                case MEMBERS:
+                case OUTCASTS:
+                    canManage = affiliation.ranks(MucOptions.Affiliation.ADMIN);
+                    break;
+                default:
+                    canManage = false;
+                    break;
+            }
+            addAction.setVisible(canManage);
+        } else {
+            addAction.setVisible(false);
+        }
 
         final MenuItem menuSearchView = menu.findItem(R.id.action_search);
         final View mSearchView = menuSearchView.getActionView();

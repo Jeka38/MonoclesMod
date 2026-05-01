@@ -1462,6 +1462,7 @@
     <string name="pref_import_database_or_settings">Импортировать базу данных или настройки</string>
     <string name="pref_import_database_or_settings_summary">Импортируйте резервную копию вашей базы данных или файла настроек</string>
     <string name="related_chats">Похожие конференции</string>
+    <string name="manage_users">Управление участниками</string>
     <string name="action_complete">Действие завершено</string>
     <string name="moderate_recent">Модерировать сообщения\?</string>
     <string name="confirm_delete_attachment_summary">Хотите пропустить подтверждение при удалении локального файла из чата?</string>

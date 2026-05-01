@@ -211,6 +211,10 @@ public final class MucDetailsContextMenuHelper {
                 }
             }
             managePermissions.setVisible(managePermissionsVisible || isAffiliationList);
+            if (isAffiliationList) {
+                removeFromRoom.setVisible(true);
+                removeFromRoom.setTitle(R.string.remove_from_channel);
+            }
             sendPrivateMessage.setVisible(true);
             sendPrivateMessage.setEnabled(mucOptions.allowPm());
             shareContactDetails.setVisible(user.isOnline() && !isGroupChat && mucOptions.allowPm() && user.getRole().ranks(MucOptions.Role.VISITOR));

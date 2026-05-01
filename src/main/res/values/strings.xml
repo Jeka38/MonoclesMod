@@ -1360,6 +1360,7 @@
     <string name="pref_import_database_or_settings">Import database or settings</string>
     <string name="pref_import_database_or_settings_summary">Import a backup of your database or of a settings file</string>
     <string name="related_chats">Related Chats</string>
+    <string name="manage_users">Manage users</string>
     <string name="confirm_delete_attachment_summary">Do you want to skip confirmation if you delete to delete a local file from a chat?</string>
     <string name="pref_confirm_delete_attachment">Skip Confirmation for file removal from chats</string>
     <string name="menuitem_create_backup_action">Create backup</string>

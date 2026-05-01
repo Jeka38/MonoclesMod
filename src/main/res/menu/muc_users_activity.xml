@@ -3,6 +3,12 @@
     xmlns:app="http://schemas.android.com/apk/res-auto">
 
     <item
+        android:id="@+id/action_add"
+        android:icon="@drawable/ic_add_white_24dp"
+        android:title="@string/add"
+        app:iconTint="?attr/icon_alpha"
+        app:showAsAction="always" />
+    <item
         android:id="@+id/action_search"
         android:icon="?attr/icon_search"
         android:title="@string/search"

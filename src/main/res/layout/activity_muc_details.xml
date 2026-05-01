@@ -103,17 +103,34 @@
                             android:layout_marginTop="4dp"
                             android:orientation="horizontal" />
 
-                        <Button
-                            android:id="@+id/relatedMucs"
-                            style="@style/Widget.Conversations.Button.Borderless"
+                        <LinearLayout
                             android:layout_width="wrap_content"
                             android:layout_height="wrap_content"
                             android:layout_gravity="end"
-                            android:minWidth="0dp"
-                            android:layout_marginBottom="4dp"
-                            android:layout_marginRight="4dp"
-                            android:text="@string/related_chats"
-                            android:textColor="?attr/colorAccent" />
+                            android:orientation="horizontal">
+
+                            <Button
+                                android:id="@+id/manage_users"
+                                style="@style/Widget.Conversations.Button.Borderless"
+                                android:layout_width="wrap_content"
+                                android:layout_height="wrap_content"
+                                android:minWidth="0dp"
+                                android:layout_marginBottom="4dp"
+                                android:layout_marginRight="4dp"
+                                android:text="@string/manage_users"
+                                android:textColor="?attr/colorAccent" />
+
+                            <Button
+                                android:id="@+id/relatedMucs"
+                                style="@style/Widget.Conversations.Button.Borderless"
+                                android:layout_width="wrap_content"
+                                android:layout_height="wrap_content"
+                                android:minWidth="0dp"
+                                android:layout_marginBottom="4dp"
+                                android:layout_marginRight="4dp"
+                                android:text="@string/related_chats"
+                                android:textColor="?attr/colorAccent" />
+                        </LinearLayout>
 
                         <TextView
                             android:id="@+id/muc_subject"

@@ -328,6 +328,11 @@ public class ConferenceDetailsActivity extends XmppActivity implements OnConvers
             intent.putExtra("services", new String[]{ mConversation.getJid().getDomain().toEscapedString(), mConversation.getAccount().getJid().toEscapedString() });
             startActivity(intent);
         });
+        this.binding.manageUsers.setOnClickListener(v -> {
+            Intent intent = new Intent(this, MucUsersActivity.class);
+            intent.putExtra("uuid", mConversation.getUuid());
+            startActivity(intent);
+        });
         showIntro(this, true);
     }
 
@@ -655,6 +660,7 @@ public class ConferenceDetailsActivity extends XmppActivity implements OnConvers
         final Bookmark bookmark = mConversation.getBookmark();
         final XmppConnection connection = mConversation.getAccount().getXmppConnection();
         this.binding.editMucNameButton.setVisibility((self.getAffiliation().ranks(MucOptions.Affiliation.OWNER) || mucOptions.canChangeSubject() || (bookmark != null && connection != null && connection.getFeatures().bookmarks2())) ? View.VISIBLE : View.GONE);
+        this.binding.manageUsers.setVisibility(self.getAffiliation().ranks(MucOptions.Affiliation.ADMIN) ? View.VISIBLE : View.GONE);
         this.binding.detailsAccount.setText(getString(R.string.using_account, account));
         this.binding.jid.setText(mConversation.getJid().asBareJid().toEscapedString());
         final Jid jid = mConversation.getJid().asBareJid();
