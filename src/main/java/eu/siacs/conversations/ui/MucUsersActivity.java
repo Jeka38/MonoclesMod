@@ -168,7 +168,7 @@ public class MucUsersActivity extends XmppActivity implements XmppConnectionServ
         binding.list.setAdapter(this.userAdapter);
 
         for (Tab tab : Tab.values()) {
-            if (mManageMode && tab == Tab.OCCUPANTS) {
+            if (mManageMode && (tab == Tab.OCCUPANTS || tab == Tab.MODERATORS)) {
                 continue;
             }
             binding.tabLayout.addTab(binding.tabLayout.newTab().setTag(tab).setText(tab.resId));
