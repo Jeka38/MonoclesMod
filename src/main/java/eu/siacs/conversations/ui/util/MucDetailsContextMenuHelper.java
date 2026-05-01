@@ -84,6 +84,9 @@ public final class MucDetailsContextMenuHelper {
         ArrayList<CharSequence> items = new ArrayList<>();
         ArrayList<Integer> actions = new ArrayList<>();
         final User self = conversation.getMucOptions().getSelf();
+        if (self == null) {
+            return new Pair<>(new CharSequence[0], new Integer[0]);
+        }
         final MucOptions mucOptions = conversation.getMucOptions();
         final boolean isGroupChat = mucOptions.isPrivateAndNonAnonymous();
         if ((self.getAffiliation().ranks(MucOptions.Affiliation.ADMIN) && self.getAffiliation().outranks(user.getAffiliation())) || self.getAffiliation() == MucOptions.Affiliation.OWNER) {
@@ -133,6 +136,10 @@ public final class MucDetailsContextMenuHelper {
     public static void configureMucDetailsContextMenu(XmppActivity activity, Menu menu, Conversation conversation, User user, boolean forceContextMenu, String username, boolean isAffiliationList) {
         final boolean advancedMode = PreferenceManager.getDefaultSharedPreferences(activity).getBoolean("advanced_muc_mode", false);
         final MucOptions mucOptions = conversation.getMucOptions();
+        final User self = mucOptions.getSelf();
+        if (self == null) {
+            return;
+        }
         final boolean isGroupChat = mucOptions.isPrivateAndNonAnonymous();
         MenuItem title = menu.findItem(R.id.title);
         MenuItem showAvatar = menu.findItem(R.id.action_show_avatar);
@@ -176,7 +183,6 @@ public final class MucDetailsContextMenuHelper {
             final Jid jid = user.getRealJid();
             final Account account = conversation.getAccount();
             final Contact contact = jid == null ? null : account.getRoster().getContact(jid);
-            final User self = conversation.getMucOptions().getSelf();
             addToRoster.setVisible(contact != null && !contact.showInRoster());
             showContactDetails.setVisible(contact == null || !contact.isSelf());
             if ((activity instanceof ConferenceDetailsActivity || activity instanceof MucUsersActivity) && user.getRole() == MucOptions.Role.NONE) {

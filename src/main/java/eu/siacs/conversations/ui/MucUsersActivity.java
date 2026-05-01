@@ -95,7 +95,7 @@ public class MucUsersActivity extends XmppActivity implements XmppConnectionServ
 
 
     private void loadAndSubmitUsers() {
-        if (mConversation != null) {
+        if (mConversation != null && mConversation.getMucOptions() != null) {
             allUsers = mConversation.getMucOptions().getUsers(true, true);
             submitFilteredList(mSearchEditText != null ? mSearchEditText.getText().toString() : null);
         }
@@ -203,7 +203,7 @@ public class MucUsersActivity extends XmppActivity implements XmppConnectionServ
 
         @Override
         public int getCount() {
-            if (mConversation == null) {
+            if (mConversation == null || mConversation.getMucOptions().getSelf() == null) {
                 return 0;
             }
             final MucOptions.Affiliation affiliation = mConversation.getMucOptions().getSelf().getAffiliation();
@@ -228,6 +228,7 @@ public class MucUsersActivity extends XmppActivity implements XmppConnectionServ
         @Override
         public Object instantiateItem(@NonNull ViewGroup container, int position) {
             RecyclerView recyclerView = new RecyclerView(container.getContext());
+            recyclerView.setLayoutParams(new ViewGroup.LayoutParams(ViewGroup.LayoutParams.MATCH_PARENT, ViewGroup.LayoutParams.MATCH_PARENT));
             recyclerView.setLayoutManager(new LinearLayoutManager(container.getContext()));
             Tab tab = Tab.values()[position];
             UserAdapter adapter = new UserAdapter(getPreferences().getBoolean("advanced_muc_mode", false));
@@ -252,7 +253,7 @@ public class MucUsersActivity extends XmppActivity implements XmppConnectionServ
     }
 
     private void updateTabsVisibility() {
-        if (mConversation == null) {
+        if (mConversation == null || mConversation.getMucOptions().getSelf() == null) {
             binding.tabLayout.setVisibility(View.GONE);
             return;
         }
@@ -270,7 +271,7 @@ public class MucUsersActivity extends XmppActivity implements XmppConnectionServ
     }
 
     private void updateFabVisibility() {
-        if (mConversation == null) {
+        if (mConversation == null || mConversation.getMucOptions().getSelf() == null) {
             binding.fab.hide();
             return;
         }
@@ -356,7 +357,7 @@ public class MucUsersActivity extends XmppActivity implements XmppConnectionServ
         getMenuInflater().inflate(R.menu.muc_users_activity, menu);
 
         final MenuItem addAction = menu.findItem(R.id.action_add);
-        if (mConversation != null) {
+        if (mConversation != null && mConversation.getMucOptions().getSelf() != null) {
             final MucOptions.Affiliation affiliation = mConversation.getMucOptions().getSelf().getAffiliation();
             boolean canManage = false;
             switch (mSelectedTab) {

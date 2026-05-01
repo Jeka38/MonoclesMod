@@ -329,9 +329,11 @@ public class ConferenceDetailsActivity extends XmppActivity implements OnConvers
             startActivity(intent);
         });
         this.binding.manageUsers.setOnClickListener(v -> {
-            Intent intent = new Intent(this, MucUsersActivity.class);
-            intent.putExtra("uuid", mConversation.getUuid());
-            startActivity(intent);
+            if (mConversation != null) {
+                Intent intent = new Intent(this, MucUsersActivity.class);
+                intent.putExtra("uuid", mConversation.getUuid());
+                startActivity(intent);
+            }
         });
         showIntro(this, true);
     }
@@ -659,8 +661,8 @@ public class ConferenceDetailsActivity extends XmppActivity implements OnConvers
         setTitle(mucOptions.isPrivateAndNonAnonymous() ? R.string.conference_details : R.string.channel_details);
         final Bookmark bookmark = mConversation.getBookmark();
         final XmppConnection connection = mConversation.getAccount().getXmppConnection();
-        this.binding.editMucNameButton.setVisibility((self.getAffiliation().ranks(MucOptions.Affiliation.OWNER) || mucOptions.canChangeSubject() || (bookmark != null && connection != null && connection.getFeatures().bookmarks2())) ? View.VISIBLE : View.GONE);
-        this.binding.manageUsers.setVisibility(self.getAffiliation().ranks(MucOptions.Affiliation.ADMIN) ? View.VISIBLE : View.GONE);
+        this.binding.editMucNameButton.setVisibility((self != null && self.getAffiliation().ranks(MucOptions.Affiliation.OWNER) || mucOptions.canChangeSubject() || (bookmark != null && connection != null && connection.getFeatures().bookmarks2())) ? View.VISIBLE : View.GONE);
+        this.binding.manageUsers.setVisibility(self != null && self.getAffiliation().ranks(MucOptions.Affiliation.ADMIN) ? View.VISIBLE : View.GONE);
         this.binding.detailsAccount.setText(getString(R.string.using_account, account));
         this.binding.jid.setText(mConversation.getJid().asBareJid().toEscapedString());
         final Jid jid = mConversation.getJid().asBareJid();
@@ -741,7 +743,7 @@ public class ConferenceDetailsActivity extends XmppActivity implements OnConvers
             } else {
                 this.binding.mucInfoMam.setText(R.string.server_info_unavailable);
             }
-            if (self.getAffiliation().ranks(MucOptions.Affiliation.OWNER)) {
+            if (self != null && self.getAffiliation().ranks(MucOptions.Affiliation.OWNER)) {
                 if (mAdvancedMode) {
                     this.binding.destroy.getBackground().setTint(getWarningButtonColor());
                     this.binding.destroy.setTextColor(getWarningTextColor());

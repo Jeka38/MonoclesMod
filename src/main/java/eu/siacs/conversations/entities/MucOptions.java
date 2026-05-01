@@ -175,7 +175,7 @@ public class MucOptions {
     }
 
     public boolean canChangeSubject() {
-        return self.getRole().ranks(Role.MODERATOR) || participantsCanChangeSubject();
+        return self != null && (self.getRole().ranks(Role.MODERATOR) || participantsCanChangeSubject());
     }
 
     public boolean participantsCanChangeSubject() {
