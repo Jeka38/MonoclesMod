@@ -947,7 +947,9 @@
     <string name="remove_owner_privileges">Revoke owner privileges</string>
     <string name="remove_from_channel">Remove from room</string>
     <string name="ban_from_channel">Ban from room</string>
+    <string name="manage_lists_users">Manage lists (users)</string>
     <string name="manage_permission">Manage privileges</string>
+    <string name="change_role_affiliation">Change role/affiliation</string>
     <string name="destroy_channel">Destroy room</string>
     <string name="destroy_channel_dialog">Would you like to destroy the room %s? This will remove this room permanently.</string>
     <string name="destroy_channel_succeed">Room successfully destroyed</string>
@@ -1519,4 +1521,5 @@
     <string name="schedule_message_title">Schedule message</string>
     <string name="pref_message_autocomplete">Mention autocomplete</string>
     <string name="pref_message_autocomplete_summary">Use \"@\" in a chat room to autocomplete and list users</string>
+    <string name="remove_from_all_lists">Remove from all lists</string>
 </resources>

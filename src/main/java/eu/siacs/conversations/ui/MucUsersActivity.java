@@ -8,6 +8,8 @@ import android.text.TextUtils;
 import android.text.TextWatcher;
 import android.view.Menu;
 import android.view.MenuItem;
+import android.view.GestureDetector;
+import android.view.MotionEvent;
 import android.view.View;
 import android.view.inputmethod.InputMethodManager;
 import android.widget.Button;
@@ -41,6 +43,10 @@ import me.drakeet.support.toast.ToastCompat;
 
 public class MucUsersActivity extends XmppActivity implements XmppConnectionService.OnMucRosterUpdate, XmppConnectionService.OnAffiliationChanged, MenuItem.OnActionExpandListener, TextWatcher {
 
+    public static final String EXTRA_UUID = "uuid";
+    public static final String EXTRA_MANAGE_MODE = "manage_mode";
+    public static final String EXTRA_INITIAL_TAB = "initial_tab";
+
     private ActivityMucUsersBinding binding;
     private UserAdapter userAdapter;
 
@@ -66,6 +72,9 @@ public class MucUsersActivity extends XmppActivity implements XmppConnectionServ
     }
 
     private Tab mSelectedTab = Tab.OCCUPANTS;
+    private boolean mManageMode = false;
+    private String mInitialTabName = null;
+    private boolean mSingleListMode = false;
 
     @Override
     protected void refreshUiReal() {
@@ -74,7 +83,7 @@ public class MucUsersActivity extends XmppActivity implements XmppConnectionServ
     @Override
     protected void onBackendConnected() {
         final Intent intent = getIntent();
-        final String uuid = intent == null ? null : intent.getStringExtra("uuid");
+        final String uuid = intent == null ? null : intent.getStringExtra(EXTRA_UUID);
         if (uuid != null) {
             mConversation = xmppConnectionService.findConversationByUuid(uuid);
             if (mConversation != null) {
@@ -145,7 +154,7 @@ public class MucUsersActivity extends XmppActivity implements XmppConnectionServ
 
     @Override
     public boolean onContextItemSelected(@NonNull MenuItem item) {
-        if (!MucDetailsContextMenuHelper.onContextItemSelected(item, userAdapter.getSelectedUser(), this, null, mSelectedTab != Tab.OCCUPANTS)) {
+        if (!MucDetailsContextMenuHelper.onContextItemSelected(item, userAdapter.getSelectedUser(), this, null, mManageMode || mSelectedTab != Tab.OCCUPANTS)) {
             return super.onContextItemSelected(item);
         }
         return true;
@@ -154,35 +163,130 @@ public class MucUsersActivity extends XmppActivity implements XmppConnectionServ
     @Override
     protected void onCreate(final Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
+        final Intent intent = getIntent();
+        mManageMode = intent != null && intent.getBooleanExtra(EXTRA_MANAGE_MODE, false);
+        mInitialTabName = intent == null ? null : intent.getStringExtra(EXTRA_INITIAL_TAB);
+        mSingleListMode = mManageMode && mInitialTabName != null;
         binding = DataBindingUtil.setContentView(this, R.layout.activity_muc_users);
         setSupportActionBar((Toolbar) binding.toolbar.getRoot());
         configureActionBar(getSupportActionBar(), true);
+        setTitle(R.string.group_chat_members);
         this.userAdapter = new UserAdapter(getPreferences().getBoolean("advanced_muc_mode", false));
         binding.list.setAdapter(this.userAdapter);
 
-        for (Tab tab : Tab.values()) {
-            binding.tabLayout.addTab(binding.tabLayout.newTab().setText(tab.resId));
+        if (mManageMode) {
+            if (mSingleListMode) {
+                mSelectedTab = parseInitialTabOrDefault();
+                setTitleForCurrentList();
+                binding.tabLayout.setVisibility(View.GONE);
+            } else {
+                for (Tab tab : Tab.values()) {
+                    if (tab == Tab.OCCUPANTS || tab == Tab.MODERATORS) {
+                        continue;
+                    }
+                    binding.tabLayout.addTab(binding.tabLayout.newTab().setTag(tab).setText(tab.resId));
+                }
+            }
+        } else {
+            mSelectedTab = Tab.OCCUPANTS;
+            setTitleForCurrentList();
+            binding.tabLayout.setVisibility(View.GONE);
         }
 
-        binding.tabLayout.addOnTabSelectedListener(new TabLayout.OnTabSelectedListener() {
-            @Override
-            public void onTabSelected(TabLayout.Tab tab) {
-                mSelectedTab = Tab.values()[tab.getPosition()];
-                userAdapter.setAffiliationList(mSelectedTab != Tab.OCCUPANTS);
-                updateFabVisibility();
-                loadAndSubmitUsers();
-            }
+        if (mManageMode && !mSingleListMode) {
+            binding.tabLayout.addOnTabSelectedListener(new TabLayout.OnTabSelectedListener() {
+                @Override
+                public void onTabSelected(TabLayout.Tab tab) {
+                    final Object tag = tab.getTag();
+                    mSelectedTab = tag instanceof Tab ? (Tab) tag : Tab.MEMBERS;
+                    setTitleForCurrentList();
+                    userAdapter.setAffiliationList(true);
+                    updateFabVisibility();
+                    loadAndSubmitUsers();
+                }
 
-            @Override
-            public void onTabUnselected(TabLayout.Tab tab) {
-            }
+                @Override
+                public void onTabUnselected(TabLayout.Tab tab) {
+                }
 
-            @Override
-            public void onTabReselected(TabLayout.Tab tab) {
-            }
-        });
+                @Override
+                public void onTabReselected(TabLayout.Tab tab) {
+                }
+            });
 
-        binding.fab.setOnClickListener(v -> showAddJidDialog());
+            selectInitialManageTab();
+            binding.fab.setOnClickListener(v -> showAddJidDialog());
+            binding.list.setOnTouchListener(new OnSwipeTouchListener(this) {
+                @Override
+                public void onSwipeLeft() {
+                    selectAdjacentTab(1);
+                }
+
+                @Override
+                public void onSwipeRight() {
+                    selectAdjacentTab(-1);
+                }
+            });
+        } else if (mManageMode) {
+            binding.fab.setOnClickListener(v -> showAddJidDialog());
+            userAdapter.setAffiliationList(true);
+            updateFabVisibility();
+        } else {
+            binding.fab.hide();
+        }
+
+    }
+
+    private void setTitleForCurrentList() {
+        switch (mSelectedTab) {
+            case OWNERS:
+                setTitle(R.string.owner);
+                break;
+            case ADMINS:
+                setTitle(R.string.admin);
+                break;
+            case MEMBERS:
+                setTitle(R.string.member);
+                break;
+            case OUTCASTS:
+                setTitle(R.string.outcast);
+                break;
+            default:
+                setTitle(R.string.group_chat_members);
+                break;
+        }
+    }
+
+    private Tab parseInitialTabOrDefault() {
+        if (mInitialTabName != null) {
+            try {
+                final Tab initialTab = Tab.valueOf(mInitialTabName);
+                if (initialTab != Tab.OCCUPANTS && initialTab != Tab.MODERATORS) {
+                    return initialTab;
+                }
+            } catch (IllegalArgumentException ignored) {
+            }
+        }
+        return Tab.MEMBERS;
+    }
+
+    private void selectInitialManageTab() {
+        final Tab requested = parseInitialTabOrDefault();
+        for (int i = 0; i < binding.tabLayout.getTabCount(); ++i) {
+            final TabLayout.Tab tab = binding.tabLayout.getTabAt(i);
+            if (tab == null) {
+                continue;
+            }
+            final Object tag = tab.getTag();
+            if (requested != null && tag == requested) {
+                tab.select();
+                return;
+            }
+        }
+        final TabLayout.Tab firstTab = binding.tabLayout.getTabAt(0);
+        if (firstTab != null) {
+            firstTab.select();
+        }
     }
 
     private void updateTabsVisibility() {
@@ -191,13 +295,17 @@ public class MucUsersActivity extends XmppActivity implements XmppConnectionServ
             return;
         }
         final MucOptions.Affiliation affiliation = mConversation.getMucOptions().getSelf().getAffiliation();
-        if (affiliation.ranks(MucOptions.Affiliation.ADMIN)) {
-            binding.tabLayout.setVisibility(View.VISIBLE);
-        } else {
-            binding.tabLayout.setVisibility(View.GONE);
-            mSelectedTab = Tab.OCCUPANTS;
-            userAdapter.setAffiliationList(false);
+        if (mManageMode) {
+            if (affiliation.ranks(MucOptions.Affiliation.ADMIN)) {
+                binding.tabLayout.setVisibility(mSingleListMode ? View.GONE : View.VISIBLE);
+            } else {
+                finish();
+            }
+            return;
         }
+        binding.tabLayout.setVisibility(View.GONE);
+        mSelectedTab = Tab.OCCUPANTS;
+        userAdapter.setAffiliationList(false);
     }
 
     private void updateFabVisibility() {
@@ -260,6 +368,63 @@ public class MucUsersActivity extends XmppActivity implements XmppConnectionServ
                 .show();
     }
 
+    private void selectAdjacentTab(final int direction) {
+        final int nextPosition = binding.tabLayout.getSelectedTabPosition() + direction;
+        if (nextPosition < 0 || nextPosition >= binding.tabLayout.getTabCount()) {
+            return;
+        }
+        final TabLayout.Tab nextTab = binding.tabLayout.getTabAt(nextPosition);
+        if (nextTab != null) {
+            nextTab.select();
+        }
+    }
+
+    private static abstract class OnSwipeTouchListener implements View.OnTouchListener {
+
+        private static final int SWIPE_THRESHOLD = 100;
+        private static final int SWIPE_VELOCITY_THRESHOLD = 100;
+        private final GestureDetector gestureDetector;
+
+        OnSwipeTouchListener(Context context) {
+            gestureDetector = new GestureDetector(context, new GestureListener());
+        }
+
+        @Override
+        public boolean onTouch(View v, MotionEvent event) {
+            return gestureDetector.onTouchEvent(event);
+        }
+
+        public void onSwipeRight() {}
+
+        public void onSwipeLeft() {}
+
+        private final class GestureListener extends GestureDetector.SimpleOnGestureListener {
+            @Override
+            public boolean onDown(MotionEvent e) {
+                return true;
+            }
+
+            @Override
+            public boolean onFling(MotionEvent e1, MotionEvent e2, float velocityX, float velocityY) {
+                if (e1 == null || e2 == null) {
+                    return false;
+                }
+                final float diffX = e2.getX() - e1.getX();
+                final float diffY = e2.getY() - e1.getY();
+                if (Math.abs(diffX) > Math.abs(diffY)
+                        && Math.abs(diffX) > SWIPE_THRESHOLD
+                        && Math.abs(velocityX) > SWIPE_VELOCITY_THRESHOLD) {
+                    if (diffX > 0) {
+                        onSwipeRight();
+                    } else {
+                        onSwipeLeft();
+                    }
+                    return true;
+                }
+                return false;
+            }
+        }
+    }
 
     @Override
     public void onMucRosterUpdate() {

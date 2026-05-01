@@ -204,6 +204,16 @@
                                 android:src="?attr/icon_settings" />
                         </RelativeLayout>
 
+                        <Button
+                            android:id="@+id/manage_muc_lists_button"
+                            style="@style/Widget.Conversations.Button.Borderless"
+                            android:layout_width="wrap_content"
+                            android:layout_height="wrap_content"
+                            android:layout_gravity="end"
+                            android:layout_marginEnd="12dp"
+                            android:text="@string/manage_lists_users"
+                            android:textColor="?attr/colorAccent" />
+
                         <RelativeLayout
                             android:layout_width="match_parent"
                             android:layout_height="wrap_content"

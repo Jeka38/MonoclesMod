@@ -1,0 +1,54 @@
+<?xml version="1.0" encoding="utf-8"?>
+<layout xmlns:android="http://schemas.android.com/apk/res/android">
+
+    <LinearLayout
+        android:layout_width="match_parent"
+        android:layout_height="match_parent"
+        android:background="?attr/color_background_tertiary"
+        android:orientation="vertical">
+
+        <include
+            android:id="@+id/toolbar"
+            layout="@layout/toolbar" />
+
+        <LinearLayout
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:orientation="vertical"
+            android:padding="16dp">
+
+            <TextView
+                android:id="@+id/list_admins"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:paddingVertical="8dp"
+                android:text="@string/admin"
+                android:textAppearance="@style/TextAppearance.Conversations.Subhead" />
+
+            <TextView
+                android:id="@+id/list_owners"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:paddingVertical="8dp"
+                android:text="@string/owner"
+                android:textAppearance="@style/TextAppearance.Conversations.Subhead" />
+
+            <TextView
+                android:id="@+id/list_outcasts"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:paddingVertical="8dp"
+                android:text="@string/outcast"
+                android:textAppearance="@style/TextAppearance.Conversations.Subhead" />
+
+            <TextView
+                android:id="@+id/list_members"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:paddingVertical="8dp"
+                android:text="@string/member"
+                android:textAppearance="@style/TextAppearance.Conversations.Subhead" />
+
+        </LinearLayout>
+    </LinearLayout>
+</layout>
