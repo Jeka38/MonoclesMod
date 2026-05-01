@@ -328,7 +328,8 @@ public class ConferenceDetailsActivity extends XmppActivity implements OnConvers
                 return;
             }
             final Intent intent = new Intent(this, MucUsersActivity.class);
-            intent.putExtra("uuid", mConversation.getUuid());
+            intent.putExtra(MucUsersActivity.EXTRA_UUID, mConversation.getUuid());
+            intent.putExtra(MucUsersActivity.EXTRA_MANAGE_MODE, true);
             startActivity(intent);
         });
 
@@ -654,6 +655,7 @@ public class ConferenceDetailsActivity extends XmppActivity implements OnConvers
         }
         final MucOptions mucOptions = mConversation.getMucOptions();
         final User self = mucOptions.getSelf();
+        this.binding.manageMucListsButton.setVisibility(self.getAffiliation().ranks(MucOptions.Affiliation.ADMIN) ? View.VISIBLE : View.GONE);
         String account;
         if (Config.DOMAIN_LOCK != null) {
             account = mConversation.getAccount().getJid().getEscapedLocal();

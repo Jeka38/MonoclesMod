@@ -43,6 +43,9 @@ import me.drakeet.support.toast.ToastCompat;
 
 public class MucUsersActivity extends XmppActivity implements XmppConnectionService.OnMucRosterUpdate, XmppConnectionService.OnAffiliationChanged, MenuItem.OnActionExpandListener, TextWatcher {
 
+    public static final String EXTRA_UUID = "uuid";
+    public static final String EXTRA_MANAGE_MODE = "manage_mode";
+
     private ActivityMucUsersBinding binding;
     private UserAdapter userAdapter;
 
@@ -68,6 +71,7 @@ public class MucUsersActivity extends XmppActivity implements XmppConnectionServ
     }
 
     private Tab mSelectedTab = Tab.OCCUPANTS;
+    private boolean mManageMode = false;
 
     @Override
     protected void refreshUiReal() {
@@ -76,7 +80,8 @@ public class MucUsersActivity extends XmppActivity implements XmppConnectionServ
     @Override
     protected void onBackendConnected() {
         final Intent intent = getIntent();
-        final String uuid = intent == null ? null : intent.getStringExtra("uuid");
+        mManageMode = intent != null && intent.getBooleanExtra(EXTRA_MANAGE_MODE, false);
+        final String uuid = intent == null ? null : intent.getStringExtra(EXTRA_UUID);
         if (uuid != null) {
             mConversation = xmppConnectionService.findConversationByUuid(uuid);
             if (mConversation != null) {
@@ -147,7 +152,7 @@ public class MucUsersActivity extends XmppActivity implements XmppConnectionServ
 
     @Override
     public boolean onContextItemSelected(@NonNull MenuItem item) {
-        if (!MucDetailsContextMenuHelper.onContextItemSelected(item, userAdapter.getSelectedUser(), this, null, mSelectedTab != Tab.OCCUPANTS)) {
+        if (!MucDetailsContextMenuHelper.onContextItemSelected(item, userAdapter.getSelectedUser(), this, null, mManageMode || mSelectedTab != Tab.OCCUPANTS)) {
             return super.onContextItemSelected(item);
         }
         return true;
@@ -163,13 +168,17 @@ public class MucUsersActivity extends XmppActivity implements XmppConnectionServ
         binding.list.setAdapter(this.userAdapter);
 
         for (Tab tab : Tab.values()) {
-            binding.tabLayout.addTab(binding.tabLayout.newTab().setText(tab.resId));
+            if (mManageMode && tab == Tab.OCCUPANTS) {
+                continue;
+            }
+            binding.tabLayout.addTab(binding.tabLayout.newTab().setTag(tab).setText(tab.resId));
         }
 
         binding.tabLayout.addOnTabSelectedListener(new TabLayout.OnTabSelectedListener() {
             @Override
             public void onTabSelected(TabLayout.Tab tab) {
-                mSelectedTab = Tab.values()[tab.getPosition()];
+                final Object tag = tab.getTag();
+                mSelectedTab = tag instanceof Tab ? (Tab) tag : Tab.OCCUPANTS;
                 userAdapter.setAffiliationList(mSelectedTab != Tab.OCCUPANTS);
                 updateFabVisibility();
                 loadAndSubmitUsers();
@@ -183,6 +192,13 @@ public class MucUsersActivity extends XmppActivity implements XmppConnectionServ
             public void onTabReselected(TabLayout.Tab tab) {
             }
         });
+
+        if (mManageMode) {
+            final TabLayout.Tab firstTab = binding.tabLayout.getTabAt(0);
+            if (firstTab != null) {
+                firstTab.select();
+            }
+        }
 
         binding.fab.setOnClickListener(v -> showAddJidDialog());
         binding.list.setOnTouchListener(new OnSwipeTouchListener(this) {
@@ -205,6 +221,14 @@ public class MucUsersActivity extends XmppActivity implements XmppConnectionServ
             return;
         }
         final MucOptions.Affiliation affiliation = mConversation.getMucOptions().getSelf().getAffiliation();
+        if (mManageMode) {
+            if (affiliation.ranks(MucOptions.Affiliation.ADMIN)) {
+                binding.tabLayout.setVisibility(View.VISIBLE);
+            } else {
+                finish();
+            }
+            return;
+        }
         if (affiliation.ranks(MucOptions.Affiliation.ADMIN)) {
             binding.tabLayout.setVisibility(View.VISIBLE);
         } else {
