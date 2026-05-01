@@ -947,6 +947,7 @@
     <string name="remove_owner_privileges">Revoke owner privileges</string>
     <string name="remove_from_channel">Remove from room</string>
     <string name="ban_from_channel">Ban from room</string>
+    <string name="manage_lists_users">Manage lists (users)</string>
     <string name="manage_permission">Manage privileges</string>
     <string name="destroy_channel">Destroy room</string>
     <string name="destroy_channel_dialog">Would you like to destroy the room %s? This will remove this room permanently.</string>

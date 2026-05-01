@@ -323,6 +323,15 @@ public class ConferenceDetailsActivity extends XmppActivity implements OnConvers
         this.binding.media.setAdapter(mMediaAdapter);
         //TODO: Implement recyclerview for users list and media list
         GridManager.setupLayoutManager(this, this.binding.media, R.dimen.media_size);
+        this.binding.manageMucListsButton.setOnClickListener(v -> {
+            if (mConversation == null) {
+                return;
+            }
+            final Intent intent = new Intent(this, MucUsersActivity.class);
+            intent.putExtra("uuid", mConversation.getUuid());
+            startActivity(intent);
+        });
+
         this.binding.relatedMucs.setOnClickListener(v -> {
             final Intent intent = new Intent(this, ChannelDiscoveryActivity.class);
             intent.putExtra("services", new String[]{ mConversation.getJid().getDomain().toEscapedString(), mConversation.getAccount().getJid().toEscapedString() });

@@ -8,6 +8,8 @@ import android.text.TextUtils;
 import android.text.TextWatcher;
 import android.view.Menu;
 import android.view.MenuItem;
+import android.view.GestureDetector;
+import android.view.MotionEvent;
 import android.view.View;
 import android.view.inputmethod.InputMethodManager;
 import android.widget.Button;
@@ -183,6 +185,18 @@ public class MucUsersActivity extends XmppActivity implements XmppConnectionServ
         });
 
         binding.fab.setOnClickListener(v -> showAddJidDialog());
+        binding.list.setOnTouchListener(new OnSwipeTouchListener(this) {
+            @Override
+            public void onSwipeLeft() {
+                selectAdjacentTab(1);
+            }
+
+            @Override
+            public void onSwipeRight() {
+                selectAdjacentTab(-1);
+            }
+        });
+
     }
 
     private void updateTabsVisibility() {
@@ -260,6 +274,63 @@ public class MucUsersActivity extends XmppActivity implements XmppConnectionServ
                 .show();
     }
 
+    private void selectAdjacentTab(final int direction) {
+        final int nextPosition = binding.tabLayout.getSelectedTabPosition() + direction;
+        if (nextPosition < 0 || nextPosition >= binding.tabLayout.getTabCount()) {
+            return;
+        }
+        final TabLayout.Tab nextTab = binding.tabLayout.getTabAt(nextPosition);
+        if (nextTab != null) {
+            nextTab.select();
+        }
+    }
+
+    private static abstract class OnSwipeTouchListener implements View.OnTouchListener {
+
+        private static final int SWIPE_THRESHOLD = 100;
+        private static final int SWIPE_VELOCITY_THRESHOLD = 100;
+        private final GestureDetector gestureDetector;
+
+        OnSwipeTouchListener(Context context) {
+            gestureDetector = new GestureDetector(context, new GestureListener());
+        }
+
+        @Override
+        public boolean onTouch(View v, MotionEvent event) {
+            return gestureDetector.onTouchEvent(event);
+        }
+
+        public void onSwipeRight() {}
+
+        public void onSwipeLeft() {}
+
+        private final class GestureListener extends GestureDetector.SimpleOnGestureListener {
+            @Override
+            public boolean onDown(MotionEvent e) {
+                return true;
+            }
+
+            @Override
+            public boolean onFling(MotionEvent e1, MotionEvent e2, float velocityX, float velocityY) {
+                if (e1 == null || e2 == null) {
+                    return false;
+                }
+                final float diffX = e2.getX() - e1.getX();
+                final float diffY = e2.getY() - e1.getY();
+                if (Math.abs(diffX) > Math.abs(diffY)
+                        && Math.abs(diffX) > SWIPE_THRESHOLD
+                        && Math.abs(velocityX) > SWIPE_VELOCITY_THRESHOLD) {
+                    if (diffX > 0) {
+                        onSwipeRight();
+                    } else {
+                        onSwipeLeft();
+                    }
+                    return true;
+                }
+                return false;
+            }
+        }
+    }
 
     @Override
     public void onMucRosterUpdate() {
