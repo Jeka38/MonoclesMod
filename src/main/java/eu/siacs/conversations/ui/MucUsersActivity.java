@@ -82,8 +82,6 @@ public class MucUsersActivity extends XmppActivity implements XmppConnectionServ
     @Override
     protected void onBackendConnected() {
         final Intent intent = getIntent();
-        mManageMode = intent != null && intent.getBooleanExtra(EXTRA_MANAGE_MODE, false);
-        mInitialTabName = intent == null ? null : intent.getStringExtra(EXTRA_INITIAL_TAB);
         final String uuid = intent == null ? null : intent.getStringExtra(EXTRA_UUID);
         if (uuid != null) {
             mConversation = xmppConnectionService.findConversationByUuid(uuid);
@@ -164,6 +162,9 @@ public class MucUsersActivity extends XmppActivity implements XmppConnectionServ
     @Override
     protected void onCreate(final Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
+        final Intent intent = getIntent();
+        mManageMode = intent != null && intent.getBooleanExtra(EXTRA_MANAGE_MODE, false);
+        mInitialTabName = intent == null ? null : intent.getStringExtra(EXTRA_INITIAL_TAB);
         binding = DataBindingUtil.setContentView(this, R.layout.activity_muc_users);
         setSupportActionBar((Toolbar) binding.toolbar.getRoot());
         configureActionBar(getSupportActionBar(), true);
