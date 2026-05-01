@@ -118,8 +118,8 @@
     <string name="backup_channel_name">Резервная копия &amp; Восстановление</string>
     <string name="backup_started_message">Резервное копирование было запущено. Вы получите уведомление, как только оно будет завершено.</string>
     <string name="bad_key_for_encryption">Не правильный ключ для шифрования.</string>
-    <string name="ban_from_channel">Заблокировать в конференции</string>
-    <string name="ban_from_conference">Заблокировать для конференции</string>
+    <string name="ban_from_conference">Заблокировать в конференции (бан)</string>
+    <string name="ban_from_channel">Заблокировать в конференции (бан)</string>
     <string name="ban_from_conference_message">Вы пытаетесь навсегда запретить %s доступ в конференцию</string>
     <string name="ban_from_public_conference_message">Вы пытаетесь забанить %s навсегда на этой публичной конференции.</string>
     <string name="ban_now">Заблокировать сейчас</string>
@@ -421,7 +421,7 @@
     <string name="gp_medium">Средний</string>
     <string name="gp_short">Короткий</string>
     <string name="gpx_track">GPX трек</string>
-    <string name="grant_admin_privileges">Предоставить права администратора</string>
+    <string name="grant_admin_privileges">Предоставить права админа</string>
     <string name="grant_membership">Предоставить права участника</string>
     <string name="grant_owner_privileges">Предоставить права владельца</string>
     <string name="group_chat_avatar">Аватар конференции</string>
@@ -518,8 +518,8 @@
     <string name="mark_all_chats_as_read">Отметить все чаты как прочитанные</string>
     <string name="marked_as_read">Отмечено как прочитанное</string>
     <string name="marked_all_chats_as_read">Все чаты отмечены как прочитанные</string>
-    <string name="kick_from_conference">Выгнать из конференции</string>
-    <string name="kick_from_room">Выгнать из конференции</string>
+    <string name="kick_from_room">Удалить из конференции (кик)</string>
+    <string name="kick_from_conference">Удалить из конференции (кик)</string>
     <string name="kick_now">Выгнать</string>
     <string name="kicking_from_conference">Вы пытаетесь выгнать %s из группового чата.</string>
     <string name="kicking_from_public_conference">Вы пытаетесь исключить %s из групповой конференции.</string>
@@ -994,7 +994,7 @@
     <string name="remote_fingerprint">Удаленный отпечаток</string>
     <string name="remote_server_not_found">Сервер не найден</string>
     <string name="remote_server_timeout">Таймаут удаленного сервера</string>
-    <string name="remove_admin_privileges">Отозвать права администратора</string>
+    <string name="remove_admin_privileges">Отозвать права админа</string>
     <string name="remove_all_individual_notifications_message">Вы действительно хотите удалить все индивидуальные уведомления, установленные для ваших контактов и конференций\?</string>
     <string name="remove_bookmark_text">Вы действительно хотите удалить %s из закладок\? Беседа, связанная с этой закладкой, не будет удалена.</string>
     <string name="remove_contact_text">Вы хотите удалить%s из Вашего списка\? Беседа, связанная с этим контактом, не будет удалена.</string>
