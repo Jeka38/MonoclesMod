@@ -178,7 +178,7 @@ public class MucUsersActivity extends XmppActivity implements XmppConnectionServ
             @Override
             public void onTabSelected(TabLayout.Tab tab) {
                 final Object tag = tab.getTag();
-                mSelectedTab = tag instanceof Tab ? (Tab) tag : Tab.OCCUPANTS;
+                mSelectedTab = tag instanceof Tab ? (Tab) tag : (mManageMode ? Tab.MEMBERS : Tab.OCCUPANTS);
                 userAdapter.setAffiliationList(mSelectedTab != Tab.OCCUPANTS);
                 updateFabVisibility();
                 loadAndSubmitUsers();
