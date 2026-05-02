@@ -52,6 +52,7 @@ public final class MucDetailsContextMenuHelper {
     private static final int ACTION_GRANT_OWNER = 5;
     private static final int ACTION_REMOVE_OWNER = 6;
     private static final int ACTION_REMOVE_FROM_LIST = 7;
+    private static final int ACTION_KICK = 8;
     private static int titleColor = 0xff0091ea;
 
     public static void onCreateContextMenu(ContextMenu menu, View v) {
@@ -93,6 +94,10 @@ public final class MucDetailsContextMenuHelper {
                 items.add(activity.getString(isGroupChat ? R.string.ban_from_conference : R.string.ban_from_channel));
                 actions.add(ACTION_BAN);
             }
+            if (self.getRole().ranks(MucOptions.Role.MODERATOR) && user.getRole() != MucOptions.Role.NONE && (self.getAffiliation().outranks(user.getAffiliation()) || user.getRole() != MucOptions.Role.MODERATOR)) {
+                items.add(activity.getString(R.string.kick_from_room));
+                actions.add(ACTION_KICK);
+            }
             if (!user.getAffiliation().ranks(MucOptions.Affiliation.MEMBER)) {
                 items.add(activity.getString(R.string.grant_membership));
                 actions.add(ACTION_GRANT_MEMBERSHIP);
@@ -118,7 +123,7 @@ public final class MucDetailsContextMenuHelper {
             }
         }
         if (isAffiliationList && user.getAffiliation() != MucOptions.Affiliation.NONE && ((self.getAffiliation().ranks(MucOptions.Affiliation.ADMIN) && self.getAffiliation().outranks(user.getAffiliation())) || self.getAffiliation() == MucOptions.Affiliation.OWNER)) {
-            items.add(activity.getString(R.string.remove_from_channel)); // Use existing string
+            items.add(activity.getString(R.string.remove_from_all_lists)); // Use string specifically for removing from lists
             actions.add(ACTION_REMOVE_FROM_LIST);
         }
         return new Pair<>(items.toArray(new CharSequence[items.size()]), actions.toArray(new Integer[actions.size()]));
@@ -213,6 +218,9 @@ public final class MucDetailsContextMenuHelper {
                 if (!Config.DISABLE_BAN) {
                     managePermissionsVisible = true;
                 }
+            }
+            if (self.getRole().ranks(MucOptions.Role.MODERATOR) && user.getRole() != MucOptions.Role.NONE && (self.getAffiliation().outranks(user.getAffiliation()) || user.getRole() != MucOptions.Role.MODERATOR)) {
+                managePermissionsVisible = true;
             }
             if (self.getAffiliation().ranks(MucOptions.Affiliation.OWNER)) {
                 if (!user.getAffiliation().ranks(MucOptions.Affiliation.OWNER)) {
@@ -354,6 +362,9 @@ public final class MucDetailsContextMenuHelper {
                                 case ACTION_REMOVE_FROM_LIST:
                                     activity.xmppConnectionService.changeAffiliationInConference(conversation, jid, MucOptions.Affiliation.NONE, onAffiliationChanged);
                                     break;
+                                case ACTION_KICK:
+                                    activity.xmppConnectionService.changeRoleInConference(conversation, user.getName(), MucOptions.Role.NONE);
+                                    break;
                             }
                         })
                         .setNeutralButton(R.string.cancel, null).show();
@@ -395,6 +406,9 @@ public final class MucDetailsContextMenuHelper {
                                 case ACTION_REMOVE_MEMBERSHIP:
                                 case ACTION_REMOVE_FROM_LIST:
                                     activity.xmppConnectionService.changeAffiliationInConference(conversation, jid, MucOptions.Affiliation.NONE, onAffiliationChanged);
+                                    break;
+                                case ACTION_KICK:
+                                    activity.xmppConnectionService.changeRoleInConference(conversation, user.getName(), MucOptions.Role.NONE);
                                     break;
                             }
                         })
