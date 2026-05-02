@@ -3,50 +3,59 @@
   <meta>
     <name>Satrap_psi</name>
   </meta>
+  
   <icon>
     <text>O:-)</text>
     <text>O=)</text>
-    <object mime="image/png">aa.gif</object>
+    <object mime="image/png">s1.gif</object>
   </icon>
+  
   <icon>
     <text>:-)</text>
     <text>:)</text>
     <text>=)</text>
-    <object mime="image/png">ab.gif</object>
+    <object mime="image/png">s2.gif</object>
   </icon>
+  
   <icon>
     <text>:-(</text>
     <text>:(</text>
     <text>;(</text>
     <text>=(</text>
-    <object mime="image/png">ac.gif</object>
+    <object mime="image/png">s3.gif</object>
   </icon>
+  
   <icon>
     <text>;-)</text>
     <text>;)</text>
-    <object mime="image/png">ad.gif</object>
+    <object mime="image/png">s4.gif</object>
   </icon>
+  
   <icon>
     <text>:-P</text>
     <text>:P</text>
     <text>=P</text>
-    <object mime="image/png">ae.gif</object>
+    <object mime="image/png">s5.gif</object>
   </icon>
+  
   <icon>
     <text>8-)</text>
     <text>B)</text>
-    <object mime="image/png">af.gif</object>
+    <object mime="image/png">s6.gif</object>
   </icon>
+  
   <icon>
     <text>:-D</text>
     <text>:D</text>
     <text>=D</text>
-    <object mime="image/png">ag.gif</object>
+    <object mime="image/png">s7.gif</object>
   </icon>
+  
   <icon>
     <text>:-[</text>
-    <object mime="image/png">ah.gif</object>
+    <object mime="image/png">s8.gif</object>
   </icon>
+  
   <icon>
     <text>=-O</text>
     <text>:-O</text>
@@ -59,41 +68,49 @@
     <text>o_0</text>
     <text>0_O</text>
     <text>0_o</text>
-    <object mime="image/png">ai.gif</object>
+    <object mime="image/png">s9.gif</object>
   </icon>
+  
   <icon>
     <text>:-*</text>
     <text>:-{}</text>
-    <object mime="image/png">aj.gif</object>
+    <object mime="image/png">s10.gif</object>
   </icon>
+  
   <icon>
     <text>:'(</text>
     <text>:'-(</text>
-    <object mime="image/png">ak.gif</object>
+    <object mime="image/png">s11.gif</object>
   </icon>
+  
   <icon>
     <text>:-X</text>
     <text>:-x</text>
-    <object mime="image/png">al.gif</object>
+    <object mime="image/png">s12.gif</object>
   </icon>
+  
   <icon>
     <text>&gt;:o</text>
-    <object mime="image/png">am.gif</object>
+    <object mime="image/png">s13.gif</object>
   </icon>
+  
   <icon>
     <text>:-|</text>
-    <object mime="image/png">an.gif</object>
+    <object mime="image/png">s14.gif</object>
   </icon>
+  
   <icon>
     <text>:-\</text>
     <text>:-/</text>
-    <object mime="image/png">ao.gif</object>
+    <object mime="image/png">s15.gif</object>
   </icon>
+  
   <icon>
     <text>*JOKINGLY*</text>
     <text>*8P*</text>
-    <object mime="image/png">ap.gif</object>
+    <object mime="image/png">s16.gif</object>
   </icon>
+  
   <icon>
     <text>]:-&gt;</text>
     <text>}:-&gt;</text>
@@ -102,18 +119,21 @@
     <text>&gt;:-]</text>
     <text>&gt;:]</text>
     <text>*DIABLO*</text>
-    <object mime="image/png">aq.gif</object>
+    <object mime="image/png">s17.gif</object>
   </icon>
+  
   <icon>
     <text>[:-}</text>
     <text>[:}</text>
     <text>*MUSIC*</text>
-    <object mime="image/png">ar.gif</object>
+    <object mime="image/png">s18.gif</object>
   </icon>
+  
   <icon>
     <text>*KISSED*</text>
-    <object mime="image/png">as.gif</object>
+    <object mime="image/png">s19.gif</object>
   </icon>
+  
   <icon>
     <text>:-!</text>
     <text>;-!</text>
@@ -121,367 +141,453 @@
     <text>;!</text>
     <text>:-~</text>
     <text>;-~</text>
-    <object mime="image/png">at.gif</object>
+    <object mime="image/png">s20.gif</object>
   </icon>
+  
   <icon>
     <text>*TIRED*</text>
-    <object mime="image/png">au.gif</object>
+    <object mime="image/png">s21.gif</object>
   </icon>
+  
   <icon>
     <text>*STOP*</text>
-    <object mime="image/png">av.gif</object>
+    <object mime="image/png">s22.gif</object>
   </icon>
+  
   <icon>
     <text>*KISSING*</text>
-    <object mime="image/png">aw.gif</object>
+    <object mime="image/png">s23.gif</object>
   </icon>
+  
   <icon>
     <text>@}-&gt;--</text>
     <text>@}-:--</text>
     <text>@&gt;}--`---</text>
-    <object mime="image/png">ax.gif</object>
+    <object mime="image/png">s24.gif</object>
   </icon>
+  
   <icon>
     <text>*THUMBS UP*</text>
     <text>*GOOD*</text>
-    <object mime="image/png">ay.gif</object>
+    <object mime="image/png">s25.gif</object>
   </icon>
+  
   <icon>
     <text>*DRINK*</text>
-    <object mime="image/png">az.gif</object>
+    <object mime="image/png">s26.gif</object>
   </icon>
+  
   <icon>
     <text>*IN LOVE*</text>
-    <object mime="image/png">ba.gif</object>
+    <object mime="image/png">s27.gif</object>
   </icon>
+  
   <icon>
     <text>@=</text>
-    <object mime="image/png">bb.gif</object>
+    <object mime="image/png">s28.gif</object>
   </icon>
+  
   <icon>
     <text>*HELP*</text>
-    <object mime="image/png">bc.gif</object>
+    <object mime="image/png">s29.gif</object>
   </icon>
+  
   <icon>
     <text>\m/</text>
-    <object mime="image/png">bd.gif</object>
+    <object mime="image/png">s30.gif</object>
   </icon>
+  
   <icon>
     <text>%)</text>
     <text>%-)</text>
-    <object mime="image/png">be.gif</object>
+    <object mime="image/png">s31.gif</object>
   </icon>
+  
   <icon>
     <text>*OK*</text>
-    <object mime="image/png">bf.gif</object>
+    <object mime="image/png">s32.gif</object>
   </icon>
+  
   <icon>
     <text>*WASSUP*</text>
     <text>*SUP*</text>
-    <object mime="image/png">bg.gif</object>
+    <object mime="image/png">s33.gif</object>
   </icon>
+  
   <icon>
     <text>*SORRY*</text>
-    <object mime="image/png">bh.gif</object>
+    <object mime="image/png">s34.gif</object>
   </icon>
+  
   <icon>
     <text>*BRAVO*</text>
-    <object mime="image/png">bi.gif</object>
+    <object mime="image/png">s35.gif</object>
   </icon>
+  
   <icon>
     <text>*ROFL*</text>
-    <object mime="image/png">bj.gif</object>
+    <object mime="image/png">s36.gif</object>
   </icon>
+  
   <icon>
     <text>*PARDON*</text>
     <text>=]</text>
-    <object mime="image/png">bk.gif</object>
+    <object mime="image/png">s37.gif</object>
   </icon>
+  
   <icon>
     <text>*NO*</text>
-    <object mime="image/png">bl.gif</object>
+    <object mime="image/png">s38.gif</object>
   </icon>
+  
   <icon>
     <text>*CRAZY*</text>
-    <object mime="image/png">bm.gif</object>
+    <object mime="image/png">s39.gif</object>
   </icon>
+  
   <icon>
     <text>*DONT_KNOW*</text>
     <text>*UNKNOWN*</text>
     <text>:-$</text>
-    <object mime="image/png">bn.gif</object>
+    <object mime="image/png">s40.gif</object>
   </icon>
+  
   <icon>
     <text>*DANCE*</text>
-    <object mime="image/png">bo.gif</object>
+    <object mime="image/png">s41.gif</object>
   </icon>
+  
   <icon>
     <text>*YAHOO*</text>
     <text>*YAHOO!*</text>
-    <object mime="image/png">bp.gif</object>
+    <object mime="image/png">s42.gif</object>
   </icon>
+  
   <icon>
     <text>*HI*</text>
     <text>*PREVED*</text>
     <text>*PRIVET*</text>
-    <object mime="image/png">bq.gif</object>
+    <object mime="image/png">s43.gif</object>
   </icon>
+  
   <icon>
     <text>*BYE*</text>
-    <object mime="image/png">br.gif</object>
+    <object mime="image/png">s44.gif</object>
   </icon>
+  
   <icon>
     <text>*YES*</text>
-    <object mime="image/png">bs.gif</object>
+    <object mime="image/png">s45.gif</object>
   </icon>
+  
   <icon>
     <text>;D</text>
     <text>*ACUTE*</text>
-    <object mime="image/png">bt.gif</object>
+    <object mime="image/png">s46.gif</object>
   </icon>
+  
   <icon>
     <text>*WALL*</text>
     <text>*DASH*</text>
-    <object mime="image/png">bu.gif</object>
+    <object mime="image/png">s47.gif</object>
   </icon>
+  
   <icon>
     <text>*WRITE*</text>
     <text>*MAIL*</text>
-    <object mime="image/png">bv.gif</object>
+    <object mime="image/png">s48.gif</object>
   </icon>
+  
   <icon>
     <text>*SCRATCH*</text>
-    <object mime="image/png">bw.gif</object>
+    <object mime="image/png">s49.gif</object>
   </icon>
+  
   <icon>
     <text>*YEEES!*</text>
-    <object mime="image/png">bx.gif</object>
+    <object mime="image/png">s50.gif</object>
   </icon>
+  
   <icon>
     <text>*SMOKE*</text>
-    <object mime="image/png">by.gif</object>
+    <object mime="image/png">s51.gif</object>
   </icon>
+  
   <icon>
     <text>*BOSS*</text>
-    <object mime="image/png">bz.gif</object>
+    <object mime="image/png">s52.gif</object>
   </icon>
+  
   <icon>
     <text>*SARCASTIC*</text>
-    <object mime="image/png">ca.gif</object>
+    <object mime="image/png">s53.gif</object>
   </icon>
+  
   <icon>
     <text>*BOAST*</text>
-    <object mime="image/png">cb.gif</object>
+    <object mime="image/png">s54.gif</object>
   </icon>
+  
   <icon>
     <text>*GAMER*</text>
-    <object mime="image/png">cc.gif</object>
+    <object mime="image/png">s55.gif</object>
   </icon>
+  
   <icon>
     <text>*db*</text>
-    <object mime="image/png">cd.gif</object>
+    <object mime="image/png">s56.gif</object>
   </icon>
+  
   <icon>
     <text>*HOHO*</text>
-    <object mime="image/png">ce.gif</object>
+    <object mime="image/png">s57.gif</object>
   </icon>
+  
   <icon>
     <text>*SHOUT*</text>
     <text>:-@</text>
-    <object mime="image/png">cf.gif</object>
+    <object mime="image/png">s58.gif</object>
   </icon>
+  
   <icon>
     <text>*VAVA*</text>
-    <object mime="image/png">cg.gif</object>
+    <object mime="image/png">s59.gif</object>
   </icon>
+  
   <icon>
     <text>*CENSORED*</text>
-    <object mime="image/png">ch.gif</object>
+    <object mime="image/png">s60.gif</object>
   </icon>
+  
   <icon>
     <text>*SEARCH*</text>
-    <object mime="image/png">ci.gif</object>
+    <object mime="image/png">s61.gif</object>
   </icon>
+  
   <icon>
     <text>*BEACH*</text>
-    <object mime="image/png">cj.gif</object>
+    <object mime="image/png">s62.gif</object>
   </icon>
+  
   <icon>
     <text>*FOCUS*</text>
-    <object mime="image/png">ck.gif</object>
+    <object mime="image/png">s63.gif</object>
   </icon>
+  
   <icon>
     <text>*HUNTER*</text>
-    <object mime="image/png">cl.gif</object>
+    <object mime="image/png">s64.gif</object>
   </icon>
+  
   <icon>
     <text>*GIRL_CRY*</text>
     <text>*GIRL_CRAY*</text>
-    <object mime="image/png">cm.gif</object>
+    <object mime="image/png">s65.gif</object>
   </icon>
+  
   <icon>
     <text>*GIRL_CRAZY*</text>
-    <object mime="image/png">cn.gif</object>
+    <object mime="image/png">s66.gif</object>
   </icon>
+  
   <icon>
     <text>*HOSPITAL*</text>
-    <object mime="image/png">co.gif</object>
+    <object mime="image/png">s67.gif</object>
   </icon>
+  
   <icon>
     <text>*GIRL_IN_LOVE*</text>
-    <object mime="image/png">cp.gif</object>
+    <object mime="image/png">s68.gif</object>
   </icon>
+  
   <icon>
     <text>*PINKGLASSES*</text>
-    <object mime="image/png">cq.gif</object>
+    <object mime="image/png">s69.gif</object>
   </icon>
+  
   <icon>
     <text>*HYSTERIC*</text>
-    <object mime="image/png">cr.gif</object>
+    <object mime="image/png">s70.gif</object>
   </icon>
+  
   <icon>
     <text>*TENDER*</text>
-    <object mime="image/png">cs.gif</object>
+    <object mime="image/png">s71.gif</object>
   </icon>
+  
   <icon>
     <text>*SPRUSE_UP*</text>
-    <object mime="image/png">ct.gif</object>
+    <object mime="image/png">s72.gif</object>
   </icon>
+  
   <icon>
     <text>*FLIRT*</text>
-    <object mime="image/png">cu.gif</object>
+    <object mime="image/png">s73.gif</object>
   </icon>
+  
   <icon>
     <text>*GIVE_HEART*</text>
-    <object mime="image/png">cv.gif</object>
+    <object mime="image/png">s74.gif</object>
   </icon>
+  
   <icon>
     <text>*CURTSEY*</text>
-    <object mime="image/png">cw.gif</object>
+    <object mime="image/png">s75.gif</object>
   </icon>
+  
   <icon>
     <text>*FEMINIST*</text>
-    <object mime="image/png">cx.gif</object>
+    <object mime="image/png">s76.gif</object>
   </icon>
+  
   <icon>
     <text>*GIRL_DRINK*</text>
-    <object mime="image/png">cy.gif</object>
+    <object mime="image/png">s77.gif</object>
   </icon>
+  
   <icon>
     <text>*HAHA*</text>
-    <object mime="image/png">cz.gif</object>
+    <object mime="image/png">s78.gif</object>
   </icon>
+  
   <icon>
     <text>*IMPOSSIBLE*</text>
-    <object mime="image/png">da.gif</object>
+    <object mime="image/png">s79.gif</object>
   </icon>
+  
   <icon>
     <text>*SIGH*</text>
-    <object mime="image/png">db.gif</object>
+    <object mime="image/png">s80.gif</object>
   </icon>
+  
   <icon>
     <text>X-)</text>
     <text>X)</text>
-    <object mime="image/png">dc.gif</object>
+    <object mime="image/png">s81.gif</object>
   </icon>
+  
   <icon>
     <text>*SLOW*</text>
-    <object mime="image/png">dd.gif</object>
+    <object mime="image/png">s82.gif</object>
   </icon>
+  
   <icon>
     <text>*MOIL*</text>
     <text>*JOB*</text>
-    <object mime="image/png">de.gif</object>
+    <object mime="image/png">s83.gif</object>
   </icon>
+  
   <icon>
     <text>*BB*</text>
-    <object mime="image/png">df.gif</object>
+    <object mime="image/png">s84.gif</object>
   </icon>
+  
   <icon>
     <text>*MEGA_SHOK*</text>
-    <object mime="image/png">dg.gif</object>
+    <object mime="image/png">s85.gif</object>
   </icon>
+  
   <icon>
     <text>*THANK*</text>
-    <object mime="image/png">dh.gif</object>
+    <object mime="image/png">s86.gif</object>
   </icon>
+  
   <icon>
     <text>*KING*</text>
-    <object mime="image/png">di.gif</object>
+    <object mime="image/png">s87.gif</object>
   </icon>
+  
   <icon>
     <text>*LAZY*</text>
-    <object mime="image/png">dj.gif</object>
+    <object mime="image/png">s88.gif</object>
   </icon>
+  
   <icon>
     <text>*FRIEND*</text>
-    <object mime="image/png">dk.gif</object>
+    <object mime="image/png">s89.gif</object>
   </icon>
+  
   <icon>
     <text>*PUNISH*</text>
-    <object mime="image/png">dl.gif</object>
+    <object mime="image/png">s90.gif</object>
   </icon>
+  
   <icon>
     <text>*WIZARD*</text>
-    <object mime="image/png">dm.gif</object>
+    <object mime="image/png">s91.gif</object>
   </icon>
+  
   <icon>
     <text>*V*</text>
-    <object mime="image/png">dn.gif</object>
+    <object mime="image/png">s92.gif</object>
   </icon>
+  
   <icon>
     <text>*SPITEFUL*</text>
-    <object mime="image/png">do.gif</object>
+    <object mime="image/png">s93.gif</object>
   </icon>
+  
   <icon>
     <text>*TEASE*</text>
-    <object mime="image/png">dp.gif</object>
+    <object mime="image/png">s94.gif</object>
   </icon>
+  
   <icon>
     <text>*HELLO*</text>
-    <object mime="image/png">dq.gif</object>
+    <object mime="image/png">s95.gif</object>
   </icon>
+  
   <icon>
     <text>*SCARE*</text>
-    <object mime="image/png">dr.gif</object>
+    <object mime="image/png">s96.gif</object>
   </icon>
+  
   <icon>
     <text>*THIS*</text>
-    <object mime="image/png">ds.gif</object>
+    <object mime="image/png">s97.gif</object>
   </icon>
+  
   <icon>
     <text>*PAINT*</text>
-    <object mime="image/png">dt.gif</object>
+    <object mime="image/png">s98.gif</object>
   </icon>
+  
   <icon>
     <text>*TRAINING*</text>
-    <object mime="image/png">du.gif</object>
+    <object mime="image/png">s99.gif</object>
   </icon>
+  
   <icon>
     <text>*PARTY*</text>
-    <object mime="image/png">dv.gif</object>
+    <object mime="image/png">s100.gif</object>
   </icon>
+  
   <icon>
     <text>*POPCORN*</text>
-    <object mime="image/png">dw.gif</object>
+    <object mime="image/png">s101.gif</object>
   </icon>
+  
   <icon>
     <text>*IREFUL*</text>
-    <object mime="image/png">dx.gif</object>
+    <object mime="image/png">s102.gif</object>
   </icon>
+  
   <icon>
     <text>*LOL*</text>
-    <object mime="image/png">dy.gif</object>
+    <object mime="image/png">s103.gif</object>
   </icon>
+  
   <icon>
     <text>*HAPPY*</text>
-    <object mime="image/png">dz.gif</object>
+    <object mime="image/png">s104.gif</object>
   </icon>
+  
   <icon>
     <text>*VAMPIRE*</text>
     <text>*BAT*</text>
     <text>&gt;:-E</text>
     <text>&gt;:E</text>
-    <object mime="image/png">ea.gif</object>
+    <object mime="image/png">s105.gif</object>
   </icon>
+
 </icondef>
