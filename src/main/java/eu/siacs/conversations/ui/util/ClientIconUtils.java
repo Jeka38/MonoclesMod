@@ -32,6 +32,7 @@ public final class ClientIconUtils {
     private static final Map<String, Integer> CLIENT_SPECIFIC_ICONS = new LinkedHashMap<>();
 
     static {
+        CLIENT_SPECIFIC_ICONS.put("narayana", R.drawable.client_another);
         CLIENT_SPECIFIC_ICONS.put("another-im", R.drawable.client_another);
         CLIENT_SPECIFIC_ICONS.put("conversations-classic-mod", R.drawable.client_conversations_mod);
         CLIENT_SPECIFIC_ICONS.put("talkgadget.google.com", R.drawable.client_talkgadget_google_com);
