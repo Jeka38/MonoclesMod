@@ -91,7 +91,7 @@ public final class ClientIconUtils {
         CLIENT_SPECIFIC_ICONS.put("emess-old", R.drawable.client_emess_old);
         CLIENT_SPECIFIC_ICONS.put("fatal-bot", R.drawable.client_fatal_bot);
         CLIENT_SPECIFIC_ICONS.put("imadering", R.drawable.client_imadering);
-        CLIENT_SPECIFIC_ICONS.put("isida-bot", R.drawable.client_isida_bot);
+        CLIENT_SPECIFIC_ICONS.put("isida", R.drawable.client_isida_bot);
         CLIENT_SPECIFIC_ICONS.put("jabber.el", R.drawable.client_jabber_el);
         CLIENT_SPECIFIC_ICONS.put("libpurple", R.drawable.client_libpurple);
         CLIENT_SPECIFIC_ICONS.put("profanity", R.drawable.client_profanity);
