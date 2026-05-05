@@ -138,6 +138,7 @@ public class SettingsActivity extends XmppActivity implements OnSharedPreference
     public static final int REQUEST_CREATE_BACKUP = 0xbf8701;
     public static final int REQUEST_IMPORT_SETTINGS = 0xbf8703;
     public static final int REQUEST_IMPORT_GIFS = 0xbf8706;
+    public static final int REQUEST_IMPORT_SMILES = 0xbf8707;
 
     Preference multiAccountPreference;
     Preference autoMessageExpiryPreference;
@@ -861,9 +862,11 @@ public class SettingsActivity extends XmppActivity implements OnSharedPreference
         if (importOwnSmiles != null) {
             importOwnSmiles.setOnPreferenceClickListener(
                     preference -> {
-                        if (xmppConnectionService != null) {
-                            xmppConnectionService.rescanSmiles(true);
-                            displayToast(getString(R.string.smiles_rescanned));
+                        if (hasStoragePermission(REQUEST_IMPORT_SMILES)) {
+                            if (xmppConnectionService != null) {
+                                xmppConnectionService.rescanSmiles(true);
+                                displayToast(getString(R.string.smiles_rescanned));
+                            }
                         }
                         return true;
                     }
@@ -1141,6 +1144,12 @@ public class SettingsActivity extends XmppActivity implements OnSharedPreference
                 }
                 if (requestCode == REQUEST_CREATE_BACKUP) {
                     createCompatibleBackup();
+                }
+                if (requestCode == REQUEST_IMPORT_SMILES) {
+                    if (xmppConnectionService != null) {
+                        xmppConnectionService.rescanSmiles(true);
+                        displayToast(getString(R.string.smiles_rescanned));
+                    }
                 }
             } else {
                 ToastCompat.makeText(

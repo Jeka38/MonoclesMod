@@ -110,10 +110,13 @@ public class EmojiSearch {
 
     public synchronized void replaceAll(List<Emoji> newEmojis) {
         emoji.clear();
-        if (newEmojis == null || newEmojis.isEmpty()) {
-            emoji.addAll(standardEmojis);
-        } else {
+        if (newEmojis != null) {
             emoji.addAll(newEmojis);
+        }
+        for (Emoji standard : standardEmojis) {
+            if (!emoji.contains(standard)) {
+                emoji.add(standard);
+            }
         }
         cachedPattern = null;
     }

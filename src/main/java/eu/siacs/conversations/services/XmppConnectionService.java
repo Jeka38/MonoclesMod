@@ -7015,6 +7015,9 @@ public class XmppConnectionService extends Service {
         if (!force && msToRescan > 0) return;
         Log.d(Config.LOGTAG, "rescanSmiles");
 
+        if (force) {
+            getDrawableCache().evictAll();
+        }
         mLastSmilesRescan = SystemClock.elapsedRealtime();
         mSmilesScanExecutor.execute(() -> {
             Thread.currentThread().setPriority(force ? Thread.NORM_PRIORITY : Thread.MIN_PRIORITY);
