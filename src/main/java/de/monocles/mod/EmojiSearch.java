@@ -18,7 +18,9 @@ import com.google.common.collect.Lists;
 import java.lang.Comparable;
 import java.util.ArrayList;
 import java.util.Collections;
+import java.util.HashMap;
 import java.util.List;
+import java.util.Map;
 import java.util.PriorityQueue;
 import java.util.Set;
 import java.util.TreeSet;
@@ -42,6 +44,7 @@ import eu.siacs.conversations.utils.ReplacingSerialSingleThreadExecutor;
 public class EmojiSearch {
     protected final Set<Emoji> emoji = new TreeSet<>();
     private final List<Emoji> standardEmojis = new ArrayList<>();
+    private final Map<String, Emoji> standardEmojisByFilename = new HashMap<>();
 
     public EmojiSearch(Context context) {
         loadStandardEmojis(context);
@@ -50,7 +53,7 @@ public class EmojiSearch {
     private void loadStandardEmojis(Context context) {
         try (InputStream is = context.getResources().openRawResource(R.raw.smiles_icondef)) {
             Element root = XmlElementReader.read(is);
-            int order = 0;
+            int order = 10000;
             for (Element iconElement : root.getChildren()) {
                 if ("icon".equals(iconElement.getName())) {
                     order++;
@@ -72,6 +75,7 @@ public class EmojiSearch {
                                 ce.addShortcode(texts.get(i));
                             }
                             standardEmojis.add(ce);
+                            standardEmojisByFilename.put(filename, ce);
                             addEmoji(ce);
                         }
                     }
@@ -106,6 +110,10 @@ public class EmojiSearch {
     public synchronized void addEmoji(final Emoji one) {
         emoji.add(one);
         cachedPattern = null;
+    }
+
+    public Map<String, Emoji> getStandardEmojisByFilename() {
+        return standardEmojisByFilename;
     }
 
     public synchronized void replaceAll(List<Emoji> newEmojis) {
@@ -198,6 +206,10 @@ public class EmojiSearch {
         public Emoji(final String unicode, final int order) {
             this.unicode = unicode;
             this.order = order;
+        }
+
+        public List<String> getShortcodes() {
+            return shortcodes;
         }
 
         public Emoji(JSONObject o) throws JSONException {

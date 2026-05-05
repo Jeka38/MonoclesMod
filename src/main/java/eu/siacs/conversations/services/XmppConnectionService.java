@@ -7080,7 +7080,22 @@ public class XmppConnectionService extends Service {
                                 saveCid(cid, file);
                             }
                             if (file.length() < 1024 * 1024) { // 1MB limit for smiles
-                                emojis.add(new EmojiSearch.CustomEmoji(filename, "*" + filename + "*", icon, "Smiles", 9999));
+                                EmojiSearch.Emoji standard = emojiSearch.getStandardEmojisByFilename().get(file.getName());
+                                if (standard instanceof EmojiSearch.CustomEmoji) {
+                                    EmojiSearch.CustomEmoji standardCustom = (EmojiSearch.CustomEmoji) standard;
+                                    List<String> shortcodes = standardCustom.getShortcodes();
+                                    if (shortcodes.size() > 0) {
+                                        EmojiSearch.CustomEmoji ce = new EmojiSearch.CustomEmoji(shortcodes.get(0), standardCustom.getSource(), icon, "Smiles", 999);
+                                        for (int i = 1; i < shortcodes.size(); i++) {
+                                            ce.addShortcode(shortcodes.get(i));
+                                        }
+                                        emojis.add(ce);
+                                    } else {
+                                        emojis.add(new EmojiSearch.CustomEmoji(filename, "*" + filename + "*", icon, "Smiles", 999));
+                                    }
+                                } else {
+                                    emojis.add(new EmojiSearch.CustomEmoji(filename, "*" + filename + "*", icon, "Smiles", 999));
+                                }
                                 filenamesInList.add(file.getName());
                             }
                         }
