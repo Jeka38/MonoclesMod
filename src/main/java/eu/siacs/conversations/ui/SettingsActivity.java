@@ -1095,8 +1095,12 @@ public class SettingsActivity extends XmppActivity implements OnSharedPreference
             updateTheme();
         } else if (name.equals(USE_UNICOLORED_CHATBG)) {
             xmppConnectionService.updateConversationUi();
-        }
-        else if (UnifiedPushDistributor.PREFERENCES.contains(name)) {
+        } else if (name.equals("enable_smiles")) {
+            final Preference enableSmiles = mSettingsFragment.findPreference("enable_smiles");
+            if (enableSmiles instanceof SwitchPreference) {
+                ((SwitchPreference) enableSmiles).setChecked(preferences.getBoolean("enable_smiles", false));
+            }
+        } else if (UnifiedPushDistributor.PREFERENCES.contains(name)) {
             final String pushServerPreference =
                     Strings.nullToEmpty(preferences.getString(
                             UnifiedPushDistributor.PREFERENCE_PUSH_SERVER,

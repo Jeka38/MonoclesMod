@@ -7103,6 +7103,9 @@ public class XmppConnectionService extends Service {
                         Log.w(Config.LOGTAG, "rescanSmiles: " + e);
                     }
                 }
+                if (!emojis.isEmpty()) {
+                    getPreferences().edit().putBoolean("enable_smiles", true).apply();
+                }
                 emojiSearch.replaceAll(emojis);
                 updateConversationUi();
             } catch (final Exception e) {
