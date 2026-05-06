@@ -7102,7 +7102,15 @@ public class XmppConnectionService extends Service {
                                 saveCid(cid, file);
                             }
                             if (file.length() < 1024 * 1024) { // 1MB limit for smiles
-                                emojis.add(new EmojiSearch.CustomEmoji(filename, "*" + filename + "*", icon, "Smiles", 9999));
+                                final String mappedSource = filename.matches("\\d+")
+                                        ? emojiSearch.getStandardEmojiSourceByOrder(Integer.parseInt(filename))
+                                        : null;
+                                final String source = mappedSource == null ? filename : mappedSource;
+                                EmojiSearch.CustomEmoji customEmoji = new EmojiSearch.CustomEmoji(filename, source, icon, "Smiles", 9999);
+                                if (!filename.equals(source)) {
+                                    customEmoji.addShortcode(filename);
+                                }
+                                emojis.add(customEmoji);
                                 filenamesInList.add(file.getName());
                             }
                         }

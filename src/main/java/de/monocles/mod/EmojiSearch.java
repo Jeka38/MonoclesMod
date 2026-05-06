@@ -124,6 +124,15 @@ public class EmojiSearch {
         cachedPattern = null;
     }
 
+    public synchronized String getStandardEmojiSourceByOrder(int order) {
+        for (Emoji one : standardEmojis) {
+            if (one instanceof CustomEmoji && one.order == order) {
+                return ((CustomEmoji) one).getSource();
+            }
+        }
+        return null;
+    }
+
     public synchronized CustomEmoji findCustomEmoji(String q) {
         for (Emoji e : emoji) {
             if (e instanceof CustomEmoji) {
