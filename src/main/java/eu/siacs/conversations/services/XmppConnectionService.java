@@ -7050,8 +7050,10 @@ public class XmppConnectionService extends Service {
 
                 List<EmojiSearch.Emoji> emojis = new ArrayList<>();
                 HashSet<String> filenamesInList = new HashSet<>();
+                boolean hasCustomSmilesSource = false;
                 File iconDef = new File(smilesDir, "icondef.xml");
                 if (iconDef.exists()) {
+                    hasCustomSmilesSource = true;
                     try (FileInputStream fis = new FileInputStream(iconDef)) {
                         Element root = XmlElementReader.read(fis);
                         int order = 1000;
@@ -7108,7 +7110,7 @@ public class XmppConnectionService extends Service {
                         Log.w(Config.LOGTAG, "rescanSmiles: " + e);
                     }
                 }
-                emojiSearch.replaceAll(emojis);
+                emojiSearch.replaceAll(emojis, !hasCustomSmilesSource);
                 updateConversationUi();
             } catch (final Exception e) {
                 Log.w(Config.LOGTAG, "rescanSmiles: " + e);

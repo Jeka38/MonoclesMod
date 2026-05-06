@@ -109,9 +109,15 @@ public class EmojiSearch {
     }
 
     public synchronized void replaceAll(List<Emoji> newEmojis) {
+        replaceAll(newEmojis, true);
+    }
+
+    public synchronized void replaceAll(List<Emoji> newEmojis, boolean fallbackToStandard) {
         emoji.clear();
         if (newEmojis == null || newEmojis.isEmpty()) {
-            emoji.addAll(standardEmojis);
+            if (fallbackToStandard) {
+                emoji.addAll(standardEmojis);
+            }
         } else {
             emoji.addAll(newEmojis);
         }
