@@ -18,7 +18,9 @@ import com.google.common.collect.Lists;
 import java.lang.Comparable;
 import java.util.ArrayList;
 import java.util.Collections;
+import java.util.HashMap;
 import java.util.List;
+import java.util.Map;
 import java.util.PriorityQueue;
 import java.util.Set;
 import java.util.TreeSet;
@@ -42,6 +44,7 @@ import eu.siacs.conversations.utils.ReplacingSerialSingleThreadExecutor;
 public class EmojiSearch {
     protected final Set<Emoji> emoji = new TreeSet<>();
     private final List<Emoji> standardEmojis = new ArrayList<>();
+    private final Map<String, CustomEmoji> standardEmojisByFilename = new HashMap<>();
 
     public EmojiSearch(Context context) {
         loadStandardEmojis(context);
@@ -50,7 +53,7 @@ public class EmojiSearch {
     private void loadStandardEmojis(Context context) {
         try (InputStream is = context.getResources().openRawResource(R.raw.smiles_icondef)) {
             Element root = XmlElementReader.read(is);
-            int order = 0;
+            int order = 10000;
             for (Element iconElement : root.getChildren()) {
                 if ("icon".equals(iconElement.getName())) {
                     order++;
@@ -72,6 +75,8 @@ public class EmojiSearch {
                                 ce.addShortcode(texts.get(i));
                             }
                             standardEmojis.add(ce);
+                            String nameWithoutExtension = filename.contains(".") ? filename.substring(0, filename.lastIndexOf('.')) : filename;
+                            standardEmojisByFilename.put(nameWithoutExtension, ce);
                             addEmoji(ce);
                         }
                     }
@@ -80,6 +85,10 @@ public class EmojiSearch {
         } catch (Exception e) {
             Log.e("EmojiSearch", "Failed to load standard emojis", e);
         }
+    }
+
+    public CustomEmoji getStandardEmojiByFilename(String filename) {
+        return standardEmojisByFilename.get(filename);
     }
 
     private Pattern cachedPattern = null;
@@ -110,10 +119,20 @@ public class EmojiSearch {
 
     public synchronized void replaceAll(List<Emoji> newEmojis) {
         emoji.clear();
-        if (newEmojis == null || newEmojis.isEmpty()) {
-            emoji.addAll(standardEmojis);
-        } else {
+        if (newEmojis != null) {
             emoji.addAll(newEmojis);
+        }
+        for (Emoji standard : standardEmojis) {
+            boolean found = false;
+            for (Emoji other : emoji) {
+                if (standard.uniquePart().equals(other.uniquePart())) {
+                    found = true;
+                    break;
+                }
+            }
+            if (!found) {
+                emoji.add(standard);
+            }
         }
         cachedPattern = null;
     }
@@ -283,6 +302,10 @@ public class EmojiSearch {
 
         public void addShortcode(String shortcode) {
             this.shortcodes.add(shortcode);
+        }
+
+        public List<String> getShortcodes() {
+            return shortcodes;
         }
 
         public SpannableStringBuilder toInsert() {

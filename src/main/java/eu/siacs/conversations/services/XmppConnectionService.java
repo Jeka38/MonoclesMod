@@ -367,6 +367,9 @@ public class XmppConnectionService extends Service {
     ) {
         @Override
         public void onEvent(final int event, final File file) {
+            if (file.getAbsolutePath().startsWith(smilesDir().getAbsolutePath())) {
+                rescanSmiles(true);
+            }
             markFileDeleted(file);
         }
     };
@@ -7012,8 +7015,11 @@ public class XmppConnectionService extends Service {
 
     public void rescanSmiles(boolean force) {
         long msToRescan = (mLastSmilesRescan + 600000L) - SystemClock.elapsedRealtime();
-        if (!force && msToRescan > 0) return;
+        if (!force && mLastSmilesRescan != 0 && msToRescan > 0) return;
         Log.d(Config.LOGTAG, "rescanSmiles");
+        if (force) {
+            mDrawableCache.evictAll();
+        }
 
         mLastSmilesRescan = SystemClock.elapsedRealtime();
         mSmilesScanExecutor.execute(() -> {
@@ -7077,13 +7083,25 @@ public class XmppConnectionService extends Service {
                                 saveCid(cid, file);
                             }
                             if (file.length() < 1024 * 1024) { // 1MB limit for smiles
-                                emojis.add(new EmojiSearch.CustomEmoji(filename, "*" + filename + "*", icon, "Smiles", 9999));
+                                final EmojiSearch.CustomEmoji standard = emojiSearch.getStandardEmojiByFilename(filename);
+                                if (standard != null) {
+                                    final EmojiSearch.CustomEmoji ce = new EmojiSearch.CustomEmoji(null, standard.getSource(), icon, "Smiles", 9999);
+                                    for (String shortcode : standard.getShortcodes()) {
+                                        ce.addShortcode(shortcode);
+                                    }
+                                    emojis.add(ce);
+                                } else {
+                                    emojis.add(new EmojiSearch.CustomEmoji(filename, "*" + filename + "*", icon, "Smiles", 9999));
+                                }
                                 filenamesInList.add(file.getName());
                             }
                         }
                     } catch (final Exception e) {
                         Log.w(Config.LOGTAG, "rescanSmiles: " + e);
                     }
+                }
+                if (!emojis.isEmpty()) {
+                    getPreferences().edit().putBoolean("enable_smiles", true).apply();
                 }
                 emojiSearch.replaceAll(emojis);
                 updateConversationUi();
