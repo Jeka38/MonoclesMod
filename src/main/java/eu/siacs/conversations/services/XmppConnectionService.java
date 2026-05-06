@@ -370,6 +370,27 @@ public class XmppConnectionService extends Service {
             markFileDeleted(file);
         }
     };
+    private final ConversationsFileObserver smilesFileObserver = new ConversationsFileObserver(
+            Environment.getExternalStoragePublicDirectory(Environment.DIRECTORY_DOCUMENTS)
+                    + File.separator
+                    + APP_DIRECTORY
+                    + File.separator
+                    + FileBackend.SMILES
+    ) {
+        @Override
+        public void onEvent(final int event, final File file) {
+            if (file == null) {
+                return;
+            }
+            final String name = file.getName();
+            if (".nomedia".equals(name)) {
+                return;
+            }
+            Log.d(Config.LOGTAG, "smiles file observer event=" + event + " file=" + file);
+            rescanSmiles(true);
+        }
+    };
+
     private final OnMessageAcknowledged mOnMessageAcknowledgedListener = new OnMessageAcknowledged() {
 
         @Override
@@ -1880,6 +1901,7 @@ public class XmppConnectionService extends Service {
         mForceDuringOnCreate.set(false);
         toggleForegroundService();
         rescanSmiles();
+        FILE_OBSERVER_EXECUTOR.execute(this.smilesFileObserver::restartWatching);
         internalPingExecutor.scheduleAtFixedRate(this::manageAccountConnectionStatesInternal,120,120,TimeUnit.SECONDS);
         //start export log service every day at given time
         ScheduleAutomaticExport();
@@ -1962,6 +1984,7 @@ public class XmppConnectionService extends Service {
         }
         destroyed = false;
         fileObserver.stopWatching();
+        smilesFileObserver.stopWatching();
         super.onDestroy();
         internalPingExecutor.shutdown();
         // cancel scheduled exporter
