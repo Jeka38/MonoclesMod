@@ -7078,6 +7078,12 @@ public class XmppConnectionService extends Service {
                                     if (file.exists() && file.canRead()) {
                                         DownloadableFile df = new DownloadableFile(file.getAbsolutePath());
                                         Drawable icon = fileBackend.getThumbnail(df, getResources(), (int) (getResources().getDisplayMetrics().density * 288), false);
+                            if (icon == null) {
+                                icon = Drawable.createFromPath(file.getAbsolutePath());
+                            }
+                            if (icon == null) {
+                                continue;
+                            }
                                         Cid[] cids = fileBackend.calculateCids(new FileInputStream(df));
                                         for (Cid cid : cids) {
                                             saveCid(cid, file);
