@@ -7051,12 +7051,15 @@ public class XmppConnectionService extends Service {
                 List<EmojiSearch.Emoji> emojis = new ArrayList<>();
                 HashSet<String> filenamesInList = new HashSet<>();
                 boolean hasCustomSmilesSource = false;
-                File iconDef = new File(smilesDir, "icondef.xml");
-                if (iconDef.exists()) {
+                for (File iconDef : Files.fileTraverser().breadthFirst(smilesDir)) {
+                    if (!iconDef.isFile() || !iconDef.canRead() || !"icondef.xml".equalsIgnoreCase(iconDef.getName())) {
+                        continue;
+                    }
                     hasCustomSmilesSource = true;
                     try (FileInputStream fis = new FileInputStream(iconDef)) {
                         Element root = XmlElementReader.read(fis);
                         int order = 1000;
+                        final File iconDefParent = iconDef.getParentFile() == null ? smilesDir : iconDef.getParentFile();
                         for (Element iconElement : root.getChildren()) {
                             if ("icon".equals(iconElement.getName())) {
                                 order++;
@@ -7068,7 +7071,10 @@ public class XmppConnectionService extends Service {
                                 }
                                 Element object = iconElement.findChild("object");
                                 if (object != null && !texts.isEmpty()) {
-                                    File file = new File(smilesDir, object.getContent());
+                                    File file = new File(iconDefParent, object.getContent());
+                                    if (!file.exists()) {
+                                        file = new File(smilesDir, object.getContent());
+                                    }
                                     if (file.exists() && file.canRead()) {
                                         DownloadableFile df = new DownloadableFile(file.getAbsolutePath());
                                         Drawable icon = fileBackend.getThumbnail(df, getResources(), (int) (getResources().getDisplayMetrics().density * 288), false);
