@@ -571,6 +571,9 @@ public class UIHelper {
         Matcher matcher = pattern.matcher(text);
         while (matcher.find()) {
             String match = matcher.group();
+            if (!isStandaloneEmojiMatch(text, matcher.start(), matcher.end(), match)) {
+                continue;
+            }
             de.monocles.mod.EmojiSearch.CustomEmoji ce = emojiSearch.findCustomEmoji(match);
             if (ce != null) {
                 Drawable drawable = ce.toInsert().getSpans(0, 1, de.monocles.mod.InlineImageSpan.class)[0].getDrawable();
@@ -581,6 +584,39 @@ public class UIHelper {
             }
         }
         return spannable;
+    }
+
+    private static boolean isStandaloneEmojiMatch(final String text, final int start, final int end, final String match) {
+        if (match.isEmpty()) {
+            return false;
+        }
+        if (isOnlyRepeatedMarker(match, '*')) {
+            return false;
+        }
+        final char first = match.charAt(0);
+        final char last = match.charAt(match.length() - 1);
+        final char before = start > 0 ? text.charAt(start - 1) : '\0';
+        final char after = end < text.length() ? text.charAt(end) : '\0';
+
+        if (before != '\0' && before == first) {
+            return false;
+        }
+        if (after != '\0' && after == last) {
+            return false;
+        }
+        return true;
+    }
+
+    private static boolean isOnlyRepeatedMarker(final String match, final char marker) {
+        if (match.length() < 2) {
+            return false;
+        }
+        for (int i = 0; i < match.length(); i++) {
+            if (match.charAt(i) != marker) {
+                return false;
+            }
+        }
+        return true;
     }
 
     public static String concatNames(List<MucOptions.User> users, int max) {
