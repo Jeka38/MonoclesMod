@@ -570,6 +570,9 @@ public class UIHelper {
         String text = spannable.toString();
         Matcher matcher = pattern.matcher(text);
         while (matcher.find()) {
+            if (!isWrappedByWhitespace(text, matcher.start(), matcher.end())) {
+                continue;
+            }
             String match = matcher.group();
             de.monocles.mod.EmojiSearch.CustomEmoji ce = emojiSearch.findCustomEmoji(match);
             if (ce != null) {
@@ -581,6 +584,13 @@ public class UIHelper {
             }
         }
         return spannable;
+    }
+
+    private static boolean isWrappedByWhitespace(String text, int start, int end) {
+        return start > 0
+                && end < text.length()
+                && Character.isWhitespace(text.charAt(start - 1))
+                && Character.isWhitespace(text.charAt(end));
     }
 
     public static String concatNames(List<MucOptions.User> users, int max) {
