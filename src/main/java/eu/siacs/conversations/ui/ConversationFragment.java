@@ -2043,20 +2043,25 @@ public class ConversationFragment extends XmppFragment
 
 
     public void setupSmiles() {
-        final Pattern lastColonPattern = Pattern.compile("");
         AdapterView.OnItemClickListener listener = (parent, view, position, id) -> {
             EmojiSearch.EmojiSearchAdapter adapter = ((EmojiSearch.EmojiSearchAdapter) parent.getAdapter());
             Editable toInsert = adapter.getItem(position).toInsert();
-            toInsert.append(" ");
-            Editable s = binding.textinput.getText();
+            Editable text = binding.textinput.getText();
+            int start = binding.textinput.getSelectionStart();
 
-            Matcher lastColonMatcher = lastColonPattern.matcher(s);
-            int lastColon = 0;
-            while (lastColonMatcher.find()) lastColon = lastColonMatcher.end();
-            if (lastColon >= 0) {
-                int start = binding.textinput.getSelectionStart(); //this is to get the the cursor position
-                binding.textinput.getText().insert(start, toInsert); //this will get the text and insert the emoji into   the current position
+            final boolean hasLeftWhitespace = start == 0 || Character.isWhitespace(text.charAt(start - 1));
+            final boolean hasRightWhitespace = start == text.length() || Character.isWhitespace(text.charAt(start));
+
+            SpannableStringBuilder insertText = new SpannableStringBuilder();
+            if (!hasLeftWhitespace) {
+                insertText.append(" ");
             }
+            insertText.append(toInsert);
+            if (!hasRightWhitespace) {
+                insertText.append(" ");
+            }
+
+            text.insert(start, insertText);
         };
         binding.smilesview.setOnItemClickListener(listener);
 
