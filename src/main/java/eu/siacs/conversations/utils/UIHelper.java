@@ -587,10 +587,9 @@ public class UIHelper {
     }
 
     private static boolean isWrappedByWhitespace(String text, int start, int end) {
-        return start > 0
-                && end < text.length()
-                && Character.isWhitespace(text.charAt(start - 1))
-                && Character.isWhitespace(text.charAt(end));
+        final boolean hasLeftWhitespace = start == 0 || Character.isWhitespace(text.charAt(start - 1));
+        final boolean hasRightWhitespace = end == text.length() || Character.isWhitespace(text.charAt(end));
+        return hasLeftWhitespace && hasRightWhitespace;
     }
 
     public static String concatNames(List<MucOptions.User> users, int max) {
