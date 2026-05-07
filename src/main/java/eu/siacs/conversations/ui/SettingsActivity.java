@@ -201,7 +201,10 @@ public class SettingsActivity extends XmppActivity implements OnSharedPreference
                         if (inputStream == null) {
                             throw new IOException("Could not open selected ZIP file");
                         }
-                        final File smilesFolder = new File(Environment.getExternalStoragePublicDirectory(Environment.DIRECTORY_DOCUMENTS) + File.separator + APP_DIRECTORY + File.separator + FileBackend.SMILES);
+                        final File documentsDir = getExternalFilesDir(Environment.DIRECTORY_DOCUMENTS);
+                        final File smilesFolder = documentsDir != null
+                                ? new File(documentsDir, APP_DIRECTORY + File.separator + FileBackend.SMILES)
+                                : new File(Environment.getExternalStoragePublicDirectory(Environment.DIRECTORY_DOCUMENTS) + File.separator + APP_DIRECTORY + File.separator + FileBackend.SMILES);
                         if (smilesFolder.exists()) {
                             if (!clearDirectory(smilesFolder)) {
                                 throw new IOException("Could not clear smiles folder");
