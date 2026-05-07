@@ -203,7 +203,9 @@ public class SettingsActivity extends XmppActivity implements OnSharedPreference
                         }
                         final File smilesFolder = new File(Environment.getExternalStoragePublicDirectory(Environment.DIRECTORY_DOCUMENTS) + File.separator + APP_DIRECTORY + File.separator + FileBackend.SMILES);
                         if (smilesFolder.exists()) {
-                            FileUtils.deleteContents(smilesFolder);
+                            if (!clearDirectory(smilesFolder)) {
+                                throw new IOException("Could not clear smiles folder");
+                            }
                         } else if (!smilesFolder.mkdirs()) {
                             throw new IOException("Could not create smiles folder");
                         }
@@ -1279,6 +1281,24 @@ public class SettingsActivity extends XmppActivity implements OnSharedPreference
         } else {
             ToastCompat.makeText(this, R.string.show_intro_again_failed, ToastCompat.LENGTH_SHORT).show();
         }
+    }
+
+    private boolean clearDirectory(final File directory) {
+        final File[] files = directory.listFiles();
+        if (files == null) {
+            return directory.exists();
+        }
+        for (File file : files) {
+            if (file.isDirectory()) {
+                if (!clearDirectory(file) || !file.delete()) {
+                    return false;
+                }
+            } else if (!file.delete()) {
+                return false;
+            }
+        }
+        final File[] remaining = directory.listFiles();
+        return remaining == null || remaining.length == 0;
     }
 
 }
