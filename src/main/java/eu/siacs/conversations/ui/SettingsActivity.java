@@ -202,10 +202,9 @@ public class SettingsActivity extends XmppActivity implements OnSharedPreference
                             throw new IOException("Could not open selected ZIP file");
                         }
                         final File smilesFolder = new File(Environment.getExternalStoragePublicDirectory(Environment.DIRECTORY_DOCUMENTS) + File.separator + APP_DIRECTORY + File.separator + FileBackend.SMILES);
-                        if (smilesFolder.exists() && !deleteDirectory(smilesFolder)) {
-                            throw new IOException("Could not delete existing smiles folder");
-                        }
-                        if (!smilesFolder.mkdirs()) {
+                        if (smilesFolder.exists()) {
+                            FileUtils.deleteContents(smilesFolder);
+                        } else if (!smilesFolder.mkdirs()) {
                             throw new IOException("Could not create smiles folder");
                         }
                         try (InputStream is = inputStream;
@@ -1280,21 +1279,6 @@ public class SettingsActivity extends XmppActivity implements OnSharedPreference
         } else {
             ToastCompat.makeText(this, R.string.show_intro_again_failed, ToastCompat.LENGTH_SHORT).show();
         }
-    }
-    private boolean deleteDirectory(final File directory) {
-        final File[] files = directory.listFiles();
-        if (files != null) {
-            for (File file : files) {
-                if (file.isDirectory()) {
-                    if (!deleteDirectory(file)) {
-                        return false;
-                    }
-                } else if (!file.delete()) {
-                    return false;
-                }
-            }
-        }
-        return directory.delete();
     }
 
 }
