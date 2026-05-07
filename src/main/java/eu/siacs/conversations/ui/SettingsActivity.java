@@ -219,13 +219,31 @@ public class SettingsActivity extends XmppActivity implements OnSharedPreference
                         }
                         java.util.zip.ZipEntry entry;
                         while ((entry = zis.getNextEntry()) != null) {
-                            if (entry.isDirectory()) continue;
-                            String name = entry.getName();
-                            if (name.contains("/")) {
-                                name = name.substring(name.lastIndexOf("/") + 1);
+                            final String entryName = entry.getName();
+                            if (entryName == null || entryName.isEmpty()) {
+                                zis.closeEntry();
+                                continue;
                             }
-                            if (name.isEmpty()) continue;
-                            File outFile = new File(smilesFolder, name);
+                            final File outFile = new File(smilesFolder, entryName);
+                            final String smilesPath = smilesFolder.getCanonicalPath() + File.separator;
+                            final String outPath = outFile.getCanonicalPath();
+                            if (!outPath.startsWith(smilesPath)) {
+                                zis.closeEntry();
+                                throw new IOException("Invalid ZIP entry: " + entryName);
+                            }
+                            if (entry.isDirectory()) {
+                                if (!outFile.exists() && !outFile.mkdirs()) {
+                                    zis.closeEntry();
+                                    throw new IOException("Could not create smiles subfolder");
+                                }
+                                zis.closeEntry();
+                                continue;
+                            }
+                            final File parent = outFile.getParentFile();
+                            if (parent != null && !parent.exists() && !parent.mkdirs()) {
+                                zis.closeEntry();
+                                throw new IOException("Could not create smiles parent folder");
+                            }
                             try (FileOutputStream fos = new FileOutputStream(outFile)) {
                                 byte[] buffer = new byte[4096];
                                 int len;
