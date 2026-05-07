@@ -949,6 +949,30 @@ public class SettingsActivity extends XmppActivity implements OnSharedPreference
             );
         }
 
+        final Preference resetSmilesPack = mSettingsFragment.findPreference("reset_smiles_pack");
+        if (resetSmilesPack != null) {
+            resetSmilesPack.setOnPreferenceClickListener(preference -> {
+                final File documentsDir = getExternalFilesDir(Environment.DIRECTORY_DOCUMENTS);
+                final File smilesFolder = documentsDir != null
+                        ? new File(documentsDir, APP_DIRECTORY + File.separator + FileBackend.SMILES)
+                        : new File(Environment.getExternalStoragePublicDirectory(Environment.DIRECTORY_DOCUMENTS) + File.separator + APP_DIRECTORY + File.separator + FileBackend.SMILES);
+                if (smilesFolder.exists()) {
+                    clearDirectory(smilesFolder);
+                }
+                if (!smilesFolder.exists()) {
+                    smilesFolder.mkdirs();
+                }
+                FileUtils.createNoMedia(smilesFolder);
+                if (xmppConnectionService != null) {
+                    xmppConnectionService.getDrawableCache().evictAll();
+                    xmppConnectionService.emojiSearch().replaceAll(new ArrayList<>());
+                    xmppConnectionService.rescanSmiles(true);
+                }
+                Toast.makeText(this, R.string.smiles_reset_done, Toast.LENGTH_LONG).show();
+                return true;
+            });
+        }
+
         final Preference importOwnGifs = mSettingsFragment.findPreference("import_own_gifs");
         if (importOwnGifs != null) {
             importOwnGifs.setOnPreferenceClickListener(
