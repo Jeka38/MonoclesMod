@@ -7003,6 +7003,10 @@ public class XmppConnectionService extends Service {
 
 
     private File smilesDir() {
+        final File documentsDir = getExternalFilesDir(Environment.DIRECTORY_DOCUMENTS);
+        if (documentsDir != null) {
+            return new File(documentsDir, APP_DIRECTORY + File.separator + FileBackend.SMILES);
+        }
         return new File(Environment.getExternalStoragePublicDirectory(Environment.DIRECTORY_DOCUMENTS) + File.separator + APP_DIRECTORY + File.separator + FileBackend.SMILES);
     }
 

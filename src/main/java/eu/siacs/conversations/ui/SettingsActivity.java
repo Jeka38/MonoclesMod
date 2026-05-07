@@ -196,13 +196,24 @@ public class SettingsActivity extends XmppActivity implements OnSharedPreference
             if (resultCode == RESULT_OK && data != null && data.getData() != null) {
                 final Uri zipUri = data.getData();
                 new Thread(() -> {
-                    try (InputStream is = getContentResolver().openInputStream(zipUri);
-                         java.util.zip.ZipInputStream zis = new java.util.zip.ZipInputStream(is)) {
-                        File smilesFolder = new File(Environment.getExternalStoragePublicDirectory(Environment.DIRECTORY_DOCUMENTS) + File.separator + APP_DIRECTORY + File.separator + FileBackend.SMILES);
-                        if (!smilesFolder.exists()) {
-                            smilesFolder.mkdirs();
+                    try {
+                        final InputStream inputStream = getContentResolver().openInputStream(zipUri);
+                        if (inputStream == null) {
+                            throw new IOException("Could not open selected ZIP file");
                         }
-                        FileUtils.deleteContents(smilesFolder);
+                        final File documentsDir = getExternalFilesDir(Environment.DIRECTORY_DOCUMENTS);
+                        final File smilesFolder = documentsDir != null
+                                ? new File(documentsDir, APP_DIRECTORY + File.separator + FileBackend.SMILES)
+                                : new File(Environment.getExternalStoragePublicDirectory(Environment.DIRECTORY_DOCUMENTS) + File.separator + APP_DIRECTORY + File.separator + FileBackend.SMILES);
+                        if (smilesFolder.exists()) {
+                            if (!clearDirectory(smilesFolder)) {
+                                throw new IOException("Could not clear smiles folder");
+                            }
+                        } else if (!smilesFolder.mkdirs()) {
+                            throw new IOException("Could not create smiles folder");
+                        }
+                        try (InputStream is = inputStream;
+                             java.util.zip.ZipInputStream zis = new java.util.zip.ZipInputStream(is)) {
                         FileUtils.createNoMedia(smilesFolder);
                         if (xmppConnectionService != null) {
                             xmppConnectionService.getDrawableCache().evictAll();
@@ -211,13 +222,31 @@ public class SettingsActivity extends XmppActivity implements OnSharedPreference
                         }
                         java.util.zip.ZipEntry entry;
                         while ((entry = zis.getNextEntry()) != null) {
-                            if (entry.isDirectory()) continue;
-                            String name = entry.getName();
-                            if (name.contains("/")) {
-                                name = name.substring(name.lastIndexOf("/") + 1);
+                            final String entryName = entry.getName();
+                            if (entryName == null || entryName.isEmpty()) {
+                                zis.closeEntry();
+                                continue;
                             }
-                            if (name.isEmpty()) continue;
-                            File outFile = new File(smilesFolder, name);
+                            final File outFile = new File(smilesFolder, entryName);
+                            final String smilesPath = smilesFolder.getCanonicalPath() + File.separator;
+                            final String outPath = outFile.getCanonicalPath();
+                            if (!outPath.startsWith(smilesPath)) {
+                                zis.closeEntry();
+                                throw new IOException("Invalid ZIP entry: " + entryName);
+                            }
+                            if (entry.isDirectory()) {
+                                if (!outFile.exists() && !outFile.mkdirs()) {
+                                    zis.closeEntry();
+                                    throw new IOException("Could not create smiles subfolder");
+                                }
+                                zis.closeEntry();
+                                continue;
+                            }
+                            final File parent = outFile.getParentFile();
+                            if (parent != null && !parent.exists() && !parent.mkdirs()) {
+                                zis.closeEntry();
+                                throw new IOException("Could not create smiles parent folder");
+                            }
                             try (FileOutputStream fos = new FileOutputStream(outFile)) {
                                 byte[] buffer = new byte[4096];
                                 int len;
@@ -232,6 +261,7 @@ public class SettingsActivity extends XmppActivity implements OnSharedPreference
                             xmppConnectionService.rescanSmiles(true);
                         }
                         runOnUiThread(() -> Toast.makeText(this, R.string.smiles_imported, Toast.LENGTH_LONG).show());
+                        }
                     } catch (IOException e) {
                         runOnUiThread(() -> Toast.makeText(this, "Failed to import smiles", Toast.LENGTH_LONG).show());
                         Log.e(Config.LOGTAG, "Failed to import smiles", e);
@@ -919,6 +949,30 @@ public class SettingsActivity extends XmppActivity implements OnSharedPreference
             );
         }
 
+        final Preference resetSmilesPack = mSettingsFragment.findPreference("reset_smiles_pack");
+        if (resetSmilesPack != null) {
+            resetSmilesPack.setOnPreferenceClickListener(preference -> {
+                final File documentsDir = getExternalFilesDir(Environment.DIRECTORY_DOCUMENTS);
+                final File smilesFolder = documentsDir != null
+                        ? new File(documentsDir, APP_DIRECTORY + File.separator + FileBackend.SMILES)
+                        : new File(Environment.getExternalStoragePublicDirectory(Environment.DIRECTORY_DOCUMENTS) + File.separator + APP_DIRECTORY + File.separator + FileBackend.SMILES);
+                if (smilesFolder.exists()) {
+                    clearDirectory(smilesFolder);
+                }
+                if (!smilesFolder.exists()) {
+                    smilesFolder.mkdirs();
+                }
+                FileUtils.createNoMedia(smilesFolder);
+                if (xmppConnectionService != null) {
+                    xmppConnectionService.getDrawableCache().evictAll();
+                    xmppConnectionService.emojiSearch().replaceAll(new ArrayList<>());
+                    xmppConnectionService.rescanSmiles(true);
+                }
+                Toast.makeText(this, R.string.smiles_reset_done, Toast.LENGTH_LONG).show();
+                return true;
+            });
+        }
+
         final Preference importOwnGifs = mSettingsFragment.findPreference("import_own_gifs");
         if (importOwnGifs != null) {
             importOwnGifs.setOnPreferenceClickListener(
@@ -1273,4 +1327,23 @@ public class SettingsActivity extends XmppActivity implements OnSharedPreference
             ToastCompat.makeText(this, R.string.show_intro_again_failed, ToastCompat.LENGTH_SHORT).show();
         }
     }
+
+    private boolean clearDirectory(final File directory) {
+        final File[] files = directory.listFiles();
+        if (files == null) {
+            return directory.exists();
+        }
+        for (File file : files) {
+            if (file.isDirectory()) {
+                if (!clearDirectory(file) || !file.delete()) {
+                    return false;
+                }
+            } else if (!file.delete()) {
+                return false;
+            }
+        }
+        final File[] remaining = directory.listFiles();
+        return remaining == null || remaining.length == 0;
+    }
+
 }
