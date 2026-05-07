@@ -196,13 +196,18 @@ public class SettingsActivity extends XmppActivity implements OnSharedPreference
             if (resultCode == RESULT_OK && data != null && data.getData() != null) {
                 final Uri zipUri = data.getData();
                 new Thread(() -> {
-                    try (InputStream is = getContentResolver().openInputStream(zipUri);
-                         java.util.zip.ZipInputStream zis = new java.util.zip.ZipInputStream(is)) {
-                        File smilesFolder = new File(Environment.getExternalStoragePublicDirectory(Environment.DIRECTORY_DOCUMENTS) + File.separator + APP_DIRECTORY + File.separator + FileBackend.SMILES);
-                        if (!smilesFolder.exists()) {
-                            smilesFolder.mkdirs();
+                    try {
+                        final InputStream inputStream = getContentResolver().openInputStream(zipUri);
+                        if (inputStream == null) {
+                            throw new IOException("Could not open selected ZIP file");
+                        }
+                        final File smilesFolder = new File(Environment.getExternalStoragePublicDirectory(Environment.DIRECTORY_DOCUMENTS) + File.separator + APP_DIRECTORY + File.separator + FileBackend.SMILES);
+                        if (!smilesFolder.exists() && !smilesFolder.mkdirs()) {
+                            throw new IOException("Could not create smiles folder");
                         }
                         FileUtils.deleteContents(smilesFolder);
+                        try (InputStream is = inputStream;
+                             java.util.zip.ZipInputStream zis = new java.util.zip.ZipInputStream(is)) {
                         FileUtils.createNoMedia(smilesFolder);
                         if (xmppConnectionService != null) {
                             xmppConnectionService.getDrawableCache().evictAll();
@@ -232,6 +237,7 @@ public class SettingsActivity extends XmppActivity implements OnSharedPreference
                             xmppConnectionService.rescanSmiles(true);
                         }
                         runOnUiThread(() -> Toast.makeText(this, R.string.smiles_imported, Toast.LENGTH_LONG).show());
+                        }
                     } catch (IOException e) {
                         runOnUiThread(() -> Toast.makeText(this, "Failed to import smiles", Toast.LENGTH_LONG).show());
                         Log.e(Config.LOGTAG, "Failed to import smiles", e);
