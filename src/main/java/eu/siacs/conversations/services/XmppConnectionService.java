@@ -105,6 +105,7 @@ import com.google.common.base.Objects;
 import com.google.common.base.Strings;
 import com.google.common.collect.ComparisonChain;
 import com.google.common.collect.Collections2;
+import com.google.common.collect.HashMultimap;
 import com.google.common.collect.Iterables;
 import com.google.common.collect.Multimap;
 
@@ -311,7 +312,7 @@ public class XmppConnectionService extends Service {
         }
     };
     public DatabaseBackend databaseBackend;
-    private Multimap<String, String> mutedMucUsers;
+    private final Multimap<String, String> mutedMucUsers = HashMultimap.create();
     private final ReplacingSerialSingleThreadExecutor mContactMergerExecutor = new ReplacingSerialSingleThreadExecutor("ContactMerger");
     private final ReplacingSerialSingleThreadExecutor mSmilesScanExecutor = new ReplacingSerialSingleThreadExecutor("SmilesScan");
     private long mLastActivity = 0;
@@ -2927,7 +2928,11 @@ public class XmppConnectionService extends Service {
                     if (DatabaseBackend.requiresMessageIndexRebuild()) {
                         DatabaseBackend.getInstance(this).rebuildMessagesIndex();
                     }
-                    mutedMucUsers = databaseBackend.loadMutedMucUsers();
+                    final Multimap<String, String> loadedMutedMucUsers = databaseBackend.loadMutedMucUsers();
+                    synchronized (mutedMucUsers) {
+                        mutedMucUsers.clear();
+                        mutedMucUsers.putAll(loadedMutedMucUsers);
+                    }
                     final long deletionDate = getAutomaticMessageDeletionDate();
                     mLastExpiryRun.set(SystemClock.elapsedRealtime());
                     if (deletionDate > 0) {
@@ -6751,19 +6756,25 @@ public class XmppConnectionService extends Service {
     public boolean muteMucUser(MucOptions.User user) {
         boolean muted = databaseBackend.muteMucUser(user);
         if (!muted) return false;
-        mutedMucUsers.put(user.getMuc().toString(), user.getOccupantId());
+        synchronized (mutedMucUsers) {
+            mutedMucUsers.put(user.getMuc().toString(), user.getOccupantId());
+        }
         return true;
     }
 
     public boolean unmuteMucUser(MucOptions.User user) {
         boolean unmuted = databaseBackend.unmuteMucUser(user);
         if (!unmuted) return false;
-        mutedMucUsers.remove(user.getMuc().toString(), user.getOccupantId());
+        synchronized (mutedMucUsers) {
+            mutedMucUsers.remove(user.getMuc().toString(), user.getOccupantId());
+        }
         return true;
     }
 
     public boolean isMucUserMuted(MucOptions.User user) {
-        return mutedMucUsers.containsEntry("" + user.getMuc(), user.getOccupantId());
+        synchronized (mutedMucUsers) {
+            return mutedMucUsers.containsEntry("" + user.getMuc(), user.getOccupantId());
+        }
     }
 
     public void blockMedia(File f) {

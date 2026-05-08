@@ -10,8 +10,10 @@ import java.io.File;
 import java.io.FileInputStream;
 import java.io.InputStream;
 import java.util.ArrayList;
+import java.util.HashMap;
 import java.util.HashSet;
 import java.util.List;
+import java.util.Collections;
 import java.util.Locale;
 import java.util.Map;
 import java.util.Set;
@@ -30,6 +32,9 @@ public final class ClientIconUtils {
 
     private ClientIconUtils() {
     }
+
+    private static final List<ClientRule> CLIENT_ICON_RULES = createClientRules();
+    private static final List<ClientRule> GENERIC_ICON_RULES = createGenericRules();
 
     public static boolean applyRosterClientIcon(final ImageView imageView, final Contact contact) {
         if (contact == null) {
@@ -168,228 +173,27 @@ public final class ClientIconUtils {
             return null;
         }
         final String name = rawName.toLowerCase(Locale.ROOT);
-        if (name.contains("adium")) {
-            return R.drawable.client_adium;
-        } else if (name.contains("github.com/snuk182/aceim")) {
-            return R.drawable.client_aceim;
-        } else if (name.contains("aqq.eu")) {
-            return R.drawable.client_aqq;
-        } else if (name.contains("barobin.com/caps")) {
-            return R.drawable.client_bayan;
-        } else if (name.contains("beem-project.com")) {
-            return R.drawable.client_beem;
-        } else if (name.contains("bitlbee.org/xmpp/caps")) {
-            return R.drawable.client_bitlbee;
-        } else if (name.contains("blabber")) {
-            return R.drawable.client_blabber;
-        } else if (name.contains("simpleapps.ru/caps") || name.contains("blacksmith-2.googlecode.com/svn/") || name.contains("matrix.bz/safety") || name.contains("matrix.bz")) {
-            return R.drawable.client_blacksmith_bot;
-        } else if (name.contains("bluejabb")) {
-            return R.drawable.client_bluejabb;
-        } else if (name.contains("bombusmod.net.ru") || name.contains("github.com/bombusmod/caps")) {
-            return R.drawable.client_bombusmod;
-        } else if (name.contains("bombusmod-qd.wen.ru")) {
-            return R.drawable.client_bombusqd;
-        } else if (name.contains("bombus-im.org/ng") || name.contains("bombus-ng")) {
-            return R.drawable.client_bombusng;
-        } else if (name.contains("bombus.pl")) {
-            return R.drawable.client_bombuspl;
-        } else if (name.contains("bombus+") || name.contains("voffk.org.ru")) {
-            return R.drawable.client_bombusplus;
-        } else if (name.contains("bombus-im.org/java")) {
-            return R.drawable.client_bombus;
-        } else if (name.contains("dino-im.org") || name.contains("dino.im") || name.contains("dino")) {
-            return R.drawable.client_dino;
-        } else if (name.contains("exodus.jabberstudio.org/caps")) {
-            return R.drawable.client_exodus;
-        } else if (name.contains("eyecu.ru")) {
-            return R.drawable.client_eyecu;
-        } else if (name.contains("urn:xmpp:rtt:0")) {
-            return R.drawable.client_fasttext;
-        } else if (name.contains("jabga.ru")) {
-            return R.drawable.client_fj;
-        } else if (name.contains("freomessenger.com/caps")) {
-            return R.drawable.client_freomessenger;
-        } else if (name.contains("freq-bot.net")) {
-            return R.drawable.client_freq;
-        } else if (name.contains("cheogram")) {
-            return R.drawable.client_cheogram;
-        } else if (name.contains("climm.org/xmpp/caps")) {
-            return R.drawable.client_climm;
-        } else if (name.contains("coccinella.sourceforge.net/protocol/caps")) {
-            return R.drawable.client_coccinella;
-        } else if (name.contains("c0nnect.de") || name.contains("c0nnecteasy")) {
-            return R.drawable.client_con0pro;
-        } else if (name.contains("sum7.eu") || name.contains("conv6ations")) {
-            return R.drawable.client_conv6ations;
-        } else if (name.contains("conversations.im") || name.contains("conversations")) {
-            return R.drawable.client_conversations;
-        } else if (name.contains("github.com/jeka38/conversations-classic-mod")) {
-            return R.drawable.client_conversations_mod;
-        } else if (name.contains("dev.narayana.im/narayana/conversations-classic") || name.contains("conversations-classic") || name.contains("conversations classic")) {
-            return R.drawable.client_conversations_old;
-        } else if (name.contains("gajim")) {
-            return R.drawable.client_gajim;
-        } else if (name.contains("gmail")) {
-            return R.drawable.client_gmail;
-        } else if (name.contains("isida-bot.com") || name.contains("isida")) {
-            return R.drawable.client_isida;
-        } else if (name.contains("jabbim")) {
-            return R.drawable.client_jabbim;
-        } else if (name.contains("jabbroid.akuz.de/caps")) {
-            return R.drawable.client_jabbroid;
-        } else if (name.contains("jajc.jrudevels.org/caps")) {
-            return R.drawable.client_jajc;
-        } else if (name.contains("jimm.net.ru/caps")) {
-            return R.drawable.client_jimm;
-        } else if (name.contains("jitsi.org")) {
-            return R.drawable.client_jitsi;
-        } else if (name.contains("kadu.im/caps")) {
-            return R.drawable.client_kadu;
-        } else if (name.contains("jtalk.ustyugov.net/caps")) {
-            return R.drawable.client_jtalk;
-        } else if (name.contains("juick") || name.contains("juick.com/caps") || name.contains("xmpp.rocks")) {
-            return R.drawable.client_juick;
-        } else if (name.contains("kopete.kde.org/jabber/caps")) {
-            return R.drawable.client_kopete;
-        } else if (name.contains("bluendo.com/protocol/caps")) {
-            return R.drawable.client_lampiro;
-        } else if (name.contains("leechcraft")) {
-            return R.drawable.client_leechcraft;
-        } else if (name.contains("loqui.im")) {
-            return R.drawable.client_loqui;
-        } else if (name.contains("mchat")) {
-            return R.drawable.client_mchat;
-        } else if (name.contains("miranda-im.org/caps") || name.contains("miranda.sourceforge.net")) {
-            return R.drawable.client_miranda;
-        } else if (name.contains("miranda-ng.org/caps")) {
-            return R.drawable.client_miranda_ng;
-        } else if (name.contains("mail.google.com")) {
-            return R.drawable.client_gmail;
-        } else if (name.contains("tomclaw.com/mandarin_im/caps")) {
-            return R.drawable.client_mandarin;
-        } else if (name.contains("mcabber")) {
-            return R.drawable.client_mcabber;
-        } else if (name.contains("monal.im/caps")) {
-            return R.drawable.client_monal;
-        } else if (name.contains("monocles")) {
-            return R.drawable.client_monocles;
-        } else if (name.contains("moxl.movim.eu") || name.contains("movim")) {
-            return R.drawable.client_movim;
-        } else if (name.contains("nimbuzz")) {
-            return R.drawable.client_nimbuzz;
-        } else if (name.contains("slixmpp.com/ver/")) {
-            return R.drawable.client_poezio_new;
-        } else if (name.contains("profanity")) {
-            return R.drawable.client_profanity;
-        } else if (name.contains("psi-im.org") || name.contains("psi")) {
-            return R.drawable.client_psi;
-        } else if (name.contains("psi+") || name.contains("psi-dev") || name.contains("psi-plus.com")) {
-            return R.drawable.client_psiplus;
-        } else if (name.contains("qip")) {
-            return R.drawable.client_qip;
-        } else if (name.contains("2010.qip.ru/caps")) {
-            return R.drawable.client_qip2010;
-        } else if (name.contains("pda.qip.ru")) {
-            return R.drawable.client_qippda;
-        } else if (name.contains("pako.googlecode.com")) {
-            return R.drawable.client_pako;
-        } else if (name.contains("pandion.im")) {
-            return R.drawable.client_pandion;
-        } else if (name.contains("pidgin")) {
-            return R.drawable.client_pidgin;
-        } else if (name.contains("jabber.pix-art.de") || name.contains("pix-art messenger")) {
-            return R.drawable.client_pixart;
-        } else if (name.contains("poez.io") || name.contains("poezio")) {
-            return R.drawable.client_poezio;
-        } else if (name.contains("oneteam.im/caps")) {
-            return R.drawable.client_oneteam;
-        } else if (name.contains("oneteam_iphone")) {
-            return R.drawable.client_oneteamiphone;
-        } else if (name.contains("code.google.com/p/qxmpp")) {
-            return R.drawable.client_qt;
-        } else if (name.contains("qutim.org")) {
-            return R.drawable.client_qutim;
-        } else if (name.contains("riddim")) {
-            return R.drawable.client_riddim;
-        } else if (name.contains("sawim.ru/caps")) {
-            return R.drawable.client_sawim;
-        } else if (name.contains("www.igniterealtime.org/projects/smack/") || name.contains("xabber")) {
-            return R.drawable.client_xabber;
-        } else if (name.contains("conversions.fjsdevelopment.weebly.com")) {
-            return R.drawable.client_secugab;
-        } else if (name.contains("safetyjabber.com/caps")) {
-            return R.drawable.client_sj;
-        } else if (name.contains("www.lonelycatgames.com/slick/caps")) {
-            return R.drawable.client_slick;
-        } else if (name.contains("smuxi.im")) {
-            return R.drawable.client_smuxi;
-        } else if (name.contains("swift.im")) {
-            return R.drawable.client_swift;
-        } else if (name.contains("google.com/xmpp/client/caps") || name.contains("talkonaut")) {
-            return R.drawable.client_talkonaut;
-        } else if (name.contains("talk.google.com") || name.contains("gtalk")) {
-            return R.drawable.client_gtalk;
-        } else if (name.contains("tigase.org/messenger")) {
-            return R.drawable.client_tigase;
-        } else if (name.contains("tkabber.jabber.ru/")) {
-            return R.drawable.client_tkabber;
-        } else if (name.contains("trillian.im/caps")) {
-            return R.drawable.client_trillian;
-        } else if (name.contains("palringo.com/caps")) {
-            return R.drawable.client_utalk;
-        } else if (name.contains("vacuum")) {
-            return R.drawable.client_vacuum;
-        } else if (name.contains("wime")) {
-            return R.drawable.client_wime;
-        } else if (name.contains("wtw.k2t.eu/")) {
-            return R.drawable.client_wtw;
-        } else if (name.contains("telepathy.freedesktop.org")) {
-            return R.drawable.client_telepathy;
-        } else if (name.contains("online.yandex.ru")) {
-            return R.drawable.client_yaonline;
-        } else if (name.contains("yaxim") || name.contains("smack")) {
-            return R.drawable.client_yaxim;
-        } else if (name.contains("pjc.googlecode.com")) {
-            return R.drawable.client_pjc;
-        } else if (name.contains("android.com/gtalk/client") || name.contains("android") || name.contains("quicksy")) {
-            return R.drawable.client_android;
-        } else if (name.contains("habahaba.im/")) {
-            return R.drawable.client_habahaba;
-        } else if (name.contains("apple.com/ichat/caps")) {
-            return R.drawable.client_ichat;
-        } else if (name.contains("imov")) {
-            return R.drawable.client_imov;
-        } else if (name.contains("chat.jabbercity.ru/caps")) {
-            return R.drawable.client_jabbercity;
-        } else if (name.contains("emacs-jabber.sourceforge.net")) {
-            return R.drawable.client_jabber_el;
-        } else if (name.contains("jabify.com/caps")) {
-            return R.drawable.client_jabify;
-        } else if (name.contains("jabiru.mzet.net/caps")) {
-            return R.drawable.client_jabiru;
-        } else if (name.contains("jappix")) {
-            return R.drawable.client_jappix;
-        } else if (name.contains("pjc")) {
-            return R.drawable.client_pjc;
-        } else if (name.contains("mobileagent")) {
-            return R.drawable.client_mobileagent;
-        } else if (name.contains("meebo")) {
-            return R.drawable.client_meebo;
-        } else if (name.contains("jasmineicq.ru/caps")) {
-            return R.drawable.client_jasmine;
+        final Integer mappedIcon = matchClientRule(name);
+        if (mappedIcon != null) {
+            return mappedIcon;
         }
+        return matchGenericClientRule(name);
+    }
 
-        if (name.contains("android") || name.contains("quicksy") || name.contains("conversations")
-                || name.contains("monocles") || name.contains("cheogram") || name.contains("yaxim")
-                || name.contains("blabber")) {
-            return R.drawable.ic_client_phone;
-        } else if (name.contains("web") || name.contains("browser")) {
-            return R.drawable.ic_client_web;
-        } else if (name.contains("gajim") || name.contains("psi") || name.contains("pidgin")
-                || name.contains("dino") || name.contains("kaidan") || name.contains("poezio")
-                || name.contains("profanity") || name.contains("beagle")) {
-            return R.drawable.ic_client_pc;
+    private static Integer matchClientRule(final String name) {
+        for (ClientRule rule : CLIENT_ICON_RULES) {
+            if (rule.matches(name)) {
+                return rule.iconRes;
+            }
+        }
+        return null;
+    }
+
+    private static Integer matchGenericClientRule(final String name) {
+        for (ClientRule rule : GENERIC_ICON_RULES) {
+            if (rule.matches(name)) {
+                return rule.iconRes;
+            }
         }
         return null;
     }
@@ -502,9 +306,10 @@ public final class ClientIconUtils {
                 return direct;
             }
         }
-        for (Map.Entry<String, Presence> entry : contact.getPresences().getPresencesMap().entrySet()) {
-            if (entry.getValue() != null) {
-                return entry.getValue();
+        final Map<String, Presence> presencesSnapshot = new HashMap<>(contact.getPresences().getPresencesMap());
+        for (Presence value : presencesSnapshot.values()) {
+            if (value != null) {
+                return value;
             }
         }
         return null;
@@ -532,6 +337,126 @@ public final class ClientIconUtils {
             return nodeIcon;
         }
         return inferIconByClientName(presence.getVer());
+    }
+
+    private static List<ClientRule> createClientRules() {
+        final ArrayList<ClientRule> rules = new ArrayList<>();
+        rules.add(rule(R.drawable.client_adium, "adium"));
+        rules.add(rule(R.drawable.client_aceim, "github.com/snuk182/aceim"));
+        rules.add(rule(R.drawable.client_aqq, "aqq.eu"));
+        rules.add(rule(R.drawable.client_bayan, "barobin.com/caps"));
+        rules.add(rule(R.drawable.client_beem, "beem-project.com"));
+        rules.add(rule(R.drawable.client_bitlbee, "bitlbee.org/xmpp/caps"));
+        rules.add(rule(R.drawable.client_blabber, "blabber"));
+        rules.add(rule(R.drawable.client_blacksmith_bot, "simpleapps.ru/caps", "blacksmith-2.googlecode.com/svn/", "matrix.bz/safety", "matrix.bz"));
+        rules.add(rule(R.drawable.client_bluejabb, "bluejabb"));
+        rules.add(rule(R.drawable.client_bombusmod, "bombusmod.net.ru", "github.com/bombusmod/caps"));
+        rules.add(rule(R.drawable.client_bombusqd, "bombusmod-qd.wen.ru"));
+        rules.add(rule(R.drawable.client_bombusng, "bombus-im.org/ng", "bombus-ng"));
+        rules.add(rule(R.drawable.client_bombuspl, "bombus.pl"));
+        rules.add(rule(R.drawable.client_bombusplus, "bombus+", "voffk.org.ru"));
+        rules.add(rule(R.drawable.client_bombus, "bombus-im.org/java"));
+        rules.add(rule(R.drawable.client_dino, "dino-im.org", "dino.im", "dino"));
+        rules.add(rule(R.drawable.client_exodus, "exodus.jabberstudio.org/caps"));
+        rules.add(rule(R.drawable.client_eyecu, "eyecu.ru"));
+        rules.add(rule(R.drawable.client_fasttext, "urn:xmpp:rtt:0"));
+        rules.add(rule(R.drawable.client_fj, "jabga.ru"));
+        rules.add(rule(R.drawable.client_freomessenger, "freomessenger.com/caps"));
+        rules.add(rule(R.drawable.client_freq, "freq-bot.net"));
+        rules.add(rule(R.drawable.client_cheogram, "cheogram"));
+        rules.add(rule(R.drawable.client_climm, "climm.org/xmpp/caps"));
+        rules.add(rule(R.drawable.client_coccinella, "coccinella.sourceforge.net/protocol/caps"));
+        rules.add(rule(R.drawable.client_con0pro, "c0nnect.de", "c0nnecteasy"));
+        rules.add(rule(R.drawable.client_conv6ations, "sum7.eu", "conv6ations"));
+        rules.add(rule(R.drawable.client_conversations, "conversations.im", "conversations"));
+        rules.add(rule(R.drawable.client_conversations_mod, "github.com/jeka38/conversations-classic-mod"));
+        rules.add(rule(R.drawable.client_conversations_old, "dev.narayana.im/narayana/conversations-classic", "conversations-classic", "conversations classic"));
+        rules.add(rule(R.drawable.client_gajim, "gajim"));
+        rules.add(rule(R.drawable.client_gmail, "gmail", "mail.google.com"));
+        rules.add(rule(R.drawable.client_isida, "isida-bot.com", "isida"));
+        rules.add(rule(R.drawable.client_jabbim, "jabbim"));
+        rules.add(rule(R.drawable.client_jabbroid, "jabbroid.akuz.de/caps"));
+        rules.add(rule(R.drawable.client_jajc, "jajc.jrudevels.org/caps"));
+        rules.add(rule(R.drawable.client_jimm, "jimm.net.ru/caps"));
+        rules.add(rule(R.drawable.client_jitsi, "jitsi.org"));
+        rules.add(rule(R.drawable.client_kadu, "kadu.im/caps"));
+        rules.add(rule(R.drawable.client_jtalk, "jtalk.ustyugov.net/caps"));
+        rules.add(rule(R.drawable.client_juick, "juick", "juick.com/caps", "xmpp.rocks"));
+        rules.add(rule(R.drawable.client_kopete, "kopete.kde.org/jabber/caps"));
+        rules.add(rule(R.drawable.client_lampiro, "bluendo.com/protocol/caps"));
+        rules.add(rule(R.drawable.client_leechcraft, "leechcraft"));
+        rules.add(rule(R.drawable.client_loqui, "loqui.im"));
+        rules.add(rule(R.drawable.client_mchat, "mchat"));
+        rules.add(rule(R.drawable.client_miranda, "miranda-im.org/caps", "miranda.sourceforge.net"));
+        rules.add(rule(R.drawable.client_miranda_ng, "miranda-ng.org/caps"));
+        rules.add(rule(R.drawable.client_mandarin, "tomclaw.com/mandarin_im/caps"));
+        rules.add(rule(R.drawable.client_mcabber, "mcabber"));
+        rules.add(rule(R.drawable.client_monal, "monal.im/caps"));
+        rules.add(rule(R.drawable.client_monocles, "monocles"));
+        rules.add(rule(R.drawable.client_movim, "moxl.movim.eu", "movim"));
+        rules.add(rule(R.drawable.client_nimbuzz, "nimbuzz"));
+        rules.add(rule(R.drawable.client_poezio_new, "slixmpp.com/ver/"));
+        rules.add(rule(R.drawable.client_profanity, "profanity"));
+        rules.add(rule(R.drawable.client_psi, "psi-im.org", "psi"));
+        rules.add(rule(R.drawable.client_psiplus, "psi+", "psi-dev", "psi-plus.com"));
+        rules.add(rule(R.drawable.client_qip, "qip"));
+        rules.add(rule(R.drawable.client_qip2010, "2010.qip.ru/caps"));
+        rules.add(rule(R.drawable.client_qippda, "pda.qip.ru"));
+        rules.add(rule(R.drawable.client_pako, "pako.googlecode.com"));
+        rules.add(rule(R.drawable.client_pandion, "pandion.im"));
+        rules.add(rule(R.drawable.client_pidgin, "pidgin"));
+        rules.add(rule(R.drawable.client_pixart, "jabber.pix-art.de", "pix-art messenger"));
+        rules.add(rule(R.drawable.client_poezio, "poez.io", "poezio"));
+        rules.add(rule(R.drawable.client_oneteam, "oneteam.im/caps"));
+        rules.add(rule(R.drawable.client_oneteamiphone, "oneteam_iphone"));
+        rules.add(rule(R.drawable.client_qt, "code.google.com/p/qxmpp"));
+        rules.add(rule(R.drawable.client_qutim, "qutim.org"));
+        rules.add(rule(R.drawable.client_riddim, "riddim"));
+        rules.add(rule(R.drawable.client_sawim, "sawim.ru/caps"));
+        rules.add(rule(R.drawable.client_xabber, "www.igniterealtime.org/projects/smack/", "xabber"));
+        rules.add(rule(R.drawable.client_secugab, "conversions.fjsdevelopment.weebly.com"));
+        rules.add(rule(R.drawable.client_sj, "safetyjabber.com/caps"));
+        rules.add(rule(R.drawable.client_slick, "www.lonelycatgames.com/slick/caps"));
+        rules.add(rule(R.drawable.client_smuxi, "smuxi.im"));
+        rules.add(rule(R.drawable.client_swift, "swift.im"));
+        rules.add(rule(R.drawable.client_talkonaut, "google.com/xmpp/client/caps", "talkonaut"));
+        rules.add(rule(R.drawable.client_gtalk, "talk.google.com", "gtalk"));
+        rules.add(rule(R.drawable.client_tigase, "tigase.org/messenger"));
+        rules.add(rule(R.drawable.client_tkabber, "tkabber.jabber.ru/"));
+        rules.add(rule(R.drawable.client_trillian, "trillian.im/caps"));
+        rules.add(rule(R.drawable.client_utalk, "palringo.com/caps"));
+        rules.add(rule(R.drawable.client_vacuum, "vacuum"));
+        rules.add(rule(R.drawable.client_wime, "wime"));
+        rules.add(rule(R.drawable.client_wtw, "wtw.k2t.eu/"));
+        rules.add(rule(R.drawable.client_telepathy, "telepathy.freedesktop.org"));
+        rules.add(rule(R.drawable.client_yaonline, "online.yandex.ru"));
+        rules.add(rule(R.drawable.client_yaxim, "yaxim", "smack"));
+        rules.add(rule(R.drawable.client_pjc, "pjc.googlecode.com", "pjc"));
+        rules.add(rule(R.drawable.client_android, "android.com/gtalk/client", "android", "quicksy"));
+        rules.add(rule(R.drawable.client_habahaba, "habahaba.im/"));
+        rules.add(rule(R.drawable.client_ichat, "apple.com/ichat/caps"));
+        rules.add(rule(R.drawable.client_imov, "imov"));
+        rules.add(rule(R.drawable.client_jabbercity, "chat.jabbercity.ru/caps"));
+        rules.add(rule(R.drawable.client_jabber_el, "emacs-jabber.sourceforge.net"));
+        rules.add(rule(R.drawable.client_jabify, "jabify.com/caps"));
+        rules.add(rule(R.drawable.client_jabiru, "jabiru.mzet.net/caps"));
+        rules.add(rule(R.drawable.client_jappix, "jappix"));
+        rules.add(rule(R.drawable.client_mobileagent, "mobileagent"));
+        rules.add(rule(R.drawable.client_meebo, "meebo"));
+        rules.add(rule(R.drawable.client_jasmine, "jasmineicq.ru/caps"));
+        return Collections.unmodifiableList(rules);
+    }
+
+    private static List<ClientRule> createGenericRules() {
+        final ArrayList<ClientRule> rules = new ArrayList<>();
+        rules.add(rule(R.drawable.ic_client_phone, "android", "quicksy", "conversations", "monocles", "cheogram", "yaxim", "blabber"));
+        rules.add(rule(R.drawable.ic_client_web, "web", "browser"));
+        rules.add(rule(R.drawable.ic_client_pc, "gajim", "psi", "pidgin", "dino", "kaidan", "poezio", "profanity", "beagle"));
+        return Collections.unmodifiableList(rules);
+    }
+
+    private static ClientRule rule(final int iconRes, final String... tokens) {
+        return new ClientRule(iconRes, tokens);
     }
 
     private static void addCandidate(final Set<String> candidates, final String value) {
@@ -632,6 +557,25 @@ public final class ClientIconUtils {
             // fallback to generic name matching
         }
         return entries;
+    }
+
+    private static final class ClientRule {
+        private final int iconRes;
+        private final String[] tokens;
+
+        private ClientRule(final int iconRes, final String... tokens) {
+            this.iconRes = iconRes;
+            this.tokens = tokens;
+        }
+
+        private boolean matches(final String haystack) {
+            for (String token : tokens) {
+                if (haystack.contains(token)) {
+                    return true;
+                }
+            }
+            return false;
+        }
     }
 
     private static class IconDefEntry {
