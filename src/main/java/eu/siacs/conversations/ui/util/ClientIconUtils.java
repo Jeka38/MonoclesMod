@@ -343,6 +343,7 @@ public final class ClientIconUtils {
         final ArrayList<ClientRule> rules = new ArrayList<>();
         rules.add(rule(R.drawable.client_adium, "adium"));
         rules.add(rule(R.drawable.client_aceim, "github.com/snuk182/aceim"));
+        rules.add(rule(R.drawable.client_another, "dev.narayana.im/narayana/conversations-classic", "conversations-classic", "conversations classic"));
         rules.add(rule(R.drawable.client_aqq, "aqq.eu"));
         rules.add(rule(R.drawable.client_bayan, "barobin.com/caps"));
         rules.add(rule(R.drawable.client_beem, "beem-project.com"));
