@@ -105,6 +105,7 @@ import com.google.common.base.Objects;
 import com.google.common.base.Strings;
 import com.google.common.collect.ComparisonChain;
 import com.google.common.collect.Collections2;
+import com.google.common.collect.HashMultimap;
 import com.google.common.collect.Iterables;
 import com.google.common.collect.Multimap;
 
@@ -311,7 +312,7 @@ public class XmppConnectionService extends Service {
         }
     };
     public DatabaseBackend databaseBackend;
-    private Multimap<String, String> mutedMucUsers;
+    private Multimap<String, String> mutedMucUsers = HashMultimap.create();
     private final ReplacingSerialSingleThreadExecutor mContactMergerExecutor = new ReplacingSerialSingleThreadExecutor("ContactMerger");
     private final ReplacingSerialSingleThreadExecutor mSmilesScanExecutor = new ReplacingSerialSingleThreadExecutor("SmilesScan");
     private long mLastActivity = 0;
@@ -6763,7 +6764,7 @@ public class XmppConnectionService extends Service {
     }
 
     public boolean isMucUserMuted(MucOptions.User user) {
-        return mutedMucUsers.containsEntry("" + user.getMuc(), user.getOccupantId());
+        return mutedMucUsers != null && mutedMucUsers.containsEntry("" + user.getMuc(), user.getOccupantId());
     }
 
     public void blockMedia(File f) {
