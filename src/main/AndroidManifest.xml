@@ -231,7 +231,7 @@
         <receiver android:name=".services.AlarmReceiver" />
 
         <activity
-            android:name=".ui.WelcomeActivity"
+            android:name="de.monocles.mod.ui.StartUI"
             android:configChanges="orientation|screenSize"
             android:label="@string/short_app_name"
             android:launchMode="singleTask"
