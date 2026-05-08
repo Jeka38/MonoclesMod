@@ -38,7 +38,6 @@ import java.util.Collection;
 import eu.siacs.conversations.Config;
 import eu.siacs.conversations.R;
 import eu.siacs.conversations.entities.Transferable;
-import eu.siacs.conversations.services.ExportBackupService;
 
 /**
  * Utilities for dealing with MIME types.
@@ -92,7 +91,6 @@ public final class MimeUtils {
         add("application/vnd.amazon.mobi8-ebook", "kfx");
         add("application/vnd.android.package-archive", "apk");
         add("application/vnd.cinderella", "cdy");
-        add(ExportBackupService.MIME_TYPE, "ceb");
         add("application/vnd.ms-pki.stl", "stl");
         add("application/vnd.oasis.opendocument.database", "odb");
         add("application/vnd.oasis.opendocument.formula", "odf");
@@ -682,8 +680,6 @@ public final class MimeUtils {
             lm = "\uD83D\uDDC4️"; // filing cabinet emoji
         } else if (mime.equals("application/epub+zip") || mime.equals("application/vnd.amazon.mobi8-ebook")) {
             lm = "\uD83D\uDCD6"; // open book emoji
-        } else if (mime.equals(ExportBackupService.MIME_TYPE)) {
-            lm = "\uD83D\uDCBE"; // diskette emoji
         } else if (DOCUMENT_MIMES.contains(mime)) {
             lm = "\uD83D\uDCC4"; // page emoji
         } else if (mime.startsWith("image/")) {

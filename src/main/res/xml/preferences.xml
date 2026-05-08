@@ -595,27 +595,6 @@
             android:summary="@string/pref_invidious_host_summary"
             android:title="@string/pref_invidious_host" />
 
-        <PreferenceCategory android:title="@string/pref_create_backup">
-            <Preference
-                android:key="create_backup"
-                android:summary="@string/pref_create_backup_summary"
-                android:title="@string/pref_create_backup" />
-            <Preference
-                android:key="create_compatible_backup"
-                android:summary="@string/pref_create_compatible_backup_summary"
-                android:title="@string/pref_create_compatible_backup" />
-            <SwitchPreference
-                android:defaultValue="@bool/plain_text_logs"
-                android:key="export_plain_text_logs"
-                android:summary="@string/pref_export_plain_text_logs_summary"
-                android:title="@string/pref_export_plain_text_logs" />
-        </PreferenceCategory>
-        <PreferenceCategory android:title="@string/import_database">
-            <Preference
-                android:key="import_database"
-                android:summary="@string/pref_import_database_or_settings_summary"
-                android:title="@string/pref_import_database_or_settings" />
-        </PreferenceCategory>
     </PreferenceScreen>
     <!--Expert-->
     <PreferenceScreen

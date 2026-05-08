@@ -115,8 +115,6 @@
     <string name="avatar_for_x">Аватар %s</string>
     <string name="avatar_has_been_published">Аватар был обновлен!</string>
     <string name="back">Назад</string>
-    <string name="backup_channel_name">Резервная копия &amp; Восстановление</string>
-    <string name="backup_started_message">Резервное копирование было запущено. Вы получите уведомление, как только оно будет завершено.</string>
     <string name="bad_key_for_encryption">Не правильный ключ для шифрования.</string>
     <string name="ban_from_conference">Заблокировать в конференции (бан)</string>
     <string name="ban_from_channel">Заблокировать в конференции (бан)</string>
@@ -230,7 +228,6 @@
 \n</string>
     <string name="contacts_have_read_up_to_this_point">%s прочитали до этого момента</string>
     <string name="conversation_unencrypted_hint">Этот чат не зашифрован. Из соображений безопасности Вам следует включить шифрование, используя значок замка. Рекомендуемый способ шифрования - OMEMO.</string>
-    <string name="conversations_backup">Резервное копирование monocles mod</string>
     <string name="copy_fingerprint">Копировать отпечаток</string>
     <string name="copy_jabber_id">Копировать JID</string>
     <string name="copy_link">Копировать веб-адрес</string>
@@ -355,7 +352,6 @@
     <string name="encryption_choice_unencrypted">Не зашифровано</string>
     <string name="enter_contact">Введите контакт</string>
     <string name="enter_password">Введите пароль</string>
-    <string name="enter_password_to_restore">Введите пароль от аккаунта %s для восстановления резервной копии.</string>
     <string name="enter_your_name">Введите Ваше имя</string>
     <string name="enter_your_name_instructions">Введите ник, который будут видеть Ваши контакты.</string>
     <string name="error">Произошла ошибка</string>
@@ -450,9 +446,6 @@
     <string name="image_mid">среднее (1920p)</string>
     <string name="image_original">оригинальное (без сжатия)</string>
     <string name="images">изображения</string>
-    <string name="import_backup_description">Начиная с Android 11 мы не можем передавать файлы в хранилище. Вы можете попробовать перейти к резервному пути, который обычно находится в Documents/monocles mod/Database.</string>
-    <string name="import_database">Импортировать резервную копию</string>
-    <string name="import_text">Если существует резервная копия, Вы можете импортировать ее, нажав кнопку ниже.</string>
     <string name="improperly_formatted_provisioning">Неправильно отформатированный код инициализации</string>
     <string name="in_progress">В процессе</string>
     <string name="incoming_call">Входящий звонок</string>
@@ -471,8 +464,6 @@
     <string name="intro_chat_details">Детали чата</string>
     <string name="intro_desc_account">Если у Вас уже есть учетная запись, Вы можете просто войти в систему с помощью chat address и пароля</string>
     <string name="intro_desc_account2">Вы можете создать новый профиль на monocles mod, просто введя ник.</string>
-    <string name="intro_desc_account3">У вас есть возможность импортировать существующую учетную запись.
-\nЕсли есть файлы резервных копий, они будут показаны.</string>
     <string name="intro_desc_chat_details">Хотите открыть детали чата\? Просто нажмите на название чата в строке меню вверху.</string>
     <string name="intro_desc_highlight_user">Если вы хотите выделить пользователя в конференции, просто коснитесь его аватара в чате. В качестве альтернативы, особенно если пользователя нет в чате, переключитесь на сведения о чате и найдите пользователя в списке участников. При длительном касании аватара пользователя появится всплывающее меню, в котором можно выделить пользователя.</string>
     <string name="intro_desc_main">Чат monocles — это не просто еще один мессенджер… чат monocles использует официальный стандарт IETF. Вы можете переключать приложения в любое время и при этом оставаться на связи с друзьями.
@@ -633,7 +624,6 @@
     <string name="no_application_found_to_view_contact">Не найдено приложений для просмотра контакта</string>
     <string name="no_application_to_share_uri">Не найдено подходящее приложение, чтобы поделиться URI</string>
     <string name="no_attachments">Вложения отсутствуют</string>
-    <string name="no_backup_available">Нет доступных резервных копий</string>
     <string name="no_camera_permission">monocles mod требуется доступ к камере</string>
     <string name="no_conference_server_found">Сервер конференции не найден</string>
     <string name="no_i2p_calls">Звонки через I2P недоступны</string>
@@ -657,7 +647,6 @@
     <string name="no_xmpp_adddress_found">XMPP-адрес не найден</string>
     <string name="non_anonymous">Сделать JID видимыми для всех</string>
     <string name="none">Нет</string>
-    <string name="not_a_backup_file">Выбранный Вами файл не является резервной копией monocles mod</string>
     <string name="not_a_valid_port">Не корректный номер порта</string>
     <string name="not_connected_try_again">Вы не подключены. Попробуйте позже</string>
     <string name="not_encrypted">Не зашифровано</string>
@@ -666,16 +655,9 @@
     <string name="not_in_roster">Контакта нет в вашем списке. Хотите добавить его\?</string>
     <string name="not_trusted">Недоверенный</string>
     <string name="not_valid_hostname">Некорректное имя хоста</string>
-    <string name="notification_backup_created_subtitle">Резервная копия сохранена в %s</string>
-    <string name="notification_backup_created_title">Резервная копия создана</string>
-    <string name="notification_backup_failed_subtitle">Резервная копия не может быть сохранена в %s</string>
-    <string name="notification_backup_failed_title">Сбой резервного копирования</string>
-    <string name="notification_create_backup_title">Создание резервной копии</string>
     <string name="notification_group_calls">Звонки</string>
     <string name="notification_group_messages">Сообщения</string>
     <string name="notification_group_status_information">Информация о статусе</string>
-    <string name="notification_restored_backup_subtitle">Не забудьте активировать аккаунт.</string>
-    <string name="notification_restored_backup_title">Ваша резервная копия была восстановлена</string>
     <string name="notify_never">Уведомления отключены</string>
     <string name="notify_on_all_messages">Уведомлять о всех сообщениях</string>
     <string name="notify_only_when_highlighted">Уведомлять только при упоминаниях</string>
@@ -696,7 +678,6 @@
     <string name="ongoing_video_call">Текущий видео вызов</string>
     <string name="only_one_call_at_a_time">У вас может быть только один звонок за один раз.</string>
     <string name="only_the_owner_can_change_group_chat_avatar">Только владелец может сменить аватар</string>
-    <string name="open_backup">Открыть резервную копию</string>
     <string name="open_join_dialog">Присоединиться к публичной конференции…</string>
     <string name="open_settings">Открыть настройки</string>
     <string name="open_website">Открыть веб-сайт</string>
@@ -787,8 +768,6 @@
     <string name="pref_confirm_messages">Подтверждение получения</string>
     <string name="pref_confirm_messages_summary">Сообщать Вашим контактам, когда Вы получили и прочитали их сообщения</string>
     <string name="pref_connection_options">Настройки соединения</string>
-    <string name="pref_create_backup">Создать резервную копию</string>
-    <string name="pref_create_backup_summary">Запись файлов резервного копирования %s</string>
     <string name="pref_delete_omemo_identities">Удалить OMEMO-отпечатки</string>
     <string name="pref_delete_omemo_identities_summary">Создать новые OMEMO ключи. Вашим контактам нужно будет проверить вашу личность снова. Используйте в случае крайней необходимости.</string>
     <string name="pref_display_enter_key">Показывать кнопку ввода</string>
@@ -809,15 +788,12 @@
     <string name="pref_enter_is_send_summary">Использовать клавишу Enter для отправки сообщения. Вы всегда можете использовать Ctrl+Enter для отправки сообщения, даже если эта опция отключена.</string>
     <string name="pref_expert_options">Продвинутые настройки</string>
     <string name="pref_expert_options_other">Другое</string>
-    <string name="pref_export_plain_text_logs">Экспортировать читабельный журнал чата</string>
-    <string name="pref_export_plain_text_logs_summary">Включить экспорт журналов чатов в читабельные файлы</string>
     <string name="pref_font_size">Размер шрифта</string>
     <string name="pref_font_size_summary">Размер шрифта, используемый в приложении.</string>
     <string name="pref_general">Общее</string>
     <string name="pref_headsup_notifications">Системные уведомления</string>
     <string name="pref_headsup_notifications_summary">Показывать уведомления</string>
     <string name="pref_import_settings">Импорт настроек</string>
-    <string name="pref_import_settings_summary">Импортируйте настройки из файла settings.dat в каталог резервных копий monocles mod.</string>
     <string name="pref_incoming_call_notification_settings">Настройки уведомлений о входящих звонках</string>
     <string name="pref_input_options">Ввод</string>
     <string name="pref_invidious_host">Invidious хост</string>
@@ -1015,9 +991,6 @@
     <string name="respond">Ответить</string>
     <string name="restart">Перезапуск</string>
     <string name="restore">Восстановить</string>
-    <string name="restore_backup">Восстановить резервную копию</string>
-    <string name="restore_warning">Не используйте функцию резервного копирования ни для чего, кроме случаев переноса на другое устройство или утери устройства.</string>
-    <string name="restoring_backup">Восстановление резервной копии</string>
     <string name="retry_decryption">Повторить расшифровку</string>
     <string name="return_to_ongoing_call">Возврат к текущему вызову</string>
     <string name="rtp_state_accepting_call">Прием вызова</string>
@@ -1101,7 +1074,6 @@
     <string name="share_as_barcode">Поделиться QR кодом</string>
     <string name="share_as_http">Поделиться HTTP ссылкой</string>
     <string name="share_as_uri">Поделиться как XMPP URI</string>
-    <string name="share_backup_files">Отправить файл резервной копии</string>
     <string name="share_invite_with">Поделиться приглашением с…</string>
     <string name="share_location">Поделиться местоположением</string>
     <string name="share_uri_with">Поделиться URI с…</string>
@@ -1176,13 +1148,11 @@
     <string name="trust_omemo_fingerprints">Доверенные OMEMO Отпечатки</string>
     <string name="try_again">Попробовать снова</string>
     <string name="unable_to_connect_to_keychain">Не удается подключиться к OpenKeychain</string>
-    <string name="unable_to_decrypt_backup">Невозможно расшифровать резервную копию. Пароль верный\?</string>
     <string name="unable_to_enable_video">Не удается включить видео.</string>
     <string name="unable_to_fetch_mam_prefs">Не удалось получить настройки архивации</string>
     <string name="unable_to_parse_certificate">Не удается обработать сертификат</string>
     <string name="unable_to_parse_invite">Не удалось отправить приглашение</string>
     <string name="unable_to_perform_this_action">Не удается выполнить это действие</string>
-    <string name="unable_to_restore_backup">Невозможно восстановить резервную копию.</string>
     <string name="unable_to_save_recording">Не удается сохранить запись</string>
     <string name="unable_to_set_channel_configuration">Не удается сохранить конфигурацию конференции</string>
     <string name="unable_to_start_recording">Не удается начать запись</string>
@@ -1445,11 +1415,9 @@
     <string name="new_contact_or_group">Новый контакт или конференция</string>
     <string name="colors">Цвета</string>
     <string name="you_may_sometimes_have_to">Иногда вам может потребоваться принудительно закрыть приложение, чтобы изменения вступили в силу.</string>
-    <string name="create_monocles_only_backup">Экспортировать дополнительные данные только для моноклей (тогда резервная копия не будет импортирована в другие приложения)\?</string>
     <string name="please_be_patient">Пожалуйста, будьте терпеливы...</string>
     <string name="notify_only_when_highlighted_or_replied">Уведомлять об упоминаниях и ответах</string>
     <string name="pref_follow_thread_in_channel_summary">Установите маркер темы, соответствующий просматриваемому в данный момент сообщению</string>
-    <string name="restore_warning_continued">Не пытайтесь восстановить резервные копии, которые вы не создавали самостоятельно!</string>
     <string name="pref_follow_thread_in_channel">Автоматическое отслеживание цепочек в конференциях</string>
     <string name="show_less">"
 \nсвернуть"</string>
@@ -1457,16 +1425,11 @@
 \nразвернуть"</string>
     <string name="collapse_message_signs_summary">Установите максимальное количество знаков, чтобы свернуть сообщение</string>
     <string name="collapse_message_signs_title">Свернуть длинные текстовые сообщения</string>
-    <string name="settings_restore_message_failure">Не удалось восстановить настройки: %s</string>
-    <string name="settings_restore_message_success">Настройки успешно восстановлены</string>
-    <string name="pref_import_database_or_settings">Импортировать базу данных или настройки</string>
-    <string name="pref_import_database_or_settings_summary">Импортируйте резервную копию вашей базы данных или файла настроек</string>
     <string name="related_chats">Похожие конференции</string>
     <string name="action_complete">Действие завершено</string>
     <string name="moderate_recent">Модерировать сообщения\?</string>
     <string name="confirm_delete_attachment_summary">Хотите пропустить подтверждение при удалении локального файла из чата?</string>
     <string name="pref_confirm_delete_attachment">Пропустить подтверждение удаления файлов из чатов</string>
-    <string name="menuitem_create_backup_action">Создать резервную копию</string>
     <string name="pref_use_blue_readmarkers_title">Используйте синие маркеры чтения</string>
     <string name="pref_use_blue_readmarkers_summary">Используйте синие маркеры чтения вместо белых или черных</string>
     <string name="chat_background">Фон чатов</string>
@@ -1520,7 +1483,6 @@
     <string name="reconnect_on_other_host">Переподключитесь на другом хосте</string>
     <string name="verified_with_qr_code"> - подтверждено QR-кодом</string>
     <string name="key_automatically_accepted"> - ключ не проверен</string>
-    <string name="outdated_backup_file_format">Вы пытаетесь импортировать устаревший формат файла резервной копии</string>
     <string name="account_state_logged_out">Вышел из системы</string>
     <string name="monocles_account_details">Это включает в себя:
 \n● зашифрованное хранилище чатов.
@@ -1531,9 +1493,7 @@
 \n● синхронизация календаря и контактов.
 \n● инструмент безопасной конференц-связи.
 \nи многое другое на <a href="https://monocles.eu/more/">https://monocles.eu/more/</a></string>
-    <string name="pref_create_compatible_backup">Создать универсальную резервную копию</string>
     <string name="unknown">Неизвестный</string>
-    <string name="pref_create_compatible_backup_summary">Записать универсальные файлы резервных копий в %s</string>
     <string name="chats">Чаты</string>
     <string name="calls">Звонки</string>
     <string name="stories">История</string>
@@ -1567,7 +1527,6 @@
     <string name="can_not_create_lock">Невозможно создать PIN-код или отпечаток пальца</string>
     <string name="pref_app_lock_disable_title">Отключить блокировку приложения</string>
     <string name="pref_app_lock_disable_summary">Отключить блокировку приложения</string>
-    <string name="app_lock_forgot_password">Переустановите приложение и загрузите резервную копию чата</string>
     <string name="pref_app_lock_enable_title">Включить блокировку приложения (бета-версия)</string>
     <string name="pref_app_lock_enable_summary">Включите блокировку приложения. Имейте в виду, что вы больше не сможете открыть приложение, если забудете PIN-код.</string>
     <string name="pref_open_links_inapp_summary">Открытие веб-ссылок в monocles</string>

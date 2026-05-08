@@ -43,7 +43,6 @@ import me.drakeet.support.toast.ToastCompat;
 
 public class WelcomeActivity extends XmppActivity implements XmppConnectionService.OnAccountCreated, KeyChainAliasCallback {
 
-    private static final int REQUEST_IMPORT_BACKUP = 0x63fb;
     private static final int REQUEST_READ_EXTERNAL_STORAGE = 0XD737;
 
     private XmppUri inviteUri;
@@ -136,11 +135,6 @@ public class WelcomeActivity extends XmppActivity implements XmppConnectionServi
         }
         IntroHelper.showIntro(this, false);
         UpdateHelper.showPopup(this);
-        if (hasStoragePermission(REQUEST_IMPORT_BACKUP)) {
-            binding.importDatabase.setVisibility(View.VISIBLE);
-            binding.importText.setVisibility(View.VISIBLE);
-        }
-        binding.importDatabase.setOnClickListener(v -> startActivity(new Intent(this, ImportBackupActivity.class)));
         binding.createAccount.setOnClickListener(v -> {
             final Intent intent = new Intent(WelcomeActivity.this, RegisterMonoclesActivity.class);
             intent.addFlags(Intent.FLAG_ACTIVITY_NO_ANIMATION);
@@ -233,11 +227,6 @@ public class WelcomeActivity extends XmppActivity implements XmppConnectionServi
         UriHandlerActivity.onRequestPermissionResult(this, requestCode, grantResults);
         if (grantResults.length > 0) {
             if (allGranted(grantResults)) {
-                switch (requestCode) {
-                    case REQUEST_IMPORT_BACKUP:
-                       // startActivity(new Intent(this, ImportBackupActivity.class));
-                        break;
-                }
             } else if (!Compatibility.runsThirtyThree() && Arrays.asList(permissions).contains(Manifest.permission.WRITE_EXTERNAL_STORAGE)) {
                 ToastCompat.makeText(this, R.string.no_storage_permission, ToastCompat.LENGTH_SHORT).show();
             } else if (Compatibility.runsThirtyThree() && Arrays.asList(permissions).contains(Manifest.permission.READ_MEDIA_IMAGES) && Arrays.asList(permissions).contains(Manifest.permission.READ_MEDIA_VIDEO) && Arrays.asList(permissions).contains(Manifest.permission.READ_MEDIA_AUDIO)) {

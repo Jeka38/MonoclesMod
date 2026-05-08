@@ -199,15 +199,6 @@ public class NotificationService {
             notificationManager.createNotificationChannel(foregroundServiceChannel);
         }
 
-        NotificationChannel backupChannel = notificationManager.getNotificationChannel(BACKUP_CHANNEL_ID);
-        if (backupChannel == null) {
-            backupChannel = new NotificationChannel(BACKUP_CHANNEL_ID,
-                    c.getString(R.string.backup_channel_name),
-                    NotificationManager.IMPORTANCE_LOW);
-            backupChannel.setShowBadge(false);
-            backupChannel.setGroup("status");
-            notificationManager.createNotificationChannel(backupChannel);
-        }
 
         NotificationChannel videoCompressionChannel = notificationManager.getNotificationChannel(VIDEOCOMPRESSION_CHANNEL_ID);
         if (videoCompressionChannel == null) {

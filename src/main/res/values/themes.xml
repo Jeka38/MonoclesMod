@@ -122,7 +122,6 @@
         <item name="media_preview_archive" type="reference">@drawable/ic_archive_black_48dp</item>
         <item name="media_preview_ebook" type="reference">@drawable/ic_book_black_48dp</item>
         <item name="media_preview_unknown" type="reference">@drawable/ic_help_black_48dp</item>
-        <item name="media_preview_backup" type="reference">@drawable/ic_backup_black_48dp</item>
         <item name="icon_gps_fixed" type="reference">@drawable/ic_gps_fixed_black_24dp</item>
         <item name="icon_gps_not_fixed" type="reference">@drawable/ic_gps_not_fixed_black_24dp
         </item>
@@ -348,7 +347,6 @@
         <item name="media_preview_archive" type="reference">@drawable/ic_archive_white_48dp</item>
         <item name="media_preview_ebook" type="reference">@drawable/ic_book_white_48dp</item>
         <item name="media_preview_unknown" type="reference">@drawable/ic_help_white_48dp</item>
-        <item name="media_preview_backup" type="reference">@drawable/ic_backup_white_48dp</item>
         <item name="icon_gps_fixed" type="reference">@drawable/ic_gps_fixed_white_24dp</item>
         <item name="icon_gps_not_fixed" type="reference">@drawable/ic_gps_not_fixed_white_24dp
         </item>
