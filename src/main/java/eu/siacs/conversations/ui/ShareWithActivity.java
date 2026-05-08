@@ -91,12 +91,6 @@ public class ShareWithActivity extends XmppActivity implements XmppConnectionSer
         if (getBooleanPreference("app_lock_enabled", R.bool.app_lock_enabled)) {
             EasyLock.setBackgroundColor(getColor(R.color.primary_black));
             EasyLock.checkPassword(this);
-            EasyLock.forgotPassword(new View.OnClickListener() {
-                @Override
-                public void onClick(View view) {
-                    Toast.makeText(ShareWithActivity.this, R.string.app_lock_forgot_password, Toast.LENGTH_LONG).show();
-                }
-            });
         }
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_share_with);

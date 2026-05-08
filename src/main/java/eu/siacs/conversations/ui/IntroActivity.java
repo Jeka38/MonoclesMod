@@ -110,12 +110,6 @@ public class IntroActivity extends AppIntro2 {
                 account2.setBackgroundColor(backgroundColor);
                 addSlide(AppIntroFragment.createInstance(account2));
 
-                SliderPage account3 = new SliderPage();
-                account3.setTitle(getString(R.string.intro_account));
-                account3.setDescription(getString(R.string.intro_desc_account3));
-                account3.setImageDrawable(R.drawable.intro_account_icon);
-                account3.setBackgroundColor(backgroundColor);
-                addSlide(AppIntroFragment.createInstance(account3));
                 break;
             case START_CONVERSATION_ACTIVITY:
                 SliderPage startChatting = new SliderPage();

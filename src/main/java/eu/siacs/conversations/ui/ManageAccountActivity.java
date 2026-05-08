@@ -1,7 +1,6 @@
 package eu.siacs.conversations.ui;
 
 import static android.view.View.VISIBLE;
-import static eu.siacs.conversations.ui.SettingsActivity.REQUEST_CREATE_BACKUP;
 import static eu.siacs.conversations.utils.PermissionUtils.allGranted;
 import static eu.siacs.conversations.utils.PermissionUtils.readGranted;
 
@@ -41,7 +40,6 @@ import eu.siacs.conversations.Config;
 import eu.siacs.conversations.R;
 import eu.siacs.conversations.entities.Contact;
 import eu.siacs.conversations.entities.Account;
-import eu.siacs.conversations.services.ExportBackupService;
 import eu.siacs.conversations.services.XmppConnectionService;
 import eu.siacs.conversations.services.XmppConnectionService.OnAccountUpdate;
 import eu.siacs.conversations.ui.adapter.AccountAdapter;
@@ -54,7 +52,6 @@ import me.drakeet.support.toast.ToastCompat;
 public class ManageAccountActivity extends XmppActivity implements XmppConnectionService.OnConversationUpdate, OnAccountUpdate, KeyChainAliasCallback, XmppConnectionService.OnAccountCreated, AccountAdapter.OnTglAccountState {
     private final String STATE_SELECTED_ACCOUNT = "selected_account";
 
-    private static final int REQUEST_IMPORT_BACKUP = 0x63fb;
     private static final int REQUEST_MICROPHONE = 0x63fb1;
 
     protected Account selectedAccount = null;
@@ -297,17 +294,6 @@ public class ManageAccountActivity extends XmppActivity implements XmppConnectio
                 startActivity(new Intent(this, EditAccountActivity.class));
                 overridePendingTransition(R.animator.fade_in, R.animator.fade_out);
                 break;
-            case R.id.action_import_backup:
-                if (hasStoragePermission(REQUEST_IMPORT_BACKUP)) {
-                    startActivity(new Intent(this, ImportBackupActivity.class));
-                }
-                overridePendingTransition(R.animator.fade_in, R.animator.fade_out);
-                break;
-            case R.id.action_create_backup:
-                if (hasStoragePermission(REQUEST_CREATE_BACKUP)) {
-                    createBackup();
-                }
-                break;
             default:
                 break;
         }
@@ -353,9 +339,6 @@ public class ManageAccountActivity extends XmppActivity implements XmppConnectio
                         }
                         mMicIntent = null;
                         return;
-                    case REQUEST_IMPORT_BACKUP:
-                        startActivity(new Intent(this, ImportBackupActivity.class));
-                        break;
                 }
             } else {
                 if (requestCode == REQUEST_MICROPHONE) {
@@ -571,18 +554,4 @@ public class ManageAccountActivity extends XmppActivity implements XmppConnectio
         runOnUiThread(() -> ToastCompat.makeText(ManageAccountActivity.this, r, ToastCompat.LENGTH_LONG).show());
     }
 
-    private void createBackup() {
-        createBackup(true, true);
-    }
-
-    private void createBackup(boolean notify, boolean withmonoclesDb) {
-        Intent intent = new Intent(this, ExportBackupService.class);
-        intent.putExtra("monocles_db", withmonoclesDb);
-        intent.putExtra("NOTIFY_ON_BACKUP_COMPLETE", notify);
-        ContextCompat.startForegroundService(this, intent);
-        final AlertDialog.Builder builder = new AlertDialog.Builder(this);
-        builder.setMessage(R.string.backup_started_message);
-        builder.setPositiveButton(R.string.ok, null);
-        builder.create().show();
-    }
 }

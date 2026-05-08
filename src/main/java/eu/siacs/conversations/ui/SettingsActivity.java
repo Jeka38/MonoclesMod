@@ -69,7 +69,6 @@ import eu.siacs.conversations.crypto.OmemoSetting;
 import eu.siacs.conversations.entities.Account;
 import eu.siacs.conversations.entities.Contact;
 import eu.siacs.conversations.persistance.FileBackend;
-import eu.siacs.conversations.services.ExportBackupService;
 import eu.siacs.conversations.services.MemorizingTrustManager;
 import eu.siacs.conversations.ui.util.StyledAttributes;
 import eu.siacs.conversations.ui.util.ClientIconUtils;
@@ -135,8 +134,6 @@ public class SettingsActivity extends XmppActivity implements OnSharedPreference
     public static final String LARGE_FONT_FOR_MUC_STATUS = "large_font_for_muc_status";
     public static final String SHOW_MUC_STATUS_MESSAGES = "show_muc_status_messages";
 
-    public static final int REQUEST_CREATE_BACKUP = 0xbf8701;
-    public static final int REQUEST_IMPORT_SETTINGS = 0xbf8703;
     public static final int REQUEST_IMPORT_GIFS = 0xbf8706;
     public static final int REQUEST_IMPORT_SMILES = 0xbf8707;
 
@@ -740,39 +737,6 @@ public class SettingsActivity extends XmppActivity implements OnSharedPreference
             updateTheme();
         }
 
-        final Preference createBackupPreference = mSettingsFragment.findPreference("create_backup");
-        if (createBackupPreference != null) {
-            createBackupPreference.setSummary(getString(R.string.pref_create_backup_summary, getBackupDirectory(null)));
-            createBackupPreference.setOnPreferenceClickListener(preference -> {
-                if (hasStoragePermission(REQUEST_CREATE_BACKUP)) {
-                    createBackup();
-                }
-                return true;
-            });
-        }
-
-        final Preference createCompatibleBackupPreference = mSettingsFragment.findPreference("create_compatible_backup");
-        if (createCompatibleBackupPreference != null) {
-            createCompatibleBackupPreference.setSummary(getString(R.string.pref_create_compatible_backup_summary, getBackupDirectory(null)));
-            createCompatibleBackupPreference.setOnPreferenceClickListener(preference -> {
-                if (hasStoragePermission(REQUEST_CREATE_BACKUP)) {
-                    createCompatibleBackup();
-                }
-                return true;
-            });
-        }
-
-        final Preference importSettingsPreference = mSettingsFragment.findPreference("import_database");
-        if (importSettingsPreference != null) {
-            importSettingsPreference.setSummary(getString(R.string.pref_import_database_or_settings_summary));
-            importSettingsPreference.setOnPreferenceClickListener(preference -> {
-                if (hasStoragePermission(REQUEST_IMPORT_SETTINGS)) {
-                    Intent intent = new Intent(getApplicationContext(), ImportBackupActivity.class);
-                    startActivity(intent);
-                }
-                return true;
-            });
-        }
 
 
         final Preference importBackgroundPreference = mSettingsFragment.findPreference("import_background");
@@ -1245,12 +1209,6 @@ public class SettingsActivity extends XmppActivity implements OnSharedPreference
             if (grantResults[0] == PackageManager.PERMISSION_GRANTED) {
                 ChatBackgroundHelper.onRequestPermissionsResult(this, requestCode, permissions, grantResults);
 
-                if (requestCode == REQUEST_CREATE_BACKUP) {
-                    createBackup();
-                }
-                if (requestCode == REQUEST_CREATE_BACKUP) {
-                    createCompatibleBackup();
-                }
             } else {
                 ToastCompat.makeText(
                         this,
@@ -1261,24 +1219,6 @@ public class SettingsActivity extends XmppActivity implements OnSharedPreference
         }
     }
 
-    private void createBackup() {
-        createBackup(true, true);
-    }
-
-    private void createCompatibleBackup() {
-        createBackup(true, false);
-    }
-
-    private void createBackup(boolean notify, boolean withmonoclesDb) {
-        Intent intent = new Intent(this, ExportBackupService.class);
-        intent.putExtra("monocles_db", withmonoclesDb);
-        intent.putExtra("NOTIFY_ON_BACKUP_COMPLETE", notify);
-        ContextCompat.startForegroundService(this, intent);
-        final AlertDialog.Builder builder = new AlertDialog.Builder(this);
-        builder.setMessage(R.string.backup_started_message);
-        builder.setPositiveButton(R.string.ok, null);
-        builder.create().show();
-    }
 
 
     private void displayToast(final String msg) {

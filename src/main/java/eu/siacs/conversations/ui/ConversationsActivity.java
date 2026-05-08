@@ -678,12 +678,6 @@ public class ConversationsActivity extends XmppActivity implements OnConversatio
         if (getBooleanPreference("app_lock_enabled", R.bool.app_lock_enabled)) {
             EasyLock.setBackgroundColor(getColor(R.color.primary_black));
             EasyLock.checkPassword(this);
-            EasyLock.forgotPassword(new View.OnClickListener() {
-                @Override
-                public void onClick(View view) {
-                    Toast.makeText(ConversationsActivity.this, R.string.app_lock_forgot_password, Toast.LENGTH_LONG).show();
-                }
-            });
         }
         super.onCreate(savedInstanceState);
         OmemoSetting.load(this);

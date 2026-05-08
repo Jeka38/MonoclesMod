@@ -38,7 +38,6 @@ import eu.siacs.conversations.Config;
 import eu.siacs.conversations.R;
 import eu.siacs.conversations.databinding.MediaBinding;
 import eu.siacs.conversations.persistance.FileBackend;
-import eu.siacs.conversations.services.ExportBackupService;
 import eu.siacs.conversations.ui.XmppActivity;
 import eu.siacs.conversations.ui.util.Attachment;
 import eu.siacs.conversations.ui.util.StyledAttributes;
@@ -104,8 +103,6 @@ public class MediaAdapter extends RecyclerView.Adapter<MediaAdapter.MediaViewHol
                 attr = R.attr.media_preview_ebook;
             } else if (mime.equals("application/webxdc+zip")) {
                 attr = R.attr.icon_webxdcs;
-            } else if (mime.equals(ExportBackupService.MIME_TYPE)) {
-                attr = R.attr.media_preview_backup;
             } else if (DOCUMENT_MIMES.contains(mime)) {
                 attr = R.attr.media_preview_document;
             } else if (mime.equals("application/gpx+xml")) {
