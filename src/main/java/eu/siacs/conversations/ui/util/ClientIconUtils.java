@@ -170,6 +170,8 @@ public final class ClientIconUtils {
         final String name = rawName.toLowerCase(Locale.ROOT);
         if (name.contains("adium")) {
             return R.drawable.client_adium;
+        } else if (name.contains("dev.narayana.im/narayana/conversations-classic") || name.contains("conversations-classic") || name.contains("conversations classic")) {
+            return R.drawable.client_another;
         } else if (name.contains("github.com/snuk182/aceim")) {
             return R.drawable.client_aceim;
         } else if (name.contains("aqq.eu")) {
@@ -226,8 +228,6 @@ public final class ClientIconUtils {
             return R.drawable.client_conversations;
         } else if (name.contains("github.com/jeka38/conversations-classic-mod")) {
             return R.drawable.client_conversations_mod;
-        } else if (name.contains("dev.narayana.im/narayana/conversations-classic") || name.contains("conversations-classic") || name.contains("conversations classic")) {
-            return R.drawable.client_conversations_old;
         } else if (name.contains("gajim")) {
             return R.drawable.client_gajim;
         } else if (name.contains("gmail")) {
