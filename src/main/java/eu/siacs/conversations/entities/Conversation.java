@@ -275,9 +275,6 @@ public class Conversation extends AbstractEntity implements Blockable, Comparabl
     }
 
     public static boolean suitableForOmemoByDefault(final Conversation conversation) {
-        if (conversation.getJid().asBareJid().equals(Config.BUG_REPORTS)) {
-            return false;
-        }
         if (conversation.getContact().isOwnServer()) {
             return false;
         }

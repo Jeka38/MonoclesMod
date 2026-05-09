@@ -591,7 +591,6 @@
     <string name="error_file_corrupt">This file seems to be corrupt.</string>
     <string name="unable_to_update_account">Unable to update account</string>
     <string name="report_jid_as_spammer">Report this JID as sending unwanted messages.</string>
-    <string name="create_issue">Report an issue</string>
     <string name="pref_delete_omemo_identities">Delete OMEMO identities</string>
     <string name="pref_delete_omemo_identities_summary">Regenerate your OMEMO keys. All your contacts will have to verify you again. Use this only as a last resort.</string>
     <string name="delete_selected_keys">Delete selected keys</string>
@@ -1139,7 +1138,7 @@
     </plurals>
     <string name="pref_invidious_host_summary">Use a custom invidious host</string>
     <string name="pref_invidious_host">Invidious host</string>
-    <string name="updated_to_monocles">We have successfully updated Monocles Messenger to monocles mod\n\nThe cooperation of the two projects monocles mod and Monocles Messenger was expanded in November 2020. In the future, the Android app Monocles Messenger will be continued under the name monocles mod.\n\nWhat you can expect:\n- Range of functions remains the same\n- Support chat rooms are merged\n- Colors and logos are adapted to monocles\n- App is still available for free in F-Droid Store\n\nYour monocles Team</string>
+    <string name="updated_to_monocles">We have successfully updated Monocles Messenger to monocles mod\n\nThe cooperation of the two projects monocles mod and Monocles Messenger was expanded in November 2020. In the future, the Android app Monocles Messenger will be continued under the name monocles mod.\n\nWhat you can expect:\n- Range of functions remains the same\n- Colors and logos are adapted to monocles\n- App is still available for free in F-Droid Store\n\nYour monocles Team</string>
     <string name="updated_to_monocles_google">We have to apologize that we could not update directly to monocles mod. Under the following link you will receive instructions on how to transfer all your accounts from Monocles Messenger to monocles mod. By clicking on move data we try to move all sent and received files from Monocles Messenger to monocles mod. After a successfully migration keep in mind to remove Monocles Messenger from your device.</string>
     <string name="link">Link</string>
     <string name="create_monocles_account">Sign up</string>

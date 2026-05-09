@@ -22,5 +22,3 @@ Features:
 * Very low battery consumption
 * Status messages
 * Daily backup of database to local storage
-
-You need help? Please join our support group chat <a href="xmpp:support@conference.monocles.eu">support@conference.monocles.de</a>.

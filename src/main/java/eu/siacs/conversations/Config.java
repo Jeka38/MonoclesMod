@@ -63,9 +63,6 @@ public final class Config {
 
     public static final String LOGTAG = BuildConfig.LOGTAG;
 
-    public static final boolean QUICK_LOG = false;
-
-    public static final Jid BUG_REPORTS = Jid.of("support@monocles.eu");
     public static final Uri HELP = Uri.parse("https://monocles.wiki");
 
     public static final String inviteUserURL = monocles() + "/chat/";
@@ -182,8 +179,6 @@ public final class Config {
 
     public static final String UPDATE_URL = BuildConfig.UPDATE_URL;
     public static final long UPDATE_CHECK_TIMER = 24 * 60 * 60; // 24 h in seconds
-
-    public static final String ISSUE_URL = "xmpp:support@conference.monocles.eu?join";
 
     //only allow secure tls chipers now
     public static final String[] ENABLED_CIPHERS = {

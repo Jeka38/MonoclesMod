@@ -249,7 +249,6 @@
     <string name="create_account">Создать новую учетную запись</string>
     <string name="create_dialog_channel_name">Название конференции</string>
     <string name="create_dialog_group_chat_name">Название конференции</string>
-    <string name="create_issue">Сообщить об ошибке</string>
     <string name="pref_avatars_shape">Форма аватаров</string>
     <string name="avater_shape_oval">Овал</string>
     <string name="avater_shape_rounded_square">Закругленный квадрат</string>
@@ -1182,7 +1181,6 @@
 \n
 \nЧто вы можете ожидать:
 \n- Набор функций остается прежним
-\n- Чаты поддержки объединены
 \n- Цвета и логотипы адаптированы под monocles mod
 \n- Приложение все еще доступно бесплатно в Google Play и F-Droid
 \n

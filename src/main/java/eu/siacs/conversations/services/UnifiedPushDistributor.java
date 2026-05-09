@@ -111,7 +111,6 @@ public class UnifiedPushDistributor extends BroadcastReceiver {
                 Log.d(
                         Config.LOGTAG,
                         "successfully created UnifiedPush entry. waking up XmppConnectionService");
-                quickLog(context, String.format("successfully registered %s (token = %s) for UnifiedPushed", application, instance));
                 final Intent serviceIntent = new Intent(context, XmppConnectionService.class);
                 serviceIntent.setAction(XmppConnectionService.ACTION_RENEW_UNIFIED_PUSH_ENDPOINTS);
                 serviceIntent.putExtra("instance", instance);
@@ -177,7 +176,6 @@ public class UnifiedPushDistributor extends BroadcastReceiver {
         }
         final UnifiedPushDatabase unifiedPushDatabase = UnifiedPushDatabase.getInstance(context);
         if (unifiedPushDatabase.deleteInstance(instance)) {
-            quickLog(context, String.format("successfully unregistered token %s from UnifiedPushed (application requested unregister)", instance));
             Log.d(Config.LOGTAG, "successfully removed " + instance + " from UnifiedPush");
             // TODO send UNREGISTERED broadcast back to app?!
         }
@@ -192,7 +190,6 @@ public class UnifiedPushDistributor extends BroadcastReceiver {
             Log.d(Config.LOGTAG, "app " + application + " has been removed from the system");
             final UnifiedPushDatabase database = UnifiedPushDatabase.getInstance(context);
             if (database.deleteApplication(application)) {
-                quickLog(context, String.format("successfully removed %s from UnifiedPushed (ACTION_PACKAGE_FULLY_REMOVED)", application));
                 Log.d(Config.LOGTAG, "successfully removed " + application + " from UnifiedPush");
             }
         }
@@ -206,10 +203,4 @@ public class UnifiedPushDistributor extends BroadcastReceiver {
                                 .asBytes());
     }
 
-    public static void quickLog(final Context context, final String message) {
-        final Intent intent = new Intent(context, XmppConnectionService.class);
-        intent.setAction(XmppConnectionService.ACTION_QUICK_LOG);
-        intent.putExtra("message", message);
-        context.startService(intent);
-    }
 }
