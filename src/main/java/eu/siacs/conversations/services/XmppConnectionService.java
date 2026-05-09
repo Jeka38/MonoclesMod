@@ -1890,7 +1890,7 @@ public class XmppConnectionService extends Service {
 
     public void updateNotificationChannels() {
         if (Compatibility.runsTwentySix()) {
-            new Thread(mNotificationService::updateChannels).start();
+            mNotificationService.updateChannels();
         }
     }
 

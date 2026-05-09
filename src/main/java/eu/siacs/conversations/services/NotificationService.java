@@ -173,8 +173,9 @@ public class NotificationService {
 
     @RequiresApi(api = Build.VERSION_CODES.O)
     void updateChannels() {
-        mXmppConnectionService.mNotificationChannelExecutor.execute(this::initializeChannels);
-        //initializeChannels();
+        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
+            initializeChannels();
+        }
     }
 
     @RequiresApi(api = Build.VERSION_CODES.O)
@@ -2162,7 +2163,7 @@ public class NotificationService {
     }
 
     Notification createForegroundNotification() {
-        final Notification.Builder mBuilder = new Notification.Builder(mXmppConnectionService);
+        final NotificationCompat.Builder mBuilder = new NotificationCompat.Builder(mXmppConnectionService, FOREGROUND_CHANNEL_ID);
         mBuilder.setContentTitle(mXmppConnectionService.getString(R.string.conversations_foreground_service));
         String status;
         final List<Account> accounts = mXmppConnectionService.getAccounts();
@@ -2211,11 +2212,10 @@ public class NotificationService {
             mBuilder.setContentIntent(openIntent);
         }
         mBuilder.setWhen(0);
-        mBuilder.setPriority(Notification.PRIORITY_MIN);
+        mBuilder.setPriority(NotificationCompat.PRIORITY_MIN);
         mBuilder.setSmallIcon(connected > 0 ? R.drawable.ic_link_white_24dp : R.drawable.ic_link_off_white_24dp);
         mBuilder.setLocalOnly(true);
         if (Compatibility.runsTwentySix()) {
-            mBuilder.setChannelId(FOREGROUND_CHANNEL_ID);
             mBuilder.addAction(
                     R.drawable.ic_logout_white_24dp,
                     mXmppConnectionService.getString(R.string.log_out),
@@ -2284,7 +2284,7 @@ public class NotificationService {
                         e);
             }
         }
-        final Notification.Builder mBuilder = new Notification.Builder(mXmppConnectionService);
+        final NotificationCompat.Builder mBuilder = new NotificationCompat.Builder(mXmppConnectionService, ERROR_CHANNEL_ID);
         if (errors.isEmpty()) {
             cancel(ERROR_NOTIFICATION_ID);
             return;
@@ -2339,10 +2339,10 @@ public class NotificationService {
                                         : PendingIntent.FLAG_UPDATE_CURRENT));
             }
         }
-        mBuilder.setVisibility(Notification.VISIBILITY_PRIVATE);
+        mBuilder.setVisibility(NotificationCompat.VISIBILITY_PRIVATE);
         mBuilder.setSmallIcon(R.drawable.ic_warning_white_24dp);
         mBuilder.setLocalOnly(true);
-        mBuilder.setPriority(Notification.PRIORITY_LOW);
+        mBuilder.setPriority(NotificationCompat.PRIORITY_LOW);
         final Intent intent;
         if (AccountUtils.MANAGE_ACCOUNT_ACTIVITY != null) {
             intent = new Intent(mXmppConnectionService, AccountUtils.MANAGE_ACCOUNT_ACTIVITY);
@@ -2354,22 +2354,16 @@ public class NotificationService {
         mBuilder.setContentIntent(PendingIntent.getActivity(mXmppConnectionService, 145, intent, s()
                 ? PendingIntent.FLAG_IMMUTABLE | PendingIntent.FLAG_UPDATE_CURRENT
                 : PendingIntent.FLAG_UPDATE_CURRENT));
-        if (Compatibility.runsTwentySix()) {
-            mBuilder.setChannelId(ERROR_CHANNEL_ID);
-        }
         notify(ERROR_NOTIFICATION_ID, mBuilder.build());
     }
 
     Notification AppUpdateNotification(PendingIntent intent, String version, String filesize) {
-        Notification.Builder mBuilder = new Notification.Builder(mXmppConnectionService);
+        NotificationCompat.Builder mBuilder = new NotificationCompat.Builder(mXmppConnectionService, UPDATE_CHANNEL_ID);
         mBuilder.setContentTitle(mXmppConnectionService.getString(R.string.app_name));
         mBuilder.setContentText(String.format(mXmppConnectionService.getString(R.string.update_available), version, filesize));
         mBuilder.setSmallIcon(R.drawable.ic_update_notification);
         mBuilder.setContentIntent(intent);
         mBuilder.setOngoing(true);
-        if (Compatibility.runsTwentySix()) {
-            mBuilder.setChannelId(UPDATE_CHANNEL_ID);
-        }
         return mBuilder.build();
     }
 
