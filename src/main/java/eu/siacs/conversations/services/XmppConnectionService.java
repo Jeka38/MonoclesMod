@@ -1850,7 +1850,11 @@ public class XmppConnectionService extends Service {
                     Log.e(Config.LOGTAG,"could not bind to OpenKeyChain", exception);
                 }
             });
-            this.pgpServiceConnection.bindToService();
+            try {
+                this.pgpServiceConnection.bindToService();
+            } catch (Exception e) {
+                Log.e(Config.LOGTAG, "could not bind to OpenKeyChain", e);
+            }
         }
 
         final PowerManager pm = ContextCompat.getSystemService(this, PowerManager.class);
