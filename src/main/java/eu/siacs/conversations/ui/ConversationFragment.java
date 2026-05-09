@@ -1801,6 +1801,9 @@ public class ConversationFragment extends XmppFragment
             final MenuItem deleteCustomBg = menu.findItem(R.id.action_delete_custom_bg);
 
             if (conversation != null) {
+                if (deleteCustomBg != null) {
+                    deleteCustomBg.setVisible(ChatBackgroundHelper.getBgFile(activity, conversation.getUuid()).exists());
+                }
                 if ((conversation.getMode() == Conversation.MODE_MULTI && !conversation.hasPermanentCounterpart()) || (activity.xmppConnectionService != null && !activity.xmppConnectionService.hasInternetConnection())) {
                     menuInviteContact.setVisible(conversation.getMucOptions().canInvite());
                     menuArchiveChat.setVisible(false);
@@ -1862,8 +1865,10 @@ public class ConversationFragment extends XmppFragment
                 menuInviteContact.setVisible(false);
                 menuGroupDetails.setVisible(false);
                 menuContactDetails.setVisible(false);
+                if (deleteCustomBg != null) {
+                    deleteCustomBg.setVisible(false);
+                }
             }
-            deleteCustomBg.setVisible(ChatBackgroundHelper.getBgFile(activity, conversation.getUuid()).exists());
             super.onCreateOptionsMenu(menu, menuInflater);
         }
         Fragment secondaryFragment = activity.getFragmentManager().findFragmentById(R.id.secondary_fragment);
