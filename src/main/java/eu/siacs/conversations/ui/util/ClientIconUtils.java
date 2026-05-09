@@ -364,6 +364,7 @@ public final class ClientIconUtils {
         rules.add(rule(R.drawable.client_fj, "jabga.ru"));
         rules.add(rule(R.drawable.client_freomessenger, "freomessenger.com/caps"));
         rules.add(rule(R.drawable.client_freq, "freq-bot.net"));
+        rules.add(rule(R.drawable.client_fluux, "fluux.io/desktop", "fluux"));
         rules.add(rule(R.drawable.client_cheogram, "cheogram"));
         rules.add(rule(R.drawable.client_climm, "climm.org/xmpp/caps"));
         rules.add(rule(R.drawable.client_coccinella, "coccinella.sourceforge.net/protocol/caps"));
