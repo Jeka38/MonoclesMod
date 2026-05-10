@@ -127,8 +127,13 @@ public class MediaViewerActivity extends XmppActivity implements AudioManager.On
 
     private void share() {
         Intent share = new Intent(Intent.ACTION_SEND);
-        share.setType(getMimeType(mFile.toString()));
-        share.putExtra(Intent.EXTRA_STREAM, FileBackend.getUriForFile(this, mFile));
+        if (mFile != null) {
+            share.setType(getMimeType(mFile.toString()));
+            share.putExtra(Intent.EXTRA_STREAM, FileBackend.getUriForFile(this, mFile));
+        } else {
+            share.setType("text/plain");
+            share.putExtra(Intent.EXTRA_TEXT, mFileUri.toString());
+        }
         try {
             startActivity(Intent.createChooser(share, getText(R.string.share_with)));
         } catch (ActivityNotFoundException e) {
@@ -152,12 +157,16 @@ public class MediaViewerActivity extends XmppActivity implements AudioManager.On
 
     private void open() {
         Uri uri;
-        try {
-            uri = FileBackend.getUriForFile(this, mFile);
-        } catch (SecurityException e) {
-            Log.d(Config.LOGTAG, "No permission to access " + mFile.getAbsolutePath(), e);
-            ToastCompat.makeText(this, this.getString(R.string.no_permission_to_access_x, mFile.getAbsolutePath()), ToastCompat.LENGTH_SHORT).show();
-            return;
+        if (mFile != null) {
+            try {
+                uri = FileBackend.getUriForFile(this, mFile);
+            } catch (SecurityException e) {
+                Log.d(Config.LOGTAG, "No permission to access " + mFile.getAbsolutePath(), e);
+                ToastCompat.makeText(this, this.getString(R.string.no_permission_to_access_x, mFile.getAbsolutePath()), ToastCompat.LENGTH_SHORT).show();
+                return;
+            }
+        } else {
+            uri = mFileUri;
         }
         String mime = MimeUtils.guessMimeTypeFromUri(this, uri);
         Intent openIntent = new Intent(Intent.ACTION_VIEW);
@@ -190,35 +199,53 @@ public class MediaViewerActivity extends XmppActivity implements AudioManager.On
         if (intent != null) {
             if (intent.hasExtra("image")) {
                 mFileUri = intent.getParcelableExtra("image");
-                mFile = new File(mFileUri.getPath());
-                if (mFileUri != null && mFile.exists() && mFile.length() > 0) {
-                    try {
+                if (mFileUri != null) {
+                    String scheme = mFileUri.getScheme();
+                    if ("http".equalsIgnoreCase(scheme) || "https".equalsIgnoreCase(scheme)) {
+                        mFile = null;
                         isImage = true;
-                        DisplayImage(mFile, mFileUri);
-                    } catch (Exception e) {
-                        isImage = false;
-                        Log.d(Config.LOGTAG, "Illegal exeption :" + e);
-                        ToastCompat.makeText(MediaViewerActivity.this, getString(R.string.error_file_corrupt), ToastCompat.LENGTH_SHORT).show();
-                        finish();
+                        DisplayImage(null, mFileUri);
+                    } else {
+                        mFile = new File(mFileUri.getPath());
+                        if (mFile.exists() && mFile.length() > 0) {
+                            try {
+                                isImage = true;
+                                DisplayImage(mFile, mFileUri);
+                            } catch (Exception e) {
+                                isImage = false;
+                                Log.d(Config.LOGTAG, "Illegal exeption :" + e);
+                                ToastCompat.makeText(MediaViewerActivity.this, getString(R.string.error_file_corrupt), ToastCompat.LENGTH_SHORT).show();
+                                finish();
+                            }
+                        } else {
+                            ToastCompat.makeText(MediaViewerActivity.this, getString(R.string.file_deleted), ToastCompat.LENGTH_SHORT).show();
+                        }
                     }
-                } else {
-                    ToastCompat.makeText(MediaViewerActivity.this, getString(R.string.file_deleted), ToastCompat.LENGTH_SHORT).show();
                 }
             } else if (intent.hasExtra("video")) {
                 mFileUri = intent.getParcelableExtra("video");
-                mFile = new File(mFileUri.getPath());
-                if (mFileUri != null && mFile.exists() && mFile.length() > 0) {
-                    try {
+                if (mFileUri != null) {
+                    String scheme = mFileUri.getScheme();
+                    if ("http".equalsIgnoreCase(scheme) || "https".equalsIgnoreCase(scheme)) {
+                        mFile = null;
                         isVideo = true;
                         DisplayVideo(mFileUri);
-                    } catch (Exception e) {
-                        isVideo = false;
-                        Log.d(Config.LOGTAG, "Illegal exeption :" + e);
-                        ToastCompat.makeText(MediaViewerActivity.this, getString(R.string.error_file_corrupt), ToastCompat.LENGTH_SHORT).show();
-                        finish();
+                    } else {
+                        mFile = new File(mFileUri.getPath());
+                        if (mFile.exists() && mFile.length() > 0) {
+                            try {
+                                isVideo = true;
+                                DisplayVideo(mFileUri);
+                            } catch (Exception e) {
+                                isVideo = false;
+                                Log.d(Config.LOGTAG, "Illegal exeption :" + e);
+                                ToastCompat.makeText(MediaViewerActivity.this, getString(R.string.error_file_corrupt), ToastCompat.LENGTH_SHORT).show();
+                                finish();
+                            }
+                        } else {
+                            ToastCompat.makeText(MediaViewerActivity.this, getString(R.string.file_deleted), ToastCompat.LENGTH_SHORT).show();
+                        }
                     }
-                } else {
-                    ToastCompat.makeText(MediaViewerActivity.this, getString(R.string.file_deleted), ToastCompat.LENGTH_SHORT).show();
                 }
             }
         }
@@ -276,16 +303,18 @@ public class MediaViewerActivity extends XmppActivity implements AudioManager.On
     }
 
     private void DisplayImage(final File file, final Uri uri) {
-        BitmapFactory.Options options = new BitmapFactory.Options();
-        options.inJustDecodeBounds = true;
-        BitmapFactory.decodeFile(new File(file.getPath()).getAbsolutePath(), options);
-        height = options.outHeight;
-        width = options.outWidth;
-        aspect = new Rational(width, height);
-        rotation = getRotation(Uri.parse("file://" + file.getAbsolutePath()));
-        Log.d(Config.LOGTAG, "Image height: " + height + ", width: " + width + ", rotation: " + rotation + " aspect: " + aspect);
-        if (useAutoRotateScreen()) {
-            rotateScreen(width, height, rotation);
+        if (file != null) {
+            BitmapFactory.Options options = new BitmapFactory.Options();
+            options.inJustDecodeBounds = true;
+            BitmapFactory.decodeFile(new File(file.getPath()).getAbsolutePath(), options);
+            height = options.outHeight;
+            width = options.outWidth;
+            aspect = new Rational(width, height);
+            rotation = getRotation(Uri.parse("file://" + file.getAbsolutePath()));
+            Log.d(Config.LOGTAG, "Image height: " + height + ", width: " + width + ", rotation: " + rotation + " aspect: " + aspect);
+            if (useAutoRotateScreen()) {
+                rotateScreen(width, height, rotation);
+            }
         }
         try {
             binding.messageImageView.setVisibility(View.VISIBLE);
@@ -306,32 +335,54 @@ public class MediaViewerActivity extends XmppActivity implements AudioManager.On
     }
 
     private void DisplayVideo(final Uri uri) {
-        try {
-            MediaMetadataRetriever retriever = new MediaMetadataRetriever();
-            retriever.setDataSource(uri.getPath());
-            Bitmap bitmap = null;
+        new Thread(() -> {
             try {
-                bitmap = retriever.getFrameAtTime(0);
-                height = bitmap.getHeight();
-                width = bitmap.getWidth();
-            } catch (Exception e) {
-                height = Integer.valueOf(retriever.extractMetadata(MediaMetadataRetriever.METADATA_KEY_VIDEO_HEIGHT));
-                width = Integer.valueOf(retriever.extractMetadata(MediaMetadataRetriever.METADATA_KEY_VIDEO_WIDTH));
-            } finally {
-                if (bitmap != null) {
-                    bitmap.recycle();
+                MediaMetadataRetriever retriever = new MediaMetadataRetriever();
+                retriever.setDataSource(this, uri);
+                Bitmap bitmap = null;
+                int videoHeight;
+                int videoWidth;
+                try {
+                    bitmap = retriever.getFrameAtTime(0);
+                    videoHeight = bitmap.getHeight();
+                    videoWidth = bitmap.getWidth();
+                } catch (Exception e) {
+                    videoHeight = Integer.valueOf(retriever.extractMetadata(MediaMetadataRetriever.METADATA_KEY_VIDEO_HEIGHT));
+                    videoWidth = Integer.valueOf(retriever.extractMetadata(MediaMetadataRetriever.METADATA_KEY_VIDEO_WIDTH));
+                } finally {
+                    if (bitmap != null) {
+                        bitmap.recycle();
+                    }
                 }
-            }
-            try {
-                rotation = Integer.valueOf(retriever.extractMetadata(MediaMetadataRetriever.METADATA_KEY_VIDEO_ROTATION));
+                int videoRotation;
+                try {
+                    videoRotation = Integer.valueOf(retriever.extractMetadata(MediaMetadataRetriever.METADATA_KEY_VIDEO_ROTATION));
+                } catch (Exception e) {
+                    videoRotation = 0;
+                }
+                final int finalHeight = videoHeight;
+                final int finalWidth = videoWidth;
+                final int finalRotation = videoRotation;
+                runOnUiThread(() -> {
+                    height = finalHeight;
+                    width = finalWidth;
+                    rotation = finalRotation;
+                    aspect = new Rational(width, height);
+                    Log.d(Config.LOGTAG, "Video height: " + height + ", width: " + width + ", rotation: " + rotation + ", aspect: " + aspect);
+                    if (useAutoRotateScreen()) {
+                        rotateScreen(width, height, rotation);
+                    }
+                    initializePlayer(uri);
+                });
             } catch (Exception e) {
-                rotation = 0;
+                e.printStackTrace();
+                runOnUiThread(this::open);
             }
-            aspect = new Rational(width, height);
-            Log.d(Config.LOGTAG, "Video height: " + height + ", width: " + width + ", rotation: " + rotation + ", aspect: " + aspect);
-            if (useAutoRotateScreen()) {
-                rotateScreen(width, height, rotation);
-            }
+        }).start();
+    }
+
+    private void initializePlayer(final Uri uri) {
+        try {
             binding.messageVideoView.setVisibility(View.VISIBLE);
             player = new ExoPlayer.Builder(this).build();
             player.addListener(new Player.Listener() {
@@ -589,7 +640,10 @@ public class MediaViewerActivity extends XmppActivity implements AudioManager.On
     }
 
     private boolean isDeletableFile(File file) {
-        return (file == null || !file.toString().startsWith("/") || file.toString().contains(getConversationsDirectory(this, "null").getAbsolutePath()));
+        if (file == null) {
+            return false;
+        }
+        return (!file.toString().startsWith("/") || file.toString().contains(getConversationsDirectory(this, "null").getAbsolutePath()));
     }
 
     private void showFAB() {

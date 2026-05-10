@@ -412,10 +412,10 @@
             android:summary="@string/pref_choose_camera_summary"
             android:title="@string/choose_camera_app" />
         <SwitchPreference
-            android:defaultValue="@bool/internal_meda_viewer"
-            android:key="internal_meda_viewer"
-            android:title="@string/internal_meda_viewer_title"
-            android:summary="@string/internal_meda_viewer_summary" />
+            android:defaultValue="@bool/internal_media_viewer"
+            android:key="internal_media_viewer"
+            android:title="@string/internal_media_viewer_title"
+            android:summary="@string/internal_media_viewer_summary" />
         <Preference
             android:title="@string/import_own_gifs"
             android:summary="@string/import_own_gifs_summary"
