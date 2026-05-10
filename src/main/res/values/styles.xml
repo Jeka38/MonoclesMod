@@ -58,10 +58,10 @@
     </style>
 
     <style name="Widget.Conversations.EditText" parent="Widget.Material3.TextInputEditText.FilledBox">
-        <item name="android:textSize">?TextSizeInput</item>
+        <item name="android:textSize">16sp</item>
         <item name="android:textCursorDrawable">@drawable/dark_cursor</item>
-        <item name="colorControlActivated">?attr/colorAccent</item>
-        <item name="colorControlNormal">?attr/colorAccent</item>
+        <item name="colorControlActivated">?attr/colorPrimary</item>
+        <item name="colorControlNormal">?attr/colorOutline</item>
         <item name="fontFamily">@font/notosansregular</item>
     </style>
 
@@ -101,17 +101,17 @@
     </style>
 
     <style name="Widget.Conversations.Button.Outline" parent="@style/Widget.Material3.Button.OutlinedButton">
-        <item name="android:textSize">?TextSizeBody2</item>
-        <item name="strokeColor">?attr/colorAccent</item>
-        <item name="cornerRadius">20dp</item>
-        <item name="android:textColor">@color/button_state_color</item>
+        <item name="android:textSize">14sp</item>
+        <item name="strokeColor">?attr/colorOutline</item>
+        <item name="cornerRadius">24dp</item>
+        <item name="android:textColor">?attr/colorPrimary</item>
         <item name="fontFamily">@font/notosanssemibold</item>
     </style>
 
     <style name="Widget.Conversations.Button" parent="@style/Widget.Material3.Button">
-        <item name="android:textSize">?TextSizeBody2</item>
-        <item name="cornerRadius">20dp</item>
-        <item name="android:textColor">@color/button_state_color</item>
+        <item name="android:textSize">14sp</item>
+        <item name="cornerRadius">24dp</item>
+        <item name="android:textColor">?attr/colorOnPrimary</item>
         <item name="fontFamily">@font/notosanssemibold</item>
     </style>
 

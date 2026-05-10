@@ -51,33 +51,36 @@
         <item name="colorSurfaceVariant">@color/grey200</item>
         <item name="colorOnSurfaceVariant">@color/grey700</item>
         <item name="colorOutline">@color/grey500</item>
+        <item name="colorOutlineVariant">@color/grey300</item>
+        <item name="colorError">@color/red800</item>
+        <item name="colorOnError">@color/realwhite</item>
 
         <item name="colorPrimaryDark">@color/primary_dark</item>
+        <item name="colorAccent">@color/accent</item>
         <item name="colorAccentLight">@color/accent_light</item>
         <item name="colorAccentLightDisabled">@color/accent_light_disabled</item>
         <item name="popupOverlayStyle">@style/ThemeOverlay.Material3.Light</item>
-        <item name="colorControlNormal">?attr/text_Color_Main</item>
-        <item name="colorControlActivated">@color/accent</item>
-        <item name="text_Color_Main">@color/realblack</item>
-        <item name="colorOnPrimary">@color/realwhite</item>
+        <item name="colorControlNormal">?attr/colorOnSurfaceVariant</item>
+        <item name="colorControlActivated">?attr/colorPrimary</item>
+        <item name="text_Color_Main">?attr/colorOnSurface</item>
         <item name="button_text_color_disabled">@color/grey500</item>
         <item name="chat_bg">@drawable/bg_light_blue</item>
-        <item name="icon_tint">@color/black54</item>
-        <item name="color_background_primary">@color/grey50</item>
+        <item name="icon_tint">?attr/colorOnSurfaceVariant</item>
+        <item name="color_background_primary">?attr/colorSurface</item>
         <item name="color_background_secondary">#FFFFFF</item>
-        <item name="color_background_tertiary">@color/grey300</item>
+        <item name="color_background_tertiary">?attr/colorSurfaceVariant</item>
         <item name="color_background_overlay">@color/grey900_40</item>
-        <item name="color_warning">@color/red700</item>
-        <item name="color_warning_button_text">@color/warning_button_dark</item>
+        <item name="color_warning">?attr/colorError</item>
+        <item name="color_warning_button_text">?attr/colorOnError</item>
         <item name="TextColorOnline">@color/green500</item>
-        <item name="TextColorError">@color/red800</item>
-        <item name="edit_text_color">@color/black87</item>
+        <item name="TextColorError">?attr/colorError</item>
+        <item name="edit_text_color">?attr/colorOnSurface</item>
         <item name="activity_background_search">@drawable/search_background_light</item>
         <item name="activity_background_no_results">@drawable/no_results_background_light</item>
-        <item name="list_item_background">@drawable/list_item_background_light</item>
-        <item name="EmojiColor">@color/realblack</item>
+        <item name="list_item_background">?attr/selectableItemBackground</item>
+        <item name="EmojiColor">?attr/colorOnSurface</item>
         <item name="color_bubble_light">?attr/colorSurfaceVariant</item>
-        <item name="color_bubble_dark">?attr/colorPrimaryContainer</item>
+        <item name="color_bubble_dark">?attr/colorSecondaryContainer</item>
         <item name="color_bubble_date">@color/lightgreen</item>
         <item name="color_bubble_warning">@color/lightred</item>
         <item name="color_border">@color/grey500</item>
@@ -263,33 +266,36 @@
         <item name="colorSurfaceVariant">@color/grey800</item>
         <item name="colorOnSurfaceVariant">@color/grey300</item>
         <item name="colorOutline">@color/grey700</item>
+        <item name="colorOutlineVariant">@color/grey800</item>
+        <item name="colorError">@color/red500</item>
+        <item name="colorOnError">@color/realblack</item>
 
         <item name="colorPrimaryDark">@color/primary_dark</item>
+        <item name="colorAccent">@color/accent</item>
         <item name="colorAccentLight">@color/accent_light</item>
         <item name="colorAccentLightDisabled">@color/accent_light_disabled</item>
         <item name="popupOverlayStyle">@style/ThemeOverlay.Material3.Dark</item>
-        <item name="colorControlNormal">?attr/text_Color_Main</item>
-        <item name="colorControlActivated">@color/accent</item>
-        <item name="text_Color_Main">@color/realwhite</item>
-        <item name="colorOnPrimary">@color/grey800</item>
+        <item name="colorControlNormal">?attr/colorOnSurfaceVariant</item>
+        <item name="colorControlActivated">?attr/colorPrimary</item>
+        <item name="text_Color_Main">?attr/colorOnSurface</item>
         <item name="button_text_color_disabled">@color/grey500</item>
         <item name="chat_bg">@drawable/bg_dark_blue</item>
-        <item name="icon_tint">@color/realwhite</item>
-        <item name="color_background_primary">@color/grey700</item>
+        <item name="icon_tint">?attr/colorOnSurfaceVariant</item>
+        <item name="color_background_primary">?attr/colorSurface</item>
         <item name="color_background_secondary">@color/grey800</item>
-        <item name="color_background_tertiary">@color/grey900</item>
+        <item name="color_background_tertiary">?attr/colorSurfaceVariant</item>
         <item name="color_background_overlay">@color/grey900_40</item>
-        <item name="color_warning">@color/red700</item>
-        <item name="color_warning_button_text">@color/warning_button</item>
+        <item name="color_warning">?attr/colorError</item>
+        <item name="color_warning_button_text">?attr/colorOnError</item>
         <item name="TextColorOnline">@color/green500</item>
-        <item name="TextColorError">@color/red500</item>
-        <item name="edit_text_color">@color/white</item>
+        <item name="TextColorError">?attr/colorError</item>
+        <item name="edit_text_color">?attr/colorOnSurface</item>
         <item name="activity_background_search">@drawable/search_background_dark</item>
         <item name="activity_background_no_results">@drawable/no_results_background_dark</item>
-        <item name="list_item_background">@drawable/list_item_background_dark</item>
-        <item name="EmojiColor">@color/realwhite</item>
+        <item name="list_item_background">?attr/selectableItemBackground</item>
+        <item name="EmojiColor">?attr/colorOnSurface</item>
         <item name="color_bubble_light">?attr/colorSurfaceVariant</item>
-        <item name="color_bubble_dark">?attr/colorPrimaryContainer</item>
+        <item name="color_bubble_dark">?attr/colorSecondaryContainer</item>
         <item name="color_bubble_date">@color/darkgreen</item>
         <item name="color_bubble_warning">@color/darkred</item>
         <item name="color_border">@color/grey700</item>
@@ -478,32 +484,21 @@
     </style>
 
     <!-- blue dialog -->
-    <style name="ConversationsTheme.Dialog" parent="Theme.Material3.Light.Dialog">
-        <item name="colorPrimary">@color/primary</item>
-        <item name="colorPrimaryDark">@color/primary_dark</item>
-        <item name="colorAccent">@color/accent</item>
-        <item name="colorAccentLight">@color/accent_light</item>
-        <item name="colorAccentLightDisabled">@color/accent_light_disabled</item>
-        <item name="color_background_primary">@color/grey50</item>
-        <item name="divider">@color/black12</item>
-        <item name="TextSizeTitle">18sp</item>
-        <item name="TextSizeBody2">14sp</item>
-        <item name="TextSizeDisplay2">45sp</item>
+    <style name="ConversationsTheme.Dialog" parent="Theme.Material3.Light.Dialog.Alert">
+        <item name="colorPrimary">?attr/colorPrimary</item>
+        <item name="colorOnSurface">?attr/colorOnSurface</item>
+        <item name="colorSurface">?attr/colorSurface</item>
+        <item name="android:windowBackground">@android:color/transparent</item>
         <item name="android:windowNoTitle">true</item>
         <item name="buttonBarButtonStyle">@style/Conversations.Dialog.Alert.Buttons</item>
     </style>
 
     <!-- blue dialog - dark -->
-    <style name="ConversationsTheme.Dark.Dialog" parent="Theme.Material3.Dark.Dialog">
-        <item name="colorPrimary">@color/primary</item>
-        <item name="colorPrimaryDark">@color/primary_dark</item>
-        <item name="colorAccent">@color/accent</item>
-        <item name="colorAccentLight">@color/accent_light</item>
-        <item name="colorAccentLightDisabled">@color/accent_light_disabled</item>
-        <item name="color_background_primary">@color/grey800</item>
-        <item name="divider">@color/white12</item>
-        <item name="TextSizeBody2">14sp</item>
-        <item name="TextSizeDisplay2">45sp</item>
+    <style name="ConversationsTheme.Dark.Dialog" parent="Theme.Material3.Dark.Dialog.Alert">
+        <item name="colorPrimary">?attr/colorPrimary</item>
+        <item name="colorOnSurface">?attr/colorOnSurface</item>
+        <item name="colorSurface">?attr/colorSurface</item>
+        <item name="android:windowBackground">@android:color/transparent</item>
         <item name="android:windowNoTitle">true</item>
         <item name="buttonBarButtonStyle">@style/Conversations.Dialog.Alert.Buttons</item>
     </style>
@@ -657,10 +652,10 @@
         <item name="colorPrimaryDark">@color/primary_monocles</item>
         <item name="colorAccentLight">@color/accent_light_monocles</item>
         <item name="colorAccentLightDisabled">@color/accent_light_disabled_monocles</item>
-        <item name="color_background_primary">#FFFFFF</item>
-        <item name="color_background_tertiary">#FFFFFF</item>
-        <item name="colorControlNormal">?attr/text_Color_Main</item>
-        <item name="colorControlActivated">@color/accent_monocles</item>
+        <item name="color_background_primary">?attr/colorSurface</item>
+        <item name="color_background_tertiary">?attr/colorSurfaceVariant</item>
+        <item name="colorControlNormal">?attr/colorOnSurfaceVariant</item>
+        <item name="colorControlActivated">?attr/colorPrimary</item>
         <item name="color_bubble_light">@color/lightmonocles</item>
         <item name="color_bubble_dark">@color/lightmonocles2</item>
         <item name="color_bubble_date">@color/lightgreen</item>
