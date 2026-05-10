@@ -1462,8 +1462,8 @@
     <string name="webxdc_store_hint_summary">To use WebXDC apps with status updates you need to disable encryption when sending the WebXDC. Please enable encryption afterwards again.</string>
     <string name="send_encrypted">Send encrypted</string>
     <string name="choose_webxdc">Choose WebXDC</string>
-    <string name="internal_meda_viewer_title">Internal media viewer</string>
-    <string name="internal_meda_viewer_summary">Open image and video files with the internal media viewer</string>
+    <string name="internal_media_viewer_title">Internal media viewer</string>
+    <string name="internal_media_viewer_summary">Open image and video files with the internal media viewer</string>
     <string name="avater_shape_oval">Oval</string>
     <string name="avater_shape_rounded_square">Rounded Square</string>
     <string name="avater_shape_square">Square</string>

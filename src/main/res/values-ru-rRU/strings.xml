@@ -259,10 +259,10 @@
     <string name="pref_message_autocomplete">Автозаполнение при написании сообщений</string>
     <string name="pref_message_autocomplete_summary">Используйте «@» в чате для автозаполнения и отображения списка пользователей</string>
     <string name="pref_show_navigation_bar">Показать панель навигации</string>
-    <string name="internal_meda_viewer_title">Внутренний просмотрщик медиа</string>
+    <string name="internal_media_viewer_title">Внутренний просмотрщик медиа</string>
     <string name="pref_avatar_shape_summary">Позволяет выбирать форму аватара глобально</string>
     <string name="pref_show_navigation_bar_summary">Показать панель навигации внизу</string>
-    <string name="internal_meda_viewer_summary">Используйте встроенный просмотрщик мультимедиа для открытия файлов изображений или видео внутри чата Monocles</string>
+    <string name="internal_media_viewer_summary">Используйте встроенный просмотрщик мультимедиа для открытия файлов изображений или видео внутри чата Monocles</string>
     <string name="creating_channel">Создание публичной конференции…</string>
     <string name="creating_conference">Создание конференции…</string>
     <string name="crop_image_menu_crop">Обрезать</string>

@@ -789,18 +789,7 @@ public class MessageAdapter extends ArrayAdapter<Message> {
                         })
                         .into(viewHolder.image);
 
-                viewHolder.image.setOnClickListener(v -> {
-                    Uri uri = Uri.parse(imageUrl);
-                    Intent intent = new Intent(Intent.ACTION_VIEW);
-                    intent.setDataAndType(uri, "image/*");
-                    intent.addFlags(Intent.FLAG_GRANT_READ_URI_PERMISSION);
-                    if (intent.resolveActivity(activity.getPackageManager()) != null) {
-                        activity.startActivity(intent);
-                        activity.overridePendingTransition(R.animator.fade_in, R.animator.fade_out);
-                    } else {
-                        ToastCompat.makeText(activity, R.string.error_message, ToastCompat.LENGTH_LONG).show();
-                    }
-                });
+                viewHolder.image.setOnClickListener(v -> ViewUtil.view(activity, Uri.parse(imageUrl)));
             }
 
             // Обработка текста сообщения
