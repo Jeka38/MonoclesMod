@@ -108,6 +108,7 @@ public class AudioPlayer implements View.OnClickListener, MediaPlayer.OnCompleti
         viewHolder.progress.setProgressTintList(color);
         viewHolder.playPause.setAlpha(viewHolder.darkBackground ? 0.7f : 0.57f);
         viewHolder.playPause.setOnClickListener(this);
+        viewHolder.audioFilename.setText(messageAdapter.getFileBackend().getFile(message).getName());
         if (message == currentlyPlayingMessage) {
             if (AudioPlayer.player != null && AudioPlayer.player.isPlaying()) {
                 viewHolder.playPause.setImageResource(viewHolder.darkBackground ? R.drawable.ic_pause_white_36dp : R.drawable.ic_pause_black_36dp);
@@ -259,6 +260,7 @@ public class AudioPlayer implements View.OnClickListener, MediaPlayer.OnCompleti
         viewHolder.playPause.setImageResource(viewHolder.darkBackground ? R.drawable.ic_play_arrow_white_36dp : R.drawable.ic_play_arrow_black_36dp);
         if (message != null) {
             viewHolder.runtime.setText(formatTime(message.getFileParams().runtime));
+            viewHolder.audioFilename.setText(messageAdapter.getFileBackend().getFile(message).getName());
         }
         viewHolder.progress.setProgress(0);
         viewHolder.progress.setEnabled(false);
@@ -441,6 +443,7 @@ public class AudioPlayer implements View.OnClickListener, MediaPlayer.OnCompleti
 
     public static class ViewHolder {
         private TextView runtime;
+        private TextView audioFilename;
         private SeekBar progress;
         private ImageButton playPause;
         private boolean darkBackground = false;
@@ -450,6 +453,7 @@ public class AudioPlayer implements View.OnClickListener, MediaPlayer.OnCompleti
             if (viewHolder == null) {
                 viewHolder = new ViewHolder();
                 viewHolder.runtime = audioPlayer.findViewById(R.id.runtime);
+                viewHolder.audioFilename = audioPlayer.findViewById(R.id.audio_filename);
                 viewHolder.progress = audioPlayer.findViewById(R.id.progress);
                 viewHolder.playPause = audioPlayer.findViewById(R.id.play_pause);
                 audioPlayer.setTag(R.id.TAG_AUDIO_PLAYER_VIEW_HOLDER, viewHolder);

@@ -153,6 +153,20 @@
             android:textColor="@color/realwhite"
             android:textSize="12sp" />
 
+        <TextView
+            android:id="@+id/audio_filename"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:layout_toEndOf="@+id/play_pause"
+            android:layout_toRightOf="@+id/play_pause"
+            android:layout_toStartOf="@+id/runtime"
+            android:layout_toLeftOf="@+id/runtime"
+            android:paddingTop="2dp"
+            android:singleLine="true"
+            android:ellipsize="middle"
+            android:textColor="@color/realwhite"
+            android:textSize="12sp" />
+
         <SeekBar
             android:id="@+id/progress"
             android:layout_width="match_parent"
