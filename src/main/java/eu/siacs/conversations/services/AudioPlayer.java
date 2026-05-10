@@ -31,6 +31,7 @@ import eu.siacs.conversations.Config;
 import eu.siacs.conversations.R;
 import eu.siacs.conversations.entities.Message;
 import eu.siacs.conversations.ui.ConversationsActivity;
+import eu.siacs.conversations.ui.util.StyledAttributes;
 import eu.siacs.conversations.ui.adapter.MessageAdapter;
 import eu.siacs.conversations.ui.util.PendingItem;
 import eu.siacs.conversations.utils.Compatibility;
@@ -109,6 +110,9 @@ public class AudioPlayer implements View.OnClickListener, MediaPlayer.OnCompleti
         viewHolder.playPause.setAlpha(viewHolder.darkBackground ? 0.7f : 0.57f);
         viewHolder.playPause.setOnClickListener(this);
         viewHolder.audioFilename.setText(messageAdapter.getFileBackend().getFile(message).getName());
+        int textColor = viewHolder.darkBackground ? 0xffffffff : StyledAttributes.getColor(messageAdapter.getContext(), R.attr.text_Color_Main);
+        viewHolder.audioFilename.setTextColor(textColor);
+        viewHolder.runtime.setTextColor(textColor);
         if (message == currentlyPlayingMessage) {
             if (AudioPlayer.player != null && AudioPlayer.player.isPlaying()) {
                 viewHolder.playPause.setImageResource(viewHolder.darkBackground ? R.drawable.ic_pause_white_36dp : R.drawable.ic_pause_black_36dp);
@@ -261,6 +265,9 @@ public class AudioPlayer implements View.OnClickListener, MediaPlayer.OnCompleti
         if (message != null) {
             viewHolder.runtime.setText(formatTime(message.getFileParams().runtime));
             viewHolder.audioFilename.setText(messageAdapter.getFileBackend().getFile(message).getName());
+            int textColor = viewHolder.darkBackground ? 0xffffffff : StyledAttributes.getColor(messageAdapter.getContext(), R.attr.text_Color_Main);
+            viewHolder.audioFilename.setTextColor(textColor);
+            viewHolder.runtime.setTextColor(textColor);
         }
         viewHolder.progress.setProgress(0);
         viewHolder.progress.setEnabled(false);
