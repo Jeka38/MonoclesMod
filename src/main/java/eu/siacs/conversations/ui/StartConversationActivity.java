@@ -1299,15 +1299,11 @@ public class StartConversationActivity extends XmppActivity implements XmppConne
 
     protected void filterConferences(String needle) {
         this.conferences.clear();
-        boolean foundSupport = false;
         ArrayList<ListItem.Tag> tags = new ArrayList<>();
         for (final Account account : xmppConnectionService.getAccounts()) {
             if (account.isEnabled()) {
                 for (Bookmark bookmark : account.getBookmarks()) {
                     if (bookmark.match(this, needle)) {
-                        if (bookmark.getJid().toString().equals("support@conference.monocles.eu")) {
-                            foundSupport = true;
-                        }
                         this.conferences.add(bookmark);
                         if (binding.startConversationViewPager.getCurrentItem() == 1) {
                             tags.addAll(bookmark.getTags(this));
@@ -1329,18 +1325,6 @@ public class StartConversationActivity extends XmppActivity implements XmppConne
                             .sorted(sortTagsBy)
                             .map(e -> e.getKey()).collect(Collectors.toList())
             );
-        }
-
-        //MONOCLES SUPPORT ROOM
-        final boolean supportDeleted = getPreferences().getBoolean("monocles_support_bookmark_deleted", false);
-        if (!supportDeleted && !foundSupport && (needle == null || needle.equals("")) && xmppConnectionService.getAccounts().size() > 0) {
-            Bookmark bookmark = new Bookmark(
-                    xmppConnectionService.getAccounts().get(0),
-                    Jid.of("support@conference.monocles.eu")
-            );
-            bookmark.setBookmarkName("monocles support room");
-            bookmark.addChild("group").setContent("support");
-            this.conferences.add(0, bookmark);
         }
 
         mConferenceAdapter.notifyDataSetChanged();

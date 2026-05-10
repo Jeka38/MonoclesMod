@@ -140,7 +140,6 @@ public class UnifiedPushBroker {
             Log.d(
                     Config.LOGTAG,
                     account.getJid().asBareJid() + ": try to renew UnifiedPush " + renewal);
-            UnifiedPushDistributor.quickLog(service,String.format("%s: try to renew UnifiedPush %s", account.getJid(), renewal.toString()));
             final String hashedApplication =
                     UnifiedPushDistributor.hash(account.getUuid(), renewal.application);
             final String hashedInstance =
@@ -209,14 +208,6 @@ public class UnifiedPushBroker {
         if (modified) {
             Log.d(
                     Config.LOGTAG,
-                    "endpoint for "
-                            + renewal.application
-                            + "/"
-                            + renewal.instance
-                            + " was updated to "
-                            + endpoint);
-            UnifiedPushDistributor.quickLog(
-                    service,
                     "endpoint for "
                             + renewal.application
                             + "/"

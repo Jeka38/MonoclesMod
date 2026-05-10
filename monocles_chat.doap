@@ -18,7 +18,6 @@
     <bug-database rdf:resource="https://codeberg.org/Arne/monocles_chat/issues"/>
     <!-- See https://github.com/ewilderj/doap/issues/53 -->
     <developer-forum rdf:resource="xmpp:development@conference.monocles.de?join"/>
-    <support-forum rdf:resource="xmpp:support@conference.monocles.eu?join"/>
 
     <license rdf:resource="https://codeberg.org/Arne/monocles_chat/src/branch/master/LICENSE"/>
 

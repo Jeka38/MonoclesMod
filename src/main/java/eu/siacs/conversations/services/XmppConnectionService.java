@@ -278,7 +278,6 @@ public class XmppConnectionService extends Service {
     public static final String ACTION_CALL_INTEGRATION_SERVICE_STARTED = "call_integration_service_started";
     private static final String ACTION_POST_CONNECTIVITY_CHANGE = "eu.siacs.conversations.POST_CONNECTIVITY_CHANGE";
     public static final String ACTION_RENEW_UNIFIED_PUSH_ENDPOINTS = "eu.siacs.conversations.UNIFIED_PUSH_RENEW";
-    public static final String ACTION_QUICK_LOG = "eu.siacs.conversations.QUICK_LOG";
     public static final String FDroid = "org.fdroid.fdroid";
     public static final String PlayStore = "com.android.vending";
     private static final String SETTING_LAST_ACTIVITY_TS = "last_activity_timestamp";
@@ -1100,12 +1099,6 @@ public class XmppConnectionService extends Service {
             case ACTION_FCM_MESSAGE_RECEIVED:
                 Log.d(Config.LOGTAG, "push message arrived in service. account");
                 break;
-            case ACTION_QUICK_LOG:
-                final String message = intent == null ? null : intent.getStringExtra("message");
-                if (message != null && Config.QUICK_LOG) {
-                    quickLog(message);
-                }
-                break;
             case Intent.ACTION_SEND:
                 final Uri uri = intent == null ? null : intent.getData();
                 if (uri != null) {
@@ -1141,22 +1134,6 @@ public class XmppConnectionService extends Service {
         return START_STICKY;
     }
 
-    private void quickLog(final String message) {
-        if (Strings.isNullOrEmpty(message)) {
-            return;
-        }
-        final Account account = AccountUtils.getFirstEnabled(this);
-        if (account == null) {
-            return;
-        }
-        final Conversation conversation =
-                findOrCreateConversation(account, Config.BUG_REPORTS, false, true);
-        final Message report = new Message(conversation, message, Message.ENCRYPTION_NONE);
-        report.setStatus(Message.STATUS_RECEIVED);
-        conversation.add(report);
-        databaseBackend.createMessage(report);
-        updateConversationUi();
-    }
 
     private void manageAccountConnectionStatesInternal() {
         manageAccountConnectionStates(ACTION_INTERNAL_PING, null);
@@ -2805,9 +2782,6 @@ public class XmppConnectionService extends Service {
     }
 
     public void deleteBookmark(final Account account, final Bookmark bookmark) {
-        if (bookmark.getJid().toString().equals("support@conference.monocles.eu")) {
-            getPreferences().edit().putBoolean("monocles_support_bookmark_deleted", true).apply();
-        }
                         /*              //TODO: Add bridges as contacts
         if (bookmark.getJid().toString().equals("whatsapp.monocles.eu")) {
             getPreferences().edit().putBoolean("whatsapp_bridge_bookmark_deleted", true).apply();

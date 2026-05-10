@@ -1255,14 +1255,6 @@ public abstract class XmppActivity extends ActionBarActivity {
         }
     }
 
-    private void createIssue() {
-        String IssueURL = Config.ISSUE_URL;
-        Intent intent = new Intent(Intent.ACTION_VIEW);
-        intent.setData(Uri.parse(IssueURL));
-        startActivity(intent);
-        overridePendingTransition(R.animator.fade_in, R.animator.fade_out);
-    }
-
     protected void shareLink(boolean http) {
         String uri = getShareableUri(http);
         if (uri == null || uri.isEmpty()) {
