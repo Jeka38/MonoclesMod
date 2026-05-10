@@ -9,33 +9,34 @@
     </style>
 
     <style name="TextAppearance.Conversations.Display2" parent="TextAppearance.Material3.DisplayMedium">
-        <item name="android:textSize">?TextSizeDisplay2</item>
+        <item name="android:textSize">?attr/TextSizeDisplay2</item>
         <item name="fontFamily">@font/notosansmedium</item>
+        <item name="android:textColor">?attr/colorOnSurface</item>
     </style>
 
-    <style name="TextAppearance.Conversations.Title" parent="TextAppearance.Material3.TitleMedium">
-        <item name="android:textSize">?TextSizeTitle</item>
+    <style name="TextAppearance.Conversations.Title" parent="TextAppearance.Material3.TitleLarge">
+        <item name="android:textSize">?attr/TextSizeTitle</item>
         <item name="fontFamily">@font/notosansmedium</item>
-
+        <item name="android:textColor">?attr/colorOnSurface</item>
     </style>
 
-    <style name="TextAppearance.Conversations.Subhead" parent="TextAppearance.Material3.TitleSmall">
-        <item name="android:textSize">?TextSizeSubhead</item>
+    <style name="TextAppearance.Conversations.Subhead" parent="TextAppearance.Material3.TitleMedium">
+        <item name="android:textSize">?attr/TextSizeSubhead</item>
         <item name="fontFamily">@font/notosansregular</item>
-
+        <item name="android:textColor">?attr/colorOnSurfaceVariant</item>
     </style>
 
     <style name="TextAppearance.Conversations.Body2" parent="TextAppearance.Material3.BodyMedium">
-        <item name="android:textSize">?TextSizeBody2</item>
+        <item name="android:textSize">?attr/TextSizeBody2</item>
         <item name="fontFamily">@font/notosansregular</item>
-
+        <item name="android:textColor">?attr/colorOnSurfaceVariant</item>
     </style>
 
-    <style name="TextAppearance.Conversations.Body1" parent="TextAppearance.Material3.BodyMedium">
-        <item name="android:textSize">?TextSizeBody1</item>
-        <item name="android:textColorLink">?text_Color_Main</item>
+    <style name="TextAppearance.Conversations.Body1" parent="TextAppearance.Material3.BodyLarge">
+        <item name="android:textSize">?attr/TextSizeBody1</item>
+        <item name="android:textColorLink">?attr/colorPrimary</item>
         <item name="fontFamily">@font/notosansregular</item>
-
+        <item name="android:textColor">?attr/colorOnSurface</item>
     </style>
 
     <style name="TextAppearance.Conversations.Body1.Warning" parent="TextAppearance.Material3.BodyLarge">

@@ -63,6 +63,7 @@ import androidx.appcompat.app.AppCompatDelegate;
 import androidx.core.content.ContextCompat;
 import androidx.databinding.DataBindingUtil;
 
+import com.google.android.material.color.DynamicColors;
 import com.bumptech.glide.Glide;
 import com.google.common.base.Strings;
 import com.google.common.collect.Collections2;
@@ -492,6 +493,7 @@ public abstract class XmppActivity extends ActionBarActivity {
     @SuppressLint("UnsupportedChromeOsCameraSystemFeature")
     @Override
     protected void onCreate(Bundle savedInstanceState) {
+        DynamicColors.applyToActivityIfAvailable(this);
         EasylockSP.init(getApplicationContext());
         super.onCreate(savedInstanceState);
         this.mTheme = findTheme();

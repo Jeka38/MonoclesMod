@@ -37,13 +37,25 @@
     <!-- blue theme -->
     <style name="ConversationsTheme" parent="Theme.Material3.Light.NoActionBar">
         <item name="colorPrimary">@color/primary</item>
+        <item name="colorOnPrimary">@color/realwhite</item>
+        <item name="colorPrimaryContainer">@color/lightblue</item>
+        <item name="colorOnPrimaryContainer">@color/primary_dark</item>
+        <item name="colorSecondary">@color/accent</item>
+        <item name="colorOnSecondary">@color/realwhite</item>
+        <item name="colorSecondaryContainer">@color/accent_light</item>
+        <item name="colorOnSecondaryContainer">@color/primary_dark</item>
+        <item name="colorTertiary">@color/realgreen</item>
+        <item name="colorOnTertiary">@color/realwhite</item>
+        <item name="colorSurface">@color/grey50</item>
+        <item name="colorOnSurface">@color/realblack</item>
+        <item name="colorSurfaceVariant">@color/grey200</item>
+        <item name="colorOnSurfaceVariant">@color/grey700</item>
+        <item name="colorOutline">@color/grey500</item>
+
         <item name="colorPrimaryDark">@color/primary_dark</item>
-        <item name="colorAccent">@color/accent</item>
         <item name="colorAccentLight">@color/accent_light</item>
         <item name="colorAccentLightDisabled">@color/accent_light_disabled</item>
         <item name="popupOverlayStyle">@style/ThemeOverlay.Material3.Light</item>
-        <item name="colorOnBackground">?colorPrimaryDark</item>
-        <item name="colorSurface">?colorPrimaryDark</item>
         <item name="colorControlNormal">?attr/text_Color_Main</item>
         <item name="colorControlActivated">@color/accent</item>
         <item name="text_Color_Main">@color/realblack</item>
@@ -64,8 +76,8 @@
         <item name="activity_background_no_results">@drawable/no_results_background_light</item>
         <item name="list_item_background">@drawable/list_item_background_light</item>
         <item name="EmojiColor">@color/realblack</item>
-        <item name="color_bubble_light">@color/lightwhite</item>
-        <item name="color_bubble_dark">@color/lightblue</item>
+        <item name="color_bubble_light">?attr/colorSurfaceVariant</item>
+        <item name="color_bubble_dark">?attr/colorPrimaryContainer</item>
         <item name="color_bubble_date">@color/lightgreen</item>
         <item name="color_bubble_warning">@color/lightred</item>
         <item name="color_border">@color/grey500</item>
@@ -237,8 +249,22 @@
     <!-- blue theme - dark -->
     <style name="ConversationsTheme.Dark" parent="Theme.Material3.Dark.NoActionBar">
         <item name="colorPrimary">@color/primary</item>
+        <item name="colorOnPrimary">@color/realwhite</item>
+        <item name="colorPrimaryContainer">@color/primary_dark</item>
+        <item name="colorOnPrimaryContainer">@color/lightblue</item>
+        <item name="colorSecondary">@color/accent</item>
+        <item name="colorOnSecondary">@color/realblack</item>
+        <item name="colorSecondaryContainer">@color/darkblue</item>
+        <item name="colorOnSecondaryContainer">@color/accent_light</item>
+        <item name="colorTertiary">@color/green500</item>
+        <item name="colorOnTertiary">@color/realblack</item>
+        <item name="colorSurface">@color/grey900</item>
+        <item name="colorOnSurface">@color/realwhite</item>
+        <item name="colorSurfaceVariant">@color/grey800</item>
+        <item name="colorOnSurfaceVariant">@color/grey300</item>
+        <item name="colorOutline">@color/grey700</item>
+
         <item name="colorPrimaryDark">@color/primary_dark</item>
-        <item name="colorAccent">@color/accent</item>
         <item name="colorAccentLight">@color/accent_light</item>
         <item name="colorAccentLightDisabled">@color/accent_light_disabled</item>
         <item name="popupOverlayStyle">@style/ThemeOverlay.Material3.Dark</item>
@@ -262,8 +288,8 @@
         <item name="activity_background_no_results">@drawable/no_results_background_dark</item>
         <item name="list_item_background">@drawable/list_item_background_dark</item>
         <item name="EmojiColor">@color/realwhite</item>
-        <item name="color_bubble_light">@color/darkwhite</item>
-        <item name="color_bubble_dark">@color/darkblue</item>
+        <item name="color_bubble_light">?attr/colorSurfaceVariant</item>
+        <item name="color_bubble_dark">?attr/colorPrimaryContainer</item>
         <item name="color_bubble_date">@color/darkgreen</item>
         <item name="color_bubble_warning">@color/darkred</item>
         <item name="color_border">@color/grey700</item>
@@ -620,8 +646,15 @@
     <!-- monocles theme -->
     <style name="ConversationsTheme.Monocles" parent="ConversationsTheme">
         <item name="colorPrimary">@color/primary_monocles</item>
+        <item name="colorOnPrimary">@color/realwhite</item>
+        <item name="colorPrimaryContainer">@color/lightmonocles</item>
+        <item name="colorOnPrimaryContainer">@color/primary_dark_monocles</item>
+        <item name="colorSecondary">@color/accent_monocles</item>
+        <item name="colorOnSecondary">@color/realwhite</item>
+        <item name="colorSecondaryContainer">@color/accent_light_monocles</item>
+        <item name="colorOnSecondaryContainer">@color/primary_dark_monocles</item>
+
         <item name="colorPrimaryDark">@color/primary_monocles</item>
-        <item name="colorAccent">@color/accent_monocles</item>
         <item name="colorAccentLight">@color/accent_light_monocles</item>
         <item name="colorAccentLightDisabled">@color/accent_light_disabled_monocles</item>
         <item name="color_background_primary">#FFFFFF</item>
@@ -640,8 +673,15 @@
     <!-- monocles theme - dark -->
     <style name="ConversationsTheme.Monocles.Dark" parent="ConversationsTheme.Dark">
         <item name="colorPrimary">@color/primary_monocles</item>
+        <item name="colorOnPrimary">@color/realwhite</item>
+        <item name="colorPrimaryContainer">@color/primary_dark_monocles</item>
+        <item name="colorOnPrimaryContainer">@color/lightmonocles</item>
+        <item name="colorSecondary">@color/accent_monocles</item>
+        <item name="colorOnSecondary">@color/realwhite</item>
+        <item name="colorSecondaryContainer">@color/darkmonocles</item>
+        <item name="colorOnSecondaryContainer">@color/accent_light_monocles</item>
+
         <item name="colorPrimaryDark">@color/primary_dark_monocles</item>
-        <item name="colorAccent">@color/accent_monocles</item>
         <item name="colorAccentLight">@color/accent_light_monocles</item>
         <item name="colorAccentLightDisabled">@color/accent_light_disabled_monocles</item>
         <item name="colorControlNormal">?attr/text_Color_Main</item>
