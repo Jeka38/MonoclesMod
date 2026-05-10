@@ -17,5 +17,5 @@
     <bool name="internal_media_viewer">true</bool>
     <bool name="show_nav_bar">true</bool>
     <bool name="message_autocomplete">true</bool>
-    <bool name="enable_smiles">false</bool>
+    <bool name="enable_smiles">true</bool>
 </resources>

@@ -187,7 +187,7 @@
             android:summary="@string/pref_play_gif_inside_summary"
             android:title="@string/pref_play_gif_inside" />
             <SwitchPreference
-                android:defaultValue="false"
+                android:defaultValue="@bool/enable_smiles"
                 android:key="enable_smiles"
                 android:summary="@string/pref_enable_smiles_summary"
                 android:title="@string/pref_enable_smiles" />
