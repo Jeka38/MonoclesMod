@@ -8,6 +8,7 @@ import android.widget.TextView;
 
 import eu.siacs.conversations.R;
 import eu.siacs.conversations.ui.adapter.MessageAdapter;
+import eu.siacs.conversations.ui.util.ShareUtil;
 
 public class MessageTextActionModeCallback implements ActionMode.Callback {
 	final MessageAdapter adapter;
@@ -32,11 +33,18 @@ public class MessageTextActionModeCallback implements ActionMode.Callback {
 
 	@Override
 	public boolean onActionItemClicked(final ActionMode mode, final MenuItem item) {
+		int start = text.getSelectionStart();
+		int end = text.getSelectionEnd();
+		if (start < 0 || end < 0) return false;
+		CharSequence selection = text.getText().subSequence(start, end);
+
 		if (item.getItemId() == R.id.quote) {
-            int start = text.getSelectionStart();
-            int end = text.getSelectionEnd();
-            if (start < 0 || end < 0) return false;
-            adapter.quoteText(text.getText().subSequence(start, end).toString(), null);
+			adapter.quoteText(selection.toString(), null);
+			mode.finish();
+			return true;
+		} else if (item.getItemId() == R.id.copy) {
+			ShareUtil.copyTextToClipboard(text.getContext(), selection.toString(), R.string.message);
+			mode.finish();
 			return true;
 		}
 		return false;
