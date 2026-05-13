@@ -496,7 +496,7 @@ public class MessageAdapter extends ArrayAdapter<Message> {
         } else {
             viewHolder.messageBody.setTextAppearance(getContext(), R.style.TextAppearance_Conversations_Body1_Secondary);
         }
-        viewHolder.messageBody.setTextIsSelectable(false);
+        viewHolder.messageBody.setTextIsSelectable(true);
     }
 
     private void showProgress(final ViewHolder viewHolder, final Transferable transferable, final Message message) {
@@ -747,7 +747,7 @@ public class MessageAdapter extends ArrayAdapter<Message> {
         viewHolder.messageBody.setTypeface(null, Typeface.NORMAL);
 
         if (message.getBody() != null && !message.getBody().equals("")) {
-            viewHolder.messageBody.setTextIsSelectable(false);
+            viewHolder.messageBody.setTextIsSelectable(true);
             viewHolder.messageBody.setVisibility(View.VISIBLE);
 
             String trimmedBody = message.getBody().trim();
@@ -834,7 +834,7 @@ public class MessageAdapter extends ArrayAdapter<Message> {
         } else {
             Log.d("ChatDebug", "Message is empty");
             viewHolder.messageBody.setText("");
-            viewHolder.messageBody.setTextIsSelectable(false);
+            viewHolder.messageBody.setTextIsSelectable(true);
             toggleWhisperInfo(viewHolder, message, false, darkBackground);
             viewHolder.images.setVisibility(View.GONE);
         }
@@ -1366,7 +1366,7 @@ public class MessageAdapter extends ArrayAdapter<Message> {
             MyLinkify.addLinks(body, false);
             viewHolder.messageBody.setText(body);
             viewHolder.messageBody.setAutoLinkMask(0);
-            viewHolder.messageBody.setTextIsSelectable(false);
+            viewHolder.messageBody.setTextIsSelectable(true);
             viewHolder.messageBody.setMovementMethod(ClickableMovementMethod.getInstance());
         } else {
             if (includeBody) {
@@ -1375,7 +1375,7 @@ public class MessageAdapter extends ArrayAdapter<Message> {
                 MyLinkify.addLinks(body, false);
                 viewHolder.messageBody.setText(body);
                 viewHolder.messageBody.setAutoLinkMask(0);
-                viewHolder.messageBody.setTextIsSelectable(false);
+                viewHolder.messageBody.setTextIsSelectable(true);
                 viewHolder.messageBody.setMovementMethod(ClickableMovementMethod.getInstance());
             } else {
                 viewHolder.messageBody.setVisibility(GONE);
