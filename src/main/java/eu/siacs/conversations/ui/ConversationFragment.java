@@ -2351,6 +2351,7 @@ public class ConversationFragment extends XmppFragment
             final MenuItem reportAndBlock = menu.findItem(R.id.action_report_and_block);
             MenuItem openWith = menu.findItem(R.id.open_with);
             MenuItem copyMessage = menu.findItem(R.id.copy_message);
+            MenuItem addToNotes = menu.findItem(R.id.add_to_notes);
             MenuItem quoteMessage = menu.findItem(R.id.quote_message);
             MenuItem retryDecryption = menu.findItem(R.id.retry_decryption);
             MenuItem correctMessage = menu.findItem(R.id.correct_message);
@@ -2386,11 +2387,11 @@ public class ConversationFragment extends XmppFragment
             }
             final boolean messageDeleted = m.isMessageDeleted();
             deleteMessage.setVisible(true);
-            if (!encrypted && !m.getBody().equals("")) {
-                copyMessage.setVisible(true);
-                quoteMessage.setVisible(!showError && MessageUtils.prepareQuote(m).length() > 0);
+            if (!encrypted && (!m.getBody().equals("") || m.isFileOrImage())) {
+                copyMessage.setVisible(!m.getBody().equals(""));
+                addToNotes.setVisible(true);
             }
-            quoteMessage.setVisible(!encrypted && !showError);
+            quoteMessage.setVisible(!encrypted && !showError && MessageUtils.prepareQuote(m).length() > 0);
             if (m.getEncryption() == Message.ENCRYPTION_DECRYPTION_FAILED && !fileDeleted) {
                 retryDecryption.setVisible(true);
             }
@@ -2596,6 +2597,9 @@ public class ConversationFragment extends XmppFragment
             return true;
         } else if (itemId == R.id.action_report_and_block) {
             reportMessage(selectedMessage);
+            return true;
+        } else if (itemId == R.id.add_to_notes) {
+            forwardToSelf(selectedMessage);
             return true;
         } else if (itemId == R.id.open_with) {
             openWith(selectedMessage);
@@ -3917,6 +3921,18 @@ public class ConversationFragment extends XmppFragment
             final DownloadableFile file = activity.xmppConnectionService.getFileBackend().getFile(message);
             ViewUtil.view(activity, file);
         }
+    }
+
+    private void forwardToSelf(Message message) {
+        final Account account = message.getConversation().getAccount();
+        final Jid selfJid = account.getJid().asBareJid();
+        final Conversation selfConversation = activity.xmppConnectionService.findOrCreateConversation(account, selfJid, false, true);
+        final Message newMessage = new Message(selfConversation, message.getBody(), selfConversation.getNextEncryption());
+        newMessage.setType(message.getType());
+        newMessage.setFileParams(message.getFileParams());
+        newMessage.setRelativeFilePath(message.getRelativeFilePath());
+        activity.xmppConnectionService.sendMessage(newMessage);
+        ToastCompat.makeText(activity, R.string.note_to_self, Toast.LENGTH_SHORT).show();
     }
 
     private void reportMessage(final Message message) {
