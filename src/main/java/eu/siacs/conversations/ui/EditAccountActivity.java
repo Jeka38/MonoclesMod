@@ -1459,6 +1459,11 @@ public class EditAccountActivity extends OmemoActivity implements OnAccountUpdat
             } else {
                 this.binding.serverInfoMam.setText(R.string.server_info_unavailable);
             }
+            if (features.privateXmlStorage()) {
+                this.binding.serverInfoPrivateXmlStorage.setText(R.string.server_info_available);
+            } else {
+                this.binding.serverInfoPrivateXmlStorage.setText(R.string.server_info_unavailable);
+            }
             if (features.csi()) {
                 this.binding.serverInfoCsi.setText(R.string.server_info_available);
             } else {

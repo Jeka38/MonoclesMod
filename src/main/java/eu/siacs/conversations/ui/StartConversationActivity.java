@@ -588,6 +588,30 @@ public class StartConversationActivity extends XmppActivity implements XmppConne
 
     }
 
+    protected void editConference() {
+        final int position = conference_context_id;
+        final Bookmark bookmark = (Bookmark) conferences.get(position);
+        final EditText bookmarkName = new EditText(this);
+        final String existingName = bookmark.getBookmarkName();
+        if (existingName != null) {
+            bookmarkName.setText(existingName);
+            bookmarkName.setSelection(existingName.length());
+        }
+        bookmarkName.setHint(R.string.bookmark_display_name);
+
+        new AlertDialog.Builder(this)
+                .setTitle(R.string.edit_bookmark)
+                .setView(bookmarkName)
+                .setNegativeButton(R.string.cancel, null)
+                .setPositiveButton(R.string.save, (dialog, which) -> {
+                    final String newName = bookmarkName.getText() == null ? null : bookmarkName.getText().toString().trim();
+                    bookmark.setBookmarkName(newName);
+                    xmppConnectionService.createBookmark(bookmark.getAccount(), bookmark);
+                    filter(mSearchEditText.getText().toString());
+                })
+                .show();
+    }
+
     @SuppressLint("InflateParams")
     protected void showCreateContactDialog(final String prefilledJid, final Invite invite) {
         FragmentTransaction ft = getSupportFragmentManager().beginTransaction();
@@ -1584,6 +1608,9 @@ public class StartConversationActivity extends XmppActivity implements XmppConne
                     break;
                 case R.id.context_share_uri:
                     activity.shareBookmarkUri();
+                    break;
+                case R.id.context_edit_conference:
+                    activity.editConference();
                     break;
                 case R.id.context_delete_conference:
                     activity.deleteConference();

@@ -3265,6 +3265,10 @@ public class XmppConnection implements Runnable {
             return pepPublishOptions() && hasDiscoFeature(account.getJid().asBareJid(), Namespace.BOOKMARKS2_COMPAT);
         }
 
+        public boolean privateXmlStorage() {
+            return hasDiscoFeature(account.getDomain(), Namespace.PRIVATE_XML_STORAGE);
+        }
+
         public boolean externalServiceDiscovery() {
             return hasDiscoFeature(account.getDomain(), Namespace.EXTERNAL_SERVICE_DISCOVERY);
         }

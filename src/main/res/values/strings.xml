@@ -199,6 +199,7 @@
     <string name="server_info_csi">XEP-0352: Client State Indication</string>
     <string name="server_info_blocking">XEP-0191: Blocking Command</string>
     <string name="server_info_roster_version">XEP-0237: Roster Versioning</string>
+    <string name="server_info_private_xml_storage">XEP-0049: Private XML Storage</string>
     <string name="server_info_stream_management">XEP-0198: Stream Management</string>
     <string name="server_info_pep">XEP-0163: PEP (Avatars / OMEMO)</string>
     <string name="server_info_http_upload">XEP-0363: HTTP File Upload</string>
@@ -241,6 +242,8 @@
     <string name="channel_full_jid_example">room@conference.example.com/nick</string>
     <string name="channel_bare_jid_example">room@conference.example.com</string>
     <string name="save_as_bookmark">Save as bookmark</string>
+    <string name="edit_bookmark">Edit bookmark</string>
+    <string name="bookmark_display_name">Bookmark name</string>
     <string name="delete_bookmark">Delete bookmark</string>
     <string name="topic">Topic</string>
     <string name="joining_conference">Joining room…</string>

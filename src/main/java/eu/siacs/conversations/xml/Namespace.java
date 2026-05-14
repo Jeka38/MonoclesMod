@@ -19,6 +19,7 @@ public final class Namespace {
     public static final String CAPTCHA = "urn:xmpp:captcha";
     public static final String BOB = "urn:xmpp:bob";
     public static final String OOB = "jabber:x:oob";
+    public static final String PRIVATE_XML_STORAGE = "jabber:iq:private";
     public static final String SASL = "urn:ietf:params:xml:ns:xmpp-sasl";
     public static final String SASL_2 = "urn:xmpp:sasl:2";
     public static final String CHANNEL_BINDING = "urn:xmpp:sasl-cb:0";

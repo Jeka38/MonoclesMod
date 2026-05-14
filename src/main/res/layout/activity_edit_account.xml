@@ -690,6 +690,28 @@ android:fontFamily="notosansregular"
                                     android:layout_height="wrap_content"
                                     android:ellipsize="end"
                                     android:singleLine="true"
+                                    android:text="@string/server_info_private_xml_storage"
+                                    android:textAppearance="@style/TextAppearance.Conversations.Body1" />
+
+                                <TextView
+                                    android:id="@+id/server_info_private_xml_storage"
+                                    android:layout_width="wrap_content"
+                                    android:layout_height="wrap_content"
+                                    android:layout_gravity="end"
+                                    android:paddingStart="4dp"
+                                    android:paddingLeft="4dp"
+                                    android:textAppearance="@style/TextAppearance.Conversations.Body1" />
+                            </TableRow>
+
+                            <TableRow
+                                android:layout_width="match_parent"
+                                android:layout_height="wrap_content">
+
+                                <TextView
+                                    android:layout_width="wrap_content"
+                                    android:layout_height="wrap_content"
+                                    android:ellipsize="end"
+                                    android:singleLine="true"
                                     android:text="@string/server_info_blocking"
                                     android:textAppearance="@style/TextAppearance.Conversations.Body1" />
 
