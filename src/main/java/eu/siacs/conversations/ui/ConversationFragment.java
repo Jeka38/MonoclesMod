@@ -24,6 +24,7 @@ import static eu.siacs.conversations.utils.PermissionUtils.readGranted;
 import static eu.siacs.conversations.utils.StorageHelper.getConversationsDirectory;
 import static eu.siacs.conversations.xmpp.Patches.ENCRYPTION_EXCEPTIONS;
 
+import android.view.ActionMode;
 import android.Manifest;
 import android.animation.ArgbEvaluator;
 import android.animation.Animator;
@@ -310,6 +311,8 @@ public class ConversationFragment extends XmppFragment
     private static final String STATE_LAST_MESSAGE_UUID = "state_last_message_uuid";
 
     private final List<Message> messageList = new ArrayList<>();
+    private final Set<String> selectedMessageUuids = new HashSet<>();
+    private ActionMode mActionMode;
     private final PendingItem<ActivityResult> postponedActivityResult = new PendingItem<>();
     private final PendingItem<String> pendingConversationsUuid = new PendingItem<>();
     private final PendingItem<ArrayList<Attachment>> pendingMediaPreviews = new PendingItem<>();
@@ -5714,6 +5717,149 @@ public class ConversationFragment extends XmppFragment
         }
         return user;
     }
+
+    public boolean onMessageLongClicked(View view, Message message) {
+        if (mActionMode != null) {
+            if (selectedMessageUuids.contains(message.getUuid())) {
+                return false;
+            }
+            toggleMessageSelection(message);
+            return true;
+        }
+        activity.startActionMode(mActionModeCallback);
+        toggleMessageSelection(message);
+        return true;
+    }
+
+    public void onMessageClicked(View view, Message message) {
+        if (mActionMode != null) {
+            toggleMessageSelection(message);
+        } else {
+            showMessageContextMenu(view, message);
+        }
+    }
+
+    private void toggleMessageSelection(Message message) {
+        String uuid = message.getUuid();
+        if (selectedMessageUuids.contains(uuid)) {
+            selectedMessageUuids.remove(uuid);
+        } else {
+            selectedMessageUuids.add(uuid);
+        }
+        if (selectedMessageUuids.isEmpty()) {
+            if (mActionMode != null) {
+                mActionMode.finish();
+            }
+        } else {
+            if (mActionMode != null) {
+                mActionMode.setTitle(String.valueOf(selectedMessageUuids.size()));
+                mActionMode.invalidate();
+            }
+        }
+        messageListAdapter.notifyDataSetChanged();
+    }
+
+    public boolean isMessageSelected(Message message) {
+        return selectedMessageUuids.contains(message.getUuid());
+    }
+
+    private final ActionMode.Callback mActionModeCallback = new ActionMode.Callback() {
+        @Override
+        public boolean onCreateActionMode(ActionMode mode, Menu menu) {
+            mActionMode = mode;
+            activity.getMenuInflater().inflate(R.menu.message_context, menu);
+            return true;
+        }
+
+        @Override
+        public boolean onPrepareActionMode(ActionMode mode, Menu menu) {
+            int count = selectedMessageUuids.size();
+            if (count > 0) {
+                mode.setTitle(String.valueOf(count));
+            }
+            // For now, only show actions if exactly one message is selected, or a subset of actions for multiple
+            MenuItem copy = menu.findItem(R.id.copy_message);
+            MenuItem quote = menu.findItem(R.id.quote_message);
+            MenuItem delete = menu.findItem(R.id.delete_message);
+            MenuItem share = menu.findItem(R.id.share_with);
+
+            if (count > 1) {
+                if (copy != null) copy.setVisible(false);
+                if (quote != null) quote.setVisible(false);
+                if (share != null) share.setVisible(false);
+                if (delete != null) delete.setVisible(true);
+            } else if (count == 1) {
+                // We should find the selected message to decide what to show
+                Message m = null;
+                String uuid = selectedMessageUuids.iterator().next();
+                synchronized (messageList) {
+                    for (Message message : messageList) {
+                        if (uuid.equals(message.getUuid())) {
+                            m = message;
+                            break;
+                        }
+                    }
+                }
+                if (m != null) {
+                    selectedMessage = m;
+                    populateContextMenu(menu);
+                }
+            }
+            return true;
+        }
+
+        @Override
+        public boolean onActionItemClicked(ActionMode mode, MenuItem item) {
+            if (selectedMessageUuids.size() == 1) {
+                String uuid = selectedMessageUuids.iterator().next();
+                synchronized (messageList) {
+                    for (Message message : messageList) {
+                        if (uuid.equals(message.getUuid())) {
+                            selectedMessage = message;
+                            break;
+                        }
+                    }
+                }
+                boolean handled = onContextItemSelected(item);
+                if (handled) {
+                    mode.finish();
+                }
+                return handled;
+            } else if (selectedMessageUuids.size() > 1 && item.getItemId() == R.id.delete_message) {
+                // Handle bulk delete
+                final List<Message> messagesToDelete = new ArrayList<>();
+                synchronized (messageList) {
+                    for (Message m : messageList) {
+                        if (selectedMessageUuids.contains(m.getUuid())) {
+                            messagesToDelete.add(m);
+                        }
+                    }
+                }
+                new AlertDialog.Builder(activity)
+                        .setTitle(R.string.delete_message)
+                        .setMessage(activity.getString(R.string.delete_message_dialog_msg))
+                        .setPositiveButton(R.string.confirm, (dialog, which) -> {
+                            for (Message m : messagesToDelete) {
+                                activity.xmppConnectionService.deleteMessage(conversation, m);
+                            }
+                            activity.onConversationsListItemUpdated();
+                            refresh();
+                            mode.finish();
+                        })
+                        .setNegativeButton(R.string.cancel, null)
+                        .show();
+                return true;
+            }
+            return false;
+        }
+
+        @Override
+        public void onDestroyActionMode(ActionMode mode) {
+            selectedMessageUuids.clear();
+            mActionMode = null;
+            messageListAdapter.notifyDataSetChanged();
+        }
+    };
 
     @Override
     public void onContactPictureClicked(Message message) {
