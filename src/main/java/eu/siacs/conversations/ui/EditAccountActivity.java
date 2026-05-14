@@ -752,6 +752,14 @@ public class EditAccountActivity extends OmemoActivity implements OnAccountUpdat
             showColorDialog();
         });
         this.binding.actionEditYourStatus.setOnClickListener(this::onEditYourStatusClicked);
+        this.binding.privateXmlStorageRow.setOnClickListener(v -> {
+            if (mAccount == null) {
+                return;
+            }
+            final Intent intent = new Intent(EditAccountActivity.this, PrivateXmlStorageActivity.class);
+            intent.putExtra(PrivateXmlStorageActivity.EXTRA_ACCOUNT, mAccount.getJid().asBareJid().toEscapedString());
+            startActivity(intent);
+        });
         if (savedInstanceState != null && savedInstanceState.getBoolean("showMoreTable")) {
             changeMoreTableVisibility(true);
         }

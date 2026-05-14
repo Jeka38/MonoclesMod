@@ -660,6 +660,7 @@ android:fontFamily="notosansregular"
                             android:visibility="gone">
 
                             <TableRow
+                                android:id="@+id/private_xml_storage_row"
                                 android:layout_width="match_parent"
                                 android:layout_height="wrap_content">
 

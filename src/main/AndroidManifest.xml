@@ -393,6 +393,10 @@
             android:launchMode="singleTop"
             android:windowSoftInputMode="stateHidden|adjustResize" />
         <activity
+            android:name=".ui.PrivateXmlStorageActivity"
+            android:exported="false"
+            android:label="@string/title_activity_private_xml_storage" />
+        <activity
             android:name=".ui.MucCaptchaActivity"
             android:exported="false"
             android:launchMode="singleTask"
