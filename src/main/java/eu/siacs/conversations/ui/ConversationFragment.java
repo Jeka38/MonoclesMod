@@ -2370,6 +2370,7 @@ public class ConversationFragment extends XmppFragment
             MenuItem showLog = menu.findItem(R.id.show_edit_log);
             MenuItem showErrorMessage = menu.findItem(R.id.show_error_message);
             MenuItem saveFile = menu.findItem(R.id.save_file);
+            MenuItem addToNotes = menu.findItem(R.id.action_add_to_notes);
             onlyThisThread.setVisible(!conversation.getLockThread() && m.getThread() != null);
             final boolean unInitiatedButKnownSize = MessageUtils.unInitiatedButKnownSize(m);
             final boolean showError = m.getStatus() == Message.STATUS_SEND_FAILED && m.getErrorMessage() != null && !Message.ERROR_MESSAGE_CANCELLED.equals(m.getErrorMessage());
@@ -2389,6 +2390,7 @@ public class ConversationFragment extends XmppFragment
             if (!encrypted && !m.getBody().equals("")) {
                 copyMessage.setVisible(true);
                 quoteMessage.setVisible(!showError && MessageUtils.prepareQuote(m).length() > 0);
+                addToNotes.setVisible(true);
             }
             quoteMessage.setVisible(!encrypted && !showError);
             if (m.getEncryption() == Message.ENCRYPTION_DECRYPTION_FAILED && !fileDeleted) {
@@ -2596,6 +2598,12 @@ public class ConversationFragment extends XmppFragment
             return true;
         } else if (itemId == R.id.action_report_and_block) {
             reportMessage(selectedMessage);
+            return true;
+        } else if (itemId == R.id.action_add_to_notes) {
+            eu.siacs.conversations.entities.Note note = new eu.siacs.conversations.entities.Note(selectedMessage.getBody(), conversation.getName().toString());
+            conversation.getAccount().addNote(note);
+            activity.xmppConnectionService.pushNotes(conversation.getAccount());
+            Toast.makeText(activity, R.string.note_added, Toast.LENGTH_SHORT).show();
             return true;
         } else if (itemId == R.id.open_with) {
             openWith(selectedMessage);

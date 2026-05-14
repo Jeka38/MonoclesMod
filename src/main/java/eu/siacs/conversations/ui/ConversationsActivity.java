@@ -974,6 +974,9 @@ public class ConversationsActivity extends XmppActivity implements OnConversatio
             case R.id.action_mark_all_chats_as_read:
                 markAllChatsAsRead();
                 return true;
+            case R.id.action_notebook:
+                startActivity(new Intent(this, NotesActivity.class));
+                return true;
             case R.id.action_latest_mention:
                 Message latestMention = xmppConnectionService.getLatestUnreadMention();
                 if (latestMention != null) {

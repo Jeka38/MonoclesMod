@@ -466,6 +466,7 @@ public class XmppConnectionService extends Service {
             } else if (!account.getXmppConnection().getFeatures().bookmarksConversion()) {
                 fetchBookmarks(account);
             }
+            fetchNotes(account);
 
             if (connection != null && connection.getFeatures().mds()) {
                 fetchMessageDisplayedSynchronization(account);
@@ -2621,6 +2622,41 @@ public class XmppConnectionService extends Service {
             }
         };
         sendIqPacket(account, iqPacket, callback);
+    }
+
+    public void fetchNotes(final Account account) {
+        final IqPacket iqPacket = new IqPacket(IqPacket.TYPE.GET);
+        final Element query = iqPacket.query("jabber:iq:private");
+        query.addChild("storage", Namespace.NOTES);
+        final OnIqPacketReceived callback = (a, response) -> {
+            if (response.getType() == IqPacket.TYPE.RESULT) {
+                final Element query1 = response.query();
+                final Element storage = query1.findChild("storage", Namespace.NOTES);
+                if (storage != null) {
+                    List<eu.siacs.conversations.entities.Note> notes = new ArrayList<>();
+                    for (Element child : storage.getChildren()) {
+                        if ("note".equals(child.getName())) {
+                            notes.add(eu.siacs.conversations.entities.Note.parse(child));
+                        }
+                    }
+                    a.setNotes(notes);
+                }
+            } else {
+                Log.d(Config.LOGTAG, a.getJid().asBareJid() + ": could not fetch notes");
+            }
+        };
+        sendIqPacket(account, iqPacket, callback);
+    }
+
+    public void pushNotes(Account account) {
+        Log.d(Config.LOGTAG, account.getJid().asBareJid() + ": pushing notes via private xml");
+        IqPacket iqPacket = new IqPacket(IqPacket.TYPE.SET);
+        Element query = iqPacket.query("jabber:iq:private");
+        Element storage = query.addChild("storage", Namespace.NOTES);
+        for (final eu.siacs.conversations.entities.Note note : account.getNotes()) {
+            storage.addChild(note);
+        }
+        sendIqPacket(account, iqPacket, mDefaultIqHandler);
     }
 
     public void fetchBookmarks2(final Account account) {

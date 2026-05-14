@@ -1380,6 +1380,9 @@
     <string name="outgoing_call_duration_timestamp">Исходящий звонок (%s) · %s</string>
     <string name="outgoing_call_timestamp">Исходящие звонки · %s</string>
     <string name="note_to_self">Примечание для себя</string>
+    <string name="action_add_to_notes">В записную книжку</string>
+    <string name="action_notebook">Записная книжка</string>
+    <string name="note_added">Сообщение добавлено в записную книжку</string>
 <!--    <string name="refresh_feature_discovery">Обнаружение функций</string>-->
     <string name="i_am_snikket_user">Я использую Сниккет</string>
     <string name="action_edit_contact">Изменить контакт</string>

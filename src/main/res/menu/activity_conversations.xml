@@ -33,6 +33,11 @@
         android:title="@string/mark_all_chats_as_read"
         android:showAsAction="ifRoom" />
     <item
+        android:id="@+id/action_notebook"
+        android:orderInCategory="90"
+        android:title="@string/action_notebook"
+        app:showAsAction="never" />
+    <item
         android:id="@+id/action_invite_user"
         android:orderInCategory="100"
         android:title="@string/invite_to_app"

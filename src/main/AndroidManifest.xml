@@ -398,6 +398,11 @@
             android:launchMode="singleTask"
             android:theme="@style/ConversationsTheme" />
         <activity
+            android:name=".ui.NotesActivity"
+            android:label="@string/action_notebook"
+            android:exported="false"
+            android:launchMode="singleTask" />
+        <activity
             android:name=".ui.ConferenceDetailsActivity"
             android:label="@string/conference_details"
             android:exported="false"

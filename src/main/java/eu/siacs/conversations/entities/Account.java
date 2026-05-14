@@ -117,6 +117,7 @@ public class Account extends AbstractEntity implements AvatarService.Avatarable 
     private String otrFingerprint;
     private final Map<Jid, Bookmark> bookmarks = new HashMap<>();
     private boolean bookmarksLoaded = false;
+    private final List<Note> notes = new ArrayList<>();
 
     private Presence.Status presenceStatus;
     private String presenceStatusMessage;
@@ -739,6 +740,25 @@ public class Account extends AbstractEntity implements AvatarService.Avatarable 
     public Bookmark getBookmark(final Jid jid) {
         synchronized (this.bookmarks) {
             return this.bookmarks.get(jid.asBareJid());
+        }
+    }
+
+    public List<Note> getNotes() {
+        synchronized (this.notes) {
+            return ImmutableList.copyOf(this.notes);
+        }
+    }
+
+    public void setNotes(List<Note> notes) {
+        synchronized (this.notes) {
+            this.notes.clear();
+            this.notes.addAll(notes);
+        }
+    }
+
+    public void addNote(Note note) {
+        synchronized (this.notes) {
+            this.notes.add(note);
         }
     }
 

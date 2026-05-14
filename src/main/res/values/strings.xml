@@ -1280,6 +1280,9 @@
     <string name="outgoing_call_duration_timestamp">Outgoing call (%s) · %s</string>
     <string name="outgoing_call_timestamp">Outgoing call · %s</string>
     <string name="note_to_self">Note to self</string>
+    <string name="action_add_to_notes">Add to Notebook</string>
+    <string name="action_notebook">Notebook</string>
+    <string name="note_added">Note added</string>
     <string name="retract_message">Retract message</string>
     <string name="retract_message_dialog_msg">Do you really want to retract this message?</string>
     <string name="reply_to">Reply to</string>
