@@ -43,6 +43,7 @@ import eu.siacs.conversations.entities.Message;
 import eu.siacs.conversations.persistance.FileBackend;
 import eu.siacs.conversations.ui.ConversationsActivity;
 import eu.siacs.conversations.ui.XmppActivity;
+import eu.siacs.conversations.ui.ShareWithActivity;
 import eu.siacs.conversations.utils.Patterns;
 import eu.siacs.conversations.utils.XmppUri;
 import eu.siacs.conversations.xmpp.Jid;
@@ -66,8 +67,8 @@ public class ShareUtil {
             shareIntent.setType("text/plain");
             shareIntent.putExtra(ConversationsActivity.EXTRA_AS_QUOTE, true);
             shareIntent.putExtra(ConversationsActivity.EXTRA_USER, user);
-            shareIntent.putExtra(ConversationsActivity.EXTRA_CONVERSATION, message.getConversation().getUuid());
-            shareIntent.putExtra("forwarded_from_chat", message.getConversation().getAvatarName());
+            shareIntent.putExtra(ShareWithActivity.EXTRA_FORWARD_SOURCE_CONVERSATION, message.getConversation().getUuid());
+            shareIntent.putExtra(ShareWithActivity.EXTRA_FORWARD_SOURCE_CHAT_NAME, message.getConversation().getAvatarName());
         } else {
             final DownloadableFile file = activity.xmppConnectionService.getFileBackend().getFile(message);
             try {

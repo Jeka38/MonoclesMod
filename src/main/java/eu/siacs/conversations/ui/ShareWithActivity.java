@@ -29,6 +29,8 @@ import p32929.easypasscodelock.Utils.EasylockSP;
 
 public class ShareWithActivity extends XmppActivity implements XmppConnectionService.OnConversationUpdate {
 
+    public static final String EXTRA_FORWARD_SOURCE_CHAT_NAME = "extra_forward_source_chat_name";
+    public static final String EXTRA_FORWARD_SOURCE_CONVERSATION = "extra_forward_source_conversation";
     private static final int REQUEST_STORAGE_PERMISSION = 0x733f32;
     private Conversation mPendingConversation = null;
 
@@ -196,7 +198,7 @@ public class ShareWithActivity extends XmppActivity implements XmppConnectionSer
         if (!conversation.isWithSelf()) {
             return share.text;
         }
-        final String sourceChat = getIntent().getStringExtra("forwarded_from_chat");
+        final String sourceChat = getIntent().getStringExtra(EXTRA_FORWARD_SOURCE_CHAT_NAME);
         if (sourceChat == null || sourceChat.trim().isEmpty()) {
             return share.text;
         }
