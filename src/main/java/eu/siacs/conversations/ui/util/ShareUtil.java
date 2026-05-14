@@ -66,6 +66,8 @@ public class ShareUtil {
             shareIntent.setType("text/plain");
             shareIntent.putExtra(ConversationsActivity.EXTRA_AS_QUOTE, true);
             shareIntent.putExtra(ConversationsActivity.EXTRA_USER, user);
+            shareIntent.putExtra(ConversationsActivity.EXTRA_CONVERSATION, message.getConversation().getUuid());
+            shareIntent.putExtra("forwarded_from_chat", message.getConversation().getAvatarName());
         } else {
             final DownloadableFile file = activity.xmppConnectionService.getFileBackend().getFile(message);
             try {

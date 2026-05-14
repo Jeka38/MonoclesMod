@@ -188,6 +188,21 @@ public class ShareWithActivity extends XmppActivity implements XmppConnectionSer
         share(conversation);
     }
 
+
+    private String buildNotebookForwardText(final Conversation conversation) {
+        if (share == null || share.text == null) {
+            return share == null ? null : share.text;
+        }
+        if (!conversation.isWithSelf()) {
+            return share.text;
+        }
+        final String sourceChat = getIntent().getStringExtra("forwarded_from_chat");
+        if (sourceChat == null || sourceChat.trim().isEmpty()) {
+            return share.text;
+        }
+        return "#" + sourceChat.trim().replaceAll("\\s+", "_") + "\n" + share.text;
+    }
+
     private void share(final Conversation conversation) {
         if (share.uris.size() != 0 && !hasStoragePermission(REQUEST_STORAGE_PERMISSION)) {
             mPendingConversation = conversation;
@@ -204,7 +219,7 @@ public class ShareWithActivity extends XmppActivity implements XmppConnectionSer
             }
         } else if (share.text != null) {
             intent.setAction(ConversationsActivity.ACTION_VIEW_CONVERSATION);
-            intent.putExtra(Intent.EXTRA_TEXT, share.text);
+            intent.putExtra(Intent.EXTRA_TEXT, buildNotebookForwardText(conversation));
             intent.putExtra(ConversationsActivity.EXTRA_AS_QUOTE, share.asQuote);
         }
         try {
