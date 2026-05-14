@@ -116,4 +116,9 @@ public class PrivateXmlStorageActivity extends XmppActivity implements OnBackend
                 })
                 .show();
     }
+
+    @Override
+    protected void refreshUiReal() {
+        refreshBookmarks();
+    }
 }
