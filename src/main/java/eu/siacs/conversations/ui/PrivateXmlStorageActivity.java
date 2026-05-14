@@ -56,7 +56,7 @@ public class PrivateXmlStorageActivity extends XmppActivity implements OnBackend
     }
 
     @Override
-    void onBackendConnected() {
+    protected void onBackendConnected() {
         final Intent intent = getIntent();
         final String jid = intent == null ? null : intent.getStringExtra(EXTRA_ACCOUNT);
         account = jid == null ? null : xmppConnectionService.findAccountByJid(Jid.ofEscaped(jid));
