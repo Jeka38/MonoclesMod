@@ -48,7 +48,6 @@ import android.util.Base64;
 import android.util.DisplayMetrics;
 import android.util.Log;
 import android.util.LruCache;
-import android.view.GestureDetector;
 import android.view.HapticFeedbackConstants;
 import android.view.MotionEvent;
 import android.view.View;
@@ -1650,62 +1649,45 @@ public class MessageAdapter extends ArrayAdapter<Message> {
         viewHolder.message_box.setOnClickListener(messageContextClickListener);
         viewHolder.messageBody.setOnClickListener(messageContextClickListener);
 
-        final View.OnLongClickListener messageContextLongClickListener = v -> {
-            if (mConversationFragment != null) {
-                return mConversationFragment.showMessageContextMenu(v, message);
-            }
-            return false;
-        };
         final CharSequence messageBodyText = viewHolder.messageBody.getText();
         final boolean hasMessageBodyText = messageBodyText != null && messageBodyText.length() > 0;
         viewHolder.messageBody.setTextIsSelectable(hasMessageBodyText);
 
+        final View.OnLongClickListener messageSelectLongClickListener = v -> {
+            if (!hasMessageBodyText || !(viewHolder.messageBody.getText() instanceof Spannable)) {
+                if (mConversationFragment != null) {
+                    return mConversationFragment.showMessageContextMenu(v, message);
+                }
+                return false;
+            }
+            final Spannable bodySpannable = (Spannable) viewHolder.messageBody.getText();
+            final int start = viewHolder.messageBody.getSelectionStart();
+            final int end = viewHolder.messageBody.getSelectionEnd();
+            final boolean fullSelection = start == 0 && end == bodySpannable.length() && bodySpannable.length() > 0;
+
+            if (start >= 0 && end >= 0 && !fullSelection) {
+                return false;
+            }
+
+            Selection.setSelection(bodySpannable, 0, bodySpannable.length());
+            viewHolder.messageBody.startActionMode(new MessageTextActionModeCallback(MessageAdapter.this, viewHolder.messageBody));
+            return true;
+        };
+
         final View.OnLongClickListener messageBodyLongClickListener = v -> {
             if (!(v instanceof TextView)) {
-                return messageContextLongClickListener.onLongClick(v);
+                return messageSelectLongClickListener.onLongClick(v);
             }
             final TextView textView = (TextView) v;
             final CharSequence bodyText = textView.getText();
             if (bodyText != null && bodyText.length() > 0) {
-                return false;
+                return messageSelectLongClickListener.onLongClick(v);
             }
-            return messageContextLongClickListener.onLongClick(v);
+            return messageSelectLongClickListener.onLongClick(v);
         };
-        view.setOnLongClickListener(messageContextLongClickListener);
-        viewHolder.message_box.setOnLongClickListener(messageContextLongClickListener);
+        view.setOnLongClickListener(messageSelectLongClickListener);
+        viewHolder.message_box.setOnLongClickListener(messageSelectLongClickListener);
         viewHolder.messageBody.setOnLongClickListener(messageBodyLongClickListener);
-        final GestureDetector messageBodyGestureDetector = new GestureDetector(activity, new GestureDetector.SimpleOnGestureListener() {
-            @Override
-            public boolean onDoubleTap(MotionEvent e) {
-                final CharSequence bodyText = viewHolder.messageBody.getText();
-                if (!(bodyText instanceof Spannable) || bodyText.length() == 0) {
-                    return false;
-                }
-                final int offset = viewHolder.messageBody.getOffsetForPosition(e.getX(), e.getY());
-                if (offset < 0 || offset >= bodyText.length()) {
-                    return false;
-                }
-                int start = offset;
-                int end = offset;
-                while (start > 0 && !Character.isWhitespace(bodyText.charAt(start - 1))) {
-                    start--;
-                }
-                while (end < bodyText.length() && !Character.isWhitespace(bodyText.charAt(end))) {
-                    end++;
-                }
-                if (start == end) {
-                    return false;
-                }
-                Selection.setSelection((Spannable) bodyText, start, end);
-                viewHolder.messageBody.startActionMode(new MessageTextActionModeCallback(MessageAdapter.this, viewHolder.messageBody));
-                return true;
-            }
-        });
-        viewHolder.messageBody.setOnTouchListener((v, event) -> {
-            messageBodyGestureDetector.onTouchEvent(event);
-            return false;
-        });
-
         viewHolder.contact_picture.setOnClickListener(v -> {
             if (MessageAdapter.this.mOnContactPictureClickedListener != null) {
                 MessageAdapter.this.mOnContactPictureClickedListener.onContactPictureClicked(message);
@@ -1717,7 +1699,7 @@ public class MessageAdapter extends ArrayAdapter<Message> {
 
         SwipeLayout swipeLayout = view.findViewById(R.id.layout_swipe);
         swipeLayout.setOnClickListener(messageContextClickListener);
-        swipeLayout.setOnLongClickListener(messageContextLongClickListener);
+        swipeLayout.setOnLongClickListener(messageSelectLongClickListener);
 
         ViewGroup bottomWrapper = view.findViewById(R.id.bottom_wrapper);
         ImageView swipeArrow = view.findViewById(R.id.swipe_arrow);
