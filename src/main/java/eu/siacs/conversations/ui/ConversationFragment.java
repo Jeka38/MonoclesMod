@@ -43,6 +43,7 @@ import android.content.SharedPreferences;
 import android.content.pm.ActivityInfo;
 import android.content.pm.PackageManager;
 import android.graphics.Color;
+import androidx.core.graphics.ColorUtils;
 import android.graphics.Typeface;
 import android.graphics.drawable.Drawable;
 import android.icu.util.Calendar;
@@ -70,6 +71,7 @@ import android.text.style.ImageSpan;
 import android.text.style.StyleSpan;
 import android.util.DisplayMetrics;
 import android.util.Log;
+import android.view.ActionMode;
 import android.view.ContextMenu;
 import android.view.ContextMenu.ContextMenuInfo;
 import android.view.Gravity;
@@ -329,6 +331,8 @@ public class ConversationFragment extends XmppFragment
     private Toast messageLoaderToast;
     private static ConversationsActivity activity;
     private Menu mOptionsMenu;
+    private ActionMode mActionMode;
+    private final Set<String> mSelectedMessages = new HashSet<>();
     //Gifspaths
     private File[] files;
     private String[] filesPaths;
@@ -2326,6 +2330,165 @@ public class ConversationFragment extends XmppFragment
         popupMenu.setOnMenuItemClickListener(this::onContextItemSelected);
         popupMenu.show();
         return true;
+    }
+
+    public void onMessageClicked(View view, Message message) {
+        if (mActionMode != null) {
+            toggleMessageSelection(message);
+        } else {
+            showMessageContextMenu(view, message);
+        }
+    }
+
+    public boolean onMessageLongClicked(View view, Message message) {
+        if (mActionMode != null) {
+            if (mSelectedMessages.contains(message.getUuid()) && (view.getId() == R.id.message_body || view.getId() == R.id.message_body_collapsable)) {
+                return false;
+            }
+            toggleMessageSelection(message);
+            return true;
+        } else {
+            startMessageSelection(message);
+            return true;
+        }
+    }
+
+    private void toggleMessageSelection(Message message) {
+        final String uuid = message.getUuid();
+        if (mSelectedMessages.contains(uuid)) {
+            mSelectedMessages.remove(uuid);
+        } else {
+            mSelectedMessages.add(uuid);
+        }
+        if (mSelectedMessages.isEmpty()) {
+            if (mActionMode != null) {
+                mActionMode.finish();
+            }
+        } else {
+            if (mActionMode != null) {
+                mActionMode.setTitle(String.valueOf(mSelectedMessages.size()));
+                mActionMode.invalidate();
+            }
+            messageListAdapter.notifyDataSetChanged();
+        }
+    }
+
+    private void startMessageSelection(Message message) {
+        mSelectedMessages.clear();
+        mSelectedMessages.add(message.getUuid());
+        mActionMode = activity.startActionMode(mMessageSelectionCallback);
+        if (mActionMode != null) {
+            mActionMode.setTitle(String.valueOf(mSelectedMessages.size()));
+        }
+        messageListAdapter.notifyDataSetChanged();
+    }
+
+    public boolean isMessageSelected(Message message) {
+        return mSelectedMessages.contains(message.getUuid());
+    }
+
+    public List<Message> getSelectedMessages() {
+        List<Message> selected = new ArrayList<>();
+        synchronized (this.messageList) {
+            for (Message message : this.messageList) {
+                if (mSelectedMessages.contains(message.getUuid())) {
+                    selected.add(message);
+                }
+            }
+        }
+        return selected;
+    }
+
+    private final ActionMode.Callback mMessageSelectionCallback = new ActionMode.Callback() {
+        @Override
+        public boolean onCreateActionMode(ActionMode mode, Menu menu) {
+            mode.getMenuInflater().inflate(R.menu.message_selection, menu);
+            return true;
+        }
+
+        @Override
+        public boolean onPrepareActionMode(ActionMode mode, Menu menu) {
+            return false;
+        }
+
+        @Override
+        public boolean onActionItemClicked(ActionMode mode, MenuItem item) {
+            int itemId = item.getItemId();
+            if (itemId == R.id.action_copy) {
+                copySelectedMessages();
+                mode.finish();
+                return true;
+            } else if (itemId == R.id.action_share) {
+                shareSelectedMessages();
+                mode.finish();
+                return true;
+            } else if (itemId == R.id.action_delete) {
+                deleteSelectedMessages();
+                mode.finish();
+                return true;
+            }
+            return false;
+        }
+
+        @Override
+        public void onDestroyActionMode(ActionMode mode) {
+            mSelectedMessages.clear();
+            mActionMode = null;
+            messageListAdapter.notifyDataSetChanged();
+        }
+    };
+
+    private void copySelectedMessages() {
+        List<Message> selected = getSelectedMessages();
+        if (selected.isEmpty()) return;
+        StringBuilder builder = new StringBuilder();
+        for (int i = 0; i < selected.size(); ++i) {
+            if (i > 0) builder.append('\n');
+            builder.append(selected.get(i).getQuoteableBody());
+        }
+        if (activity.copyTextToClipboard(builder.toString(), R.string.message)) {
+            ToastCompat.makeText(activity, R.string.message_copied_to_clipboard, ToastCompat.LENGTH_SHORT).show();
+        }
+    }
+
+    private void shareSelectedMessages() {
+        List<Message> selected = getSelectedMessages();
+        if (selected.isEmpty()) return;
+        if (selected.size() == 1) {
+            ShareUtil.share(activity, selected.get(0), getUsername(selected.get(0)));
+        } else {
+            StringBuilder builder = new StringBuilder();
+            for (int i = 0; i < selected.size(); ++i) {
+                if (i > 0) builder.append('\n');
+                builder.append(getUsername(selected.get(i))).append(": ").append(selected.get(i).getMergedBody());
+            }
+            Intent shareIntent = new Intent();
+            shareIntent.setAction(Intent.ACTION_SEND);
+            shareIntent.putExtra(Intent.EXTRA_TEXT, builder.toString());
+            shareIntent.setType("text/plain");
+            try {
+                activity.startActivity(Intent.createChooser(shareIntent, activity.getText(R.string.share_with)));
+            } catch (ActivityNotFoundException e) {
+                ToastCompat.makeText(activity, R.string.no_application_found_to_open_file, ToastCompat.LENGTH_SHORT).show();
+            }
+        }
+    }
+
+    private void deleteSelectedMessages() {
+        List<Message> selected = getSelectedMessages();
+        if (selected.isEmpty()) return;
+        final AlertDialog.Builder builder = new AlertDialog.Builder(getActivity());
+        builder.setNegativeButton(R.string.cancel, null);
+        builder.setTitle(R.string.delete_message);
+        builder.setMessage(R.string.delete_message_dialog_msg);
+        builder.setPositiveButton(R.string.confirm, (dialog, which) -> {
+            for (Message message : selected) {
+                activity.xmppConnectionService.deleteMessage(conversation, message);
+            }
+            activity.onConversationsListItemUpdated();
+            refresh();
+        });
+        builder.create().show();
     }
 
     private void populateContextMenu(Menu menu) {
@@ -4331,6 +4494,9 @@ public class ConversationFragment extends XmppFragment
     @Override
     public void onStop() {
         super.onStop();
+        if (mActionMode != null) {
+            mActionMode.finish();
+        }
         if (activity != null) {
             hideSoftKeyboard(activity);
         }
@@ -4379,6 +4545,9 @@ public class ConversationFragment extends XmppFragment
         final boolean changedConversation = this.conversation != conversation;
         if (changedConversation) {
             this.saveMessageDraftStopAudioPlayer();
+            if (mActionMode != null) {
+                mActionMode.finish();
+            }
         }
         this.clearPending();
         if (this.reInit(conversation, extras != null)) {
@@ -5624,6 +5793,10 @@ public class ConversationFragment extends XmppFragment
 
     @Override
     public void onContactPictureLongClicked(View v, final Message message) {
+        if (mActionMode != null) {
+            toggleMessageSelection(message);
+            return;
+        }
         final String fingerprint;
         if (message.getEncryption() == Message.ENCRYPTION_PGP || message.getEncryption() == Message.ENCRYPTION_DECRYPTED) {
             fingerprint = "pgp";
@@ -5717,6 +5890,10 @@ public class ConversationFragment extends XmppFragment
 
     @Override
     public void onContactPictureClicked(Message message) {
+        if (mActionMode != null) {
+            toggleMessageSelection(message);
+            return;
+        }
 
         final boolean received = message.getStatus() <= Message.STATUS_RECEIVED;
         if (received) {

@@ -496,7 +496,7 @@ public class MessageAdapter extends ArrayAdapter<Message> {
         } else {
             viewHolder.messageBody.setTextAppearance(getContext(), R.style.TextAppearance_Conversations_Body1_Secondary);
         }
-        viewHolder.messageBody.setTextIsSelectable(false);
+
     }
 
     private void showProgress(final ViewHolder viewHolder, final Transferable transferable, final Message message) {
@@ -747,7 +747,7 @@ public class MessageAdapter extends ArrayAdapter<Message> {
         viewHolder.messageBody.setTypeface(null, Typeface.NORMAL);
 
         if (message.getBody() != null && !message.getBody().equals("")) {
-            viewHolder.messageBody.setTextIsSelectable(false);
+
             viewHolder.messageBody.setVisibility(View.VISIBLE);
 
             String trimmedBody = message.getBody().trim();
@@ -834,7 +834,7 @@ public class MessageAdapter extends ArrayAdapter<Message> {
         } else {
             Log.d("ChatDebug", "Message is empty");
             viewHolder.messageBody.setText("");
-            viewHolder.messageBody.setTextIsSelectable(false);
+
             toggleWhisperInfo(viewHolder, message, false, darkBackground);
             viewHolder.images.setVisibility(View.GONE);
         }
@@ -1366,7 +1366,7 @@ public class MessageAdapter extends ArrayAdapter<Message> {
             MyLinkify.addLinks(body, false);
             viewHolder.messageBody.setText(body);
             viewHolder.messageBody.setAutoLinkMask(0);
-            viewHolder.messageBody.setTextIsSelectable(false);
+
             viewHolder.messageBody.setMovementMethod(ClickableMovementMethod.getInstance());
         } else {
             if (includeBody) {
@@ -1375,7 +1375,7 @@ public class MessageAdapter extends ArrayAdapter<Message> {
                 MyLinkify.addLinks(body, false);
                 viewHolder.messageBody.setText(body);
                 viewHolder.messageBody.setAutoLinkMask(0);
-                viewHolder.messageBody.setTextIsSelectable(false);
+
                 viewHolder.messageBody.setMovementMethod(ClickableMovementMethod.getInstance());
             } else {
                 viewHolder.messageBody.setVisibility(GONE);
@@ -1641,7 +1641,7 @@ public class MessageAdapter extends ArrayAdapter<Message> {
                 return;
             }
             if (mConversationFragment != null) {
-                mConversationFragment.showMessageContextMenu(v, message);
+                mConversationFragment.onMessageClicked(v, message);
             }
         };
         view.setOnClickListener(messageContextClickListener);
@@ -1650,7 +1650,7 @@ public class MessageAdapter extends ArrayAdapter<Message> {
 
         final View.OnLongClickListener messageContextLongClickListener = v -> {
             if (mConversationFragment != null) {
-                return mConversationFragment.showMessageContextMenu(v, message);
+                return mConversationFragment.onMessageLongClicked(v, message);
             }
             return false;
         };
@@ -1837,6 +1837,11 @@ public class MessageAdapter extends ArrayAdapter<Message> {
             }
         }
 
+        final boolean selected = mConversationFragment != null && mConversationFragment.isMessageSelected(message);
+        if (viewHolder.messageBody != null) {
+            viewHolder.messageBody.setTextIsSelectable(selected);
+            viewHolder.messageBody.setFocusable(selected);
+        }
         if (type == RECEIVED) {
             if (!muted && commands != null && conversation instanceof Conversation) {
                 CommandButtonAdapter adapter = new CommandButtonAdapter(activity);
@@ -1858,11 +1863,11 @@ public class MessageAdapter extends ArrayAdapter<Message> {
             }
             viewHolder.answer_button.setVisibility(GONE);
             if (isInValidSession) {
-                setBubbleBackgroundColor(viewHolder.message_box, type, message.isPrivateMessage(), isInValidSession);
+                setBubbleBackgroundColor(viewHolder.message_box, type, message.isPrivateMessage(), isInValidSession, selected);
                 viewHolder.encryption.setVisibility(GONE);
                 viewHolder.encryption.setTextColor(ThemeHelper.getMessageTextColor(activity, darkBackground, false));
             } else {
-                setBubbleBackgroundColor(viewHolder.message_box, type, message.isPrivateMessage(), isInValidSession);
+                setBubbleBackgroundColor(viewHolder.message_box, type, message.isPrivateMessage(), isInValidSession, selected);
                 viewHolder.encryption.setVisibility(View.VISIBLE);
                 viewHolder.encryption.setTextColor(ThemeHelper.getWarningTextColor(activity, darkBackground));
                 if (omemoEncryption && !message.isTrusted()) {
@@ -1894,7 +1899,7 @@ public class MessageAdapter extends ArrayAdapter<Message> {
         }
 
         if (type == SENT) {
-            setBubbleBackgroundColor(viewHolder.message_box, type, message.isPrivateMessage(), isInValidSession);
+            setBubbleBackgroundColor(viewHolder.message_box, type, message.isPrivateMessage(), isInValidSession, selected);
         }
         displayStatus(viewHolder, message, type, darkBackground);
         return view;
@@ -2077,19 +2082,24 @@ public class MessageAdapter extends ArrayAdapter<Message> {
 
     public void setBubbleBackgroundColor(final View viewHolder, final int type,
                                          final boolean isPrivateMessage, final boolean isInValidSession) {
+        setBubbleBackgroundColor(viewHolder, type, isPrivateMessage, isInValidSession, false);
+    }
+
+    public void setBubbleBackgroundColor(final View viewHolder, final int type,
+                                         final boolean isPrivateMessage, final boolean isInValidSession, boolean selected) {
         if (type == RECEIVED) {
             if (isInValidSession) {
                 viewHolder.setBackgroundResource(R.drawable.message_bubble_received_light);
-                activity.setBubbleColor(viewHolder, StyledAttributes.getColor(activity, R.attr.color_bubble_light), -1);
+                activity.setBubbleColor(viewHolder, selected ? ColorUtils.setAlphaComponent(StyledAttributes.getColor(activity, R.attr.colorAccent), 80) : StyledAttributes.getColor(activity, R.attr.color_bubble_light), -1);
             } else {
                 viewHolder.setBackgroundResource(R.drawable.message_bubble_received_warning);
-                activity.setBubbleColor(viewHolder, StyledAttributes.getColor(activity, R.attr.color_bubble_warning), -1);
+                activity.setBubbleColor(viewHolder, selected ? ColorUtils.setAlphaComponent(StyledAttributes.getColor(activity, R.attr.colorAccent), 80) : StyledAttributes.getColor(activity, R.attr.color_bubble_warning), -1);
             }
         }
 
         if (type == SENT) {
             viewHolder.setBackgroundResource(R.drawable.message_bubble_sent);
-            activity.setBubbleColor(viewHolder, StyledAttributes.getColor(activity, R.attr.color_bubble_dark), -1);
+            activity.setBubbleColor(viewHolder, selected ? ColorUtils.setAlphaComponent(StyledAttributes.getColor(activity, R.attr.colorAccent), 80) : StyledAttributes.getColor(activity, R.attr.color_bubble_dark), -1);
         }
     }
 
