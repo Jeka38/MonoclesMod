@@ -1883,6 +1883,26 @@ public class MessageAdapter extends ArrayAdapter<Message> {
             } else {
                 viewHolder.subject.setVisibility(View.VISIBLE);
                 viewHolder.subject.setText(subject);
+                final Jid conversationJid = message.getConversation().getJid();
+                if (conversationJid != null && conversationJid.asBareJid().equals(account.getJid().asBareJid())) {
+                    viewHolder.subject.setBackgroundResource(R.drawable.rounded_tag);
+                    Drawable unwrappedDrawable = ContextCompat.getDrawable(activity, R.drawable.rounded_tag);
+                    if (unwrappedDrawable != null) {
+                        Drawable wrappedDrawable = DrawableCompat.wrap(unwrappedDrawable.mutate());
+                        DrawableCompat.setTint(wrappedDrawable, UIHelper.getColorForName(subject));
+                        viewHolder.subject.setBackground(wrappedDrawable);
+                    }
+                    viewHolder.subject.setTextColor(Color.WHITE);
+                    ViewGroup.MarginLayoutParams layoutParams = (ViewGroup.MarginLayoutParams) viewHolder.subject.getLayoutParams();
+                    layoutParams.rightMargin = (int) (metrics.density * 4);
+                    viewHolder.subject.setLayoutParams(layoutParams);
+                } else {
+                    viewHolder.subject.setBackground(null);
+                    viewHolder.subject.setTextColor(ThemeHelper.getMessageTextColor(activity, darkBackground, false));
+                    ViewGroup.MarginLayoutParams layoutParams = (ViewGroup.MarginLayoutParams) viewHolder.subject.getLayoutParams();
+                    layoutParams.rightMargin = (int) (metrics.density * 2);
+                    viewHolder.subject.setLayoutParams(layoutParams);
+                }
             }
 
 //            else {

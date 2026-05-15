@@ -3928,11 +3928,14 @@ public class ConversationFragment extends XmppFragment
         final Jid selfJid = account.getJid().asBareJid();
         final Conversation selfConversation = activity.xmppConnectionService.findOrCreateConversation(account, selfJid, false, true);
         final Message newMessage = new Message(selfConversation, message.getBody(), selfConversation.getNextEncryption());
+        if (message.getConversation() instanceof Conversation) {
+            newMessage.setSubject(((Conversation) message.getConversation()).getName().toString());
+        }
         newMessage.setType(message.getType());
         newMessage.setFileParams(message.getFileParams());
         newMessage.setRelativeFilePath(message.getRelativeFilePath());
         activity.xmppConnectionService.sendMessage(newMessage);
-        ToastCompat.makeText(activity, R.string.note_to_self, Toast.LENGTH_SHORT).show();
+        ToastCompat.makeText(activity, R.string.added_to_favorites, Toast.LENGTH_SHORT).show();
     }
 
     private void reportMessage(final Message message) {
