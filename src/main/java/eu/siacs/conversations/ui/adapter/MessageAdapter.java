@@ -1654,9 +1654,21 @@ public class MessageAdapter extends ArrayAdapter<Message> {
             }
             return false;
         };
+        final View.OnLongClickListener messageBodyLongClickListener = v -> {
+            if (!(v instanceof TextView)) {
+                return messageContextLongClickListener.onLongClick(v);
+            }
+            final TextView textView = (TextView) v;
+            final CharSequence bodyText = textView.getText();
+            if (bodyText != null && bodyText.length() > 0) {
+                textView.setTextIsSelectable(true);
+                return false;
+            }
+            return messageContextLongClickListener.onLongClick(v);
+        };
         view.setOnLongClickListener(messageContextLongClickListener);
         viewHolder.message_box.setOnLongClickListener(messageContextLongClickListener);
-        viewHolder.messageBody.setOnLongClickListener(messageContextLongClickListener);
+        viewHolder.messageBody.setOnLongClickListener(messageBodyLongClickListener);
 
         viewHolder.contact_picture.setOnClickListener(v -> {
             if (MessageAdapter.this.mOnContactPictureClickedListener != null) {
