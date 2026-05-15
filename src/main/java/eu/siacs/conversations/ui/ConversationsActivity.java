@@ -1135,7 +1135,11 @@ public class ConversationsActivity extends XmppActivity implements OnConversatio
                 TextView abtitle = findViewById(android.R.id.text1);
                 TextView absubtitle = findViewById(android.R.id.text2);
                 final View avatartoolbar = view.findViewById(R.id.toolbar_avatar);
-                abtitle.setText(conversation.getName());
+                if (conversation.withSelf()) {
+                    abtitle.setText(R.string.note_to_self);
+                } else {
+                    abtitle.setText(conversation.getName());
+                }
                 abtitle.setSelected(true);
 
                 if (conversation.getMode() == Conversation.MODE_SINGLE || conversation.hasPermanentCounterpart()) {
@@ -1180,7 +1184,12 @@ public class ConversationsActivity extends XmppActivity implements OnConversatio
                     absubtitle.setSelected(true);
                 }
 
-                AvatarWorkerTask.loadAvatar(conversation, (ImageView) avatartoolbar, R.dimen.avatar_actionbar);
+                if (conversation.withSelf()) {
+                    ((ImageView) avatartoolbar).setImageResource(isDarkTheme() ? R.drawable.ic_star_white_24dp : R.drawable.ic_star_black_24dp);
+                    avatartoolbar.setBackgroundColor(StyledAttributes.getColor(this, R.attr.colorAccent));
+                } else {
+                    AvatarWorkerTask.loadAvatar(conversation, (ImageView) avatartoolbar, R.dimen.avatar_actionbar);
+                }
                 findViewById(R.id.toolbar_avatar).setVisibility(View.VISIBLE);
                 ActionBarUtil.setCustomActionBarOnClickListener(
                         binding.toolbar.getRoot(),

@@ -20,7 +20,7 @@
         android:visible="false" />
     <item
         android:id="@+id/add_to_notes"
-        android:title="@string/note_to_self"
+        android:title="@string/add_message_to_favorites"
         android:visible="false" />
 
     <item

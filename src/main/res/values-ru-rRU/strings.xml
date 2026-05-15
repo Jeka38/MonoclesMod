@@ -79,6 +79,7 @@
     <string name="add_phone_book_text">Хотите добавить %s в Вашу адресную книгу\?</string>
     <string name="add_to_contact_list">Добавить в контакты</string>
     <string name="add_to_favorites">Закрепить</string>
+    <string name="add_message_to_favorites">Добавить в избранное</string>
     <string name="admin">администратор</string>
     <string name="admins_can_edit_subject">Админы могут изменять эту тему.</string>
     <string name="advanced_mode">Расширенный режим</string>
