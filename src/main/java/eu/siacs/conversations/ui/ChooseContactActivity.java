@@ -295,6 +295,19 @@ public class ChooseContactActivity extends AbstractSearchableListItemActivity im
             }
         }
         Collections.sort(getListItems());
+        if (needle == null || needle.trim().isEmpty()) {
+            Contact self = null;
+            for (ListItem item : getListItems()) {
+                if (item instanceof Contact && ((Contact) item).isSelf()) {
+                    self = (Contact) item;
+                    break;
+                }
+            }
+            if (self != null) {
+                getListItems().remove(self);
+                getListItems().add(0, self);
+            }
+        }
         getListItemAdapter().notifyDataSetChanged();
         for (int i = 0; i < getListItemAdapter().getCount(); i++) {
             getListView().setItemChecked(i, selected.contains(getListItemAdapter().getItem(i).getJid().toString()));

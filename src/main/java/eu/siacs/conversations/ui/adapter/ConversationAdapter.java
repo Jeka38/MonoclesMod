@@ -128,7 +128,7 @@ public class ConversationAdapter
             return;
         }
         String UUID = conversation.getUuid();
-        CharSequence name = conversation.getName();
+        CharSequence name = conversation.getMode() == Conversation.MODE_SINGLE && conversation.getContact().isSelf() ? activity.getString(R.string.note_to_self) : conversation.getName();
         hasInternetConnection = activity.xmppConnectionService.hasInternetConnection();
         if (name instanceof Jid) {
             viewHolder.binding.conversationName.setText(
@@ -419,10 +419,15 @@ public class ConversationAdapter
                 : View.GONE);
         viewHolder.binding.conversationLastupdate.setText(
                 UIHelper.readableTimeDifference(activity, timestamp));
+        if (conversation.getMode() == Conversation.MODE_SINGLE && conversation.getContact().isSelf()) {
+            viewHolder.binding.conversationImage.setImageResource(activity.isDarkTheme() ? R.drawable.ic_star_white_24dp : R.drawable.ic_star_black_24dp);
+            viewHolder.binding.conversationImage.setBackgroundColor(StyledAttributes.getColor(activity, R.attr.colorAccent));
+        } else {
             AvatarWorkerTask.loadAvatar(
-                conversation,
-                viewHolder.binding.conversationImage,
-                R.dimen.avatar_on_conversation_overview);
+                    conversation,
+                    viewHolder.binding.conversationImage,
+                    R.dimen.avatar_on_conversation_overview);
+        }
         if (conversation.getMode() == Conversational.MODE_SINGLE && conversation.getContact().isActive()) {
             viewHolder.binding.userActiveIndicator.setVisibility(View.VISIBLE);
         } else {
@@ -479,7 +484,7 @@ public class ConversationAdapter
     }
 
     private void bindClientIcon(ConversationViewHolder viewHolder, Conversation conversation) {
-        if (!showClientIcons || conversation.getMode() != Conversation.MODE_SINGLE) {
+        if (!showClientIcons || conversation.getMode() != Conversation.MODE_SINGLE || conversation.withSelf()) {
             viewHolder.binding.clientInfo.setVisibility(View.GONE);
             return;
         }

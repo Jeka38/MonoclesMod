@@ -141,7 +141,12 @@ public class ListItemAdapter extends ArrayAdapter<ListItem> {
             viewHolder.tags.setAlpha(ACTIVE_ALPHA);
         }
         if (activity.xmppConnectionService != null) {
-            AvatarWorkerTask.loadAvatar(item, viewHolder.avatar, R.dimen.avatar);
+            if (item instanceof Contact && ((Contact) item).isSelf()) {
+                viewHolder.avatar.setImageResource(activity.isDarkTheme() ? R.drawable.ic_star_white_24dp : R.drawable.ic_star_black_24dp);
+                viewHolder.avatar.setBackgroundColor(StyledAttributes.getColor(activity, R.attr.colorAccent));
+            } else {
+                AvatarWorkerTask.loadAvatar(item, viewHolder.avatar, R.dimen.avatar);
+            }
         }
         if (item.getActive()) {
             viewHolder.activeIndicator.setVisibility(View.VISIBLE);
@@ -153,7 +158,7 @@ public class ListItemAdapter extends ArrayAdapter<ListItem> {
     }
 
     private void bindClientIcon(final ViewHolder viewHolder, final ListItem item) {
-        if (!showClientIcons || !(item instanceof Contact)) {
+        if (!showClientIcons || !(item instanceof Contact) || ((Contact) item).isSelf()) {
             viewHolder.clientInfo.setVisibility(View.GONE);
             return;
         }

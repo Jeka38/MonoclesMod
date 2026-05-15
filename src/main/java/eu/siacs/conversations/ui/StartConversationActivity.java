@@ -1240,6 +1240,19 @@ public class StartConversationActivity extends XmppActivity implements XmppConne
         }
 
             Collections.sort(this.contacts);
+            if (needle == null || needle.trim().isEmpty()) {
+                Contact self = null;
+                for (ListItem item : this.contacts) {
+                    if (item instanceof Contact && ((Contact) item).isSelf()) {
+                        self = (Contact) item;
+                        break;
+                    }
+                }
+                if (self != null) {
+                    this.contacts.remove(self);
+                    this.contacts.add(0, self);
+                }
+            }
 /*                              //TODO: Make bridges deletable
         //Whatsapp bridge
         final boolean whatsappDeleted = getPreferences().getBoolean("whatsapp_bridge_bookmark_deleted", false);

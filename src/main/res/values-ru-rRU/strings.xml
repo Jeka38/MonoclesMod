@@ -79,6 +79,7 @@
     <string name="add_phone_book_text">Хотите добавить %s в Вашу адресную книгу\?</string>
     <string name="add_to_contact_list">Добавить в контакты</string>
     <string name="add_to_favorites">Закрепить</string>
+    <string name="add_message_to_favorites">Добавить в избранное</string>
     <string name="admin">администратор</string>
     <string name="admins_can_edit_subject">Админы могут изменять эту тему.</string>
     <string name="advanced_mode">Расширенный режим</string>
@@ -1379,7 +1380,8 @@
     <string name="incoming_call_duration_timestamp">Входящий вызов (%s) · %s</string>
     <string name="outgoing_call_duration_timestamp">Исходящий звонок (%s) · %s</string>
     <string name="outgoing_call_timestamp">Исходящие звонки · %s</string>
-    <string name="note_to_self">Примечание для себя</string>
+    <string name="note_to_self">Избранное</string>
+    <string name="added_to_favorites">Добавлено в избранное</string>
 <!--    <string name="refresh_feature_discovery">Обнаружение функций</string>-->
     <string name="i_am_snikket_user">Я использую Сниккет</string>
     <string name="action_edit_contact">Изменить контакт</string>

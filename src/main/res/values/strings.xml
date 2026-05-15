@@ -1106,6 +1106,7 @@
     <string name="could_not_switch_camera">Could not switch camera</string>
     <string name="readmore">Read more</string>
     <string name="add_to_favorites">Add to favorites</string>
+    <string name="add_message_to_favorites">Add to favorites</string>
     <string name="remove_from_favorites">Remove from favorites</string>
     <string name="improperly_formatted_provisioning">Improperly formatted provisioning code</string>
     <string name="gpx_track">GPX track</string>
@@ -1279,7 +1280,8 @@
     <string name="incoming_call_duration_timestamp">Incoming call (%s) · %s</string>
     <string name="outgoing_call_duration_timestamp">Outgoing call (%s) · %s</string>
     <string name="outgoing_call_timestamp">Outgoing call · %s</string>
-    <string name="note_to_self">Note to self</string>
+    <string name="note_to_self">Favorites</string>
+    <string name="added_to_favorites">Added to favorites</string>
     <string name="retract_message">Retract message</string>
     <string name="retract_message_dialog_msg">Do you really want to retract this message?</string>
     <string name="reply_to">Reply to</string>
