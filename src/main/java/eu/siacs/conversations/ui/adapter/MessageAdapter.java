@@ -1654,6 +1654,10 @@ public class MessageAdapter extends ArrayAdapter<Message> {
             }
             return false;
         };
+        final CharSequence messageBodyText = viewHolder.messageBody.getText();
+        final boolean hasMessageBodyText = messageBodyText != null && messageBodyText.length() > 0;
+        viewHolder.messageBody.setTextIsSelectable(hasMessageBodyText);
+
         final View.OnLongClickListener messageBodyLongClickListener = v -> {
             if (!(v instanceof TextView)) {
                 return messageContextLongClickListener.onLongClick(v);
@@ -1661,7 +1665,6 @@ public class MessageAdapter extends ArrayAdapter<Message> {
             final TextView textView = (TextView) v;
             final CharSequence bodyText = textView.getText();
             if (bodyText != null && bodyText.length() > 0) {
-                textView.setTextIsSelectable(true);
                 return false;
             }
             return messageContextLongClickListener.onLongClick(v);
