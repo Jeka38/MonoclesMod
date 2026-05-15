@@ -48,6 +48,7 @@ import android.util.Base64;
 import android.util.DisplayMetrics;
 import android.util.Log;
 import android.util.LruCache;
+import android.view.GestureDetector;
 import android.view.HapticFeedbackConstants;
 import android.view.MotionEvent;
 import android.view.View;
@@ -1688,6 +1689,37 @@ public class MessageAdapter extends ArrayAdapter<Message> {
         view.setOnLongClickListener(messageSelectLongClickListener);
         viewHolder.message_box.setOnLongClickListener(messageSelectLongClickListener);
         viewHolder.messageBody.setOnLongClickListener(messageBodyLongClickListener);
+        final GestureDetector messageBodyGestureDetector = new GestureDetector(activity, new GestureDetector.SimpleOnGestureListener() {
+            @Override
+            public boolean onDoubleTap(MotionEvent e) {
+                final CharSequence bodyText = viewHolder.messageBody.getText();
+                if (!(bodyText instanceof Spannable) || bodyText.length() == 0) {
+                    return false;
+                }
+                final int offset = viewHolder.messageBody.getOffsetForPosition(e.getX(), e.getY());
+                if (offset < 0 || offset >= bodyText.length()) {
+                    return false;
+                }
+                int start = offset;
+                int end = offset;
+                while (start > 0 && !Character.isWhitespace(bodyText.charAt(start - 1))) {
+                    start--;
+                }
+                while (end < bodyText.length() && !Character.isWhitespace(bodyText.charAt(end))) {
+                    end++;
+                }
+                if (start == end) {
+                    return false;
+                }
+                Selection.setSelection((Spannable) bodyText, start, end);
+                viewHolder.messageBody.startActionMode(new MessageTextActionModeCallback(MessageAdapter.this, viewHolder.messageBody));
+                return true;
+            }
+        });
+        viewHolder.messageBody.setOnTouchListener((v, event) -> {
+            messageBodyGestureDetector.onTouchEvent(event);
+            return false;
+        });
         viewHolder.contact_picture.setOnClickListener(v -> {
             if (MessageAdapter.this.mOnContactPictureClickedListener != null) {
                 MessageAdapter.this.mOnContactPictureClickedListener.onContactPictureClicked(message);
