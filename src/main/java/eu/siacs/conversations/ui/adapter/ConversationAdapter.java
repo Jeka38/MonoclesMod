@@ -420,9 +420,12 @@ public class ConversationAdapter
         viewHolder.binding.conversationLastupdate.setText(
                 UIHelper.readableTimeDifference(activity, timestamp));
         if (conversation.getMode() == Conversation.MODE_SINGLE && conversation.getContact().isSelf()) {
+            viewHolder.binding.conversationImage.setScaleType(ImageView.ScaleType.CENTER);
             viewHolder.binding.conversationImage.setImageResource(activity.isDarkTheme() ? R.drawable.ic_star_white_24dp : R.drawable.ic_star_black_24dp);
             viewHolder.binding.conversationImage.setBackgroundColor(StyledAttributes.getColor(activity, R.attr.colorAccent));
         } else {
+            viewHolder.binding.conversationImage.setScaleType(ImageView.ScaleType.CENTER_CROP);
+            viewHolder.binding.conversationImage.setBackgroundColor(0);
             AvatarWorkerTask.loadAvatar(
                     conversation,
                     viewHolder.binding.conversationImage,

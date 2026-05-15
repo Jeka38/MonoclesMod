@@ -141,7 +141,16 @@ public class ListItemAdapter extends ArrayAdapter<ListItem> {
             viewHolder.tags.setAlpha(ACTIVE_ALPHA);
         }
         if (activity.xmppConnectionService != null) {
-            AvatarWorkerTask.loadAvatar(item, viewHolder.avatar, R.dimen.avatar);
+            if (item instanceof Contact && ((Contact) item).isSelf()) {
+                AvatarWorkerTask.cancelPotentialWork(item, viewHolder.avatar);
+                viewHolder.avatar.setScaleType(ImageView.ScaleType.CENTER);
+                viewHolder.avatar.setImageResource(activity.isDarkTheme() ? R.drawable.ic_star_white_24dp : R.drawable.ic_star_black_24dp);
+                viewHolder.avatar.setBackgroundColor(StyledAttributes.getColor(activity, R.attr.colorAccent));
+            } else {
+                viewHolder.avatar.setScaleType(ImageView.ScaleType.CENTER_CROP);
+                viewHolder.avatar.setBackgroundColor(0);
+                AvatarWorkerTask.loadAvatar(item, viewHolder.avatar, R.dimen.avatar);
+            }
         }
         if (item.getActive()) {
             viewHolder.activeIndicator.setVisibility(View.VISIBLE);
