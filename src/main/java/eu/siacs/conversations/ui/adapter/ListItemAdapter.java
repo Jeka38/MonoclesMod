@@ -153,7 +153,7 @@ public class ListItemAdapter extends ArrayAdapter<ListItem> {
     }
 
     private void bindClientIcon(final ViewHolder viewHolder, final ListItem item) {
-        if (!showClientIcons || !(item instanceof Contact)) {
+        if (!showClientIcons || !(item instanceof Contact) || ((Contact) item).isSelf()) {
             viewHolder.clientInfo.setVisibility(View.GONE);
             return;
         }

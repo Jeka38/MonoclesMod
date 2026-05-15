@@ -484,7 +484,7 @@ public class ConversationAdapter
     }
 
     private void bindClientIcon(ConversationViewHolder viewHolder, Conversation conversation) {
-        if (!showClientIcons || conversation.getMode() != Conversation.MODE_SINGLE) {
+        if (!showClientIcons || conversation.getMode() != Conversation.MODE_SINGLE || conversation.withSelf()) {
             viewHolder.binding.clientInfo.setVisibility(View.GONE);
             return;
         }
