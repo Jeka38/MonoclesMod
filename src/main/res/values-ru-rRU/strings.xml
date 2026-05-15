@@ -233,6 +233,7 @@
     <string name="copy_link">Копировать веб-адрес</string>
     <string name="copy_omemo_clipboard_description">Скопировать OMEMO-отпечаток в буфер обмена</string>
     <string name="copy_original_url">Копировать оригинальный URL</string>
+    <string name="copy">Копировать</string>
     <string name="copy_to_clipboard">Копировать в буфер обмена</string>
     <string name="correct_message">Изменить сообщение</string>
     <string name="corresponding_conversations_closed">Соответствующие разговоры были закрыты.</string>
