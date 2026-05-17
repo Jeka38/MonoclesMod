@@ -1036,7 +1036,6 @@ public class MessageParser extends AbstractParser implements OnMessagePacketRece
                         Log.d(Config.LOGTAG, "retracted message '" + retractedMessage.getBody() + "' with '" + message.getBody() + "'");
                         synchronized (retractedMessage) {
 
-                            retractedMessage.setBody(mXmppConnectionService.getString(R.string.message_deleted));
                             retractedMessage.setRetractId(retractId);
 
                             extractChatState(mXmppConnectionService.find(account, counterpart.asBareJid()), isTypeGroupChat, packet);
@@ -1044,18 +1043,13 @@ public class MessageParser extends AbstractParser implements OnMessagePacketRece
                             message.setMessageDeleted(true);
                             message.setRetractId(retractId);
 
-                            if (message.getStatus() > Message.STATUS_RECEIVED) {
-                                retractedMessage.setMessageDeleted(true);
-                            }
-
                             for (Edit itm : retractedMessage.getEditedList()) {
                                 Message tmpRetractedMessage = conversation.findMessageWithUuidOrRemoteId(itm.getEditedId());
                                 if (tmpRetractedMessage != null) {
-                                    tmpRetractedMessage.setRetractId(retractId);
-                                    mXmppConnectionService.updateMessage(tmpRetractedMessage, tmpRetractedMessage.getUuid());
+                                    mXmppConnectionService.deleteMessage(conversation, tmpRetractedMessage);
                                 }
                             }
-                            mXmppConnectionService.updateMessage(retractedMessage, retractedMessage.getUuid());
+                            mXmppConnectionService.deleteMessage(conversation, retractedMessage);
                             mXmppConnectionService.databaseBackend.createMessage(message);
                             if (mXmppConnectionService.confirmMessages()
                                     && retractedMessage.getStatus() == Message.STATUS_RECEIVED

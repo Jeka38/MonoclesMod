@@ -3991,10 +3991,6 @@ public class ConversationFragment extends XmppFragment
                     retractmessage.setRetractId(retractedMessage.getRemoteMsgId() != null ? retractedMessage.getRemoteMsgId() : retractedMessage.getUuid());
                 }
 
-                retractedMessage.putEdited(retractedMessage.getUuid(), retractedMessage.getServerMsgId(), retractedMessage.getBody(), retractedMessage.getTimeSent());
-                retractedMessage.setBody(Message.DELETED_MESSAGE_BODY);
-                retractedMessage.setServerMsgId(null);
-                retractedMessage.setRemoteMsgId(message.getRemoteMsgId());
                 retractedMessage.setMessageDeleted(true);
 
                 retractmessage.setType(Message.TYPE_TEXT);
@@ -4005,23 +4001,21 @@ public class ConversationFragment extends XmppFragment
                 retractmessage.setCarbon(false);
                 retractmessage.setRemoteMsgId(retractmessage.getUuid());
                 retractmessage.setMessageDeleted(true);
-                retractedMessage.setTime(time); //set new time here to keep orginal timestamps
                 for (Edit itm : retractedMessage.getEditedList()) {
                     Message tmpRetractedMessage = conversation.findMessageWithUuidOrRemoteId(itm.getEditedId());
                     if (tmpRetractedMessage != null) {
-                        tmpRetractedMessage.setMessageDeleted(true);
-                        activity.xmppConnectionService.updateMessage(tmpRetractedMessage, tmpRetractedMessage.getUuid());
+                        activity.xmppConnectionService.deleteMessage(conversation, tmpRetractedMessage);
                     }
                 }
-                activity.xmppConnectionService.updateMessage(retractedMessage, retractedMessage.getUuid());
                 if (finalMessage.getStatus() >= Message.STATUS_SEND) {
                     //only send retraction messages vor outgoing messages!
                     sendMessage(retractmessage);
                 }
                 activity.xmppConnectionService.deleteMessage(conversation, retractedMessage);
                 activity.xmppConnectionService.deleteMessage(conversation, retractmessage);
+            } else {
+                activity.xmppConnectionService.deleteMessage(conversation, message);
             }
-            activity.xmppConnectionService.deleteMessage(conversation, message);
             activity.onConversationsListItemUpdated();
             refresh();
         });
