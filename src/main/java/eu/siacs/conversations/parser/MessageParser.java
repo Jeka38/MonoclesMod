@@ -31,6 +31,7 @@ import io.ipfs.cid.Cid;
 
 import android.os.Build;
 import android.text.Html;
+import android.text.TextUtils;
 
 import net.java.otr4j.session.Session;
 import net.java.otr4j.session.SessionStatus;
@@ -587,9 +588,11 @@ public class MessageParser extends AbstractParser implements OnMessagePacketRece
         final Element applyToElement = packet.findChild("apply-to", "urn:xmpp:fasten:0");
         final String retractId = applyToElement != null && applyToElement.findChild("retract", "urn:xmpp:message-retract:0") != null ? applyToElement.getAttribute("id") : null;
 
-        if (packet.getBody() == null && retractId != null) {   //It's RECOMMENDED that you include a Fallback Indication (XEP-0428) [6] tag with fallback text in the <body/>, so that older clients can still indicate the intent to retract and so that older servers will archive the retraction.
+        final boolean isRetraction = retractId != null || (replaceElement != null && !replaceElement.getName().equals("replace"));
+
+        if (packet.getBody() == null && isRetraction) {   //It's RECOMMENDED that you include a Fallback Indication (XEP-0428) [6] tag with fallback text in the <body/>, so that older clients can still indicate the intent to retract and so that older servers will archive the retraction.
             //Otherwhise the following code will not execute the retraction, because it searchs for body content!
-            packet.setBody("This person attempted to retract a previous message, but it's unsupported by your client.");
+            packet.setBody(mXmppConnectionService.getString(R.string.retraction_fallback));
         }
 
         LocalizedContent body = packet.getBody();
@@ -719,7 +722,7 @@ public class MessageParser extends AbstractParser implements OnMessagePacketRece
             mXmppConnectionService.updateConversationUi();
         }
 
-        if ((body != null || pgpEncrypted != null || (axolotlEncrypted != null && axolotlEncrypted.hasChild("payload")) || !attachments.isEmpty() || html != null || (packet.hasChild("subject") && packet.hasChild("thread"))) && !isMucStatusMessage) {
+        if ((!TextUtils.isEmpty(body == null ? null : body.content) || pgpEncrypted != null || (axolotlEncrypted != null && axolotlEncrypted.hasChild("payload")) || !attachments.isEmpty() || html != null || (packet.hasChild("subject") && packet.hasChild("thread")) || replacementId != null || retractId != null) && !isMucStatusMessage) {
             final Conversation conversation;
             if (isPrivateMucMessage) {
                 conversation = mXmppConnectionService.findOrCreateConversation(account, counterpart.asBareJid(), counterpart, true, false, query, false, null);
@@ -946,6 +949,10 @@ public class MessageParser extends AbstractParser implements OnMessagePacketRece
 
                             replacedMessage.putEdited(replacedMessage.getRemoteMsgId() != null ? replacedMessage.getRemoteMsgId() : replacedMessage.getUuid(), replacedMessage.getServerMsgId(), replacedMessage.getBody(), replacedMessage.getTimeSent());
 
+                            if (TextUtils.isEmpty(message.getBody()) || message.getBody().trim().isEmpty() || (replaceElement != null && !replaceElement.getName().equals("replace"))) {
+                                mXmppConnectionService.deleteMessage(conversation, replacedMessage);
+                                return;
+                            }
                             replacedMessage.setUuid(UUID.randomUUID().toString());
                             replacedMessage.setBody(message.getBody());
                             replacedMessage.setSubject(message.getSubject());
@@ -1000,10 +1007,7 @@ public class MessageParser extends AbstractParser implements OnMessagePacketRece
                     } else {
                         Log.d(Config.LOGTAG, account.getJid().asBareJid() + ": received message correction but verification didn't check out");
                     }
-                } else if (message.getBody() == null || message.getBody().equals("") || message.getBody().equals(" ")) {
-                    return;
-                }
-                else if (message.getBody() == null || message.getBody().equals("") || message.getBody().equals(" ")) {
+                } else if (message.getBody() == null || message.getBody().trim().isEmpty() || isRetraction) {
                     return;
                 }
             } else if (replacementId != null && !mXmppConnectionService.allowMessageCorrection() && (message.hasDeletedBody())) {
@@ -1050,7 +1054,6 @@ public class MessageParser extends AbstractParser implements OnMessagePacketRece
                                 }
                             }
                             mXmppConnectionService.deleteMessage(conversation, retractedMessage);
-                            mXmppConnectionService.databaseBackend.createMessage(message);
                             if (mXmppConnectionService.confirmMessages()
                                     && retractedMessage.getStatus() == Message.STATUS_RECEIVED
                                     && (retractedMessage.trusted() || retractedMessage.isPrivateMessage()) //TODO do we really want to send receipts for all PMs?
@@ -1066,10 +1069,6 @@ public class MessageParser extends AbstractParser implements OnMessagePacketRece
                         Log.d(Config.LOGTAG, account.getJid().asBareJid() + ": received message retraction but checks are not valid");
                     }
                 } else {
-                    //we deleted a carbon from ourself and the dialog allready removed it from ui
-                    message.setMessageDeleted(true);
-                    message.setRetractId(retractId);
-                    mXmppConnectionService.databaseBackend.createMessage(message);
                     return;
                 }
                 if (replaceElement != null && !replaceElement.getName().equals("replace")) return;

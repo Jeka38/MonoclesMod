@@ -10,6 +10,7 @@ import net.java.otr4j.OtrException;
 import net.java.otr4j.session.Session;
 
 import eu.siacs.conversations.Config;
+import eu.siacs.conversations.R;
 import eu.siacs.conversations.crypto.axolotl.AxolotlService;
 import eu.siacs.conversations.crypto.axolotl.XmppAxolotlMessage;
 import eu.siacs.conversations.entities.Account;
@@ -74,7 +75,7 @@ public class MessageGenerator extends AbstractGenerator {
             apply.addChild("retract", "urn:xmpp:message-retract:0");
             packet.addChild("fallback", "urn:xmpp:fallback:0");
             packet.addChild("store", "urn:xmpp:hints");
-            packet.setBody("This person attempted to retract a previous message, but it's unsupported by your client.");
+            packet.setBody(this.mXmppConnectionService.getString(R.string.retraction_fallback));
         }
         if (!legacyEncryption) {
             if (message.getSubject() != null && message.getSubject().length() > 0) packet.addChild("subject").setContent(message.getSubject());
