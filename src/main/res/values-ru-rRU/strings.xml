@@ -1374,6 +1374,7 @@
     <string name="moderate_message">Модерация</string>
     <string name="retract_message">Отозвать сообщение</string>
     <string name="retract_message_dialog_msg">Вы действительно хотите отозвать это сообщение?</string>
+    <string name="retraction_fallback">Этот человек попытался отозвать предыдущее сообщение, но Ваш клиент это не поддерживает.</string>
     <string name="reply_to">Ответить на</string>
     <string name="moderate_reason">Причина модерации</string>
     <string name="unable_to_moderate">Невозможно модерировать</string>

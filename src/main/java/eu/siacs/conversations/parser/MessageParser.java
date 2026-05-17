@@ -31,6 +31,7 @@ import io.ipfs.cid.Cid;
 
 import android.os.Build;
 import android.text.Html;
+import android.text.TextUtils;
 
 import net.java.otr4j.session.Session;
 import net.java.otr4j.session.SessionStatus;
@@ -589,7 +590,7 @@ public class MessageParser extends AbstractParser implements OnMessagePacketRece
 
         if (packet.getBody() == null && retractId != null) {   //It's RECOMMENDED that you include a Fallback Indication (XEP-0428) [6] tag with fallback text in the <body/>, so that older clients can still indicate the intent to retract and so that older servers will archive the retraction.
             //Otherwhise the following code will not execute the retraction, because it searchs for body content!
-            packet.setBody("This person attempted to retract a previous message, but it's unsupported by your client.");
+            packet.setBody(mXmppConnectionService.getString(R.string.retraction_fallback));
         }
 
         LocalizedContent body = packet.getBody();
@@ -946,6 +947,10 @@ public class MessageParser extends AbstractParser implements OnMessagePacketRece
 
                             replacedMessage.putEdited(replacedMessage.getRemoteMsgId() != null ? replacedMessage.getRemoteMsgId() : replacedMessage.getUuid(), replacedMessage.getServerMsgId(), replacedMessage.getBody(), replacedMessage.getTimeSent());
 
+                            if (TextUtils.isEmpty(message.getBody()) || message.getBody().equals(" ")) {
+                                mXmppConnectionService.deleteMessage(conversation, replacedMessage);
+                                return;
+                            }
                             replacedMessage.setUuid(UUID.randomUUID().toString());
                             replacedMessage.setBody(message.getBody());
                             replacedMessage.setSubject(message.getSubject());
@@ -1003,9 +1008,6 @@ public class MessageParser extends AbstractParser implements OnMessagePacketRece
                 } else if (message.getBody() == null || message.getBody().equals("") || message.getBody().equals(" ")) {
                     return;
                 }
-                else if (message.getBody() == null || message.getBody().equals("") || message.getBody().equals(" ")) {
-                    return;
-                }
             } else if (replacementId != null && !mXmppConnectionService.allowMessageCorrection() && (message.hasDeletedBody())) {
                 Log.d(Config.LOGTAG, account.getJid().asBareJid() + ": received deleted message but LMC is deactivated");
                 return;
@@ -1050,7 +1052,6 @@ public class MessageParser extends AbstractParser implements OnMessagePacketRece
                                 }
                             }
                             mXmppConnectionService.deleteMessage(conversation, retractedMessage);
-                            mXmppConnectionService.databaseBackend.createMessage(message);
                             if (mXmppConnectionService.confirmMessages()
                                     && retractedMessage.getStatus() == Message.STATUS_RECEIVED
                                     && (retractedMessage.trusted() || retractedMessage.isPrivateMessage()) //TODO do we really want to send receipts for all PMs?
@@ -1066,10 +1067,6 @@ public class MessageParser extends AbstractParser implements OnMessagePacketRece
                         Log.d(Config.LOGTAG, account.getJid().asBareJid() + ": received message retraction but checks are not valid");
                     }
                 } else {
-                    //we deleted a carbon from ourself and the dialog allready removed it from ui
-                    message.setMessageDeleted(true);
-                    message.setRetractId(retractId);
-                    mXmppConnectionService.databaseBackend.createMessage(message);
                     return;
                 }
                 if (replaceElement != null && !replaceElement.getName().equals("replace")) return;

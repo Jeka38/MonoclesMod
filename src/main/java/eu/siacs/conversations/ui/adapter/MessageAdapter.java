@@ -1765,8 +1765,10 @@ public class MessageAdapter extends ArrayAdapter<Message> {
         if (muted) {
             // Muted MUC participant
             displayInfoMessage(viewHolder, "Muted", darkBackground, message);
+        } else if (message.isMessageDeleted()) {
+            displayInfoMessage(viewHolder, activity.getString(R.string.message_deleted), darkBackground, message);
         } else if (unInitiatedButKnownSize || message.isFileDeleted() || (transferable != null && transferable.getStatus() != Transferable.STATUS_UPLOADING)) {
-            if (unInitiatedButKnownSize || (message.isMessageDeleted() && message.getModerated() == null)  || transferable != null && transferable.getStatus() == Transferable.STATUS_OFFER) {
+            if (unInitiatedButKnownSize || transferable != null && transferable.getStatus() == Transferable.STATUS_OFFER) {
                 displayDownloadableMessage(viewHolder, message, activity.getString(R.string.download_x_file, UIHelper.getFileDescriptionString(activity, message)), darkBackground, type);
             } else if (transferable != null && transferable.getStatus() == Transferable.STATUS_OFFER_CHECK_FILESIZE) {
                 displayDownloadableMessage(viewHolder, message, activity.getString(R.string.check_x_filesize, UIHelper.getFileDescriptionString(activity, message)), darkBackground, type);

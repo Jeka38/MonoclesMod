@@ -389,6 +389,8 @@ public class UIHelper {
                 displayBody = bodyText;
             }
             return new Pair<>(displayBody, true);
+        } else if (message.isMessageDeleted()) {
+            return new Pair<>(context.getString(R.string.message_deleted), false);
         } else {
             final String body = MessageUtils.filterLtrRtl(message.getBody());
             if (message.hasDeletedBody()) {

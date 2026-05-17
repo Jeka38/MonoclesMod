@@ -1284,6 +1284,7 @@
     <string name="added_to_favorites">Added to favorites</string>
     <string name="retract_message">Retract message</string>
     <string name="retract_message_dialog_msg">Do you really want to retract this message?</string>
+    <string name="retraction_fallback">This person attempted to retract a previous message, but it\'s unsupported by your client.</string>
     <string name="reply_to">Reply to</string>
     <string name="or_use_another">... or choose another one below</string>
     <string name="monocles_account_introduction">Sign up now and <b>get an secure monocles account, powered with regenerative energies</b> to directly start chatting.</string>
