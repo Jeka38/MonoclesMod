@@ -316,6 +316,8 @@ public class UIHelper {
         final boolean muted = message.getStatus() == Message.STATUS_RECEIVED && message.getConversation().getMode() == Conversation.MODE_MULTI && context.isMucUserMuted(new MucOptions.User(null, message.getConversation().getJid(), message.getOccupantId(), null, null));
         if (muted) {
             return new Pair<>("Muted", false);
+        } else if (message.isMessageDeleted()) {
+            return new Pair<>(context.getString(R.string.message_deleted), false);
         } else if (d != null && !moderated) {
             switch (d.getStatus()) {
                 case Transferable.STATUS_WAITING:
