@@ -366,7 +366,7 @@ public class IqGenerator extends AbstractGenerator {
         data.setFormType(mam.version.namespace);
         if (mam.muc()) {
             packet.setTo(mam.getWith());
-        } else if (mam.getWith() != null) {
+        } else if (mam.getWith() != null && !mam.getWith().equals(mam.getAccount().getJid().asBareJid())) {
             data.put("with", mam.getWith().toEscapedString());
         }
         final long start = mam.getStart();
