@@ -692,6 +692,11 @@ public class MessageParser extends AbstractParser implements OnMessagePacketRece
             } else {
                 conversation = mXmppConnectionService.findOrCreateConversation(account, counterpart.asBareJid(), conversationIsProbablyMuc, false, query, false);
             }
+
+            if (query != null && query.getConversation() != null && query.getConversation() != conversation) {
+                return;
+            }
+
             Jid webxdcSender = counterpart.asBareJid();
             if (conversation.getMode() == Conversation.MODE_MULTI) {
                 if(conversation.getMucOptions().nonanonymous()) {
@@ -729,6 +734,11 @@ public class MessageParser extends AbstractParser implements OnMessagePacketRece
             } else {
                 conversation = mXmppConnectionService.findOrCreateConversation(account, counterpart.asBareJid(), conversationIsProbablyMuc, false, query, false);
             }
+
+            if (query != null && query.getConversation() != null && query.getConversation() != conversation) {
+                return;
+            }
+
             final boolean conversationMultiMode = conversation.getMode() == Conversation.MODE_MULTI;
 
             if (serverMsgId == null) {
