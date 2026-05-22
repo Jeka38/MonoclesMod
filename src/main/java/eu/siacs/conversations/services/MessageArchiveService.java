@@ -111,26 +111,13 @@ public class MessageArchiveService implements OnAdvancedStreamFeaturesLoaded {
                 mXmppConnectionService.databaseBackend.getLastMessageReceived(account),
                 mXmppConnectionService.databaseBackend.getLastClearDate(account)
         );
-        long endCatchup = account.getXmppConnection().getLastSessionEstablished();
-        final Query query;
         if (mamReference.getTimestamp() == 0) {
             return;
-        } else if (endCatchup - mamReference.getTimestamp() >= Config.MAM_MAX_CATCHUP) {
-            long startCatchup = endCatchup - Config.MAM_MAX_CATCHUP;
-            List<Conversation> conversations = mXmppConnectionService.getConversations();
-            for (Conversation conversation : conversations) {
-                if (conversation.getMode() == Conversation.MODE_SINGLE && conversation.getAccount() == account && startCatchup > conversation.getLastMessageTransmitted().getTimestamp()) {
-                    this.query(conversation, startCatchup, true);
-                }
-            }
-            query = new Query(account, new MamReference(startCatchup), 0);
-        } else {
-            query = new Query(account, mamReference, 0);
         }
-        synchronized (this.queries) {
-            this.queries.add(query);
-        }
-        this.execute(query);
+        // History synchronization is conversation-scoped only.
+        // Do not start account-wide catchup here because it fetches personal message archives
+        // across all chats and breaks per-chat history loading (e.g. Favorites).
+        Log.d(Config.LOGTAG, account.getJid().asBareJid() + ": skip automatic account-wide MAM catchup; waiting for explicit conversation query");
     }
 
     void catchupMUC(final Conversation conversation) {
