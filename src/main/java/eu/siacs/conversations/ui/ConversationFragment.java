@@ -1376,6 +1376,23 @@ public class ConversationFragment extends XmppFragment
             return;
         }
 
+        if (conversation.getCorrectingMessage() == null && attachmentCount == 1) {
+            if (body.length() > 0 || hasSubject) {
+                final Message caption = new Message(conversation, body.toString(), conversation.getNextEncryption());
+                caption.setBody(hasSubject && body.length() == 0 ? null : body);
+                if (hasSubject) caption.setSubject(binding.textinputSubject.getText().toString());
+                caption.setThread(conversation.getThread());
+                conversation.setCaption(caption);
+            } else {
+                conversation.setCaption(null);
+            }
+            commitAttachments();
+            binding.textinput.setText("");
+            conversation.setCaption(null);
+            setupReply(null);
+            return;
+        }
+
         final Message message;
         if (conversation.getCorrectingMessage() == null) {
             boolean attention = false;
@@ -1395,14 +1412,6 @@ public class ConversationFragment extends XmppFragment
                 message.setEncryption(conversation.getNextEncryption());
             } else {
                 message = new Message(conversation, body.toString(), conversation.getNextEncryption());
-                // Обрабатываем случай с одним вложением
-                if (attachmentCount == 1) {
-                    conversation.setCaption(message);
-                    commitAttachments(); // Отправляем вложение
-                    binding.textinput.setText(""); // Очищаем поле ввода
-                    conversation.setCaption(null); // Очищаем caption после отправки
-                    return;
-                }
                 message.setBody(hasSubject && body.length() == 0 ? null : body);
                 if (message.bodyIsOnlyEmojis()) {
                     SpannableStringBuilder spannable = message.getSpannableBody(null, null);
