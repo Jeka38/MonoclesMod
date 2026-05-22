@@ -111,10 +111,26 @@ public class MessageArchiveService implements OnAdvancedStreamFeaturesLoaded {
                 mXmppConnectionService.databaseBackend.getLastMessageReceived(account),
                 mXmppConnectionService.databaseBackend.getLastClearDate(account)
         );
+        long endCatchup = account.getXmppConnection().getLastSessionEstablished();
+        final Query query;
         if (mamReference.getTimestamp() == 0) {
             return;
+        } else if (endCatchup - mamReference.getTimestamp() >= Config.MAM_MAX_CATCHUP) {
+            long startCatchup = endCatchup - Config.MAM_MAX_CATCHUP;
+            List<Conversation> conversations = mXmppConnectionService.getConversations();
+            for (Conversation conversation : conversations) {
+                if (conversation.getMode() == Conversation.MODE_SINGLE && conversation.getAccount() == account && startCatchup > conversation.getLastMessageTransmitted().getTimestamp()) {
+                    this.query(conversation, startCatchup, true);
+                }
+            }
+            query = new Query(account, new MamReference(startCatchup), 0);
+        } else {
+            query = new Query(account, mamReference, 0);
         }
-        Log.d(Config.LOGTAG, account.getJid().asBareJid() + ": skipping account-wide MAM catchup to avoid loading history for all chats");
+        synchronized (this.queries) {
+            this.queries.add(query);
+        }
+        this.execute(query);
     }
 
     void catchupMUC(final Conversation conversation) {
@@ -621,28 +637,6 @@ public class MessageArchiveService implements OnAdvancedStreamFeaturesLoaded {
             } else {
                 return (from == null) || account.getJid().asBareJid().equals(from.asBareJid());
             }
-        }
-
-        public boolean validFor(MessagePacket packet) {
-            if (conversation == null) {
-                return true;
-            }
-            final Jid from = packet.getFrom();
-            if (from == null) {
-                return false;
-            }
-            final Jid counterpart;
-            if (account.getJid().asBareJid().equals(from.asBareJid())) {
-                final Jid to = packet.getTo();
-                if (to == null) {
-                    return false;
-                }
-                counterpart = to;
-            } else {
-                counterpart = from;
-            }
-            final Jid with = getWith();
-            return with != null && with.equals(counterpart.asBareJid());
         }
 
         @NotNull

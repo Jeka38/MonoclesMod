@@ -31,7 +31,6 @@ import io.ipfs.cid.Cid;
 
 import android.os.Build;
 import android.text.Html;
-import android.text.TextUtils;
 
 import net.java.otr4j.session.Session;
 import net.java.otr4j.session.SessionStatus;
@@ -528,10 +527,6 @@ public class MessageParser extends AbstractParser implements OnMessagePacketRece
             if (handleErrorMessage(account, packet)) {
                 return;
             }
-            if (!query.validFor(packet)) {
-                Log.d(Config.LOGTAG, account.getJid().asBareJid() + ": ignoring mam result outside requested conversation " + query.getWith());
-                return;
-            }
             final var contact = packet.getFrom() == null || packet.getFrom() instanceof InvalidJid ? null : account.getRoster().getContact(packet.getFrom());
             if (contact != null && contact.isBlocked()) {
                 Log.d(Config.LOGTAG, "Got MAM result from blocked contact, ignoring...");
@@ -592,11 +587,9 @@ public class MessageParser extends AbstractParser implements OnMessagePacketRece
         final Element applyToElement = packet.findChild("apply-to", "urn:xmpp:fasten:0");
         final String retractId = applyToElement != null && applyToElement.findChild("retract", "urn:xmpp:message-retract:0") != null ? applyToElement.getAttribute("id") : null;
 
-        final boolean isRetraction = retractId != null || (replaceElement != null && !replaceElement.getName().equals("replace"));
-
-        if (packet.getBody() == null && isRetraction) {   //It's RECOMMENDED that you include a Fallback Indication (XEP-0428) [6] tag with fallback text in the <body/>, so that older clients can still indicate the intent to retract and so that older servers will archive the retraction.
+        if (packet.getBody() == null && retractId != null) {   //It's RECOMMENDED that you include a Fallback Indication (XEP-0428) [6] tag with fallback text in the <body/>, so that older clients can still indicate the intent to retract and so that older servers will archive the retraction.
             //Otherwhise the following code will not execute the retraction, because it searchs for body content!
-            packet.setBody(mXmppConnectionService.getString(R.string.retraction_fallback));
+            packet.setBody("This person attempted to retract a previous message, but it's unsupported by your client.");
         }
 
         LocalizedContent body = packet.getBody();
@@ -726,7 +719,7 @@ public class MessageParser extends AbstractParser implements OnMessagePacketRece
             mXmppConnectionService.updateConversationUi();
         }
 
-        if ((!TextUtils.isEmpty(body == null ? null : body.content) || pgpEncrypted != null || (axolotlEncrypted != null && axolotlEncrypted.hasChild("payload")) || !attachments.isEmpty() || html != null || (packet.hasChild("subject") && packet.hasChild("thread")) || replacementId != null || retractId != null) && !isMucStatusMessage) {
+        if ((body != null || pgpEncrypted != null || (axolotlEncrypted != null && axolotlEncrypted.hasChild("payload")) || !attachments.isEmpty() || html != null || (packet.hasChild("subject") && packet.hasChild("thread"))) && !isMucStatusMessage) {
             final Conversation conversation;
             if (isPrivateMucMessage) {
                 conversation = mXmppConnectionService.findOrCreateConversation(account, counterpart.asBareJid(), counterpart, true, false, query, false, null);
@@ -953,10 +946,6 @@ public class MessageParser extends AbstractParser implements OnMessagePacketRece
 
                             replacedMessage.putEdited(replacedMessage.getRemoteMsgId() != null ? replacedMessage.getRemoteMsgId() : replacedMessage.getUuid(), replacedMessage.getServerMsgId(), replacedMessage.getBody(), replacedMessage.getTimeSent());
 
-                            if (TextUtils.isEmpty(message.getBody()) || message.getBody().trim().isEmpty() || (replaceElement != null && !replaceElement.getName().equals("replace"))) {
-                                mXmppConnectionService.deleteMessage(conversation, replacedMessage);
-                                return;
-                            }
                             replacedMessage.setUuid(UUID.randomUUID().toString());
                             replacedMessage.setBody(message.getBody());
                             replacedMessage.setSubject(message.getSubject());
@@ -1011,7 +1000,10 @@ public class MessageParser extends AbstractParser implements OnMessagePacketRece
                     } else {
                         Log.d(Config.LOGTAG, account.getJid().asBareJid() + ": received message correction but verification didn't check out");
                     }
-                } else if (message.getBody() == null || message.getBody().trim().isEmpty() || isRetraction) {
+                } else if (message.getBody() == null || message.getBody().equals("") || message.getBody().equals(" ")) {
+                    return;
+                }
+                else if (message.getBody() == null || message.getBody().equals("") || message.getBody().equals(" ")) {
                     return;
                 }
             } else if (replacementId != null && !mXmppConnectionService.allowMessageCorrection() && (message.hasDeletedBody())) {
@@ -1044,6 +1036,7 @@ public class MessageParser extends AbstractParser implements OnMessagePacketRece
                         Log.d(Config.LOGTAG, "retracted message '" + retractedMessage.getBody() + "' with '" + message.getBody() + "'");
                         synchronized (retractedMessage) {
 
+                            retractedMessage.setBody(mXmppConnectionService.getString(R.string.message_deleted));
                             retractedMessage.setRetractId(retractId);
 
                             extractChatState(mXmppConnectionService.find(account, counterpart.asBareJid()), isTypeGroupChat, packet);
@@ -1051,13 +1044,19 @@ public class MessageParser extends AbstractParser implements OnMessagePacketRece
                             message.setMessageDeleted(true);
                             message.setRetractId(retractId);
 
+                            if (message.getStatus() > Message.STATUS_RECEIVED) {
+                                retractedMessage.setMessageDeleted(true);
+                            }
+
                             for (Edit itm : retractedMessage.getEditedList()) {
                                 Message tmpRetractedMessage = conversation.findMessageWithUuidOrRemoteId(itm.getEditedId());
                                 if (tmpRetractedMessage != null) {
-                                    mXmppConnectionService.deleteMessage(conversation, tmpRetractedMessage);
+                                    tmpRetractedMessage.setRetractId(retractId);
+                                    mXmppConnectionService.updateMessage(tmpRetractedMessage, tmpRetractedMessage.getUuid());
                                 }
                             }
-                            mXmppConnectionService.deleteMessage(conversation, retractedMessage);
+                            mXmppConnectionService.updateMessage(retractedMessage, retractedMessage.getUuid());
+                            mXmppConnectionService.databaseBackend.createMessage(message);
                             if (mXmppConnectionService.confirmMessages()
                                     && retractedMessage.getStatus() == Message.STATUS_RECEIVED
                                     && (retractedMessage.trusted() || retractedMessage.isPrivateMessage()) //TODO do we really want to send receipts for all PMs?
@@ -1073,6 +1072,10 @@ public class MessageParser extends AbstractParser implements OnMessagePacketRece
                         Log.d(Config.LOGTAG, account.getJid().asBareJid() + ": received message retraction but checks are not valid");
                     }
                 } else {
+                    //we deleted a carbon from ourself and the dialog allready removed it from ui
+                    message.setMessageDeleted(true);
+                    message.setRetractId(retractId);
+                    mXmppConnectionService.databaseBackend.createMessage(message);
                     return;
                 }
                 if (replaceElement != null && !replaceElement.getName().equals("replace")) return;
