@@ -794,6 +794,9 @@ public class XmppConnectionService extends Service {
         } else {
             message = conversation.getReplyTo().reply();
             message.setEncryption(conversation.getNextEncryption());
+            message.updateReplyTo(conversation.getReplyTo(), new SpannableStringBuilder(""));
+            message.setBody("");
+            message.clearFallbacks("urn:xmpp:reply:0");
         }
 
         if (conversation.getCaption() != null) {
@@ -846,6 +849,9 @@ public class XmppConnectionService extends Service {
         } else {
             message = conversation.getReplyTo().reply();
             message.setEncryption(conversation.getNextEncryption());
+            message.updateReplyTo(conversation.getReplyTo(), new SpannableStringBuilder(""));
+            message.setBody("");
+            message.clearFallbacks("urn:xmpp:reply:0");
         }
 
         if (conversation.getCaption() != null) {
