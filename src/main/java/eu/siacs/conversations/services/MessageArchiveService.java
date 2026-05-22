@@ -623,6 +623,28 @@ public class MessageArchiveService implements OnAdvancedStreamFeaturesLoaded {
             }
         }
 
+        public boolean validFor(MessagePacket packet) {
+            if (conversation == null) {
+                return true;
+            }
+            final Jid from = packet.getFrom();
+            if (from == null) {
+                return false;
+            }
+            final Jid counterpart;
+            if (account.getJid().asBareJid().equals(from.asBareJid())) {
+                final Jid to = packet.getTo();
+                if (to == null) {
+                    return false;
+                }
+                counterpart = to;
+            } else {
+                counterpart = from;
+            }
+            final Jid with = getWith();
+            return with != null && with.equals(counterpart.asBareJid());
+        }
+
         @NotNull
         @Override
         public String toString() {
