@@ -792,11 +792,15 @@ public class XmppConnectionService extends Service {
         if (conversation.getReplyTo() == null) {
             message = new Message(conversation, "", conversation.getNextEncryption());
         } else {
-            message = conversation.getReplyTo().reply();
-            message.setEncryption(conversation.getNextEncryption());
-            message.updateReplyTo(conversation.getReplyTo(), new SpannableStringBuilder(""));
-            message.setBody("");
-            message.clearFallbacks("urn:xmpp:reply:0");
+            message = new Message(conversation, "", conversation.getNextEncryption());
+            final Message replyTo = conversation.getReplyTo();
+            final String replyId = replyTo.replyId();
+            if (replyId != null) {
+                message.addPayload(new Element("reply", "urn:xmpp:reply:0")
+                        .setAttribute("to", replyTo.getCounterpart())
+                        .setAttribute("id", replyId));
+                message.setInReplyTo(replyTo);
+            }
         }
 
         if (conversation.getCaption() != null) {
@@ -847,11 +851,15 @@ public class XmppConnectionService extends Service {
         if (conversation.getReplyTo() == null) {
             message = new Message(conversation, "", conversation.getNextEncryption());
         } else {
-            message = conversation.getReplyTo().reply();
-            message.setEncryption(conversation.getNextEncryption());
-            message.updateReplyTo(conversation.getReplyTo(), new SpannableStringBuilder(""));
-            message.setBody("");
-            message.clearFallbacks("urn:xmpp:reply:0");
+            message = new Message(conversation, "", conversation.getNextEncryption());
+            final Message replyTo = conversation.getReplyTo();
+            final String replyId = replyTo.replyId();
+            if (replyId != null) {
+                message.addPayload(new Element("reply", "urn:xmpp:reply:0")
+                        .setAttribute("to", replyTo.getCounterpart())
+                        .setAttribute("id", replyId));
+                message.setInReplyTo(replyTo);
+            }
         }
 
         if (conversation.getCaption() != null) {
