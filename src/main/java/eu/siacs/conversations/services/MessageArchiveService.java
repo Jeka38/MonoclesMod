@@ -116,8 +116,8 @@ public class MessageArchiveService implements OnAdvancedStreamFeaturesLoaded {
         if (mamReference.getTimestamp() == 0) {
             return;
         } else if (endCatchup - mamReference.getTimestamp() >= Config.MAM_MAX_CATCHUP) {
-            long startCatchup = endCatchup - Config.MAM_MAX_CATCHUP;
-            query = new Query(account, new MamReference(startCatchup), 0);
+            Log.d(Config.LOGTAG, account.getJid().asBareJid() + ": skipping account-wide MAM catchup due to large window");
+            return;
         } else {
             query = new Query(account, mamReference, 0);
         }
