@@ -117,12 +117,6 @@ public class MessageArchiveService implements OnAdvancedStreamFeaturesLoaded {
             return;
         } else if (endCatchup - mamReference.getTimestamp() >= Config.MAM_MAX_CATCHUP) {
             long startCatchup = endCatchup - Config.MAM_MAX_CATCHUP;
-            List<Conversation> conversations = mXmppConnectionService.getConversations();
-            for (Conversation conversation : conversations) {
-                if (conversation.getMode() == Conversation.MODE_SINGLE && conversation.getAccount() == account && startCatchup > conversation.getLastMessageTransmitted().getTimestamp()) {
-                    this.query(conversation, startCatchup, true);
-                }
-            }
             query = new Query(account, new MamReference(startCatchup), 0);
         } else {
             query = new Query(account, mamReference, 0);
