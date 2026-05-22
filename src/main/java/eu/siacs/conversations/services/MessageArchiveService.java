@@ -111,20 +111,10 @@ public class MessageArchiveService implements OnAdvancedStreamFeaturesLoaded {
                 mXmppConnectionService.databaseBackend.getLastMessageReceived(account),
                 mXmppConnectionService.databaseBackend.getLastClearDate(account)
         );
-        long endCatchup = account.getXmppConnection().getLastSessionEstablished();
-        final Query query;
         if (mamReference.getTimestamp() == 0) {
             return;
-        } else if (endCatchup - mamReference.getTimestamp() >= Config.MAM_MAX_CATCHUP) {
-            Log.d(Config.LOGTAG, account.getJid().asBareJid() + ": skipping account-wide MAM catchup due to large window");
-            return;
-        } else {
-            query = new Query(account, mamReference, 0);
         }
-        synchronized (this.queries) {
-            this.queries.add(query);
-        }
-        this.execute(query);
+        Log.d(Config.LOGTAG, account.getJid().asBareJid() + ": skipping account-wide MAM catchup to avoid loading history for all chats");
     }
 
     void catchupMUC(final Conversation conversation) {
