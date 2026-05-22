@@ -1681,6 +1681,7 @@ public class ConversationFragment extends XmppFragment
             }
             mediaPreviewAdapter.notifyDataSetChanged();
             toggleInputMethod();
+            setupReply(null);
         };
         if (conversation == null
                 || conversation.getMode() == Conversation.MODE_MULTI
@@ -1690,7 +1691,6 @@ public class ConversationFragment extends XmppFragment
         } else {
             activity.selectPresence(conversation, callback);
         }
-        setupReply(null);
     }
 
     private void HideWarning() {
