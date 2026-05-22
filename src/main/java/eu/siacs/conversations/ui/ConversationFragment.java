@@ -1387,9 +1387,7 @@ public class ConversationFragment extends XmppFragment
                 conversation.setCaption(null);
             }
             commitAttachments();
-            binding.textinput.setText("");
             conversation.setCaption(null);
-            setupReply(null);
             return;
         }
 
