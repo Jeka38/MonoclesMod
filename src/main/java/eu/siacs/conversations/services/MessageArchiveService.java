@@ -133,7 +133,7 @@ public class MessageArchiveService implements OnAdvancedStreamFeaturesLoaded {
         this.execute(query);
     }
 
-    void catchupMUC(final Conversation conversation) {
+    public void catchupMUC(final Conversation conversation) {
         if (conversation.getLastMessageTransmitted().getTimestamp() < 0 && conversation.countMessages() == 0) {
             query(conversation,
                     new MamReference(0),
@@ -465,7 +465,14 @@ public class MessageArchiveService implements OnAdvancedStreamFeaturesLoaded {
     @Override
     public void onAdvancedStreamFeaturesAvailable(Account account) {
         if (account.getXmppConnection() != null && account.getXmppConnection().getFeatures().mam()) {
-            this.catchup(account);
+            final Conversation conversation = mXmppConnectionService.getNotificationService().getOpenConversation();
+            if (conversation != null && conversation.getAccount() == account) {
+                if (conversation.getMode() == Conversation.MODE_MULTI) {
+                    this.catchupMUC(conversation);
+                } else {
+                    this.query(conversation);
+                }
+            }
         }
     }
 

@@ -3337,7 +3337,8 @@ public class XmppConnectionService extends Service {
                 if (account.getXmppConnection() != null
                         && !c.getContact().isBlocked()
                         && account.getXmppConnection().getFeatures().mam()
-                        && !muc) {
+                        && !muc
+                        && c == getNotificationService().getOpenConversation()) {
                     if (query == null) {
                         mMessageArchiveService.query(c);
                     } else {
@@ -4089,7 +4090,7 @@ public class XmppConnectionService extends Service {
 
                     maybeRegisterWithMuc(conversation, null);
 
-                    if (mucOptions.mamSupport()) {
+                    if (mucOptions.mamSupport() && conversation == getNotificationService().getOpenConversation()) {
                         getMessageArchiveService().catchupMUC(conversation);
                     }
                     fetchConferenceMembers(conversation);  //todo: Нужно ли оно нам?

@@ -2142,6 +2142,10 @@ public class NotificationService {
         this.mOpenConversation = conversation;
     }
 
+    public Conversation getOpenConversation() {
+        return this.mOpenConversation;
+    }
+
     public void setIsInForeground(final boolean foreground) {
         this.mIsInForeground = foreground;
     }

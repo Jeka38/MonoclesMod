@@ -4504,6 +4504,14 @@ public class ConversationFragment extends XmppFragment
                 .getNotificationService()
                 .setOpenConversation(this.conversation);
 
+        if (this.conversation.getAccount().getXmppConnection() != null && this.conversation.getAccount().getXmppConnection().getFeatures().mam()) {
+            if (this.conversation.getMode() == Conversation.MODE_MULTI) {
+                activity.xmppConnectionService.getMessageArchiveService().catchupMUC(this.conversation);
+            } else {
+                activity.xmppConnectionService.getMessageArchiveService().query(this.conversation);
+            }
+        }
+
         if (commandAdapter != null && conversation != originalConversation) {
             commandAdapter.clear();
             conversation.setupViewPager(binding.conversationViewPager, binding.tabLayout, activity.xmppConnectionService.isOnboarding(), originalConversation);
