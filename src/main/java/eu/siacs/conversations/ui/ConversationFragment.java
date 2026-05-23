@@ -1379,13 +1379,20 @@ public class ConversationFragment extends XmppFragment
             }
 
             if (conversation.getReplyTo() != null) {
-                if (Emoticons.isEmoji(body.toString().replaceAll("\\s", ""))) {
+                if (attachmentCount == 0 && Emoticons.isEmoji(body.toString().replaceAll("\\s", ""))) {
                     message = conversation.getReplyTo().react(body.toString().replaceAll("\\s", ""));
                 } else {
                     message = conversation.getReplyTo().reply();
                     message.appendBody(body);
                 }
                 message.setEncryption(conversation.getNextEncryption());
+                if (attachmentCount > 0) {
+                    conversation.setCaption(message);
+                    commitAttachments();
+                    binding.textinput.setText("");
+                    conversation.setCaption(null);
+                    return;
+                }
             } else {
                 message = new Message(conversation, body.toString(), conversation.getNextEncryption());
                 // Обрабатываем отправку вложений вместе с текстом/цитатой
