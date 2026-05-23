@@ -6997,15 +6997,9 @@ public class XmppConnectionService extends Service {
             if (appDir.exists() || appDir.mkdirs()) {
                 return appDir;
             }
+            return appDir;
         }
-        final File publicDir = new File(Environment.getExternalStoragePublicDirectory(Environment.DIRECTORY_DOCUMENTS) + File.separator + APP_DIRECTORY + File.separator + FileBackend.SMILES);
-        if (publicDir.exists() || publicDir.mkdirs()) {
-            return publicDir;
-        }
-        if (appDocumentsDir != null) {
-            return new File(appDocumentsDir, APP_DIRECTORY + File.separator + FileBackend.SMILES);
-        }
-        return publicDir;
+        return new File(getFilesDir(), APP_DIRECTORY + File.separator + FileBackend.SMILES);
     }
 
     public void rescanSmiles() {
