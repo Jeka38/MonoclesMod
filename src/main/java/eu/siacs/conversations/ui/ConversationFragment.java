@@ -2185,7 +2185,11 @@ public class ConversationFragment extends XmppFragment
         if (binding.textinput.isEnabled()) {
             String username = "";
             if (user != null && user.length() > 0) {
-                final String sanitizedUser = user.replace('\n', ' ').replace('\r', ' ').trim();
+                final String sanitizedUser = user
+                        .replace('\n', ' ')
+                        .replace('\r', ' ')
+                        .replace("_", "\\_")
+                        .trim();
                 if (user.equals(getString(R.string.me))) {
                     username = getString(R.string.me_quote) + System.getProperty("line.separator");
                 } else {
