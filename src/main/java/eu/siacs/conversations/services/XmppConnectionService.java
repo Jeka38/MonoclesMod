@@ -74,6 +74,7 @@ import android.os.Messenger;
 import android.os.PowerManager;
 import android.os.PowerManager.WakeLock;
 import android.os.SystemClock;
+import android.os.UserManager;
 import android.os.Vibrator;
 import android.preference.PreferenceManager;
 import android.provider.ContactsContract;
@@ -7004,6 +7005,13 @@ public class XmppConnectionService extends Service {
     }
 
     public void rescanSmiles(boolean force) {
+        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.N) {
+            final UserManager userManager = getSystemService(UserManager.class);
+            if (userManager != null && !userManager.isUserUnlocked()) {
+                Log.d(Config.LOGTAG, "skip rescanSmiles while user is locked");
+                return;
+            }
+        }
         long msToRescan = (mLastSmilesRescan + 600000L) - SystemClock.elapsedRealtime();
         if (!force && msToRescan > 0) return;
         Log.d(Config.LOGTAG, "rescanSmiles");
