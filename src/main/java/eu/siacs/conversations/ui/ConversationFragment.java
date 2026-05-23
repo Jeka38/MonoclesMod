@@ -70,6 +70,7 @@ import android.text.style.ImageSpan;
 import android.text.style.StyleSpan;
 import android.util.DisplayMetrics;
 import android.util.Log;
+import android.util.Pair;
 import android.view.ContextMenu;
 import android.view.ContextMenu.ContextMenuInfo;
 import android.view.Gravity;
@@ -2270,7 +2271,15 @@ public class ConversationFragment extends XmppFragment
             return;
         }
 
-        SpannableStringBuilder body = message.getSpannableBody(null, null);
+        final Pair<CharSequence, Boolean> preview = UIHelper.getMessagePreview(activity, message, 0);
+        final SpannableStringBuilder body = new SpannableStringBuilder(preview.first);
+        for (int i = body.length() - 1; i >= 0; --i) {
+            if (body.charAt(i) == '
+' || body.charAt(i) == '
+') {
+                body.replace(i, i + 1, " ");
+            }
+        }
         if ((message.isFileOrImage() || message.isOOb()) && binding.imageReplyPreview != null) {
             binding.imageReplyPreview.setVisibility(VISIBLE);
             if (activity.getBooleanPreference("play_gif_inside", R.bool.play_gif_inside)) {
@@ -2282,8 +2291,7 @@ public class ConversationFragment extends XmppFragment
             Glide.with(activity).clear(binding.imageReplyPreview);
             binding.imageReplyPreview.setVisibility(GONE);
         }
-        messageListAdapter.handleTextQuotes(binding.contextPreviewText, body, activity.isDarkTheme());
-        binding.contextPreviewText.setText(body);
+        binding.contextPreviewText.setText(UIHelper.shorten(body));
         binding.contextPreview.setVisibility(View.VISIBLE);
     }
     @Override
