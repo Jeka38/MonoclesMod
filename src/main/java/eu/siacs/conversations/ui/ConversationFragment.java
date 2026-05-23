@@ -2271,7 +2271,7 @@ public class ConversationFragment extends XmppFragment
             return;
         }
 
-        final Pair<CharSequence, Boolean> preview = UIHelper.getMessagePreview(activity, message, 0);
+        final Pair<CharSequence, Boolean> preview = UIHelper.getMessagePreview(activity.xmppConnectionService, message, 0);
         final SpannableStringBuilder body = new SpannableStringBuilder(preview.first);
         for (int i = body.length() - 1; i >= 0; --i) {
             if (body.charAt(i) == '\n' || body.charAt(i) == '\r') {
