@@ -166,6 +166,17 @@ public class SettingsActivity extends XmppActivity implements OnSharedPreference
         configureActionBar(getSupportActionBar());
     }
 
+    private File smilesFolder() {
+        final File publicDir = new File(Environment.getExternalStoragePublicDirectory(Environment.DIRECTORY_DOCUMENTS) + File.separator + APP_DIRECTORY + File.separator + FileBackend.SMILES);
+        final File appDocumentsDir = getExternalFilesDir(Environment.DIRECTORY_DOCUMENTS);
+        if (publicDir.exists() || publicDir.mkdirs()) {
+            return publicDir;
+        } else if (appDocumentsDir != null) {
+            return new File(appDocumentsDir, APP_DIRECTORY + File.separator + FileBackend.SMILES);
+        }
+        return publicDir;
+    }
+
     @Override
     public boolean onCreateOptionsMenu(final Menu menu) {
         getMenuInflater().inflate(R.menu.settings_activity, menu);
@@ -198,7 +209,7 @@ public class SettingsActivity extends XmppActivity implements OnSharedPreference
                         if (inputStream == null) {
                             throw new IOException("Could not open selected ZIP file");
                         }
-                        final File smilesFolder = new File(Environment.getExternalStoragePublicDirectory(Environment.DIRECTORY_DOCUMENTS) + File.separator + APP_DIRECTORY + File.separator + FileBackend.SMILES);
+                        final File smilesFolder = smilesFolder();
                         if (smilesFolder.exists()) {
                             if (!clearDirectory(smilesFolder)) {
                                 throw new IOException("Could not clear smiles folder");
@@ -913,7 +924,7 @@ public class SettingsActivity extends XmppActivity implements OnSharedPreference
         final Preference resetSmilesPack = mSettingsFragment.findPreference("reset_smiles_pack");
         if (resetSmilesPack != null) {
             resetSmilesPack.setOnPreferenceClickListener(preference -> {
-                final File smilesFolder = new File(Environment.getExternalStoragePublicDirectory(Environment.DIRECTORY_DOCUMENTS) + File.separator + APP_DIRECTORY + File.separator + FileBackend.SMILES);
+                final File smilesFolder = smilesFolder();
                 if (smilesFolder.exists()) {
                     clearDirectory(smilesFolder);
                 }
