@@ -367,6 +367,9 @@ public class XmppConnectionService extends Service {
     ) {
         @Override
         public void onEvent(final int event, final File file) {
+            if (file.getAbsolutePath().startsWith(smilesDir().getAbsolutePath())) {
+                rescanSmiles(true);
+            }
             markFileDeleted(file);
         }
     };
@@ -6988,11 +6991,15 @@ public class XmppConnectionService extends Service {
 
 
     private File smilesDir() {
-        final File documentsDir = getExternalFilesDir(Environment.DIRECTORY_DOCUMENTS);
-        if (documentsDir != null) {
-            return new File(documentsDir, APP_DIRECTORY + File.separator + FileBackend.SMILES);
+        final File appDocumentsDir = getExternalFilesDir(Environment.DIRECTORY_DOCUMENTS);
+        if (appDocumentsDir != null) {
+            final File appDir = new File(appDocumentsDir, APP_DIRECTORY + File.separator + FileBackend.SMILES);
+            if (appDir.exists() || appDir.mkdirs()) {
+                return appDir;
+            }
+            return appDir;
         }
-        return new File(Environment.getExternalStoragePublicDirectory(Environment.DIRECTORY_DOCUMENTS) + File.separator + APP_DIRECTORY + File.separator + FileBackend.SMILES);
+        return new File(getFilesDir(), APP_DIRECTORY + File.separator + FileBackend.SMILES);
     }
 
     public void rescanSmiles() {
@@ -7001,21 +7008,24 @@ public class XmppConnectionService extends Service {
 
     public void rescanSmiles(boolean force) {
         long msToRescan = (mLastSmilesRescan + 600000L) - SystemClock.elapsedRealtime();
-        if (!force && msToRescan > 0) return;
+        if (!force && msToRescan > 0 && mLastSmilesRescan != 0) return;
         Log.d(Config.LOGTAG, "rescanSmiles");
+        if (force) {
+            mDrawableCache.evictAll();
+        }
 
         mLastSmilesRescan = SystemClock.elapsedRealtime();
         mSmilesScanExecutor.execute(() -> {
             Thread.currentThread().setPriority(force ? Thread.NORM_PRIORITY : Thread.MIN_PRIORITY);
             try {
+                List<EmojiSearch.Emoji> emojis = new ArrayList<>();
+                HashSet<String> filenamesInList = new HashSet<>();
                 final File smilesDir = smilesDir();
                 if (!smilesDir.exists()) {
                     smilesDir.mkdirs();
                 }
                 FileUtils.createNoMedia(smilesDir);
 
-                List<EmojiSearch.Emoji> emojis = new ArrayList<>();
-                HashSet<String> filenamesInList = new HashSet<>();
                 File iconDef = new File(smilesDir, "icondef.xml");
                 if (iconDef.exists()) {
                     try (FileInputStream fis = new FileInputStream(iconDef)) {
@@ -7045,7 +7055,7 @@ public class XmppConnectionService extends Service {
                                             ce.addShortcode(texts.get(i));
                                         }
                                         emojis.add(ce);
-                                        filenamesInList.add(file.getName());
+                                        filenamesInList.add(file.getAbsolutePath());
                                     }
                                 }
                             }
@@ -7057,7 +7067,7 @@ public class XmppConnectionService extends Service {
                 for (File file : Files.fileTraverser().breadthFirst(smilesDir)) {
                     try {
                         if (file.isFile() && file.canRead() && !file.getName().equals("icondef.xml") && !file.getName().equals(".nomedia")) {
-                            if (filenamesInList.contains(file.getName())) continue;
+                            if (filenamesInList.contains(file.getAbsolutePath())) continue;
                             DownloadableFile df = new DownloadableFile(file.getAbsolutePath());
                             Drawable icon = fileBackend.getThumbnail(df, getResources(), (int) (getResources().getDisplayMetrics().density * 288), false);
                             final String filename = Files.getNameWithoutExtension(df.getName());
@@ -7067,12 +7077,15 @@ public class XmppConnectionService extends Service {
                             }
                             if (file.length() < 1024 * 1024) { // 1MB limit for smiles
                                 emojis.add(new EmojiSearch.CustomEmoji(filename, "*" + filename + "*", icon, "Smiles", 9999));
-                                filenamesInList.add(file.getName());
+                                filenamesInList.add(file.getAbsolutePath());
                             }
                         }
                     } catch (final Exception e) {
                         Log.w(Config.LOGTAG, "rescanSmiles: " + e);
                     }
+                }
+                if (!emojis.isEmpty()) {
+                    getPreferences().edit().putBoolean("enable_smiles", true).apply();
                 }
                 emojiSearch.replaceAll(emojis);
                 updateConversationUi();

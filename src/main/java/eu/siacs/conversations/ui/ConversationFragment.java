@@ -1351,13 +1351,6 @@ public class ConversationFragment extends XmppFragment
         Editable body = this.binding.textinput.getText();
         final int attachmentCount = mediaPreviewAdapter.getItemCount();
 
-        // Если есть несколько вложений, отправляем их независимо от текста
-        if (attachmentCount > 1) {
-            commitAttachments();
-            conversation.setCaption(null); // Очищаем caption после отправки
-            return;
-        }
-
         // Если текста нет, создаем пустой body
         if (body == null || body.length() == 0) {
             body = new SpannableStringBuilder("");
@@ -1395,10 +1388,10 @@ public class ConversationFragment extends XmppFragment
                 message.setEncryption(conversation.getNextEncryption());
             } else {
                 message = new Message(conversation, body.toString(), conversation.getNextEncryption());
-                // Обрабатываем случай с одним вложением
-                if (attachmentCount == 1) {
+                // Обрабатываем отправку вложений вместе с текстом/цитатой
+                if (attachmentCount > 0) {
                     conversation.setCaption(message);
-                    commitAttachments(); // Отправляем вложение
+                    commitAttachments(); // Отправляем вложения с caption
                     binding.textinput.setText(""); // Очищаем поле ввода
                     conversation.setCaption(null); // Очищаем caption после отправки
                     return;
