@@ -1387,7 +1387,9 @@ public class ConversationFragment extends XmppFragment
                 }
                 message.setEncryption(conversation.getNextEncryption());
                 if (attachmentCount > 0) {
-                    conversation.setCaption(message);
+                    final Message captionMessage = new Message(conversation, body.toString(), conversation.getNextEncryption());
+                    captionMessage.setBody(hasSubject && body.length() == 0 ? null : body);
+                    conversation.setCaption(captionMessage);
                     commitAttachments();
                     binding.textinput.setText("");
                     conversation.setCaption(null);
