@@ -6991,11 +6991,18 @@ public class XmppConnectionService extends Service {
 
 
     private File smilesDir() {
-        final File publicDir = new File(Environment.getExternalStoragePublicDirectory(Environment.DIRECTORY_DOCUMENTS) + File.separator + APP_DIRECTORY + File.separator + FileBackend.SMILES);
         final File appDocumentsDir = getExternalFilesDir(Environment.DIRECTORY_DOCUMENTS);
+        if (appDocumentsDir != null) {
+            final File appDir = new File(appDocumentsDir, APP_DIRECTORY + File.separator + FileBackend.SMILES);
+            if (appDir.exists() || appDir.mkdirs()) {
+                return appDir;
+            }
+        }
+        final File publicDir = new File(Environment.getExternalStoragePublicDirectory(Environment.DIRECTORY_DOCUMENTS) + File.separator + APP_DIRECTORY + File.separator + FileBackend.SMILES);
         if (publicDir.exists() || publicDir.mkdirs()) {
             return publicDir;
-        } else if (appDocumentsDir != null) {
+        }
+        if (appDocumentsDir != null) {
             return new File(appDocumentsDir, APP_DIRECTORY + File.separator + FileBackend.SMILES);
         }
         return publicDir;
