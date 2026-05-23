@@ -1069,6 +1069,9 @@ public class XmppConnectionService extends Service {
                     refreshAllPresences();
                 }
                 break;
+            case Intent.ACTION_USER_UNLOCKED:
+                rescanSmiles(true);
+                break;
             case ACTION_FCM_TOKEN_REFRESH:
                 refreshAllFcmTokens();
                 break;
@@ -1840,6 +1843,7 @@ public class XmppConnectionService extends Service {
             scheduleNextIdlePing();
             if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.N) {
                 systemBroadcastFilter.addAction(ConnectivityManager.CONNECTIVITY_ACTION);
+                systemBroadcastFilter.addAction(Intent.ACTION_USER_UNLOCKED);
             }
             systemBroadcastFilter.addAction(NotificationManager.ACTION_INTERRUPTION_FILTER_CHANGED);
         }
