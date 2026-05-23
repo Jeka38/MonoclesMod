@@ -328,6 +328,7 @@ public class XmppConnectionService extends Service {
     private final AtomicBoolean mInitialAddressbookSyncCompleted = new AtomicBoolean(false);
     private final AtomicBoolean mForceForegroundService = new AtomicBoolean(false);
     private final AtomicBoolean mForceDuringOnCreate = new AtomicBoolean(false);
+    private final AtomicBoolean mSmilesRescanRetryScheduled = new AtomicBoolean(false);
     private final AtomicReference<OngoingCall> ongoingCall = new AtomicReference<>();
     private final OnMessagePacketReceived mMessageParser = new MessageParser(this);
     private final OnPresencePacketReceived mPresenceParser = new PresenceParser(this);
@@ -7009,6 +7010,7 @@ public class XmppConnectionService extends Service {
             final UserManager userManager = getSystemService(UserManager.class);
             if (userManager != null && !userManager.isUserUnlocked()) {
                 Log.d(Config.LOGTAG, "skip rescanSmiles while user is locked");
+                scheduleSmilesRescanRetry();
                 return;
             }
         }
@@ -7091,14 +7093,27 @@ public class XmppConnectionService extends Service {
                 }
                 if (emojis.isEmpty() && hasCustomSmileArtifacts) {
                     Log.w(Config.LOGTAG, "rescanSmiles: custom smile artifacts found but no emojis parsed; keeping previous emoji set");
+                    scheduleSmilesRescanRetry();
                     return;
                 }
+                mSmilesRescanRetryScheduled.set(false);
                 emojiSearch.replaceAll(emojis);
                 updateConversationUi();
             } catch (final Exception e) {
                 Log.w(Config.LOGTAG, "rescanSmiles: " + e);
+                scheduleSmilesRescanRetry();
             }
         });
+    }
+
+    private void scheduleSmilesRescanRetry() {
+        if (!mSmilesRescanRetryScheduled.compareAndSet(false, true)) {
+            return;
+        }
+        internalPingExecutor.schedule(() -> {
+            mSmilesRescanRetryScheduled.set(false);
+            rescanSmiles(true);
+        }, 30, TimeUnit.SECONDS);
     }
 
     public EmojiSearch emojiSearch() {
