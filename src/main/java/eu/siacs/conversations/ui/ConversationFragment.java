@@ -1351,13 +1351,6 @@ public class ConversationFragment extends XmppFragment
         Editable body = this.binding.textinput.getText();
         final int attachmentCount = mediaPreviewAdapter.getItemCount();
 
-        // Если есть несколько вложений, отправляем их независимо от текста
-        if (attachmentCount > 1) {
-            commitAttachments();
-            conversation.setCaption(null); // Очищаем caption после отправки
-            return;
-        }
-
         // Если текста нет, создаем пустой body
         if (body == null || body.length() == 0) {
             body = new SpannableStringBuilder("");
@@ -1386,19 +1379,28 @@ public class ConversationFragment extends XmppFragment
             }
 
             if (conversation.getReplyTo() != null) {
-                if (Emoticons.isEmoji(body.toString().replaceAll("\\s", ""))) {
+                if (attachmentCount == 0 && Emoticons.isEmoji(body.toString().replaceAll("\\s", ""))) {
                     message = conversation.getReplyTo().react(body.toString().replaceAll("\\s", ""));
                 } else {
                     message = conversation.getReplyTo().reply();
                     message.appendBody(body);
                 }
                 message.setEncryption(conversation.getNextEncryption());
+                if (attachmentCount > 0) {
+                    final Message captionMessage = new Message(conversation, body.toString(), conversation.getNextEncryption());
+                    captionMessage.setBody(hasSubject && body.length() == 0 ? null : body);
+                    conversation.setCaption(captionMessage);
+                    commitAttachments();
+                    binding.textinput.setText("");
+                    conversation.setCaption(null);
+                    return;
+                }
             } else {
                 message = new Message(conversation, body.toString(), conversation.getNextEncryption());
-                // Обрабатываем случай с одним вложением
-                if (attachmentCount == 1) {
+                // Обрабатываем отправку вложений вместе с текстом/цитатой
+                if (attachmentCount > 0) {
                     conversation.setCaption(message);
-                    commitAttachments(); // Отправляем вложение
+                    commitAttachments(); // Отправляем вложения с caption
                     binding.textinput.setText(""); // Очищаем поле ввода
                     conversation.setCaption(null); // Очищаем caption после отправки
                     return;
@@ -2183,10 +2185,15 @@ public class ConversationFragment extends XmppFragment
         if (binding.textinput.isEnabled()) {
             String username = "";
             if (user != null && user.length() > 0) {
+                final String sanitizedUser = user
+                        .replace('\n', ' ')
+                        .replace('\r', ' ')
+                        .replace("_", "\\_")
+                        .trim();
                 if (user.equals(getString(R.string.me))) {
                     username = getString(R.string.me_quote) + System.getProperty("line.separator");
                 } else {
-                    username = getString(R.string.x_user_quote, user) + System.getProperty("line.separator");
+                    username = getString(R.string.x_user_quote, sanitizedUser) + System.getProperty("line.separator");
                 }
             }
             binding.textinput.insertAsQuote(username + text);
