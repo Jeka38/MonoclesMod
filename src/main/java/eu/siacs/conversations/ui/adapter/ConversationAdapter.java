@@ -330,7 +330,8 @@ public class ConversationAdapter
                 if (conversation.getMode() == Conversation.MODE_MULTI) {
                     viewHolder.binding.senderName.setVisibility(View.VISIBLE);
                     viewHolder.binding.senderName.setText(
-                            UIHelper.getColoredUsername(activity.xmppConnectionService, message));
+                            UIHelper.shorten(
+                                    UIHelper.getColoredUsername(activity.xmppConnectionService, message)));
                     viewHolder.binding.senderName.append(":");
                 } else {
                     viewHolder.binding.senderName.setVisibility(View.GONE);

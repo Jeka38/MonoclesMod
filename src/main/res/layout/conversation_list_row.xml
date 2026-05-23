@@ -114,6 +114,8 @@
                             android:gravity="center_vertical"
                             android:minHeight="?attr/IconSize"
                             android:text="@string/me"
+                            android:ellipsize="end"
+                            android:maxLines="1"
                             android:textAppearance="@style/TextAppearance.Conversations.Body1.Secondary"
                             android:visibility="visible" />
 
