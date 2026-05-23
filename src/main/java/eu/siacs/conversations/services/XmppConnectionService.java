@@ -7027,9 +7027,11 @@ public class XmppConnectionService extends Service {
                 FileUtils.createNoMedia(smilesDir);
 
                 List<EmojiSearch.Emoji> emojis = new ArrayList<>();
+                boolean hasCustomSmileArtifacts = false;
                 HashSet<String> filenamesInList = new HashSet<>();
                 File iconDef = new File(smilesDir, "icondef.xml");
                 if (iconDef.exists()) {
+                    hasCustomSmileArtifacts = true;
                     try (FileInputStream fis = new FileInputStream(iconDef)) {
                         Element root = XmlElementReader.read(fis);
                         int order = 1000;
@@ -7069,6 +7071,7 @@ public class XmppConnectionService extends Service {
                 for (File file : Files.fileTraverser().breadthFirst(smilesDir)) {
                     try {
                         if (file.isFile() && file.canRead() && !file.getName().equals("icondef.xml") && !file.getName().equals(".nomedia")) {
+                            hasCustomSmileArtifacts = true;
                             if (filenamesInList.contains(file.getName())) continue;
                             DownloadableFile df = new DownloadableFile(file.getAbsolutePath());
                             Drawable icon = fileBackend.getThumbnail(df, getResources(), (int) (getResources().getDisplayMetrics().density * 288), false);
@@ -7085,6 +7088,10 @@ public class XmppConnectionService extends Service {
                     } catch (final Exception e) {
                         Log.w(Config.LOGTAG, "rescanSmiles: " + e);
                     }
+                }
+                if (emojis.isEmpty() && hasCustomSmileArtifacts) {
+                    Log.w(Config.LOGTAG, "rescanSmiles: custom smile artifacts found but no emojis parsed; keeping previous emoji set");
+                    return;
                 }
                 emojiSearch.replaceAll(emojis);
                 updateConversationUi();
