@@ -1434,8 +1434,6 @@ public class MessageAdapter extends ArrayAdapter<Message> {
         if (selectAll) {
             textView.post(() -> selectAllMessageText(textView));
             textView.postDelayed(() -> selectAllMessageText(textView), 150);
-        } else if (Build.VERSION.SDK_INT < Build.VERSION_CODES.N && event != null) {
-            textView.post(() -> selectWordAtPosition(textView, eventX, eventY));
         }
     }
 
@@ -1444,26 +1442,6 @@ public class MessageAdapter extends ArrayAdapter<Message> {
         if (text instanceof Spannable) {
             Selection.selectAll((Spannable) text);
         }
-    }
-
-    private void selectWordAtPosition(final TextView textView, final float eventX, final float eventY) {
-        final CharSequence text = textView.getText();
-        if (!(text instanceof Spannable)) {
-            return;
-        }
-        final int offset = getTextOffsetForPosition(textView, eventX, eventY);
-        if (offset < 0 || offset >= text.length()) {
-            return;
-        }
-        int start = offset;
-        int end = offset;
-        while (start > 0 && !Character.isWhitespace(text.charAt(start - 1))) {
-            start--;
-        }
-        while (end < text.length() && !Character.isWhitespace(text.charAt(end))) {
-            end++;
-        }
-        Selection.setSelection((Spannable) text, start, end);
     }
 
     private void setupMessageTextGestures(final TextView textView, final Message message) {
@@ -1488,7 +1466,7 @@ public class MessageAdapter extends ArrayAdapter<Message> {
 
             @Override
             public void onLongPress(final MotionEvent event) {
-                selectMessageText(textView, event, false);
+                textView.setTextIsSelectable(true);
             }
 
             @Override
@@ -1498,6 +1476,9 @@ public class MessageAdapter extends ArrayAdapter<Message> {
             }
         });
         textView.setOnTouchListener((v, event) -> {
+            if (event.getActionMasked() == MotionEvent.ACTION_DOWN && !hasClickableSpanAt(textView, event)) {
+                textView.setTextIsSelectable(true);
+            }
             gestureDetector.onTouchEvent(event);
             return false;
         });
