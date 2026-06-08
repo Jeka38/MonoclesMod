@@ -1466,7 +1466,7 @@ public class MessageAdapter extends ArrayAdapter<Message> {
 
             @Override
             public void onLongPress(final MotionEvent event) {
-                textView.setTextIsSelectable(true);
+                selectMessageText(textView, event, false);
             }
 
             @Override
