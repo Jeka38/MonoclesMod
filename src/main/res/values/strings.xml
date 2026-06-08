@@ -1479,4 +1479,6 @@
     <string name="pref_message_autocomplete">Mention autocomplete</string>
     <string name="pref_message_autocomplete_summary">Use \"@\" in a chat room to autocomplete and list users</string>
     <string name="remove_from_all_lists">Remove from all lists</string>
+    <string name="status_online">Online</string>
+    <string name="status_offline">Offline</string>
 </resources>

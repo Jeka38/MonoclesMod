@@ -60,6 +60,7 @@ import android.text.SpannableStringBuilder;
 import android.text.Spanned;
 import android.text.style.TypefaceSpan;
 import android.util.Log;
+import android.util.TypedValue;
 import android.view.KeyEvent;
 import android.view.Menu;
 import android.view.MenuItem;
@@ -1132,8 +1133,8 @@ public class ConversationsActivity extends XmppActivity implements OnConversatio
                 actionBar.setIcon(null);
                 actionBar.setBackgroundDrawable(new ColorDrawable(StyledAttributes.getColor(this, R.attr.color_background_secondary)));
                 actionBar.setDisplayShowCustomEnabled(true);
-                TextView abtitle = findViewById(android.R.id.text1);
-                TextView absubtitle = findViewById(android.R.id.text2);
+                TextView abtitle = view.findViewById(android.R.id.text1);
+                TextView absubtitle = view.findViewById(android.R.id.text2);
                 final View avatartoolbar = view.findViewById(R.id.toolbar_avatar);
                 abtitle.setText(conversation.getName());
                 abtitle.setSelected(true);
@@ -1190,19 +1191,50 @@ public class ConversationsActivity extends XmppActivity implements OnConversatio
             }
         }
 
+        actionBar.setDisplayHomeAsUpEnabled(false);
+        final View view = getLayoutInflater().inflate(R.layout.ab_title, null);
+        getSupportActionBar().setCustomView(view);
+        actionBar.setIcon(null);
+        actionBar.setBackgroundDrawable(new ColorDrawable(StyledAttributes.getColor(this, R.attr.color_background_secondary)));
+        actionBar.setDisplayShowCustomEnabled(true);
+
+        TextView abtitle = view.findViewById(android.R.id.text1);
+        TextView absubtitle = view.findViewById(android.R.id.text2);
+
         Typeface font = ResourcesCompat.getFont(this, R.font.notosanssemibold);
         SpannableStringBuilder app_title = new SpannableStringBuilder("monocles mod");
         if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.P) {
             int end = Math.min(13, app_title.length());
             app_title.setSpan(new TypefaceSpan(font), 0, end, Spanned.SPAN_EXCLUSIVE_INCLUSIVE);
         }
+        abtitle.setText(app_title);
+        abtitle.setSelected(true);
 
-        actionBar.setDisplayShowCustomEnabled(false);
-        actionBar.setTitle(app_title);
-        actionBar.setDisplayHomeAsUpEnabled(false);
+        if (isAnyAccountOnline()) {
+            absubtitle.setText(R.string.status_online);
+            absubtitle.setTextColor(ContextCompat.getColor(this, R.color.online));
+        } else {
+            absubtitle.setText(R.string.status_offline);
+            absubtitle.setTextColor(StyledAttributes.getColor(this, android.R.attr.textColorSecondary));
+        }
+        absubtitle.setTextSize(TypedValue.COMPLEX_UNIT_PX, abtitle.getTextSize() / 2);
+        absubtitle.setVisibility(View.VISIBLE);
+
         ActionBarUtil.resetCustomActionBarOnClickListeners(binding.toolbar.getRoot());
     }
 
+
+    private boolean isAnyAccountOnline() {
+        if (xmppConnectionService == null) {
+            return false;
+        }
+        for (Account account : xmppConnectionService.getAccounts()) {
+            if (account.getStatus() == Account.State.ONLINE) {
+                return true;
+            }
+        }
+        return false;
+    }
 
     private void openConversationDetails(final Conversation conversation) {
         if (conversation.getMode() == Conversational.MODE_MULTI && !conversation.hasPermanentCounterpart()) {
