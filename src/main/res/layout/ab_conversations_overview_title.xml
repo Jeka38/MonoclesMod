@@ -1,0 +1,31 @@
+<?xml version="1.0" encoding="utf-8"?>
+<LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    android:layout_width="match_parent"
+    android:layout_height="match_parent"
+    android:gravity="center_vertical"
+    android:orientation="vertical">
+
+    <TextView
+        android:id="@+id/overview_title"
+        style="@style/TextAppearance.Material3.ActionBar.Title"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:ellipsize="end"
+        android:gravity="start|center_vertical"
+        android:paddingTop="1dp"
+        android:scrollHorizontally="true"
+        android:singleLine="true"
+        android:text="monocles mod" />
+
+    <TextView
+        android:id="@+id/overview_connection_status"
+        style="@style/TextAppearance.Material3.ActionBar.Subtitle"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:ellipsize="end"
+        android:gravity="start|center_vertical"
+        android:paddingBottom="1dp"
+        android:scrollHorizontally="true"
+        android:singleLine="true"
+        android:textSize="10sp" />
+</LinearLayout>

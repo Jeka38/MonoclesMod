@@ -27,6 +27,8 @@
     <string name="account_status_not_found">Сервер не найден</string>
     <string name="account_status_offline">Не в сети</string>
     <string name="account_status_online">В сети</string>
+    <string name="overview_connection_status_online">Онлайн</string>
+    <string name="overview_connection_status_offline">Оффлайн</string>
     <string name="account_status_policy_violation">Нарушение правил</string>
     <string name="account_status_regis_conflict">Имя пользователя уже используется</string>
     <string name="account_status_regis_fail">Регистрация не удалась</string>

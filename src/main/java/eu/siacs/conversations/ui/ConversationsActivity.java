@@ -49,6 +49,7 @@ import android.content.Intent;
 import android.content.SharedPreferences;
 import android.content.pm.PackageManager;
 import android.graphics.Typeface;
+import android.graphics.Color;
 import android.graphics.drawable.ColorDrawable;
 import android.net.Uri;
 import android.os.AsyncTask;
@@ -1190,17 +1191,48 @@ public class ConversationsActivity extends XmppActivity implements OnConversatio
             }
         }
 
-        Typeface font = ResourcesCompat.getFont(this, R.font.notosanssemibold);
-        SpannableStringBuilder app_title = new SpannableStringBuilder("monocles mod");
-        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.P) {
-            int end = Math.min(13, app_title.length());
-            app_title.setSpan(new TypefaceSpan(font), 0, end, Spanned.SPAN_EXCLUSIVE_INCLUSIVE);
-        }
+        final Typeface font = ResourcesCompat.getFont(this, R.font.notosanssemibold);
+        final View view = getLayoutInflater().inflate(R.layout.ab_conversations_overview_title, null);
+        final TextView title = view.findViewById(R.id.overview_title);
+        final TextView status = view.findViewById(R.id.overview_connection_status);
+        title.setText(getAppTitle(font));
+        title.setSelected(true);
+        updateOverviewConnectionStatus(status);
 
-        actionBar.setDisplayShowCustomEnabled(false);
-        actionBar.setTitle(app_title);
+        actionBar.setCustomView(view);
+        actionBar.setIcon(null);
+        actionBar.setBackgroundDrawable(new ColorDrawable(StyledAttributes.getColor(this, R.attr.color_background_secondary)));
+        actionBar.setDisplayShowCustomEnabled(true);
         actionBar.setDisplayHomeAsUpEnabled(false);
         ActionBarUtil.resetCustomActionBarOnClickListeners(binding.toolbar.getRoot());
+    }
+
+    private SpannableStringBuilder getAppTitle(final Typeface font) {
+        final SpannableStringBuilder appTitle = new SpannableStringBuilder("monocles mod");
+        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.P) {
+            int end = Math.min(13, appTitle.length());
+            appTitle.setSpan(new TypefaceSpan(font), 0, end, Spanned.SPAN_EXCLUSIVE_INCLUSIVE);
+        }
+        return appTitle;
+    }
+
+    private void updateOverviewConnectionStatus(final TextView status) {
+        final boolean connected = hasConnectedAccount();
+        status.setText(connected ? R.string.overview_connection_status_online : R.string.overview_connection_status_offline);
+        status.setTextColor(connected ? ContextCompat.getColor(this, R.color.online) : Color.RED);
+        status.setSelected(true);
+    }
+
+    private boolean hasConnectedAccount() {
+        if (!xmppConnectionServiceBound || xmppConnectionService == null) {
+            return false;
+        }
+        for (final Account account : xmppConnectionService.getAccounts()) {
+            if (account.isOnlineAndConnected()) {
+                return true;
+            }
+        }
+        return false;
     }
 
 
