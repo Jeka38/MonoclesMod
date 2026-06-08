@@ -30,6 +30,7 @@ import android.graphics.Typeface;
 import android.graphics.drawable.Drawable;
 import android.net.Uri;
 import android.os.AsyncTask;
+import android.os.Build;
 import android.preference.PreferenceManager;
 import android.text.Editable;
 import android.text.Layout;
@@ -1391,57 +1392,78 @@ public class MessageAdapter extends ArrayAdapter<Message> {
         if (!(text instanceof Spanned) || textView.getLayout() == null) {
             return false;
         }
-        final int x = (int) event.getX() - textView.getTotalPaddingLeft() + textView.getScrollX();
-        final int y = (int) event.getY() - textView.getTotalPaddingTop() + textView.getScrollY();
-        final Layout layout = textView.getLayout();
-        final int line = layout.getLineForVertical(y);
-        final int offset = layout.getOffsetForHorizontal(line, x);
+        final int offset = getTextOffsetForPosition(textView, event.getX(), event.getY());
+        if (offset < 0 || offset > text.length()) {
+            return false;
+        }
         final ClickableSpan[] links = ((Spanned) text).getSpans(offset, offset, ClickableSpan.class);
         return links != null && links.length > 0;
     }
 
-    private int getTextOffsetForEvent(final TextView textView, final MotionEvent event) {
+    private int getTextOffsetForPosition(final TextView textView, final float eventX, final float eventY) {
         final Layout layout = textView.getLayout();
         if (layout == null) {
             return -1;
         }
-        final int x = (int) event.getX() - textView.getTotalPaddingLeft() + textView.getScrollX();
-        final int y = (int) event.getY() - textView.getTotalPaddingTop() + textView.getScrollY();
+        final int x = (int) eventX - textView.getTotalPaddingLeft() + textView.getScrollX();
+        final int y = (int) eventY - textView.getTotalPaddingTop() + textView.getScrollY();
         final int line = layout.getLineForVertical(y);
         return layout.getOffsetForHorizontal(line, x);
     }
 
-    private void enableMessageTextSelection(final TextView textView, final MotionEvent event, final boolean selectAll) {
-        if (textView.getText() == null || textView.getText().length() == 0) {
+    private void selectMessageText(final TextView textView, final MotionEvent event, final boolean selectAll) {
+        final CharSequence currentText = textView.getText();
+        if (currentText == null || currentText.length() == 0) {
             return;
+        }
+        if (!(currentText instanceof Spannable)) {
+            textView.setText(currentText, TextView.BufferType.SPANNABLE);
         }
         textView.setTextIsSelectable(true);
         textView.setFocusable(true);
         textView.setFocusableInTouchMode(true);
         textView.requestFocus();
         textView.performHapticFeedback(HapticFeedbackConstants.LONG_PRESS);
-        textView.post(() -> {
-            final CharSequence text = textView.getText();
-            if (text instanceof Spannable) {
-                int start = 0;
-                int end = text.length();
-                if (!selectAll && event != null) {
-                    final int offset = getTextOffsetForEvent(textView, event);
-                    if (offset >= 0 && offset < text.length()) {
-                        start = offset;
-                        end = offset;
-                        while (start > 0 && !Character.isWhitespace(text.charAt(start - 1))) {
-                            start--;
-                        }
-                        while (end < text.length() && !Character.isWhitespace(text.charAt(end))) {
-                            end++;
-                        }
-                    }
-                }
-                Selection.setSelection((Spannable) text, start, end);
-                textView.startActionMode(new MessageTextActionModeCallback(this, textView));
-            }
-        });
+        final float eventX = event == null ? -1 : event.getX();
+        final float eventY = event == null ? -1 : event.getY();
+        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.N && event != null) {
+            textView.performLongClick(eventX, eventY);
+        } else {
+            textView.performLongClick();
+        }
+        if (selectAll) {
+            textView.post(() -> selectAllMessageText(textView));
+            textView.postDelayed(() -> selectAllMessageText(textView), 150);
+        } else if (Build.VERSION.SDK_INT < Build.VERSION_CODES.N && event != null) {
+            textView.post(() -> selectWordAtPosition(textView, eventX, eventY));
+        }
+    }
+
+    private void selectAllMessageText(final TextView textView) {
+        final CharSequence text = textView.getText();
+        if (text instanceof Spannable) {
+            Selection.selectAll((Spannable) text);
+        }
+    }
+
+    private void selectWordAtPosition(final TextView textView, final float eventX, final float eventY) {
+        final CharSequence text = textView.getText();
+        if (!(text instanceof Spannable)) {
+            return;
+        }
+        final int offset = getTextOffsetForPosition(textView, eventX, eventY);
+        if (offset < 0 || offset >= text.length()) {
+            return;
+        }
+        int start = offset;
+        int end = offset;
+        while (start > 0 && !Character.isWhitespace(text.charAt(start - 1))) {
+            start--;
+        }
+        while (end < text.length() && !Character.isWhitespace(text.charAt(end))) {
+            end++;
+        }
+        Selection.setSelection((Spannable) text, start, end);
     }
 
     private void setupMessageTextGestures(final TextView textView, final Message message) {
@@ -1449,6 +1471,11 @@ public class MessageAdapter extends ArrayAdapter<Message> {
             return;
         }
         final GestureDetector gestureDetector = new GestureDetector(getContext(), new GestureDetector.SimpleOnGestureListener() {
+            @Override
+            public boolean onDown(final MotionEvent event) {
+                return true;
+            }
+
             @Override
             public boolean onSingleTapConfirmed(final MotionEvent event) {
                 if (!hasClickableSpanAt(textView, event) && mConversationFragment != null) {
@@ -1461,12 +1488,12 @@ public class MessageAdapter extends ArrayAdapter<Message> {
 
             @Override
             public void onLongPress(final MotionEvent event) {
-                enableMessageTextSelection(textView, event, false);
+                selectMessageText(textView, event, false);
             }
 
             @Override
             public boolean onDoubleTap(final MotionEvent event) {
-                enableMessageTextSelection(textView, event, true);
+                selectMessageText(textView, event, true);
                 return true;
             }
         });
