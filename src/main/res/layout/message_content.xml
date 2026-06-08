@@ -34,7 +34,7 @@
         android:layout_height="wrap_content"
         android:breakStrategy="simple"
         android:autoLink="none"
-        android:longClickable="false"
+        android:longClickable="true"
         android:textIsSelectable="false"
         android:textAppearance="@style/TextAppearance.Conversations.Body1"
         android:visibility="gone" />
@@ -49,7 +49,7 @@
         android:layout_height="wrap_content"
         android:breakStrategy="simple"
         android:autoLink="none"
-        android:longClickable="false"
+        android:longClickable="true"
         android:textIsSelectable="false"
         android:textAppearance="@style/TextAppearance.Conversations.Body1"
         android:visibility="gone" />

@@ -32,10 +32,12 @@ import android.net.Uri;
 import android.os.AsyncTask;
 import android.preference.PreferenceManager;
 import android.text.Editable;
+import android.text.Layout;
 import android.text.Spannable;
 import android.text.SpannableString;
 import android.text.SpannableStringBuilder;
 import android.text.Spanned;
+import android.text.Selection;
 import android.text.format.DateUtils;
 import android.text.style.ClickableSpan;
 import android.text.style.ForegroundColorSpan;
@@ -47,6 +49,7 @@ import android.util.Base64;
 import android.util.DisplayMetrics;
 import android.util.Log;
 import android.util.LruCache;
+import android.view.GestureDetector;
 import android.view.HapticFeedbackConstants;
 import android.view.MotionEvent;
 import android.view.View;
@@ -1383,6 +1386,96 @@ public class MessageAdapter extends ArrayAdapter<Message> {
         }
     }
 
+    private boolean hasClickableSpanAt(final TextView textView, final MotionEvent event) {
+        final CharSequence text = textView.getText();
+        if (!(text instanceof Spanned) || textView.getLayout() == null) {
+            return false;
+        }
+        final int x = (int) event.getX() - textView.getTotalPaddingLeft() + textView.getScrollX();
+        final int y = (int) event.getY() - textView.getTotalPaddingTop() + textView.getScrollY();
+        final Layout layout = textView.getLayout();
+        final int line = layout.getLineForVertical(y);
+        final int offset = layout.getOffsetForHorizontal(line, x);
+        final ClickableSpan[] links = ((Spanned) text).getSpans(offset, offset, ClickableSpan.class);
+        return links != null && links.length > 0;
+    }
+
+    private int getTextOffsetForEvent(final TextView textView, final MotionEvent event) {
+        final Layout layout = textView.getLayout();
+        if (layout == null) {
+            return -1;
+        }
+        final int x = (int) event.getX() - textView.getTotalPaddingLeft() + textView.getScrollX();
+        final int y = (int) event.getY() - textView.getTotalPaddingTop() + textView.getScrollY();
+        final int line = layout.getLineForVertical(y);
+        return layout.getOffsetForHorizontal(line, x);
+    }
+
+    private void enableMessageTextSelection(final TextView textView, final MotionEvent event, final boolean selectAll) {
+        if (textView.getText() == null || textView.getText().length() == 0) {
+            return;
+        }
+        textView.setTextIsSelectable(true);
+        textView.setFocusable(true);
+        textView.setFocusableInTouchMode(true);
+        textView.requestFocus();
+        textView.performHapticFeedback(HapticFeedbackConstants.LONG_PRESS);
+        textView.post(() -> {
+            final CharSequence text = textView.getText();
+            if (text instanceof Spannable) {
+                int start = 0;
+                int end = text.length();
+                if (!selectAll && event != null) {
+                    final int offset = getTextOffsetForEvent(textView, event);
+                    if (offset >= 0 && offset < text.length()) {
+                        start = offset;
+                        end = offset;
+                        while (start > 0 && !Character.isWhitespace(text.charAt(start - 1))) {
+                            start--;
+                        }
+                        while (end < text.length() && !Character.isWhitespace(text.charAt(end))) {
+                            end++;
+                        }
+                    }
+                }
+                Selection.setSelection((Spannable) text, start, end);
+                textView.startActionMode(new MessageTextActionModeCallback(this, textView));
+            }
+        });
+    }
+
+    private void setupMessageTextGestures(final TextView textView, final Message message) {
+        if (textView == null) {
+            return;
+        }
+        final GestureDetector gestureDetector = new GestureDetector(getContext(), new GestureDetector.SimpleOnGestureListener() {
+            @Override
+            public boolean onSingleTapConfirmed(final MotionEvent event) {
+                if (!hasClickableSpanAt(textView, event) && mConversationFragment != null) {
+                    textView.setTextIsSelectable(false);
+                    mConversationFragment.showMessageContextMenu(textView, message);
+                    return true;
+                }
+                return false;
+            }
+
+            @Override
+            public void onLongPress(final MotionEvent event) {
+                enableMessageTextSelection(textView, event, false);
+            }
+
+            @Override
+            public boolean onDoubleTap(final MotionEvent event) {
+                enableMessageTextSelection(textView, event, true);
+                return true;
+            }
+        });
+        textView.setOnTouchListener((v, event) -> {
+            gestureDetector.onTouchEvent(event);
+            return false;
+        });
+    }
+
     private void loadMoreMessages(Conversation conversation) {
         conversation.setLastClearHistory(0, null);
         activity.xmppConnectionService.updateConversation(conversation);
@@ -1646,7 +1739,7 @@ public class MessageAdapter extends ArrayAdapter<Message> {
         };
         view.setOnClickListener(messageContextClickListener);
         viewHolder.message_box.setOnClickListener(messageContextClickListener);
-        viewHolder.messageBody.setOnClickListener(messageContextClickListener);
+        setupMessageTextGestures(viewHolder.messageBody, message);
 
         final View.OnLongClickListener messageContextLongClickListener = v -> {
             if (mConversationFragment != null) {
@@ -1656,7 +1749,6 @@ public class MessageAdapter extends ArrayAdapter<Message> {
         };
         view.setOnLongClickListener(messageContextLongClickListener);
         viewHolder.message_box.setOnLongClickListener(messageContextLongClickListener);
-        viewHolder.messageBody.setOnLongClickListener(messageContextLongClickListener);
 
         viewHolder.contact_picture.setOnClickListener(v -> {
             if (MessageAdapter.this.mOnContactPictureClickedListener != null) {
