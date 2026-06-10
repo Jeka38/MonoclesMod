@@ -1585,6 +1585,6 @@
     <string name="manage_lists_users">Управление списками (пользователи)</string>
     <string name="change_role_affiliation">Изменить роль/аффилиацию</string>
     <string name="remove_from_all_lists">Удалить из списка</string>
-    <string name="status_online">Онлайн</string>
-    <string name="status_offline">оффлайн</string>
+    <string name="status_online">Подключен</string>
+    <string name="status_offline">Не подключен</string>
 </resources>

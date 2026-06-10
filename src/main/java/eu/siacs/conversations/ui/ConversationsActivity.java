@@ -60,7 +60,6 @@ import android.text.SpannableStringBuilder;
 import android.text.Spanned;
 import android.text.style.TypefaceSpan;
 import android.util.Log;
-import android.util.TypedValue;
 import android.view.KeyEvent;
 import android.view.Menu;
 import android.view.MenuItem;
@@ -1191,35 +1190,15 @@ public class ConversationsActivity extends XmppActivity implements OnConversatio
             }
         }
 
-        actionBar.setDisplayHomeAsUpEnabled(false);
-        final View view = getLayoutInflater().inflate(R.layout.ab_title, null);
-        getSupportActionBar().setCustomView(view);
-        actionBar.setIcon(null);
-        actionBar.setBackgroundDrawable(new ColorDrawable(StyledAttributes.getColor(this, R.attr.color_background_secondary)));
-        actionBar.setDisplayShowCustomEnabled(true);
-
-        TextView abtitle = view.findViewById(android.R.id.text1);
-        TextView absubtitle = view.findViewById(android.R.id.text2);
-
         Typeface font = ResourcesCompat.getFont(this, R.font.notosanssemibold);
-        SpannableStringBuilder app_title = new SpannableStringBuilder("monocles mod");
+        SpannableStringBuilder app_title = new SpannableStringBuilder(getString(isAnyAccountOnline() ? R.string.status_online : R.string.status_offline));
         if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.P) {
-            int end = Math.min(13, app_title.length());
-            app_title.setSpan(new TypefaceSpan(font), 0, end, Spanned.SPAN_EXCLUSIVE_INCLUSIVE);
+            app_title.setSpan(new TypefaceSpan(font), 0, app_title.length(), Spanned.SPAN_EXCLUSIVE_INCLUSIVE);
         }
-        abtitle.setText(app_title);
-        abtitle.setSelected(true);
 
-        if (isAnyAccountOnline()) {
-            absubtitle.setText(R.string.status_online);
-            absubtitle.setTextColor(ContextCompat.getColor(this, R.color.online));
-        } else {
-            absubtitle.setText(R.string.status_offline);
-            absubtitle.setTextColor(StyledAttributes.getColor(this, android.R.attr.textColorSecondary));
-        }
-        absubtitle.setTextSize(TypedValue.COMPLEX_UNIT_PX, abtitle.getTextSize() / 2);
-        absubtitle.setVisibility(View.VISIBLE);
-
+        actionBar.setDisplayShowCustomEnabled(false);
+        actionBar.setTitle(app_title);
+        actionBar.setDisplayHomeAsUpEnabled(false);
         ActionBarUtil.resetCustomActionBarOnClickListeners(binding.toolbar.getRoot());
     }
 
