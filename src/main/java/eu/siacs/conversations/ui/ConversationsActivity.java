@@ -1132,8 +1132,8 @@ public class ConversationsActivity extends XmppActivity implements OnConversatio
                 actionBar.setIcon(null);
                 actionBar.setBackgroundDrawable(new ColorDrawable(StyledAttributes.getColor(this, R.attr.color_background_secondary)));
                 actionBar.setDisplayShowCustomEnabled(true);
-                TextView abtitle = findViewById(android.R.id.text1);
-                TextView absubtitle = findViewById(android.R.id.text2);
+                TextView abtitle = view.findViewById(android.R.id.text1);
+                TextView absubtitle = view.findViewById(android.R.id.text2);
                 final View avatartoolbar = view.findViewById(R.id.toolbar_avatar);
                 abtitle.setText(conversation.getName());
                 abtitle.setSelected(true);
@@ -1191,10 +1191,9 @@ public class ConversationsActivity extends XmppActivity implements OnConversatio
         }
 
         Typeface font = ResourcesCompat.getFont(this, R.font.notosanssemibold);
-        SpannableStringBuilder app_title = new SpannableStringBuilder("monocles mod");
+        SpannableStringBuilder app_title = new SpannableStringBuilder(getString(isAnyAccountOnline() ? R.string.status_online : R.string.status_offline));
         if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.P) {
-            int end = Math.min(13, app_title.length());
-            app_title.setSpan(new TypefaceSpan(font), 0, end, Spanned.SPAN_EXCLUSIVE_INCLUSIVE);
+            app_title.setSpan(new TypefaceSpan(font), 0, app_title.length(), Spanned.SPAN_EXCLUSIVE_INCLUSIVE);
         }
 
         actionBar.setDisplayShowCustomEnabled(false);
@@ -1203,6 +1202,18 @@ public class ConversationsActivity extends XmppActivity implements OnConversatio
         ActionBarUtil.resetCustomActionBarOnClickListeners(binding.toolbar.getRoot());
     }
 
+
+    private boolean isAnyAccountOnline() {
+        if (xmppConnectionService == null) {
+            return false;
+        }
+        for (Account account : xmppConnectionService.getAccounts()) {
+            if (account.getStatus() == Account.State.ONLINE) {
+                return true;
+            }
+        }
+        return false;
+    }
 
     private void openConversationDetails(final Conversation conversation) {
         if (conversation.getMode() == Conversational.MODE_MULTI && !conversation.hasPermanentCounterpart()) {
