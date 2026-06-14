@@ -772,10 +772,7 @@ public class ConversationFragment extends XmppFragment
                 }
 
                 EmojiPickerView emojiPickerView = binding.emojiPicker;
-                emojiPickerView.setOnEmojiPickedListener(emojiViewItem -> {
-                    int start = binding.textinput.getSelectionStart(); //this is to get the the cursor position
-                    binding.textinput.getText().insert(start, emojiViewItem.getEmoji()); //this will get the text and insert the emoji into   the current position
-                });
+                emojiPickerView.setOnEmojiPickedListener(ConversationFragment.this::recordEmojiToTextField);
 
                 updateMediaPickerTabs();
                 setupEmojiSearch();
@@ -805,10 +802,7 @@ public class ConversationFragment extends XmppFragment
             EmojiPickerView emojiPickerView = binding.emojiPicker;
             backPressedLeaveEmojiPicker.setEnabled(true);
             binding.textinput.requestFocus();
-            emojiPickerView.setOnEmojiPickedListener(emojiViewItem -> {
-                int start = binding.textinput.getSelectionStart(); //this is to get the the cursor position
-                binding.textinput.getText().insert(start, emojiViewItem.getEmoji()); //this will get the text and insert the emoji into   the current position
-            });
+            emojiPickerView.setOnEmojiPickedListener(ConversationFragment.this::recordEmojiToTextField);
 
             updateMediaPickerTabs();
         }
@@ -4188,22 +4182,52 @@ public class ConversationFragment extends XmppFragment
         }
     }
 
+    public void directReact(Message message, String emoji) {
+        while (message.mergeable(message.next())) {
+            message = message.next();
+        }
+        final Message reaction = new Message(conversation, emoji, conversation.getNextEncryption());
+        reaction.updateReaction(message, emoji);
+        sendMessage(reaction);
+    }
+
+    private void hideEmojiPicker() {
+        if (binding.mediaPickerLayout.getHeight() > 100) {
+            LinearLayout emojipickerview = binding.mediaPickerLayout;
+            ViewGroup.LayoutParams params = emojipickerview.getLayoutParams();
+            params.height = 0;
+            emojipickerview.setLayoutParams(params);
+            binding.keyboardButton.setVisibility(GONE);
+            binding.emojiButton.setVisibility(VISIBLE);
+            backPressedLeaveEmojiPicker.setEnabled(false);
+        }
+    }
+
+    private void recordEmojiToTextField(androidx.emoji2.emojipicker.EmojiViewItem emojiViewItem) {
+        int start = binding.textinput.getSelectionStart();
+        binding.textinput.getText().insert(start, emojiViewItem.getEmoji());
+    }
+
     private void chooseReaction(Message message) {
         while (message.mergeable(message.next())) {
             message = message.next();
         }
-        conversation.setUserSelectedThread(true);
+
+        EmojiPickerView emojiPickerView = binding.emojiPicker;
+        final Message finalMessage = message;
+        emojiPickerView.setOnEmojiPickedListener(emojiViewItem -> {
+            directReact(finalMessage, emojiViewItem.getEmoji());
+            hideEmojiPicker();
+            emojiPickerView.setOnEmojiPickedListener(this::recordEmojiToTextField);
+        });
+
         //Open emoji picker
         if (binding.emojiButton.getVisibility() == VISIBLE && binding.mediaPickerLayout.getHeight() > 100) {
             binding.emojiButton.setVisibility(GONE);
             binding.keyboardButton.setVisibility(VISIBLE);
             hideSoftKeyboard(activity);
-            EmojiPickerView emojiPickerView = binding.emojiPicker;
             backPressedLeaveEmojiPicker.setEnabled(true);
             binding.textinput.requestFocus();
-            emojiPickerView.setOnEmojiPickedListener(emojiViewItem -> {
-                binding.textinput.append(emojiViewItem.getEmoji());
-            });
         } else if (binding.emojiButton.getVisibility() == VISIBLE && binding.mediaPickerLayout.getHeight() < 100) {
             LinearLayout emojipickerview = binding.mediaPickerLayout;
             ViewGroup.LayoutParams params = emojipickerview.getLayoutParams();
@@ -4212,12 +4236,8 @@ public class ConversationFragment extends XmppFragment
             binding.emojiButton.setVisibility(GONE);
             binding.keyboardButton.setVisibility(VISIBLE);
             hideSoftKeyboard(activity);
-            EmojiPickerView emojiPickerView = binding.emojiPicker;
             backPressedLeaveEmojiPicker.setEnabled(true);
             binding.textinput.requestFocus();
-            emojiPickerView.setOnEmojiPickedListener(emojiViewItem -> {
-                binding.textinput.append(emojiViewItem.getEmoji());
-            });
         }
         if (binding.emojiPicker.getVisibility() == VISIBLE) {
             binding.emojisButton.setBackground(ContextCompat.getDrawable(activity, R.drawable.selector_bubble));
