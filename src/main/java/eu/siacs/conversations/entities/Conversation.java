@@ -134,6 +134,7 @@ import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
 import java.util.ListIterator;
+import java.util.Map;
 import java.util.concurrent.atomic.AtomicBoolean;
 
 import eu.siacs.conversations.Config;
@@ -822,10 +823,32 @@ public class Conversation extends AbstractEntity implements Blockable, Comparabl
             messages.clear();
             messages.addAll(this.messages);
             threads.clear();
+            for (Message m : this.messages) {
+                m.getReactionsList().clear();
+            }
+        }
+        Map<String, Message> messageMap = new HashMap<>();
+        for (Message m : messages) {
+            String id = m.getServerMsgId();
+            if (id != null) messageMap.put(id, m);
+            messageMap.put(m.getUuid(), m);
+            if (m.getRemoteMsgId() != null) messageMap.put(m.getRemoteMsgId(), m);
         }
         Set<String> extraIds = new HashSet<>();
         for (ListIterator<Message> iterator = messages.listIterator(messages.size()); iterator.hasPrevious(); ) {
             Message m = iterator.previous();
+
+            Element reactionsElement = m.getReactions();
+            if (reactionsElement != null && reactionsElement.getAttribute("id") != null) {
+                Message target = messageMap.get(reactionsElement.getAttribute("id"));
+                if (target != null) {
+                    target.addReaction(m);
+                    m.untie();
+                    iterator.remove();
+                    continue;
+                }
+            }
+
             final Element mthread = m.getThread();
             if (mthread != null) {
                 Thread thread = threads.get(mthread.getContent());

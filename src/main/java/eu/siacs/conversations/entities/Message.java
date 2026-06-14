@@ -177,6 +177,7 @@ public class Message extends AbstractEntity implements AvatarService.Avatarable 
     private FileParams fileParams = null;
     private List<MucOptions.User> counterparts;
     private WeakReference<MucOptions.User> user;
+    private List<Message> reactions = new ArrayList<>();
 
     public static final Object PLAIN_TEXT_SPAN = new PlainTextSpan();
 
@@ -515,10 +516,21 @@ public class Message extends AbstractEntity implements AvatarService.Avatarable 
     public void updateReaction(final Message reactTo, String emoji) {
         Set<String> emojis = new HashSet<>();
         if (conversation instanceof Conversation) emojis = ((Conversation) conversation).findReactionsTo(reactTo.replyId(), null);
-        emojis.remove(getBody(true));
-        emojis.add(emoji);
+        if (emojis.contains(emoji)) {
+            emojis.remove(emoji);
+        } else {
+            emojis.add(emoji);
+        }
 
-        updateReplyTo(reactTo, new SpannableStringBuilder(emoji));
+        if (emojis.isEmpty()) {
+            setBody(" ");
+            final Element reactions = new Element("reactions", "urn:xmpp:reactions:0").setAttribute("id", reactTo.replyId());
+            setReactions(reactions);
+            return;
+        }
+
+        String body = String.join("", emojis);
+        updateReplyTo(reactTo, new SpannableStringBuilder(body));
         final Element fallback = new Element("fallback", "urn:xmpp:fallback:0").setAttribute("for", "urn:xmpp:reactions:0");
         fallback.addChild("body", "urn:xmpp:fallback:0");
         addPayload(fallback);
@@ -526,7 +538,7 @@ public class Message extends AbstractEntity implements AvatarService.Avatarable 
         for (String oneEmoji : emojis) {
             reactions.addChild("reaction", "urn:xmpp:reactions:0").setContent(oneEmoji);
         }
-        addPayload(reactions);
+        setReactions(reactions);
     }
 
     public void setReactions(Element reactions) {
@@ -1597,6 +1609,7 @@ public class Message extends AbstractEntity implements AvatarService.Avatarable 
     public void untie() {
         this.mNextMessage = null;
         this.mPreviousMessage = null;
+        this.reactions.clear();
     }
 
     public boolean isPrivateMessage() {
@@ -1994,6 +2007,14 @@ public class Message extends AbstractEntity implements AvatarService.Avatarable 
     }
     public int increaseResendCount(){
         return ++resendCount;
+    }
+
+    public void addReaction(Message message) {
+        this.reactions.add(message);
+    }
+
+    public List<Message> getReactionsList() {
+        return this.reactions;
     }
 
     public static class PlainTextSpan {}

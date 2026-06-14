@@ -78,6 +78,7 @@ import com.bumptech.glide.request.RequestListener;
 import com.bumptech.glide.request.target.Target;
 import com.daimajia.swipe.SwipeLayout;
 import com.google.common.base.Strings;
+import com.wefika.flowlayout.FlowLayout;
 
 import java.io.IOException;
 import java.io.UnsupportedEncodingException;
@@ -1459,6 +1460,7 @@ public class MessageAdapter extends ArrayAdapter<Message> {
                     viewHolder.transfer = view.findViewById(R.id.transfer);
                     viewHolder.progressBar = view.findViewById(R.id.progressBar);
                     viewHolder.cancel_transfer = view.findViewById(R.id.cancel_transfer);
+                    viewHolder.reactions_container = view.findViewById(R.id.reactions_container);
                     break;
                 case RECEIVED:
                     view = activity.getLayoutInflater().inflate(R.layout.message_received, parent, false);
@@ -1494,6 +1496,7 @@ public class MessageAdapter extends ArrayAdapter<Message> {
                     viewHolder.progressBar = view.findViewById(R.id.progressBar);
                     viewHolder.cancel_transfer = view.findViewById(R.id.cancel_transfer);
                     viewHolder.commands_list = view.findViewById(R.id.commands_list);
+                    viewHolder.reactions_container = view.findViewById(R.id.reactions_container);
                     break;
                 case STATUS:
                     view = activity.getLayoutInflater().inflate(R.layout.message_status, parent, false);
@@ -1896,8 +1899,73 @@ public class MessageAdapter extends ArrayAdapter<Message> {
         if (type == SENT) {
             setBubbleBackgroundColor(viewHolder.message_box, type, message.isPrivateMessage(), isInValidSession);
         }
+        displayReactions(viewHolder, message);
         displayStatus(viewHolder, message, type, darkBackground);
         return view;
+    }
+
+    private void displayReactions(ViewHolder viewHolder, Message message) {
+        if (viewHolder.reactions_container == null) return;
+        viewHolder.reactions_container.removeAllViews();
+        List<Message> reactions = message.getReactionsList();
+        if (reactions == null || reactions.isEmpty()) {
+            viewHolder.reactions_container.setVisibility(GONE);
+            return;
+        }
+        Map<String, Integer> counts = new HashMap<>();
+        Map<String, Boolean> myReactions = new HashMap<>();
+        for (Message reactionMsg : reactions) {
+            Element reactionsElement = reactionMsg.getReactions();
+            if (reactionsElement != null) {
+                boolean isMine = reactionMsg.getStatus() > Message.STATUS_RECEIVED;
+                for (Element el : reactionsElement.getChildren()) {
+                    if (el.getName().equals("reaction") && el.getNamespace().equals("urn:xmpp:reactions:0")) {
+                        String emoji = el.getContent();
+                        if (emoji != null && !emoji.isEmpty()) {
+                            counts.put(emoji, counts.getOrDefault(emoji, 0) + 1);
+                            if (isMine) {
+                                myReactions.put(emoji, true);
+                            }
+                        }
+                    }
+                }
+            }
+        }
+        if (counts.isEmpty()) {
+            viewHolder.reactions_container.setVisibility(GONE);
+            return;
+        }
+        viewHolder.reactions_container.setVisibility(View.VISIBLE);
+        boolean darkBackground = activity.isDarkTheme();
+        for (Map.Entry<String, Integer> entry : counts.entrySet()) {
+            String emoji = entry.getKey();
+            View reactionView = activity.getLayoutInflater().inflate(R.layout.message_reaction_item, viewHolder.reactions_container, false);
+            TextView tv = reactionView.findViewById(R.id.reaction_text);
+            String text = emoji;
+            if (entry.getValue() > 1) {
+                text += " " + entry.getValue();
+            }
+            tv.setText(text);
+            int accent = StyledAttributes.getColor(activity, R.attr.colorAccent);
+            Drawable tag = activity.getResources().getDrawable(R.drawable.rounded_tag).mutate();
+            if (myReactions.getOrDefault(emoji, false)) {
+                int background = ColorUtils.setAlphaComponent(accent, 0x40);
+                DrawableCompat.setTint(tag, background);
+                tv.setBackground(tag);
+                tv.setTextColor(accent);
+            } else {
+                int background = ColorUtils.setAlphaComponent(accent, 0x15);
+                DrawableCompat.setTint(tag, background);
+                tv.setBackground(tag);
+                tv.setTextColor(ThemeHelper.getMessageTextColor(activity, darkBackground, false));
+            }
+            reactionView.setOnClickListener(v -> {
+                if (mConversationFragment != null) {
+                    mConversationFragment.directReact(message, emoji);
+                }
+            });
+            viewHolder.reactions_container.addView(reactionView);
+        }
     }
 
     private static class markFileExistingFinisher implements Runnable {
@@ -2073,6 +2141,7 @@ public class MessageAdapter extends ArrayAdapter<Message> {
         protected RelativeLayout transfer;
         protected ProgressBar progressBar;
         protected ImageButton cancel_transfer;
+        protected FlowLayout reactions_container;
     }
 
     public void setBubbleBackgroundColor(final View viewHolder, final int type,

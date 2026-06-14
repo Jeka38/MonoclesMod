@@ -221,4 +221,12 @@
         android:src="@drawable/ic_reply_circle_black_24dp"
         android:visibility="gone" />
 
+    <com.wefika.flowlayout.FlowLayout
+        android:id="@+id/reactions_container"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:orientation="horizontal"
+        android:visibility="gone"
+        android:padding="2dp" />
+
 </merge> 
