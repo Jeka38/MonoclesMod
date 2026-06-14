@@ -772,10 +772,7 @@ public class ConversationFragment extends XmppFragment
                 }
 
                 EmojiPickerView emojiPickerView = binding.emojiPicker;
-                emojiPickerView.setOnEmojiPickedListener(emojiViewItem -> {
-                    int start = binding.textinput.getSelectionStart(); //this is to get the the cursor position
-                    binding.textinput.getText().insert(start, emojiViewItem.getEmoji()); //this will get the text and insert the emoji into   the current position
-                });
+                emojiPickerView.setOnEmojiPickedListener(ConversationFragment.this::recordEmojiToTextField);
 
                 updateMediaPickerTabs();
                 setupEmojiSearch();
@@ -805,10 +802,7 @@ public class ConversationFragment extends XmppFragment
             EmojiPickerView emojiPickerView = binding.emojiPicker;
             backPressedLeaveEmojiPicker.setEnabled(true);
             binding.textinput.requestFocus();
-            emojiPickerView.setOnEmojiPickedListener(emojiViewItem -> {
-                int start = binding.textinput.getSelectionStart(); //this is to get the the cursor position
-                binding.textinput.getText().insert(start, emojiViewItem.getEmoji()); //this will get the text and insert the emoji into   the current position
-            });
+            emojiPickerView.setOnEmojiPickedListener(ConversationFragment.this::recordEmojiToTextField);
 
             updateMediaPickerTabs();
         }
@@ -4209,18 +4203,22 @@ public class ConversationFragment extends XmppFragment
         }
     }
 
+    private void recordEmojiToTextField(androidx.emoji2.emojipicker.EmojiViewItem emojiViewItem) {
+        int start = binding.textinput.getSelectionStart();
+        binding.textinput.getText().insert(start, emojiViewItem.getEmoji());
+    }
+
     private void chooseReaction(Message message) {
         while (message.mergeable(message.next())) {
             message = message.next();
         }
 
         EmojiPickerView emojiPickerView = binding.emojiPicker;
-        final var oldListener = emojiPickerView.getOnEmojiPickedListener();
         final Message finalMessage = message;
         emojiPickerView.setOnEmojiPickedListener(emojiViewItem -> {
             directReact(finalMessage, emojiViewItem.getEmoji());
             hideEmojiPicker();
-            emojiPickerView.setOnEmojiPickedListener(oldListener);
+            emojiPickerView.setOnEmojiPickedListener(this::recordEmojiToTextField);
         });
 
         //Open emoji picker
