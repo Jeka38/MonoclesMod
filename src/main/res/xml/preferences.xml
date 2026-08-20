@@ -231,6 +231,11 @@
             android:key="start_searching"
             android:summary="@string/pref_start_search_summary"
             android:title="@string/pref_start_search" />
+        <SwitchPreference
+            android:defaultValue="@bool/sort_by_last_message"
+            android:key="sort_by_last_message"
+            android:summary="@string/pref_sort_by_last_message_summary"
+            android:title="@string/pref_sort_by_last_message" />
         <!--
         <SwitchPreference
             android:defaultValue="@bool/allowmergemessages"

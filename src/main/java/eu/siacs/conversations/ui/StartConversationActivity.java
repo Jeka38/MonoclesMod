@@ -389,6 +389,9 @@ public class StartConversationActivity extends XmppActivity implements XmppConne
                 case R.id.create_contact:
                     showCreateContactDialog(prefilled, null);
                     break;
+                case R.id.discover_services:
+                    startActivity(new Intent(this, ServiceDiscoveryActivity.class));
+                    break;
             }
             return false;
         });
@@ -1240,6 +1243,9 @@ public class StartConversationActivity extends XmppActivity implements XmppConne
         }
 
             Collections.sort(this.contacts);
+            if (getBooleanPreference(SettingsActivity.SORT_BY_LAST_MESSAGE, R.bool.sort_by_last_message)) {
+                this.contacts.sort(this::compareByLastMessage);
+            }
 /*                              //TODO: Make bridges deletable
         //Whatsapp bridge
         final boolean whatsappDeleted = getPreferences().getBoolean("whatsapp_bridge_bookmark_deleted", false);
@@ -1313,6 +1319,9 @@ public class StartConversationActivity extends XmppActivity implements XmppConne
             }
         }
         Collections.sort(this.conferences);
+        if (getBooleanPreference(SettingsActivity.SORT_BY_LAST_MESSAGE, R.bool.sort_by_last_message)) {
+            this.conferences.sort(this::compareByLastMessage);
+        }
 
         if (binding.startConversationViewPager.getCurrentItem() == 1) {
             // Tag navigation UI
@@ -1328,6 +1337,24 @@ public class StartConversationActivity extends XmppActivity implements XmppConne
         }
 
         mConferenceAdapter.notifyDataSetChanged();
+    }
+
+    private int compareByLastMessage(final ListItem a, final ListItem b) {
+        final long timeA = getLastMessageTime(a);
+        final long timeB = getLastMessageTime(b);
+        if (timeA != timeB) {
+            return Long.compare(timeB, timeA);
+        }
+        return a.compareTo(b);
+    }
+
+    private long getLastMessageTime(final ListItem item) {
+        final Jid jid = item.getJid();
+        if (jid == null || xmppConnectionService == null) {
+            return 0;
+        }
+        final Conversation conversation = xmppConnectionService.find(item.getAccount(), jid);
+        return conversation == null ? 0 : conversation.getSortableTimeExcludingStatusMessages();
     }
 
     @Override

@@ -974,6 +974,28 @@ public class Conversation extends AbstractEntity implements Blockable, Comparabl
         }
     }
 
+    public long getSortableTimeExcludingStatusMessages() {
+        Draft draft = getDraft();
+        long messageTime = getLatestMessageTimeExcludingStatusMessages();
+        if (draft == null) {
+            return messageTime;
+        } else {
+            return Math.max(messageTime, draft.getTimestamp());
+        }
+    }
+
+    private long getLatestMessageTimeExcludingStatusMessages() {
+        synchronized (this.messages) {
+            for (int i = this.messages.size() - 1; i >= 0; --i) {
+                final Message message = this.messages.get(i);
+                if (message.getType() != Message.TYPE_STATUS) {
+                    return message.getTimeReceived();
+                }
+            }
+        }
+        return Math.max(getCreated(), getLastClearHistory().getTimestamp());
+    }
+
     public String getDraftMessage() {
         return draftMessage;
     }

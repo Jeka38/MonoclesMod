@@ -105,6 +105,7 @@ public class SettingsActivity extends XmppActivity implements OnSharedPreference
     public static final String USE_BUNDLED_EMOJIS = "use_bundled_emoji";
     public static final String ENABLE_MULTI_ACCOUNTS = "enable_multi_accounts";
     public static final String SHOW_OWN_ACCOUNTS = "show_own_accounts";
+    public static final String SORT_BY_LAST_MESSAGE = "sort_by_last_message";
     public static final String QUICK_SHARE_ATTACHMENT_CHOICE = "quick_share_attachment_choice";
     public static final String NUMBER_OF_ACCOUNTS = "number_of_accounts";
     public static final String PLAY_GIF_INSIDE = "play_gif_inside";
@@ -1170,6 +1171,8 @@ public class SettingsActivity extends XmppActivity implements OnSharedPreference
             recreate();
             updateTheme();
         } else if (name.equals(USE_UNICOLORED_CHATBG)) {
+            xmppConnectionService.updateConversationUi();
+        } else if (name.equals(SORT_BY_LAST_MESSAGE)) {
             xmppConnectionService.updateConversationUi();
         }
         else if (UnifiedPushDistributor.PREFERENCES.contains(name)) {

@@ -62,6 +62,7 @@
     <bool name="show_maps_inside">false</bool>
     <string name="mappreview_url">https://staticmap.monocles.eu/map.png</string>
     <bool name="show_own_accounts">false</bool>
+    <bool name="sort_by_last_message">false</bool>
     <bool name="vibrate_in_chat">true</bool>
     <bool name="enable_otr">false</bool>
     <bool name="showtextformatting">false</bool>

@@ -10,6 +10,7 @@ public final class Namespace {
     public static final String ROSTER = "jabber:iq:roster";
     public static final String REGISTER = "jabber:iq:register";
     public static final String REGISTER_STREAM_FEATURE = "http://jabber.org/features/iq-register";
+    public static final String SEARCH = "jabber:iq:search";
     public static final String BYTE_STREAMS = "http://jabber.org/protocol/bytestreams";
     public static final String HTTP_UPLOAD = "urn:xmpp:http:upload:0";
     public static final String HTTP_UPLOAD_LEGACY = "urn:xmpp:http:upload";
@@ -66,6 +67,7 @@ public final class Namespace {
     public static final String PING = "urn:xmpp:ping";
     public static final String PUSH = "urn:xmpp:push:0";
     public static final String COMMANDS = "http://jabber.org/protocol/commands";
+    public static final String MUC = "http://jabber.org/protocol/muc";
     public static final String MUC_USER = "http://jabber.org/protocol/muc#user";
     public static final String BOOKMARKS2 = "urn:xmpp:bookmarks:1";
     public static final String BOOKMARKS2_COMPAT = BOOKMARKS2 + "#compat";

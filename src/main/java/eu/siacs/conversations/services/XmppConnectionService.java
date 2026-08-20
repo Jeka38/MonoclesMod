@@ -13,6 +13,7 @@ import static eu.siacs.conversations.ui.SettingsActivity.CONFIRM_MESSAGES;
 import static eu.siacs.conversations.ui.SettingsActivity.ENABLE_MULTI_ACCOUNTS;
 import static eu.siacs.conversations.ui.SettingsActivity.INDICATE_RECEIVED;
 import static eu.siacs.conversations.ui.SettingsActivity.SHOW_OWN_ACCOUNTS;
+import static eu.siacs.conversations.ui.SettingsActivity.SORT_BY_LAST_MESSAGE;
 import static eu.siacs.conversations.ui.SettingsActivity.USE_INNER_STORAGE;
 import static eu.siacs.conversations.utils.Compatibility.hasStoragePermission;
 import static eu.siacs.conversations.utils.RichPreview.RICH_LINK_METADATA;
@@ -3052,7 +3053,11 @@ public class XmppConnectionService extends Service {
             }
         }
         list.clear();
-        list.addAll(getConversations());
+        for (Conversation conversation : getConversations()) {
+            if (conversation.getAccount().isEnabled()) {
+                list.add(conversation);
+            }
+        }
         try {
             if (orderedUuids != null) {
                 Collections.sort(list, (a, b) -> {
@@ -3064,12 +3069,22 @@ public class XmppConnectionService extends Service {
                     return indexA - indexB;
                 });
             } else {
-                Collections.sort(list, (a, b) -> ComparisonChain.start()
-                        .compareFalseFirst(b.getBooleanAttribute(Conversation.ATTRIBUTE_PINNED_ON_TOP, false), a.getBooleanAttribute(Conversation.ATTRIBUTE_PINNED_ON_TOP, false))
-                        .compareFalseFirst(b.getAccount().isEnabled(), a.getAccount().isEnabled())
-                        .compare(a.getName().toString(), b.getName().toString(), String.CASE_INSENSITIVE_ORDER)
-                        .compare(a.getUuid(), b.getUuid())
-                        .result());
+                if (getBooleanPreference(SORT_BY_LAST_MESSAGE, R.bool.sort_by_last_message)) {
+                    Collections.sort(list, (a, b) -> ComparisonChain.start()
+                            .compareFalseFirst(b.getBooleanAttribute(Conversation.ATTRIBUTE_PINNED_ON_TOP, false), a.getBooleanAttribute(Conversation.ATTRIBUTE_PINNED_ON_TOP, false))
+                            .compareFalseFirst(b.getAccount().isEnabled(), a.getAccount().isEnabled())
+                            .compare(b.getSortableTimeExcludingStatusMessages(), a.getSortableTimeExcludingStatusMessages())
+                            .compare(a.getName().toString(), b.getName().toString(), String.CASE_INSENSITIVE_ORDER)
+                            .compare(a.getUuid(), b.getUuid())
+                            .result());
+                } else {
+                    Collections.sort(list, (a, b) -> ComparisonChain.start()
+                            .compareFalseFirst(b.getBooleanAttribute(Conversation.ATTRIBUTE_PINNED_ON_TOP, false), a.getBooleanAttribute(Conversation.ATTRIBUTE_PINNED_ON_TOP, false))
+                            .compareFalseFirst(b.getAccount().isEnabled(), a.getAccount().isEnabled())
+                            .compare(a.getName().toString(), b.getName().toString(), String.CASE_INSENSITIVE_ORDER)
+                            .compare(a.getUuid(), b.getUuid())
+                            .result());
+                }
             }
         } catch (IllegalArgumentException e) {
             //ignore
@@ -5608,6 +5623,18 @@ public class XmppConnectionService extends Service {
         return getBooleanPreference(ENABLE_MULTI_ACCOUNTS, R.bool.enable_multi_accounts);
     }
 
+    public boolean multipleActiveAccounts() {
+        if (getAccounts().size() <= 1) {
+            return false;
+        }
+        for (final Account account : getAccounts()) {
+            if (!account.isEnabled()) {
+                return false;
+            }
+        }
+        return true;
+    }
+
     public boolean showOwnAccounts() {
         return getBooleanPreference(SHOW_OWN_ACCOUNTS, R.bool.show_own_accounts);
     }
@@ -5624,7 +5651,9 @@ public class XmppConnectionService extends Service {
     public int unreadCount() {
         int count = 0;
         for (Conversation conversation : getConversations()) {
-            count += conversation.unreadCount();
+            if (conversation.getAccount().isEnabled()) {
+                count += conversation.unreadCount();
+            }
         }
         return count;
     }
@@ -5632,7 +5661,7 @@ public class XmppConnectionService extends Service {
     public Message getLatestUnreadMention() {
         Message latestMention = null;
         for (Conversation conversation : getConversations()) {
-            if (conversation.unreadCount() == 0) {
+            if (!conversation.getAccount().isEnabled() || conversation.unreadCount() == 0) {
                 continue;
             }
             Message mention = conversation.getLatestUnreadMention(this);

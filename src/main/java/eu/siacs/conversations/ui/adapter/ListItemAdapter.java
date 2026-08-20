@@ -80,7 +80,7 @@ public class ListItemAdapter extends ArrayAdapter<ListItem> {
             viewHolder = (ViewHolder) view.getTag();
         }
 
-        if (activity.xmppConnectionService != null && activity.xmppConnectionService.getAccounts().size() > 1) {
+        if (activity.xmppConnectionService != null && activity.xmppConnectionService.multipleActiveAccounts()) {
             viewHolder.inner.setBackgroundColor(item.getAccount().getColor(activity.isDarkTheme()));
         }
 

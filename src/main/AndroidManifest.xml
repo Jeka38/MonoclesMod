@@ -548,6 +548,11 @@
             android:exported="false"
             android:launchMode="singleTask" />
         <activity
+            android:name=".ui.ServiceDiscoveryActivity"
+            android:label="@string/discover_services"
+            android:exported="false"
+            android:launchMode="singleTask" />
+        <activity
             android:name=".ui.IntroActivity"
             android:label="@string/app_name"
             android:exported="false"

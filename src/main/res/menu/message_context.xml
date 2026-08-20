@@ -18,7 +18,10 @@
         android:id="@+id/copy_message"
         android:title="@string/copy_to_clipboard"
         android:visible="false" />
-
+    <item
+        android:id="@+id/select_text"
+        android:title="@string/select_text"
+        android:visible="false" />
     <item
         android:id="@+id/only_this_thread"
         android:title="@string/only_this_thread"

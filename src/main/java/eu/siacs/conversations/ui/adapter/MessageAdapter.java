@@ -48,7 +48,6 @@ import android.util.DisplayMetrics;
 import android.util.Log;
 import android.util.LruCache;
 import android.view.HapticFeedbackConstants;
-import android.view.MotionEvent;
 import android.view.View;
 import android.view.ViewGroup;
 import android.view.WindowManager;
@@ -93,7 +92,6 @@ import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
 import de.monocles.mod.BobTransfer;
-import de.monocles.mod.MessageTextActionModeCallback;
 import de.monocles.mod.Util;
 import de.monocles.mod.WebxdcPage;
 import de.monocles.mod.WebxdcUpdate;
@@ -176,6 +174,7 @@ public class MessageAdapter extends ArrayAdapter<Message> {
     private ConversationFragment mConversationFragment = null;
     private boolean expandable;
     private boolean expand;
+
 
 
     public MessageAdapter(final XmppActivity activity, final List<Message> messages, final boolean forceNames) {
@@ -1512,10 +1511,6 @@ public class MessageAdapter extends ArrayAdapter<Message> {
             }
         }
 
-        if (viewHolder.messageBody != null) {
-            viewHolder.messageBody.setCustomSelectionActionModeCallback(new MessageTextActionModeCallback(this, viewHolder.messageBody));
-        }
-
         boolean darkBackground = activity.isDarkTheme();
 
         if (type == DATE_SEPARATOR) {
@@ -1631,6 +1626,7 @@ public class MessageAdapter extends ArrayAdapter<Message> {
         }
 
         resetClickListener(viewHolder.message_box, viewHolder.messageBody);
+
         final boolean[] swipeInProgress = {false};
         final float[] maxSwipeProgress = {0f};
         final boolean[] thresholdReached = {false};
@@ -2024,6 +2020,8 @@ public class MessageAdapter extends ArrayAdapter<Message> {
     public void setConversationFragment(ConversationFragment frag) {
         mConversationFragment = frag;
     }
+
+
 
     public void quoteText(String text, String user) {
         if (mConversationFragment != null) mConversationFragment.quoteText(text, null);

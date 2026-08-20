@@ -144,7 +144,7 @@ public class ConversationAdapter
             viewHolder.binding.account.setVisibility(View.GONE);
         }
 
-        if (activity.xmppConnectionService != null && activity.xmppConnectionService.getAccounts().size() > 1) {
+        if (activity.xmppConnectionService != null && activity.xmppConnectionService.multipleActiveAccounts()) {
             viewHolder.binding.frame.setBackgroundColor(conversation.getAccount().getColor(activity.isDarkTheme()));
         } else {
             viewHolder.binding.frame.setBackgroundColor(StyledAttributes.getColor(this.activity, R.attr.color_background_secondary));

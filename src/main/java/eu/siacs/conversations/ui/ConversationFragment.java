@@ -91,6 +91,7 @@ import android.widget.AbsListView;
 import android.widget.AbsListView.OnScrollListener;
 import android.widget.AdapterView;
 import android.widget.AdapterView.AdapterContextMenuInfo;
+import android.widget.EditText;
 import android.widget.LinearLayout;
 import android.widget.ListView;
 import android.widget.RelativeLayout;
@@ -1526,7 +1527,7 @@ public class ConversationFragment extends XmppFragment
     }
 
     private boolean isPrivateMessage() {
-        return conversation != null && conversation.getMode() == Conversation.MODE_MULTI && conversation.getNextCounterpart() != null && !conversation.hasPermanentCounterpart();
+        return conversation != null && conversation.getMode() == Conversation.MODE_MULTI && conversation.hasPermanentCounterpart();
     }
 
     public void setupIme() {
@@ -2377,6 +2378,7 @@ public class ConversationFragment extends XmppFragment
             MenuItem showLog = menu.findItem(R.id.show_edit_log);
             MenuItem showErrorMessage = menu.findItem(R.id.show_error_message);
             MenuItem saveFile = menu.findItem(R.id.save_file);
+            MenuItem selectText = menu.findItem(R.id.select_text);
             onlyThisThread.setVisible(!conversation.getLockThread() && m.getThread() != null);
             final boolean unInitiatedButKnownSize = MessageUtils.unInitiatedButKnownSize(m);
             final boolean showError = m.getStatus() == Message.STATUS_SEND_FAILED && m.getErrorMessage() != null && !Message.ERROR_MESSAGE_CANCELLED.equals(m.getErrorMessage());
@@ -2395,6 +2397,7 @@ public class ConversationFragment extends XmppFragment
             deleteMessage.setVisible(true);
             if (!encrypted && !m.getBody().equals("")) {
                 copyMessage.setVisible(true);
+                selectText.setVisible(true);
                 quoteMessage.setVisible(!showError && MessageUtils.prepareQuote(m).length() > 0);
             }
             quoteMessage.setVisible(!encrypted && !showError);
@@ -2501,6 +2504,9 @@ public class ConversationFragment extends XmppFragment
         int itemId = item.getItemId();
         if (itemId == R.id.share_with) {
             ShareUtil.share(activity, selectedMessage, user);
+            return true;
+        } else if (itemId == R.id.select_text) {
+            showTextSelectionDialog(selectedMessage);
             return true;
         } else if (itemId == R.id.correct_message) {
             correctMessage(selectedMessage);
@@ -2628,6 +2634,25 @@ public class ConversationFragment extends XmppFragment
             return true;
         }
         return onOptionsItemSelected(item);
+    }
+
+    private void showTextSelectionDialog(final Message message) {
+        final EditText editText = new EditText(activity);
+        editText.setText(message.getBody());
+        editText.setSelection(0, message.getBody().length());
+        editText.setFocusable(true);
+        editText.setClickable(true);
+        editText.setLongClickable(true);
+        editText.setTextIsSelectable(true);
+        editText.setMovementMethod(android.text.method.ArrowKeyMovementMethod.getInstance());
+        final AlertDialog.Builder builder = new AlertDialog.Builder(activity);
+        builder.setTitle(R.string.select_text);
+        builder.setView(editText);
+        builder.setPositiveButton(R.string.ok, null);
+        builder.setCancelable(true);
+        final AlertDialog dialog = builder.create();
+        dialog.getWindow().setSoftInputMode(WindowManager.LayoutParams.SOFT_INPUT_STATE_ALWAYS_HIDDEN);
+        dialog.show();
     }
 
     private void openLog(Message logMsg) {
@@ -5052,6 +5077,14 @@ public class ConversationFragment extends XmppFragment
         if (useSendButtonToIndicateStatus && c.getAccount().getStatus() == Account.State.ONLINE) {
             if (activity != null && activity.xmppConnectionService != null && activity.xmppConnectionService.getMessageArchiveService().isCatchingUp(c)) {
                 status = Presence.Status.OFFLINE;
+            } else if (c.getMode() == Conversation.MODE_MULTI && c.getNextCounterpart() != null) {
+                final Conversation main = activity != null && activity.xmppConnectionService != null ? activity.xmppConnectionService.findFirstMuc(c.getJid()) : null;
+                final MucOptions mucOptions = main != null ? main.getMucOptions() : c.getMucOptions();
+                final MucOptions.User user = mucOptions.findUserByFullJid(c.getNextCounterpart());
+                final Presence presence = user == null ? null : user.getPresence();
+                status = presence == null
+                        ? (user != null && user.isOnline() ? Presence.Status.ONLINE : Presence.Status.OFFLINE)
+                        : presence.getStatus();
             } else if (c.getMode() == Conversation.MODE_SINGLE) {
                 status = c.getContact().getShownStatus();
             } else {
