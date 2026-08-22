@@ -54,6 +54,8 @@ public class Option {
 
     public String getValue() { return value; }
 
+    public String getLabel() { return label; }
+
     public SVG getIcon() { return icon; }
 
     public Element getIconEl() { return iconEl; }

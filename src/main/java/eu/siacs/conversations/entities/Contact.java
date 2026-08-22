@@ -678,6 +678,23 @@ public class Contact implements ListItem, Blockable {
         return account.getJid().getDomain().equals(jid.asBareJid());
     }
 
+    public boolean isTransport() {
+        if (getPresences().anyIdentity("gateway", null)) {
+            return true;
+        }
+        for (final String group : getGroups(true)) {
+            if (group != null && isTransportGroup(group)) {
+                return true;
+            }
+        }
+        return false;
+    }
+
+    private static boolean isTransportGroup(final String group) {
+        final String lower = group.toLowerCase(Locale.ROOT);
+        return lower.contains("transport") || lower.contains("транспорт");
+    }
+
     public void setCommonName(String cn) {
         this.commonName = cn;
     }

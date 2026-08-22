@@ -393,6 +393,40 @@ public class MyLinkify {
         if (includeGeo) {
             Linkify.addLinks(body, GeoHelper.GEO_URI, "geo");
         }
+        decodeHttpUrlDisplay(body);
+    }
+
+    // Show percent-encoded http(s) links in a readable form (e.g. Cyrillic),
+    // while keeping the span's actual URL (used for clicks) encoded and valid.
+    private static void decodeHttpUrlDisplay(final Editable body) {
+        final URLSpan[] spans = body.getSpans(0, body.length(), URLSpan.class);
+        Arrays.sort(spans, (a, b) -> body.getSpanStart(b) - body.getSpanStart(a));
+        for (final URLSpan span : spans) {
+            final String url = span.getURL();
+            if (url == null || (!url.startsWith("http://") && !url.startsWith("https://"))) {
+                continue;
+            }
+            final int start = body.getSpanStart(span);
+            final int end = body.getSpanEnd(span);
+            if (start < 0 || end <= start) {
+                continue;
+            }
+            final String visible = body.subSequence(start, end).toString();
+            if (!visible.contains("%")) {
+                continue;
+            }
+            try {
+                final String decoded = URLDecoder.decode(visible.replace("+", "￼"), StandardCharsets.UTF_8.name()).replace("￼", "+");
+                if (!decoded.equals(visible)) {
+                    final int flags = body.getSpanFlags(span);
+                    body.removeSpan(span);
+                    body.replace(start, end, decoded);
+                    body.setSpan(span, start, start + decoded.length(), flags);
+                }
+            } catch (final Exception ignored) {
+                // leave encoded form if decoding fails
+            }
+        }
     }
 
     public static void addLinks(Editable body, Account account, Jid context) {

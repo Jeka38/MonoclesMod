@@ -431,6 +431,26 @@ public class FileBackend {
         return getFile(message, true);
     }
 
+    public DownloadableFile getFileForAutoDownload(Message message) {
+        return getFileForAutoDownload(message, null);
+    }
+
+    public DownloadableFile getFileForAutoDownload(Message message, String originalName) {
+        final File downloadsDir = new File(getGlobalDownloadsPath());
+        String name = originalName;
+        if (name == null || name.isEmpty() || name.contains(File.separator)) {
+            final String relativePath = message.getRelativeFilePath();
+            if (relativePath != null && relativePath.contains(File.separator)) {
+                name = relativePath.substring(relativePath.lastIndexOf(File.separator) + 1);
+            } else if (relativePath != null && !relativePath.isEmpty()) {
+                name = relativePath;
+            } else {
+                name = fileDateFormat.format(new Date(message.getTimeSent())) + "_" + message.getUuid().substring(0, 4);
+            }
+        }
+        return new DownloadableFile(downloadsDir, name);
+    }
+
     public DownloadableFile getFileForPath(String path) {
         return getFileForPath(path, MimeUtils.guessMimeTypeFromExtension(MimeUtils.extractRelevantExtension(path)));
     }
@@ -816,8 +836,11 @@ public class FileBackend {
         try {
             setupRelativeFilePath(message, uri, extension);
             copyFileToPrivateStorage(mXmppConnectionService.getFileBackend().getFile(message), uri);
-            final String name = getDisplayNameFromUri(uri);
-            if (name != null) {
+            String name = getDisplayNameFromUri(uri);
+            if (name == null || name.isEmpty()) {
+                name = getFallbackNameFromUri(uri, extension);
+            }
+            if (name != null && !name.isEmpty()) {
                 message.getFileParams().setName(name);
             }
         } catch (final XmppConnectionService.BlockedMediaException e) {
@@ -840,6 +863,31 @@ public class FileBackend {
             filename = null;
         }
         return filename;
+    }
+
+    // derive a display name from the URI itself when the provider does not answer DISPLAY_NAME queries
+    private String getFallbackNameFromUri(final Uri uri, final String extension) {
+        final String last = uri.getLastPathSegment();
+        if (last == null) {
+            return null;
+        }
+        String name = last;
+        final int slash = name.lastIndexOf('/');
+        if (slash >= 0 && slash < name.length() - 1) {
+            name = name.substring(slash + 1);
+        }
+        final int colon = name.lastIndexOf(':');
+        if (colon >= 0 && colon < name.length() - 1) {
+            name = name.substring(colon + 1);
+        }
+        name = name.trim();
+        if (name.isEmpty()) {
+            return null;
+        }
+        if (extension != null && !extension.isEmpty() && !name.contains(".")) {
+            name = name + "." + extension;
+        }
+        return name;
     }
 
     public static void moveDirectory(XmppConnectionService mXmppConnectionService, File sourceLocation, File targetLocation) throws Exception {
@@ -1884,7 +1932,9 @@ public class FileBackend {
         } else {
             fileParams.url = url;
         }
-        fileParams.setName(file.getName());
+        if (fileParams.getName() == null || fileParams.getName().isEmpty()) {
+            fileParams.setName(file.getName());
+        }
         fileParams.setMediaType(mime);
         if (encrypted && !file.exists()) {
             Log.d(Config.LOGTAG, "skipping updateFileParams because file is encrypted");

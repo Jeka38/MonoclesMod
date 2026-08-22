@@ -55,6 +55,7 @@
     <string name="start_conversation">Start Conversation</string>
     <string name="invite_contact">Invite Contact</string>
     <string name="contacts">Contacts</string>
+    <string name="transports">Transports</string>
     <string name="group_conferences">Conferences</string>
     <string name="group_private_messages">Private messages</string>
     <string name="show_muc_status_messages">Show status messages in conferences</string>
@@ -413,6 +414,7 @@
     <string name="apk">Android App</string>
     <string name="audiobook">Audiobook</string>
     <string name="vcard">Contact</string>
+    <string name="vcard_view">vCard</string>
     <string name="avatar_has_been_published">Avatar has been published!</string>
     <string name="sending_x_file">Sending %s</string>
     <string name="sending_x_file_x">Sending %1$s (%2$s \%%)</string>
@@ -981,6 +983,7 @@
     <string name="service_search_no_results">No results found</string>
     <string name="added_to_contacts">Added to contacts</string>
     <string name="service_add_to_roster">Add to roster</string>
+    <string name="open_file">Open file</string>
     <string name="service_submitting_registration">Submitting registration…</string>
     <string name="service_already_registered">You are already registered with this service</string>
     <string name="service_no_registration_fields">This service does not offer registration</string>

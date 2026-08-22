@@ -506,6 +506,7 @@ public class ConversationAdapter
     private void updateItems() {
         items.clear();
         List<Conversation> contacts = new ArrayList<>();
+        List<Conversation> transports = new ArrayList<>();
         List<Conversation> conferences = new ArrayList<>();
         List<Conversation> pms = new ArrayList<>();
 
@@ -517,7 +518,12 @@ public class ConversationAdapter
                     conferences.add(conversation);
                 }
             } else {
-                contacts.add(conversation);
+                final Contact contact = conversation.getContact();
+                if (contact != null && contact.isTransport()) {
+                    transports.add(conversation);
+                } else {
+                    contacts.add(conversation);
+                }
             }
         }
 
@@ -527,6 +533,16 @@ public class ConversationAdapter
             items.add(new ListItem(headerTitle, headerKey));
             if (!collapsedGroups.contains(headerKey)) {
                 for (Conversation c : contacts) {
+                    items.add(new ListItem(c));
+                }
+            }
+        }
+        if (!transports.isEmpty()) {
+            String headerKey = "transports";
+            String headerTitle = activity.getString(R.string.transports);
+            items.add(new ListItem(headerTitle, headerKey));
+            if (!collapsedGroups.contains(headerKey)) {
+                for (Conversation c : transports) {
                     items.add(new ListItem(c));
                 }
             }

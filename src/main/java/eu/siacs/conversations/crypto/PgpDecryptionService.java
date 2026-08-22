@@ -154,7 +154,7 @@ public class PgpDecryptionService {
 							if (message.trusted()
 									&& message.treatAsDownloadable()
 									&& manager.getAutoAcceptFileSize() > 0) {
-								manager.createNewDownloadConnection(message);
+								manager.createNewAutoDownloadConnection(message);
 							}
 						} catch (final IOException e) {
 							Log.d(Config.LOGTAG,"decryption failed", e);

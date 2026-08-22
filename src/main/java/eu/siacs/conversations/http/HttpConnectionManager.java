@@ -103,6 +103,36 @@ public class HttpConnectionManager extends AbstractConnectionManager {
         }
     }
 
+    public void createNewAutoDownloadConnection(final Message message) {
+        synchronized (this.downloadConnections) {
+            for (HttpDownloadConnection connection : this.downloadConnections) {
+                if (connection.getMessage() == message) {
+                    Log.d(Config.LOGTAG, message.getConversation().getAccount().getJid().asBareJid() + ": download already in progress");
+                    return;
+                }
+            }
+            final HttpDownloadConnection connection = new HttpDownloadConnection(message, this, null);
+            connection.setDownloadToDownloads(true);
+            connection.init(false);
+            this.downloadConnections.add(connection);
+        }
+    }
+
+    public void createNewUserDownloadConnection(final Message message) {
+        synchronized (this.downloadConnections) {
+            for (HttpDownloadConnection connection : this.downloadConnections) {
+                if (connection.getMessage() == message) {
+                    Log.d(Config.LOGTAG, message.getConversation().getAccount().getJid().asBareJid() + ": download already in progress");
+                    return;
+                }
+            }
+            final HttpDownloadConnection connection = new HttpDownloadConnection(message, this, null);
+            connection.setDownloadToDownloads(true);
+            connection.init(true);
+            this.downloadConnections.add(connection);
+        }
+    }
+
     public void createNewUploadConnection(final Message message, boolean delay) {
         synchronized (this.uploadConnections) {
             for (HttpUploadConnection connection : this.uploadConnections) {

@@ -3,6 +3,7 @@ package eu.siacs.conversations.ui;
 import android.content.ClipData;
 import android.content.ClipboardManager;
 import android.content.Context;
+import android.util.Pair;
 import android.util.TypedValue;
 import android.view.Gravity;
 import android.view.LayoutInflater;
@@ -18,7 +19,6 @@ import androidx.activity.OnBackPressedCallback;
 import androidx.appcompat.app.AlertDialog;
 
 import java.util.ArrayList;
-import java.util.Collections;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Set;
@@ -126,7 +126,7 @@ public class ServiceManagementDialog {
     }
 
     private void onFeaturesLoaded(IqPacket response) {
-        if (response.getType() == IqPacket.TYPE.RESULT) {
+        if (response != null && response.getType() == IqPacket.TYPE.RESULT) {
             final Element query = response.query(Namespace.DISCO_INFO);
             for (Element child : query.getChildren()) {
                 if ("feature".equals(child.getName())) {
@@ -142,8 +142,8 @@ public class ServiceManagementDialog {
                     }
                 }
             }
+            featuresKnown = true;
         }
-        featuresKnown = true;
         showActions();
     }
 
@@ -576,7 +576,7 @@ public class ServiceManagementDialog {
         }
 
         if (form != null) {
-            showCommandForm(form);
+            showCommandForm(form, parseAllowedActions(command));
         } else if (note != null) {
             showMessage(note);
         } else {
@@ -584,13 +584,27 @@ public class ServiceManagementDialog {
         }
     }
 
-    private void showCommandForm(Data form) {
+    private List<String> parseAllowedActions(Element command) {
+        final List<String> actions = new ArrayList<>();
+        final Element actionsElement = command.findChild("actions", Namespace.COMMANDS);
+        if (actionsElement != null) {
+            for (Element child : actionsElement.getChildren()) {
+                actions.add(child.getName());
+            }
+        }
+        return actions;
+    }
+
+    private void showCommandForm(Data form, final List<String> allowedActions) {
         clearContent();
         state = State.COMMAND_FORM;
         commandForm = form;
         formWrapper = null;
+        final Set<String> actions = new HashSet<>(allowedActions);
         final Field actionsField = form.getFieldByName(ACTIONS_FIELD);
-        final List<String> actions = actionsField == null ? Collections.emptyList() : actionsField.getValues();
+        if (actionsField != null) {
+            actions.addAll(actionsField.getValues());
+        }
         final Data viewForm = new Data();
         for (Field field : form.getFields()) {
             if ("hidden".equals(field.getType())) {
@@ -608,27 +622,37 @@ public class ServiceManagementDialog {
             addText(getString(R.string.service_command_no_fields));
         } else {
             formWrapper = FormWrapper.createInLayout(activity, binding.content, viewForm);
+            formWrapper.setOnItemLongClickedListener(this::onFormItemLongClicked);
         }
 
         final boolean canCancel = actions.contains("cancel");
-        final boolean canNext = actions.contains("next");
         final boolean canPrev = actions.contains("prev");
-        String positiveActionName = "submit";
-        if (viewForm.getFields().isEmpty()) {
-            if (actions.contains("execute")) {
-                positiveActionName = "execute";
-            } else if (actions.contains("complete")) {
-                positiveActionName = "complete";
-            }
+        final boolean canNext = actions.contains("next");
+        final boolean canComplete = actions.contains("complete");
+        final boolean canExecute = actions.contains("execute");
+
+        final String positiveAction;
+        final int positiveLabel;
+        if (viewForm.getFields().isEmpty() && canExecute) {
+            positiveAction = "execute";
+            positiveLabel = R.string.submit;
+        } else if (canComplete) {
+            positiveAction = "complete";
+            positiveLabel = R.string.finish;
+        } else if (canNext) {
+            positiveAction = "next";
+            positiveLabel = R.string.next;
+        } else {
+            positiveAction = "execute";
+            positiveLabel = R.string.submit;
         }
-        final String positiveActionNameFinal = positiveActionName;
         setButtons(
                 canCancel ? getString(R.string.cancel) : null,
                 canCancel ? () -> submitCommand("cancel") : null,
-                canNext ? getString(R.string.next) : canPrev ? getString(R.string.previous) : null,
-                canNext ? () -> submitCommand("next") : canPrev ? () -> submitCommand("prev") : null,
-                getString(R.string.submit),
-                () -> submitCommand(positiveActionNameFinal));
+                canPrev ? getString(R.string.previous) : null,
+                canPrev ? () -> submitCommand("prev") : null,
+                getString(positiveLabel),
+                () -> submitCommand(positiveAction));
     }
 
     private void submitCommand(String action) {
@@ -650,6 +674,41 @@ public class ServiceManagementDialog {
         }
         showProgress(getString(R.string.service_executing_command));
         activity.xmppConnectionService.sendIqPacket(account, packet, (a, response) -> activity.runOnUiThread(() -> onCommandResult(response)));
+    }
+
+    private boolean onFormItemLongClicked(final String value) {
+        final Jid jid = tryParseJid(value);
+        if (jid == null) {
+            return false;
+        }
+        showItemContextMenu(jid);
+        return true;
+    }
+
+    private void showItemContextMenu(final Jid jid) {
+        final List<Pair<Integer, Runnable>> actions = new ArrayList<>();
+        actions.add(new Pair<>(R.string.service_add_to_roster, () -> addToRoster(jid)));
+        actions.add(new Pair<>(R.string.vcard_view, () -> showVcard(jid)));
+        actions.add(new Pair<>(R.string.copy_jid, () -> copyJid(jid)));
+        final CharSequence[] labels = new CharSequence[actions.size()];
+        for (int i = 0; i < actions.size(); i++) {
+            labels[i] = getString(actions.get(i).first);
+        }
+        new AlertDialog.Builder(activity)
+                .setTitle(jid.asBareJid().toString())
+                .setItems(labels, (dialog, which) -> actions.get(which).second.run())
+                .show();
+    }
+
+    private void showVcard(final Jid jid) {
+        final Contact contact = account.getRoster().getContact(jid.asBareJid());
+        activity.switchToContactDetails(contact);
+    }
+
+    private void copyJid(final Jid jid) {
+        final ClipboardManager clipboardManager = (ClipboardManager) activity.getSystemService(Context.CLIPBOARD_SERVICE);
+        clipboardManager.setPrimaryClip(ClipData.newPlainText("JID", jid.toEscapedString()));
+        ToastCompat.makeText(activity, R.string.jabber_id_copied_to_clipboard, ToastCompat.LENGTH_SHORT).show();
     }
 
     private void showResult(Data form) {

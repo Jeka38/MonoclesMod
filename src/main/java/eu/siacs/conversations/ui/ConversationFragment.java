@@ -3312,7 +3312,7 @@ public class ConversationFragment extends XmppFragment
         } else {
             activity.xmppConnectionService
                     .getHttpConnectionManager()
-                    .createNewDownloadConnection(message, true);
+                    .createNewUserDownloadConnection(message);
         }
     }
 

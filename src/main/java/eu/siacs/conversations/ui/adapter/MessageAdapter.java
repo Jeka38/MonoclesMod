@@ -78,6 +78,8 @@ import com.bumptech.glide.request.target.Target;
 import com.daimajia.swipe.SwipeLayout;
 import com.google.common.base.Strings;
 
+import okhttp3.HttpUrl;
+
 import java.io.IOException;
 import java.io.UnsupportedEncodingException;
 import java.lang.ref.WeakReference;
@@ -854,8 +856,87 @@ public class MessageAdapter extends ArrayAdapter<Message> {
         return null;
     }
 
+    /** best-effort display name for a file message; never returns a machine-generated hash if a real name exists */
+    public String getMessageFileName(final Message message) {
+        final String name = getFileName(message);
+        if (name != null && !name.isEmpty()) {
+            return name;
+        }
+        return null;
+    }
+
+    private static boolean looksLikeHashedFilename(final String name) {        if (name == null || name.isEmpty()) {
+            return false;
+        }
+        final String base = name.contains("/") ? name.substring(name.lastIndexOf('/') + 1) : name;
+        return base.startsWith("zb2") || base.startsWith("bciq") || base.matches("[A-Za-z0-9_-]{40,}\\.[A-Za-z0-9]{1,8}");
+    }
+
+    private static String extractFileNameFromPath(final String path) {
+        if (path == null || path.isEmpty()) {
+            return null;
+        }
+        final int slash = Math.max(path.lastIndexOf('/'), path.lastIndexOf('\\'));
+        return slash >= 0 && slash < path.length() - 1 ? path.substring(slash + 1) : path;
+    }
+
+    private String getFileName(final Message message) {
+        String simsName = null;
+        if (message.getFileParams() != null) {
+            simsName = message.getFileParams().getName();
+        }
+        if (simsName != null && !simsName.isEmpty() && !looksLikeHashedFilename(simsName)) {
+            return simsName;
+        }
+        String urlName = null;
+        if (message.getFileParams() != null && message.getFileParams().url != null) {
+            try {
+                final HttpUrl httpUrl = HttpUrl.parse(message.getFileParams().url);
+                if (httpUrl != null) {
+                    final List<String> pathSegments = httpUrl.pathSegments();
+                    if (!pathSegments.isEmpty()) {
+                        urlName = pathSegments.get(pathSegments.size() - 1);
+                    }
+                }
+            } catch (final Exception e) {
+                Log.d(Config.LOGTAG, "could not parse url for filename: " + e);
+            }
+        }
+        if (urlName != null && !urlName.isEmpty() && !looksLikeHashedFilename(urlName)) {
+            return urlName;
+        }
+        final String pathBaseName = extractFileNameFromPath(message.getRelativeFilePath());
+        if (pathBaseName != null && !pathBaseName.isEmpty() && !looksLikeHashedFilename(pathBaseName)) {
+            return pathBaseName;
+        }
+        if (simsName != null && !simsName.isEmpty()) {
+            return simsName;
+        }
+        final DownloadableFile file = activity.xmppConnectionService.getFileBackend().getFile(message);
+        if (file != null && file.getName() != null && !file.getName().isEmpty()) {
+            return file.getName();
+        }
+        return urlName != null && !urlName.isEmpty() ? urlName : null;
+    }
+
+    private void setFileNameInBody(final ViewHolder viewHolder, final Message message, final boolean darkBackground, final int type) {
+        final String fileName = getFileName(message);
+        if (fileName == null || fileName.isEmpty()) {
+            return;
+        }
+        if (darkBackground) {
+            viewHolder.messageBody.setTextAppearance(getContext(), R.style.TextAppearance_Conversations_Body1_OnDark);
+        } else {
+            viewHolder.messageBody.setTextAppearance(getContext(), R.style.TextAppearance_Conversations_Body1);
+        }
+        viewHolder.messageBody.setVisibility(View.VISIBLE);
+        viewHolder.messageBody.setText(fileName);
+        viewHolder.messageBody.setTextIsSelectable(false);
+    }
+
     private void displayDownloadableMessage(ViewHolder viewHolder, final Message message, String text, final boolean darkBackground, final int type) {
         displayTextMessage(viewHolder, message, darkBackground, type);
+        setFileNameInBody(viewHolder, message, darkBackground, type);
         viewHolder.image.setVisibility(GONE);
         List<Element> thumbs = message.getFileParams() != null ? message.getFileParams().getThumbnails() : null;
         if (thumbs != null && !thumbs.isEmpty()) {
@@ -982,6 +1063,7 @@ public class MessageAdapter extends ArrayAdapter<Message> {
 
     private void displayOpenableMessage(ViewHolder viewHolder, final Message message, final boolean darkBackground, final int type) {
         displayTextMessage(viewHolder, message, darkBackground, type);
+        setFileNameInBody(viewHolder, message, darkBackground, type);
         final DownloadableFile file = activity.xmppConnectionService.getFileBackend().getFile(message);
         if (file != null && !file.exists() && !message.isFileDeleted()) {
             new Thread(new markFileDeletedFinisher(message, activity)).start();
@@ -1005,7 +1087,7 @@ public class MessageAdapter extends ArrayAdapter<Message> {
             final Drawable drawable = DrawableCompat.wrap(icon);
             DrawableCompat.setTint(drawable, StyledAttributes.getColor(getContext(), R.attr.colorAccent));
             viewHolder.download_button.setCompoundDrawablesWithIntrinsicBounds(drawable, null, null, null);
-            viewHolder.download_button.setText(activity.getString(R.string.download_x_file, UIHelper.getFileDescriptionString(activity, message)));
+            viewHolder.download_button.setText(activity.getString(R.string.open_file));
         } else if (mimeType != null && message.getMimeType().equals("application/vnd.android.package-archive")) {
             try {
                 showAPK(message, viewHolder);
@@ -1017,64 +1099,44 @@ public class MessageAdapter extends ArrayAdapter<Message> {
             final Drawable drawable = DrawableCompat.wrap(icon);
             DrawableCompat.setTint(drawable, StyledAttributes.getColor(getContext(), R.attr.colorAccent));
             viewHolder.download_button.setCompoundDrawablesWithIntrinsicBounds(drawable, null, null, null);
-            viewHolder.download_button.setText(activity.getString(R.string.download_x_file, UIHelper.getFileDescriptionString(activity, message)));
+            viewHolder.download_button.setText(activity.getString(R.string.open_file));
         } else if (mimeType != null && message.getMimeType().contains("image")) {
             final Drawable icon = activity.getResources().getDrawable(R.drawable.ic_image_grey600_48dp);
             final Drawable drawable = DrawableCompat.wrap(icon);
             DrawableCompat.setTint(drawable, StyledAttributes.getColor(getContext(), R.attr.colorAccent));
             viewHolder.download_button.setCompoundDrawablesWithIntrinsicBounds(drawable, null, null, null);
-            viewHolder.download_button.setText(activity.getString(R.string.download_x_file, UIHelper.getFileDescriptionString(activity, message)));
+            viewHolder.download_button.setText(activity.getString(R.string.open_file));
         } else if (mimeType != null && message.getMimeType().contains("audio")) {
             final Drawable icon = activity.getResources().getDrawable(R.drawable.ic_audio_grey600_48dp);
             final Drawable drawable = DrawableCompat.wrap(icon);
             DrawableCompat.setTint(drawable, StyledAttributes.getColor(getContext(), R.attr.colorAccent));
             viewHolder.download_button.setCompoundDrawablesWithIntrinsicBounds(drawable, null, null, null);
-            viewHolder.download_button.setText(activity.getString(R.string.download_x_file, UIHelper.getFileDescriptionString(activity, message)));
+            viewHolder.download_button.setText(activity.getString(R.string.open_file));
         } else {
             final Drawable icon = activity.getResources().getDrawable(R.drawable.ic_file_grey600_48dp);
             final  Drawable drawable = DrawableCompat.wrap(icon);
             DrawableCompat.setTint(drawable, StyledAttributes.getColor(getContext(), R.attr.colorAccent));
             viewHolder.download_button.setCompoundDrawablesWithIntrinsicBounds(drawable, null, null, null);
-            viewHolder.download_button.setText(activity.getString(R.string.download_x_file, UIHelper.getFileDescriptionString(activity, message)));
+            viewHolder.download_button.setText(activity.getString(R.string.open_file));
         }
-        viewHolder.download_button.setOnClickListener(v -> ConversationFragment.saveFileAs(activity, message));
+        viewHolder.download_button.setOnClickListener(v -> openDownloadable(message));
     }
 
     private void showAPK(final Message message, final ViewHolder viewHolder) {
-        String APKName = "";
-        if (message.getFileParams().subject.length() != 0) {
-            try {
-                byte[] data = Base64.decode(message.getFileParams().subject, Base64.DEFAULT);
-                APKName = new String(data, "UTF-8");
-            } catch (UnsupportedEncodingException e) {
-                APKName = "";
-                e.printStackTrace();
-            }
-        }
         final Drawable icon = activity.getResources().getDrawable(R.drawable.ic_android_grey600_48dp);
         final Drawable drawable = DrawableCompat.wrap(icon);
         DrawableCompat.setTint(drawable, StyledAttributes.getColor(getContext(), R.attr.colorAccent));
         viewHolder.download_button.setCompoundDrawablesWithIntrinsicBounds(drawable, null, null, null);
-        viewHolder.download_button.setText(activity.getString(R.string.download_x_file, UIHelper.getFileDescriptionString(activity, message) + APKName));
+        viewHolder.download_button.setText(activity.getString(R.string.open_file));
         viewHolder.download_button.setVisibility(View.VISIBLE);
     }
 
     private void showVCard(final Message message, ViewHolder viewHolder) {
-        String VCardName = "";
-        if (message.getFileParams().subject.length() != 0) {
-            try {
-                byte[] data = Base64.decode(message.getFileParams().subject, Base64.DEFAULT);
-                VCardName = new String(data, "UTF-8");
-            } catch (UnsupportedEncodingException e) {
-                VCardName = "";
-                e.printStackTrace();
-            }
-        }
         final  Drawable icon = activity.getResources().getDrawable(R.drawable.ic_account_card_details_grey600_48dp);
         final  Drawable drawable = DrawableCompat.wrap(icon);
         DrawableCompat.setTint(drawable, StyledAttributes.getColor(getContext(), R.attr.colorAccent));
         viewHolder.download_button.setCompoundDrawablesWithIntrinsicBounds(drawable, null, null, null);
-        viewHolder.download_button.setText(activity.getString(R.string.download_x_file, UIHelper.getFileDescriptionString(activity, message) + VCardName));
+        viewHolder.download_button.setText(activity.getString(R.string.open_file));
         viewHolder.download_button.setVisibility(View.VISIBLE);
     }
 
@@ -1778,7 +1840,9 @@ public class MessageAdapter extends ArrayAdapter<Message> {
                 displayInfoMessage(viewHolder, UIHelper.getMessagePreview(activity.xmppConnectionService, message).first, darkBackground, message);
             }
         } else if (message.isFileOrImage() && message.getEncryption() != Message.ENCRYPTION_PGP && message.getEncryption() != Message.ENCRYPTION_DECRYPTION_FAILED) {
-            if (message.getFileParams().width > 0 && message.getFileParams().height > 0) {
+            final String fileMimeType = message.getMimeType();
+            final boolean imageOrVideoPreview = fileMimeType != null && (fileMimeType.startsWith("image/") || fileMimeType.startsWith("video/"));
+            if (message.getFileParams().width > 0 && message.getFileParams().height > 0 && imageOrVideoPreview) {
                 displayMediaPreviewMessage(viewHolder, message, darkBackground, type);
             } else if (message.getFileParams().runtime > 0 && (message.getFileParams().width == 0 && message.getFileParams().height == 0)) {
                 displayAudioMessage(viewHolder, message, darkBackground, type);
@@ -1986,7 +2050,8 @@ public class MessageAdapter extends ArrayAdapter<Message> {
             ActivityCompat.requestPermissions(activity, new String[]{Manifest.permission.WRITE_EXTERNAL_STORAGE, Manifest.permission.READ_EXTERNAL_STORAGE}, ConversationsActivity.REQUEST_OPEN_MESSAGE);
             return;
         }
-        final DownloadableFile file = activity.xmppConnectionService.getFileBackend().getFile(message);
+        final String originalName = message.getFileParams() != null && message.getFileParams().getName() != null ? message.getFileParams().getName() : null;
+        final DownloadableFile file = activity.xmppConnectionService.getFileBackend().getFileForAutoDownload(message, originalName);
         ViewUtil.view(activity, file);
     }
 

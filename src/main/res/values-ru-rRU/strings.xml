@@ -202,6 +202,7 @@
     <string name="contact_is_typing">%s печатает…</string>
     <string name="contact_name">Имя контакта</string>
     <string name="contacts">Контакты</string>
+    <string name="transports">Транспорты</string>
     <string name="group_conferences">Конференции</string>
     <string name="group_private_messages">Личные сообщения</string>
     <string name="show_muc_status_messages">Показывать статусные сообщения в конференциях</string>
@@ -348,6 +349,7 @@
     <string name="service_search_no_results">Результатов не найдено</string>
     <string name="added_to_contacts">Добавлен в контакты</string>
     <string name="service_add_to_roster">Добавить в контакты</string>
+    <string name="open_file">Открыть файл</string>
     <string name="service_submitting_registration">Отправляем регистрацию…</string>
     <string name="service_already_registered">Вы уже зарегистрированы на этом сервисе</string>
     <string name="service_no_registration_fields">Этот сервис не предлагает регистрацию</string>
@@ -1246,6 +1248,7 @@
     <string name="using_account">используется аккаунт %s</string>
     <string name="using_inner_storage">Использовать внутреннее хранилище</string>
     <string name="vcard">Контакт</string>
+    <string name="vcard_view">Визитка</string>
     <string name="verified">Проверено!</string>
     <string name="verified_fingerprints">Проверенные отпечатки</string>
     <string name="verified_omemo_key_with_certificate">Ключ OMEMO был подтвержден сертификатом!</string>

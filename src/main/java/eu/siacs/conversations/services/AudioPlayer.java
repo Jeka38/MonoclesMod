@@ -29,6 +29,7 @@ import java.util.concurrent.Executors;
 
 import eu.siacs.conversations.Config;
 import eu.siacs.conversations.R;
+import eu.siacs.conversations.entities.DownloadableFile;
 import eu.siacs.conversations.entities.Message;
 import eu.siacs.conversations.ui.ConversationsActivity;
 import eu.siacs.conversations.ui.util.StyledAttributes;
@@ -75,6 +76,23 @@ public class AudioPlayer implements View.OnClickListener, MediaPlayer.OnCompleti
         return String.format(Locale.ENGLISH, "%d:%02d", ms / 60000, Math.min(Math.round((ms % 60000) / 1000f), 59));
     }
 
+    // show the original file name (SIMS <name> etc.); fall back to the on-disk name
+    private String resolveDisplayName(final Message message) {
+        String name = null;
+        if (messageAdapter != null) {
+            try {
+                name = messageAdapter.getMessageFileName(message);
+            } catch (final Exception e) {
+                Log.d(Config.LOGTAG, "could not resolve display name for audio message", e);
+            }
+        }
+        if (name == null || name.isEmpty()) {
+            final DownloadableFile file = messageAdapter.getFileBackend().getFile(message);
+            name = file == null ? null : file.getName();
+        }
+        return name == null ? "" : name;
+    }
+
     private void initializeProximityWakeLock(Context context) {
         if (Build.VERSION.SDK_INT >= 21) {
             synchronized (AudioPlayer.LOCK) {
@@ -109,7 +127,7 @@ public class AudioPlayer implements View.OnClickListener, MediaPlayer.OnCompleti
         viewHolder.progress.setProgressTintList(color);
         viewHolder.playPause.setAlpha(viewHolder.darkBackground ? 0.7f : 0.57f);
         viewHolder.playPause.setOnClickListener(this);
-        viewHolder.audioFilename.setText(messageAdapter.getFileBackend().getFile(message).getName());
+        viewHolder.audioFilename.setText(resolveDisplayName(message));
         int textColor = viewHolder.darkBackground ? 0xffffffff : StyledAttributes.getColor(messageAdapter.getContext(), R.attr.text_Color_Main);
         viewHolder.audioFilename.setTextColor(textColor);
         viewHolder.runtime.setTextColor(textColor);
@@ -264,7 +282,7 @@ public class AudioPlayer implements View.OnClickListener, MediaPlayer.OnCompleti
         viewHolder.playPause.setImageResource(viewHolder.darkBackground ? R.drawable.ic_play_arrow_white_36dp : R.drawable.ic_play_arrow_black_36dp);
         if (message != null) {
             viewHolder.runtime.setText(formatTime(message.getFileParams().runtime));
-            viewHolder.audioFilename.setText(messageAdapter.getFileBackend().getFile(message).getName());
+            viewHolder.audioFilename.setText(resolveDisplayName(message));
             int textColor = viewHolder.darkBackground ? 0xffffffff : StyledAttributes.getColor(messageAdapter.getContext(), R.attr.text_Color_Main);
             viewHolder.audioFilename.setTextColor(textColor);
             viewHolder.runtime.setTextColor(textColor);

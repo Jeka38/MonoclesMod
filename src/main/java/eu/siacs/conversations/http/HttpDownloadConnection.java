@@ -16,6 +16,7 @@ import java.io.InputStream;
 import java.io.OutputStream;
 import java.text.SimpleDateFormat;
 import java.util.Date;
+import java.util.List;
 import java.util.Locale;
 
 import javax.net.ssl.SSLHandshakeException;
@@ -47,6 +48,7 @@ public class HttpDownloadConnection implements Transferable {
     private DownloadableFile file;
     private int mStatus = Transferable.STATUS_UNKNOWN;
     private boolean acceptedAutomatically = false;
+    private boolean downloadToDownloads = false;
     private int mProgress = 0;
     private Call mostRecentCall;
     final private Consumer<DownloadableFile> cb;
@@ -104,7 +106,14 @@ public class HttpDownloadConnection implements Transferable {
             if (ext == null && fileParams.getMediaType() != null) {
                 ext = MimeUtils.guessExtensionFromMimeType(fileParams.getMediaType());
             }
-            if (ext != null) {
+            final String originalName = fileParams.getName();
+            if (originalName != null && !originalName.isEmpty()) {
+                if (message.getStatus() == Message.STATUS_RECEIVED) {
+                    message.setRelativeFilePath(originalName);
+                } else {
+                    message.setRelativeFilePath("Sent/" + originalName);
+                }
+            } else if (ext != null) {
                 if (message.getStatus() == Message.STATUS_RECEIVED) {
                     message.setRelativeFilePath(String.format("%s.%s", fileDateFormat.format(new Date(message.getTimeSent())) + "_" + message.getUuid().substring(0, 4), ext));
                 } else {
@@ -150,9 +159,30 @@ public class HttpDownloadConnection implements Transferable {
             this.file = new DownloadableFile(mXmppConnectionService.getCacheDir(), message.getUuid());
             this.file.setKeyAndIv(CryptoHelper.hexToBytes(reference));
             Log.d(Config.LOGTAG, "create temporary OMEMO encrypted file: " + this.file.getAbsolutePath() + "(" + message.getMimeType() + ")");
+        } else if (downloadToDownloads) {
+            this.file = mXmppConnectionService.getFileBackend().getFileForAutoDownload(message, originalFilenameFromUrl());
+            message.setRelativeFilePath(this.file.getAbsolutePath());
         } else {
             this.file = mXmppConnectionService.getFileBackend().getFile(message, false);
         }
+    }
+
+    private String originalFilenameFromUrl() {
+        final Message.FileParams fileParams = message.getFileParams();
+        if (fileParams != null) {
+            final String name = fileParams.getName();
+            if (name != null && !name.isEmpty()) {
+                return name;
+            }
+        }
+        final List<String> pathSegments = mUrl.pathSegments();
+        if (pathSegments != null && !pathSegments.isEmpty()) {
+            final String name = pathSegments.get(pathSegments.size() - 1);
+            if (name != null && !name.isEmpty()) {
+                return name;
+            }
+        }
+        return null;
     }
 
     private void download(final boolean interactive) {
@@ -216,20 +246,24 @@ public class HttpDownloadConnection implements Transferable {
         }
         DownloadableFile file;
         final DownloadableFile tmp = mXmppConnectionService.getFileBackend().getFile(message);
-        final String extension = MimeUtils.extractRelevantExtension(tmp.getName());
-        try {
-            mXmppConnectionService.getFileBackend().setupRelativeFilePath(message, new FileInputStream(tmp), extension);
-            file = mXmppConnectionService.getFileBackend().getFile(message);
-            boolean didRename = tmp.renameTo(file);
-            if (!didRename) throw new IOException("rename failed");
-        } catch (final IOException e) {
-            Log.w(Config.LOGTAG, "Failed to rename downloaded file: " + e);
+        if (downloadToDownloads) {
             file = tmp;
-            message.setRelativeFilePath(file.getAbsolutePath());
-        } catch (final XmppConnectionService.BlockedMediaException e) {
-            file = tmp;
-            tmp.delete();
-            message.setDeleted(true);
+        } else {
+            final String extension = MimeUtils.extractRelevantExtension(tmp.getName());
+            try {
+                mXmppConnectionService.getFileBackend().setupRelativeFilePath(message, new FileInputStream(tmp), extension);
+                file = mXmppConnectionService.getFileBackend().getFile(message);
+                boolean didRename = tmp.renameTo(file);
+                if (!didRename) throw new IOException("rename failed");
+            } catch (final IOException e) {
+                Log.w(Config.LOGTAG, "Failed to rename downloaded file: " + e);
+                file = tmp;
+                message.setRelativeFilePath(file.getAbsolutePath());
+            } catch (final XmppConnectionService.BlockedMediaException e) {
+                file = tmp;
+                tmp.delete();
+                message.setDeleted(true);
+            }
         }
         message.setTransferable(null);
         mXmppConnectionService.updateMessage(message);
@@ -299,6 +333,10 @@ public class HttpDownloadConnection implements Transferable {
 
     public Message getMessage() {
         return message;
+    }
+
+    void setDownloadToDownloads(boolean value) {
+        this.downloadToDownloads = value;
     }
 
     private class FileSizeChecker implements Runnable {
@@ -376,7 +414,15 @@ public class HttpDownloadConnection implements Transferable {
                 final String contentLength = response.header("Content-Length");
                 final String contentType = response.header("Content-Type");
                 final AbstractConnectionManager.Extension extension = AbstractConnectionManager.Extension.of(mUrl.encodedPath());
-                if (Strings.isNullOrEmpty(extension.getExtension()) && contentType != null) {
+                final String originalFilename = HttpConnectionManager.extractFilenameFromResponse(response);
+                if (originalFilename != null && !originalFilename.isEmpty()) {
+                    final String currentName = message.getRelativeFilePath();
+                    if (currentName == null || !currentName.endsWith(originalFilename)) {
+                        Log.d(Config.LOGTAG, "rewriting filename from Content-Disposition: " + originalFilename);
+                        mXmppConnectionService.getFileBackend().setupRelativeFilePath(message, originalFilename);
+                        setupFile();
+                    }
+                } else if (Strings.isNullOrEmpty(extension.getExtension()) && contentType != null) {
                     final String fileExtension = MimeUtils.guessExtensionFromMimeType(contentType);
                     if (fileExtension != null) {
                         mXmppConnectionService.getFileBackend().setupRelativeFilePath(message, String.format("%s.%s", fileDateFormat.format(new Date(message.getTimeSent())) + "_" + message.getUuid().substring(0, 4), fileExtension), contentType);

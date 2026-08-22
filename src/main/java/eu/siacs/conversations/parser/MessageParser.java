@@ -1181,7 +1181,7 @@ public class MessageParser extends AbstractParser implements OnMessagePacketRece
                         Log.d(Config.LOGTAG, "BobTransfer failed to parse URI");
                     }
                 } else {
-                    manager.createNewDownloadConnection(message);
+                    manager.createNewAutoDownloadConnection(message);
                 }
             } else if (notify) {
                 if (query != null && query.isCatchup()) {

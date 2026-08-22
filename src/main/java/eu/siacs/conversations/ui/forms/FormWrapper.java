@@ -52,6 +52,14 @@ public class FormWrapper {
         }
     }
 
+    public void setOnItemLongClickedListener(FormListFieldWrapper.OnItemLongClickedListener listener) {
+        for (FormFieldWrapper fieldWrapper : fieldWrappers) {
+            if (fieldWrapper instanceof FormListFieldWrapper) {
+                ((FormListFieldWrapper) fieldWrapper).setOnItemLongClickedListener(listener);
+            }
+        }
+    }
+
     public void setReadOnly(boolean b) {
         for (FormFieldWrapper fieldWrapper : fieldWrappers) {
             fieldWrapper.setReadOnly(b);

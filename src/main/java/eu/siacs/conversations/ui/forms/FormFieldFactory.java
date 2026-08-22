@@ -16,6 +16,8 @@ public class FormFieldFactory {
         typeTable.put("text-multi", FormTextFieldWrapper.class);
         typeTable.put("text-private", FormTextFieldWrapper.class);
         typeTable.put("jid-single", FormJidSingleFieldWrapper.class);
+        typeTable.put("list-single", FormListFieldWrapper.class);
+        typeTable.put("list-multi", FormListFieldWrapper.class);
         typeTable.put("boolean", FormBooleanFieldWrapper.class);
     }
 
