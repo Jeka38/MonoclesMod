@@ -32,6 +32,7 @@ import android.graphics.drawable.Drawable;
 import android.graphics.pdf.PdfRenderer;
 import android.media.MediaMetadataRetriever;
 import android.media.MediaScannerConnection;
+import android.content.ContentValues;
 import android.net.Uri;
 import android.os.Build;
 import android.os.Environment;
@@ -449,6 +450,49 @@ public class FileBackend {
             }
         }
         return new DownloadableFile(downloadsDir, name);
+    }
+
+    // raw file access to shared storage is blocked by scoped storage (Android 11+);
+    // public downloads must go through the MediaStore Downloads collection instead
+    public boolean isScopedStoragePublicDownload(final File file) {
+        if (Build.VERSION.SDK_INT < Build.VERSION_CODES.Q) {
+            return false;
+        }
+        final File downloadsRoot = Environment.getExternalStoragePublicDirectory(Environment.DIRECTORY_DOWNLOADS);
+        return downloadsRoot != null && file.getAbsolutePath().startsWith(downloadsRoot.getAbsolutePath());
+    }
+
+    public OutputStream createPublicDownloadOutputStream(final File file) throws IOException {
+        final File storageRoot = Environment.getExternalStorageDirectory();
+        String relativePath = file.getAbsolutePath();
+        if (storageRoot != null && relativePath.startsWith(storageRoot.getAbsolutePath())) {
+            relativePath = relativePath.substring(storageRoot.getAbsolutePath().length());
+        }
+        while (relativePath.startsWith("/")) {
+            relativePath = relativePath.substring(1);
+        }
+        final int slash = relativePath.lastIndexOf('/');
+        final String directory = slash > 0 ? relativePath.substring(0, slash) : Environment.DIRECTORY_DOWNLOADS;
+        final String displayName = slash > 0 ? relativePath.substring(slash + 1) : relativePath;
+
+        final ContentValues values = new ContentValues();
+        values.put(MediaStore.MediaColumns.DISPLAY_NAME, displayName);
+        final String mimeType = MimeUtils.guessMimeTypeFromExtension(MimeUtils.extractRelevantExtension(displayName));
+        if (mimeType != null) {
+            values.put(MediaStore.MediaColumns.MIME_TYPE, mimeType);
+        }
+        values.put(MediaStore.MediaColumns.RELATIVE_PATH, directory);
+
+        final Uri uri = mXmppConnectionService.getContentResolver().insert(MediaStore.Downloads.EXTERNAL_CONTENT_URI, values);
+        if (uri == null) {
+            throw new IOException("MediaStore rejected download insert for " + displayName);
+        }
+        final OutputStream outputStream = mXmppConnectionService.getContentResolver().openOutputStream(uri);
+        if (outputStream == null) {
+            throw new IOException("could not open output stream for " + uri);
+        }
+        Log.d(Config.LOGTAG, "writing public download via MediaStore: " + directory + "/" + displayName);
+        return outputStream;
     }
 
     public DownloadableFile getFileForPath(String path) {

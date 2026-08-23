@@ -2050,8 +2050,15 @@ public class MessageAdapter extends ArrayAdapter<Message> {
             ActivityCompat.requestPermissions(activity, new String[]{Manifest.permission.WRITE_EXTERNAL_STORAGE, Manifest.permission.READ_EXTERNAL_STORAGE}, ConversationsActivity.REQUEST_OPEN_MESSAGE);
             return;
         }
-        final String originalName = message.getFileParams() != null && message.getFileParams().getName() != null ? message.getFileParams().getName() : null;
-        final DownloadableFile file = activity.xmppConnectionService.getFileBackend().getFileForAutoDownload(message, originalName);
+        final FileBackend fileBackend = activity.xmppConnectionService.getFileBackend();
+        DownloadableFile file = fileBackend.getFile(message);
+        if (!file.exists()) {
+            final String originalName = message.getFileParams() != null && message.getFileParams().getName() != null ? message.getFileParams().getName() : null;
+            final DownloadableFile downloadFile = fileBackend.getFileForAutoDownload(message, originalName);
+            if (downloadFile.exists()) {
+                file = downloadFile;
+            }
+        }
         ViewUtil.view(activity, file);
     }
 

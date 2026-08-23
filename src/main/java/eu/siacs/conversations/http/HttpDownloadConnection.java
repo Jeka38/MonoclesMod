@@ -296,7 +296,7 @@ public class HttpDownloadConnection implements Transferable {
         }
         if (e instanceof java.net.UnknownHostException) {
             mXmppConnectionService.showErrorToastInUi(R.string.download_failed_server_not_found);
-        } else if (e instanceof java.net.ConnectException) {
+        } else if (e instanceof java.net.ConnectException || e instanceof java.net.SocketTimeoutException) {
             mXmppConnectionService.showErrorToastInUi(R.string.download_failed_could_not_connect);
         } else if (e instanceof FileWriterException) {
             mXmppConnectionService.showErrorToastInUi(R.string.download_failed_could_not_write_file);
@@ -370,7 +370,16 @@ public class HttpDownloadConnection implements Transferable {
                 size = retrieveFileSize();
             } catch (final Exception e) {
                 Log.d(Config.LOGTAG, "io exception in http file size checker: " + e.getMessage());
-                retrieveFailed(e);
+                // an explicit user download must not depend on the HEAD request
+                // succeeding; fall back to a streaming download of unknown size
+                if (interactive && mHttpConnectionManager.hasStoragePermission()) {
+                    Log.d(Config.LOGTAG, "falling back to download without known file size");
+                    file.setExpectedSize(-1);
+                    HttpDownloadConnection.this.acceptedAutomatically = false;
+                    download(interactive);
+                } else {
+                    retrieveFailed(e);
+                }
                 return;
             }
             final Message.FileParams fileParams = message.getFileParams();
@@ -378,10 +387,13 @@ public class HttpDownloadConnection implements Transferable {
             mXmppConnectionService.databaseBackend.updateMessage(message, true);
             file.setExpectedSize(size);
             message.setFileParams(null);
+            // an explicit user download must not be gated by the auto-accept size limit;
+            // the limit only decides automatic downloads
             if (mHttpConnectionManager.hasStoragePermission()
-                    && size <= mHttpConnectionManager.getAutoAcceptFileSize()
-                    && mXmppConnectionService.isDataSaverDisabled()) {
-                HttpDownloadConnection.this.acceptedAutomatically = true;
+                    && (interactive
+                    || (size <= mHttpConnectionManager.getAutoAcceptFileSize()
+                    && mXmppConnectionService.isDataSaverDisabled()))) {
+                HttpDownloadConnection.this.acceptedAutomatically = !interactive;
                 download(interactive);
             } else {
                 changeStatus(STATUS_OFFER);
@@ -489,8 +501,11 @@ public class HttpDownloadConnection implements Transferable {
 
             final Request.Builder requestBuilder = new Request.Builder().url(URL.stripFragment(mUrl));
 
+            final FileBackend fileBackend = mXmppConnectionService.getFileBackend();
+            final boolean scopedPublicDownload = fileBackend.isScopedStoragePublicDownload(file);
             final long expected = file.getExpectedSize();
-            final boolean tryResume = file.exists() && file.getSize() > 0 && file.getSize() < expected;
+            final boolean tryResume =
+                    !scopedPublicDownload && expected > 0 && file.exists() && file.getSize() > 0 && file.getSize() < expected;
             final long resumeSize;
             if (tryResume) {
                 resumeSize = file.getSize();
@@ -516,15 +531,20 @@ public class HttpDownloadConnection implements Transferable {
             } else {
                 final String contentLength = response.header("Content-Length");
                 final long size = Strings.isNullOrEmpty(contentLength) ? 0 : Longs.tryParse(contentLength);
-                if (expected != size) {
+                if (expected > 0 && expected != size) {
                     Log.d(Config.LOGTAG, "content-length reported on GET (" + size + ") did not match Content-Length reported on HEAD (" + expected + ")");
                 }
-                file.getParentFile().mkdirs();
-                Log.d(Config.LOGTAG,"creating file: "+file.getAbsolutePath());
-                if (!file.exists() && !file.createNewFile()) {
-                    throw new FileWriterException(file);
+                if (scopedPublicDownload) {
+                    // scoped storage: create the file through the MediaStore instead of raw file access
+                    outputStream = fileBackend.createPublicDownloadOutputStream(file);
+                } else {
+                    file.getParentFile().mkdirs();
+                    Log.d(Config.LOGTAG, "creating file: " + file.getAbsolutePath());
+                    if (!file.exists() && !file.createNewFile()) {
+                        throw new FileWriterException(file);
+                    }
+                    outputStream = AbstractConnectionManager.createOutputStream(file, false, false);
                 }
-                outputStream = AbstractConnectionManager.createOutputStream(file, false, false);
             }
             int count;
             final byte[] buffer = new byte[4096];
@@ -535,12 +555,15 @@ public class HttpDownloadConnection implements Transferable {
                 } catch (final IOException e) {
                     throw new FileWriterException(file);
                 }
-                if (transmitted > expected) {
+                if (expected >= 0 && transmitted > expected) {
                     throw new InvalidFileException(String.format("File exceeds expected size of %d", expected));
                 }
-                updateProgress(Math.round(((double) transmitted / expected) * 100));
+                if (expected > 0) {
+                    updateProgress(Math.round(((double) transmitted / expected) * 100));
+                }
             }
             outputStream.flush();
+            outputStream.close();
         }
 
         private void updateImageBounds() {
