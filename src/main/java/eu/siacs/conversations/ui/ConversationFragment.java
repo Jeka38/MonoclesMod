@@ -2377,8 +2377,8 @@ public class ConversationFragment extends XmppFragment
             MenuItem deleteFile = menu.findItem(R.id.delete_file);
             MenuItem showLog = menu.findItem(R.id.show_edit_log);
             MenuItem showErrorMessage = menu.findItem(R.id.show_error_message);
-            MenuItem saveFile = menu.findItem(R.id.save_file);
             MenuItem selectText = menu.findItem(R.id.select_text);
+            MenuItem saveFile = menu.findItem(R.id.save_file);
             onlyThisThread.setVisible(!conversation.getLockThread() && m.getThread() != null);
             final boolean unInitiatedButKnownSize = MessageUtils.unInitiatedButKnownSize(m);
             final boolean showError = m.getStatus() == Message.STATUS_SEND_FAILED && m.getErrorMessage() != null && !Message.ERROR_MESSAGE_CANCELLED.equals(m.getErrorMessage());
@@ -2439,7 +2439,7 @@ public class ConversationFragment extends XmppFragment
             }
             if (m.isFileOrImage() && fileDeleted && m.hasFileOnRemoteHost()) {
                 downloadFile.setVisible(true);
-                downloadFile.setTitle(activity.getString(R.string.download_x_file, UIHelper.getFileDescriptionString(activity, m)));
+                downloadFile.setTitle(activity.getString(R.string.download_x_file, activity.getString(R.string.file)));
             }
             final boolean waitingOfferedSending = m.getStatus() == Message.STATUS_WAITING
                     || m.getStatus() == Message.STATUS_UNSEND
@@ -2455,14 +2455,16 @@ public class ConversationFragment extends XmppFragment
                     saveAsGif.setVisible(true);
                     blockMedia.setVisible(true);
                     deleteFile.setVisible(true);
-                    deleteFile.setTitle(activity.getString(R.string.delete_x_file, UIHelper.getFileDescriptionString(activity, m)));
+                    deleteFile.setTitle(activity.getString(R.string.delete_x_file, activity.getString(R.string.file)));
                 } else if (path == null || !path.startsWith("/") || path.contains(getConversationsDirectory(this.activity, "null").getAbsolutePath())) {
                     blockMedia.setVisible(true);
                     deleteFile.setVisible(true);
-                    deleteFile.setTitle(activity.getString(R.string.delete_x_file, UIHelper.getFileDescriptionString(activity, m)));
+                    deleteFile.setTitle(activity.getString(R.string.delete_x_file, activity.getString(R.string.file)));
                 }
+            }
+            if (m.isFileOrImage() && (m.hasFileOnRemoteHost() || (!fileDeleted && m.getFileParams() != null))) {
                 saveFile.setVisible(true);
-                saveFile.setTitle(activity.getString(R.string.save_x_file, UIHelper.getFileDescriptionString(activity, m)));
+                saveFile.setTitle(activity.getString(R.string.save_x_file, activity.getString(R.string.file)));
             }
             if (m.getFileParams() != null && !m.getFileParams().getThumbnails().isEmpty()) {
                 // We might be showing a thumbnail worth blocking
@@ -2614,7 +2616,13 @@ public class ConversationFragment extends XmppFragment
             openWith(selectedMessage);
             return true;
         } else if (itemId == R.id.save_file) {
-            activity.xmppConnectionService.getFileBackend().saveFile(selectedMessage, activity);
+            final FileBackend fb = activity.xmppConnectionService.getFileBackend();
+            final File localFile = fb.getFile(selectedMessage);
+            if (localFile.exists()) {
+                fb.saveFile(selectedMessage, activity);
+            } else if (selectedMessage.hasFileOnRemoteHost() || selectedMessage.getTransferable() != null) {
+                activity.xmppConnectionService.getHttpConnectionManager().createNewUserDownloadConnection(selectedMessage);
+            }
             return true;
         } else if (itemId == R.id.show_edit_log) {
             openLog(selectedMessage);
@@ -4581,6 +4589,15 @@ public class ConversationFragment extends XmppFragment
 
     protected void refreshCommands(boolean delayShow) {
         if (commandAdapter == null) return;
+
+        // commands for group chats are now accessible via ConferenceDetailsActivity;
+        // hide the in-chat tab for conferences
+        if (conversation.getMode() == Conversation.MODE_MULTI) {
+            binding.commandsViewProgressbar.setVisibility(View.GONE);
+            commandAdapter.clear();
+            conversation.hideViewPager();
+            return;
+        }
 
         final CommandAdapter.MucConfig mucConfig =
                 conversation.getMucOptions().getSelf().getAffiliation().ranks(MucOptions.Affiliation.OWNER) ?

@@ -437,7 +437,6 @@ public class FileBackend {
     }
 
     public DownloadableFile getFileForAutoDownload(Message message, String originalName) {
-        final File downloadsDir = new File(getGlobalDownloadsPath());
         String name = originalName;
         if (name == null || name.isEmpty() || name.contains(File.separator)) {
             final String relativePath = message.getRelativeFilePath();
@@ -449,6 +448,12 @@ public class FileBackend {
                 name = fileDateFormat.format(new Date(message.getTimeSent())) + "_" + message.getUuid().substring(0, 4);
             }
         }
+        // honor the "use internal storage" preference; the global Downloads
+        // path would otherwise ignore it and always expose files publicly
+        final boolean internalStorage = STORAGE_INDEX.get() == 1;
+        final File downloadsDir = internalStorage
+                ? mXmppConnectionService.getFilesDir()
+                : new File(getGlobalDownloadsPath());
         return new DownloadableFile(downloadsDir, name);
     }
 
@@ -2712,15 +2717,10 @@ public class FileBackend {
             extension = "oga";
         }
         String filename = fileDateFormat.format(new Date(message.getTimeSent())) + "_" + message.getUuid().substring(0, 4) + "." + extension;
-        if (mime != null && mime.startsWith("image")) {
-            return getGlobalPicturesPath() + File.separator + filename;
-        } else if (mime != null && mime.startsWith("video")) {
-            return getGlobalVideosPath() + File.separator + filename;
-        } else if (mime != null && mime.startsWith("audio")) {
-            return getGlobalAudiosPath() + File.separator + filename;
-        } else {
-            return getGlobalDownloadsPath() + File.separator + filename;
+        if (params != null && params.getName() != null && !params.getName().isEmpty()) {
+            filename = params.getName();
         }
+        return getGlobalDownloadsPath() + File.separator + filename;
     }
 
     public BitmapDrawable getFallbackThumbnail(final Message message, int size, boolean cacheOnly) {

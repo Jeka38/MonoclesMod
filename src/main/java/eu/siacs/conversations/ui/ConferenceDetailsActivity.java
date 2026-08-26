@@ -79,6 +79,7 @@ import eu.siacs.conversations.utils.TimeFrameUtils;
 import eu.siacs.conversations.utils.XmppUri;
 import eu.siacs.conversations.xmpp.Jid;
 import eu.siacs.conversations.xmpp.XmppConnection;
+import eu.siacs.conversations.xml.Namespace;
 import me.drakeet.support.toast.ToastCompat;
 
 public class ConferenceDetailsActivity extends XmppActivity implements OnConversationUpdate, OnMucRosterUpdate, XmppConnectionService.OnAffiliationChanged, XmppConnectionService.OnConfigurationPushed, TextWatcher, OnMediaLoaded {
@@ -330,6 +331,13 @@ public class ConferenceDetailsActivity extends XmppActivity implements OnConvers
             final Intent intent = new Intent(this, ManageMucListsActivity.class);
             intent.putExtra(MucUsersActivity.EXTRA_UUID, mConversation.getUuid());
             startActivity(intent);
+        });
+
+        this.binding.commandsButton.setOnClickListener(v -> {
+            if (mConversation == null) return;
+            final Account account = mConversation.getAccount();
+            final Jid jid = mConversation.getJid().asBareJid();
+            ServiceManagementDialog.showCommands(this, account, jid);
         });
 
         this.binding.relatedMucs.setOnClickListener(v -> {
@@ -655,6 +663,7 @@ public class ConferenceDetailsActivity extends XmppActivity implements OnConvers
         final MucOptions mucOptions = mConversation.getMucOptions();
         final User self = mucOptions.getSelf();
         this.binding.manageMucListsButton.setVisibility(self.getAffiliation().ranks(MucOptions.Affiliation.ADMIN) ? View.VISIBLE : View.GONE);
+        this.binding.commandsButton.setVisibility(mucOptions.hasFeature(Namespace.COMMANDS) ? View.VISIBLE : View.GONE);
         String account;
         if (Config.DOMAIN_LOCK != null) {
             account = mConversation.getAccount().getJid().getEscapedLocal();

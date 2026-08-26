@@ -1067,7 +1067,11 @@ public class MessageAdapter extends ArrayAdapter<Message> {
         final DownloadableFile file = activity.xmppConnectionService.getFileBackend().getFile(message);
         if (file != null && !file.exists() && !message.isFileDeleted()) {
             new Thread(new markFileDeletedFinisher(message, activity)).start();
-            displayInfoMessage(viewHolder, activity.getString(R.string.file_deleted), darkBackground, message);
+            if (message.hasFileOnRemoteHost()) {
+                displayDownloadableMessage(viewHolder, message, activity.getString(R.string.download_x_file, UIHelper.getFileDescriptionString(activity, message)), darkBackground, type);
+            } else {
+                displayInfoMessage(viewHolder, activity.getString(R.string.file_deleted), darkBackground, message);
+            }
             return;
         }
         viewHolder.download_button.setVisibility(View.VISIBLE);
@@ -1278,7 +1282,11 @@ public class MessageAdapter extends ArrayAdapter<Message> {
         final DownloadableFile file = activity.xmppConnectionService.getFileBackend().getFile(message);
         if (file != null && !file.exists() && !message.isFileDeleted()) {
             new Thread(new markFileDeletedFinisher(message, activity)).start();
-            displayInfoMessage(viewHolder, activity.getString(R.string.file_deleted), darkBackground, message);
+            if (message.hasFileOnRemoteHost()) {
+                displayDownloadableMessage(viewHolder, message, activity.getString(R.string.download_x_file, UIHelper.getFileDescriptionString(activity, message)), darkBackground, type);
+            } else {
+                displayInfoMessage(viewHolder, activity.getString(R.string.file_deleted), darkBackground, message);
+            }
             return;
         }
 
@@ -1834,10 +1842,14 @@ public class MessageAdapter extends ArrayAdapter<Message> {
                     new Thread(new markFileDeletedFinisher(message, activity)).start();
                     displayInfoMessage(viewHolder, activity.getString(R.string.file_deleted), darkBackground, message);
                 }*/
-                if (checkFileExistence(message, view, viewHolder)) {
-                    new Thread(new markFileExistingFinisher(message, activity)).start();
+                if (message.isFileDeleted() && message.hasFileOnRemoteHost()) {
+                    displayDownloadableMessage(viewHolder, message, activity.getString(R.string.download_x_file, UIHelper.getFileDescriptionString(activity, message)), darkBackground, type);
+                } else {
+                    if (checkFileExistence(message, view, viewHolder)) {
+                        new Thread(new markFileExistingFinisher(message, activity)).start();
+                    }
+                    displayInfoMessage(viewHolder, UIHelper.getMessagePreview(activity.xmppConnectionService, message).first, darkBackground, message);
                 }
-                displayInfoMessage(viewHolder, UIHelper.getMessagePreview(activity.xmppConnectionService, message).first, darkBackground, message);
             }
         } else if (message.isFileOrImage() && message.getEncryption() != Message.ENCRYPTION_PGP && message.getEncryption() != Message.ENCRYPTION_DECRYPTION_FAILED) {
             final String fileMimeType = message.getMimeType();

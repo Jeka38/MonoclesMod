@@ -69,12 +69,21 @@ public class ServiceManagementDialog {
     private final List<String> identities = new ArrayList<>();
     private boolean featuresKnown = false;
 
+    private boolean commandsOnly = false;
+
     private Runnable negativeAction;
     private Runnable neutralAction;
     private Runnable positiveAction;
 
     public static void show(XmppActivity activity, Account account, ServiceDiscoveryItem item) {
         new ServiceManagementDialog(activity, account, item).show();
+    }
+
+    public static void showCommands(final XmppActivity activity, final Account account, final Jid jid) {
+        final ServiceDiscoveryItem item = new ServiceDiscoveryItem(jid, jid.toEscapedString(), null);
+        final ServiceManagementDialog dialog = new ServiceManagementDialog(activity, account, item);
+        dialog.commandsOnly = true;
+        dialog.show();
     }
 
     private ServiceManagementDialog(XmppActivity activity, Account account, ServiceDiscoveryItem item) {
@@ -104,7 +113,12 @@ public class ServiceManagementDialog {
         dialog.show();
         dialog.getWindow().clearFlags(WindowManager.LayoutParams.FLAG_ALT_FOCUSABLE_IM);
         dialog.getWindow().setSoftInputMode(WindowManager.LayoutParams.SOFT_INPUT_ADJUST_RESIZE);
-        loadFeatures();
+        if (commandsOnly) {
+            binding.title.setText(item.getDisplayName());
+            commands();
+        } else {
+            loadFeatures();
+        }
     }
 
     private void loadFeatures() {
@@ -884,7 +898,11 @@ public class ServiceManagementDialog {
             case COMMAND_LIST:
             case RESULT:
             case MESSAGE:
-                showActions();
+                if (commandsOnly) {
+                    dismiss();
+                } else {
+                    showActions();
+                }
                 break;
             case COMMAND_FORM:
                 commands();
