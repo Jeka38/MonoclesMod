@@ -7,9 +7,7 @@ import de.monocles.mod.Util;
 
 import android.graphics.drawable.Drawable;
 import android.view.LayoutInflater;
-import android.view.MenuInflater;
 import android.widget.ArrayAdapter;
-import android.widget.PopupMenu;
 import android.widget.TextView;
 import java.util.ArrayList;
 import java.util.Comparator;
@@ -420,9 +418,6 @@ public class ConferenceDetailsActivity extends XmppActivity implements OnConvers
                 break;
             case R.id.action_edit_muc:
                 onMucEditButtonClicked(null);
-                break;
-            case R.id.action_overflow:
-                showOverflowBottomSheet();
                 break;
             case R.id.action_share_http:
                 shareLink(true);
@@ -854,55 +849,6 @@ public class ConferenceDetailsActivity extends XmppActivity implements OnConvers
                 binding.tags.addView(tv);
             }
         }
-    }
-
-    private void showOverflowBottomSheet() {
-        if (mConversation == null) return;
-        final PopupMenu popup = new PopupMenu(this, findViewById(R.id.action_overflow));
-        final MenuInflater inflater = popup.getMenuInflater();
-        inflater.inflate(R.menu.muc_details_bottom_sheet, popup.getMenu());
-        final MucOptions mucOptions = mConversation.getMucOptions();
-        final User self = mucOptions.getSelf();
-        final boolean isOwner = self.getAffiliation().ranks(MucOptions.Affiliation.OWNER);
-        popup.getMenu().findItem(R.id.action_edit_conference).setVisible(isOwner || mucOptions.canChangeSubject());
-        popup.getMenu().findItem(R.id.action_conference_settings).setVisible(isOwner);
-        popup.getMenu().findItem(R.id.action_manage_users).setVisible(self.getAffiliation().ranks(MucOptions.Affiliation.ADMIN));
-        popup.getMenu().findItem(R.id.action_commands).setVisible(mucOptions.hasFeature(Namespace.COMMANDS));
-        popup.getMenu().findItem(R.id.action_delete_bookmark).setVisible(mConversation.getBookmark() != null);
-        popup.setOnMenuItemClickListener(item -> {
-            switch (item.getItemId()) {
-                case R.id.action_edit_conference:
-                    onMucEditButtonClicked(null);
-                    return true;
-                case R.id.action_conference_settings:
-                    mChangeConferenceSettings.onClick(null);
-                    return true;
-                case R.id.action_manage_users:
-                    final Intent intent = new Intent(this, ManageMucListsActivity.class);
-                    intent.putExtra(MucUsersActivity.EXTRA_UUID, mConversation.getUuid());
-                    startActivity(intent);
-                    return true;
-                case R.id.action_commands:
-                    final Account account = mConversation.getAccount();
-                    final Jid jid = mConversation.getJid().asBareJid();
-                    ServiceManagementDialog.showCommands(this, account, jid);
-                    return true;
-                case R.id.action_delete_bookmark:
-                    new AlertDialog.Builder(this)
-                            .setTitle(R.string.action_delete_contact)
-                            .setMessage(getString(R.string.remove_bookmark_text, mConversation.getJid().toString()))
-                            .setNegativeButton(R.string.cancel, null)
-                            .setPositiveButton(R.string.delete, (dialog, which) -> {
-                                deleteBookmark();
-                                recreate();
-                            })
-                            .show();
-                    return true;
-                default:
-                    return false;
-            }
-        });
-        popup.show();
     }
 
     public static String getStatus(Context context, User user, final boolean advanced) {

@@ -10,13 +10,6 @@
         app:showAsAction="always" />
 
     <item
-        android:id="@+id/action_overflow"
-        android:icon="@drawable/ic_overflow_white_24dp"
-        android:orderInCategory="6"
-        android:title="@string/more"
-        app:showAsAction="always" />
-
-    <item
         android:id="@+id/action_share"
         android:icon="?attr/icon_action_share"
         android:orderInCategory="15"
