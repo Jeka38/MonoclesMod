@@ -3,11 +3,25 @@
     xmlns:app="http://schemas.android.com/apk/res-auto">
 
     <item
+        android:id="@+id/action_edit_muc"
+        android:icon="?attr/icon_edit_body"
+        android:orderInCategory="5"
+        android:title="@string/edit_conference"
+        app:showAsAction="always" />
+
+    <item
+        android:id="@+id/action_overflow"
+        android:icon="@drawable/ic_overflow_white_24dp"
+        android:orderInCategory="6"
+        android:title="@string/more"
+        app:showAsAction="always" />
+
+    <item
         android:id="@+id/action_share"
         android:icon="?attr/icon_action_share"
         android:orderInCategory="15"
         android:title="@string/share_uri_with"
-        app:showAsAction="always">
+        app:showAsAction="never">
         <menu>
             <item
                 android:id="@+id/action_share_uri"
@@ -49,9 +63,4 @@
         android:orderInCategory="110"
         android:title="@string/pref_message_notification_settings"
         app:showAsAction="never" />
-<!--    <item-->
-<!--        android:id="@+id/action_refresh_feature_discovery"-->
-<!--        android:orderInCategory="111"-->
-<!--        android:title="@string/refresh_feature_discovery"-->
-<!--        app:showAsAction="never" />-->
 </menu>

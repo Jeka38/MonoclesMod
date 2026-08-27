@@ -1638,4 +1638,12 @@
     <string name="remove_from_all_lists">Удалить из списка</string>
     <string name="status_online">Подключен</string>
     <string name="status_offline">Не подключен</string>
+    <string name="group_badge">Группа</string>
+    <string name="about_conference">О конференции</string>
+    <string name="edit_conference">Изменить конференцию</string>
+    <string name="conference_settings">Настройки конференции</string>
+    <string name="manage_users_subtitle">Управление участниками и списками</string>
+    <string name="commands_subtitle">Список доступных команд</string>
+    <string name="muc_settings_description">Настройка параметров комнаты</string>
+    <string name="conference_settings_saved">Настройки сохранены</string>
 </resources>

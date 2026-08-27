@@ -1,7 +1,6 @@
 package eu.siacs.conversations.ui.forms;
 
 import android.content.Context;
-import android.widget.CheckBox;
 import android.widget.CompoundButton;
 
 import java.util.ArrayList;
@@ -12,7 +11,7 @@ import eu.siacs.conversations.xmpp.forms.Field;
 
 public class FormBooleanFieldWrapper extends FormFieldWrapper {
 
-    protected CheckBox checkBox;
+    protected CompoundButton checkBox;
 
     protected FormBooleanFieldWrapper(Context context, Field field) {
         super(context, field);
@@ -28,14 +27,14 @@ public class FormBooleanFieldWrapper extends FormFieldWrapper {
 
     @Override
     protected void setLabel(String label, boolean required) {
-        CheckBox checkBox = view.findViewById(R.id.field);
+        CompoundButton checkBox = view.findViewById(R.id.field);
         checkBox.setText(createSpannableLabelString(label, required));
     }
 
     @Override
     public List<String> getValues() {
         List<String> values = new ArrayList<>();
-        values.add(Boolean.toString(checkBox.isChecked()));
+        values.add(checkBox.isChecked() ? "1" : "0");
         return values;
     }
 
@@ -44,7 +43,8 @@ public class FormBooleanFieldWrapper extends FormFieldWrapper {
         if (values.size() == 0) {
             checkBox.setChecked(false);
         } else {
-            checkBox.setChecked(Boolean.parseBoolean(values.get(0)));
+            final String v = values.get(0);
+            checkBox.setChecked("1".equals(v) || Boolean.parseBoolean(v));
         }
     }
 

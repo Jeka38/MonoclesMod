@@ -753,8 +753,10 @@ public class ConversationsActivity extends XmppActivity implements OnConversatio
             }
         }
         if (xmppConnectionServiceBound && xmppConnectionService.getAccounts().size() > 0) {
-            if (inviteUser != null) inviteUser.setVisible(true);
-            if (markAllChatsAsRead != null) markAllChatsAsRead.setVisible(xmppConnectionService.getConversations().stream().anyMatch(c -> c.unreadCount() > 0));
+            final Fragment mainFragment = getFragmentManager().findFragmentById(R.id.main_fragment);
+            final boolean isChatsTab = mainFragment instanceof ConversationsOverviewFragment;
+            if (inviteUser != null) inviteUser.setVisible(isChatsTab);
+            if (markAllChatsAsRead != null) markAllChatsAsRead.setVisible(isChatsTab && xmppConnectionService.getConversations().stream().anyMatch(c -> c.unreadCount() > 0));
             if (latestMention != null) latestMention.setVisible(xmppConnectionService.getLatestUnreadMention() != null);
         } else {
             if (inviteUser != null) inviteUser.setVisible(false);

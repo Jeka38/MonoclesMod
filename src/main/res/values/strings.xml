@@ -1533,4 +1533,13 @@
     <string name="remove_from_all_lists">Remove from all lists</string>
     <string name="status_online">Connected</string>
     <string name="status_offline">Not connected</string>
+    <string name="group_badge">Group</string>
+    <string name="about_conference">About</string>
+    <string name="edit_conference">Edit conference</string>
+    <string name="conference_settings">Conference settings</string>
+    <string name="manage_users_subtitle">Manage members and lists</string>
+    <string name="commands_subtitle">Available commands</string>
+    <string name="more">More</string>
+    <string name="muc_settings_description">Configure room options</string>
+    <string name="conference_settings_saved">Settings saved</string>
 </resources>
