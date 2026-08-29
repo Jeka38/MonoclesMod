@@ -70,6 +70,7 @@ import android.os.Binder;
 import android.os.Build;
 import android.os.Bundle;
 import android.os.Environment;
+import android.os.Handler;
 import android.os.IBinder;
 import android.os.Messenger;
 import android.os.PowerManager;
@@ -316,6 +317,16 @@ public class XmppConnectionService extends Service {
     private final ReplacingSerialSingleThreadExecutor mContactMergerExecutor = new ReplacingSerialSingleThreadExecutor("ContactMerger");
     private final ReplacingSerialSingleThreadExecutor mSmilesScanExecutor = new ReplacingSerialSingleThreadExecutor("SmilesScan");
     private long mLastActivity = 0;
+    private final Map<Jid, Presence.Status> mLastSentPresenceStatus = new HashMap<>();
+    private static final long AUTO_PRESENCE_CHECK_INTERVAL = 30L * 1000L;
+    private final Handler mMainHandler = new Handler();
+    private final Runnable mAutoPresenceRunnable = new Runnable() {
+        @Override
+        public void run() {
+            updateAutoPresence();
+            mMainHandler.postDelayed(this, AUTO_PRESENCE_CHECK_INTERVAL);
+        }
+    };
     private long mLastMucPing = 0;
     private Map<String, Message> mScheduledMessages = new HashMap<>();
     private long mLastSmilesRescan = 0;
@@ -1059,19 +1070,8 @@ public class XmppConnectionService extends Service {
                     mNotificationService.clearMessages(c);
                     updateConversation(c);
                 });
-            case AudioManager.RINGER_MODE_CHANGED_ACTION:
-            case NotificationManager.ACTION_INTERRUPTION_FILTER_CHANGED:
-                if (dndOnSilentMode()) {
-                    refreshAllPresences();
-                }
-                break;
             case Intent.ACTION_SCREEN_ON:
                 deactivateGracePeriod();
-            case Intent.ACTION_USER_PRESENT:
-            case Intent.ACTION_SCREEN_OFF:
-                if (awayWhenScreenLocked()) {
-                    refreshAllPresences();
-                }
                 break;
             case ACTION_FCM_TOKEN_REFRESH:
                 refreshAllFcmTokens();
@@ -1575,8 +1575,42 @@ public class XmppConnectionService extends Service {
         } else if (awayWhenScreenLocked() && isScreenLocked()) {
             return Presence.Status.AWAY;
         } else {
+            return getAutoPresenceStatus();
+        }
+    }
+
+    private Presence.Status getAutoPresenceStatus() {
+        final long awayMinutes = getLongPreference(SettingsActivity.AUTO_AWAY_MINUTES, R.integer.auto_away_minutes);
+        final long dndMinutes = getLongPreference(SettingsActivity.AUTO_DND_MINUTES, R.integer.auto_dnd_minutes);
+        if (mLastActivity == 0) {
             return Presence.Status.ONLINE;
         }
+        final long idleMinutes = (System.currentTimeMillis() - mLastActivity) / 60000L;
+        if (dndMinutes > 0 && idleMinutes >= dndMinutes) {
+            return Presence.Status.DND;
+        } else if (awayMinutes > 0 && idleMinutes >= awayMinutes) {
+            return Presence.Status.AWAY;
+        }
+        return Presence.Status.ONLINE;
+    }
+
+    private void updateAutoPresence() {
+        if (manuallyChangePresence()) {
+            return;
+        }
+        for (Account account : getAccounts()) {
+            if (account.isOnlineAndConnected()) {
+                final Presence.Status target = getTargetPresence();
+                if (target != mLastSentPresenceStatus.get(account.getJid())) {
+                    sendPresence(account, checkListeners() && broadcastLastActivity());
+                }
+            }
+        }
+    }
+
+    public void updateLastActivity() {
+        mLastActivity = System.currentTimeMillis();
+        getPreferences().edit().putLong(SETTING_LAST_ACTIVITY_TS, mLastActivity).apply();
     }
 
     public boolean isScreenLocked() {
@@ -1778,6 +1812,7 @@ public class XmppConnectionService extends Service {
         if (mLastActivity == 0) {
             mLastActivity = getPreferences().getLong(SETTING_LAST_ACTIVITY_TS, System.currentTimeMillis());
         }
+        mMainHandler.postDelayed(mAutoPresenceRunnable, AUTO_PRESENCE_CHECK_INTERVAL);
 
         Log.d(Config.LOGTAG, "initializing database...");
         this.databaseBackend = DatabaseBackend.getInstance(getApplicationContext());
@@ -3935,7 +3970,7 @@ public class XmppConnectionService extends Service {
 
     private void switchToForeground() {
         toggleSoftDisabled(false);
-        final boolean broadcastLastActivity = broadcastLastActivity();
+        updateLastActivity();
         for (Conversation conversation : getConversations()) {
             if (conversation.getMode() == Conversation.MODE_MULTI) {
                 conversation.getMucOptions().resetChatState();
@@ -3947,13 +3982,8 @@ public class XmppConnectionService extends Service {
             if (account.getStatus() == Account.State.ONLINE) {
                 account.deactivateGracePeriod();
                 final XmppConnection connection = account.getXmppConnection();
-                if (connection != null) {
-                    if (connection.getFeatures().csi()) {
-                        connection.sendActive();
-                    }
-                    if (broadcastLastActivity) {
-                        sendPresence(account, false); //send new presence but don't include idle because we are not
-                    }
+                if (connection != null && connection.getFeatures().csi()) {
+                    connection.sendActive();
                 }
             }
         }
@@ -3961,23 +3991,12 @@ public class XmppConnectionService extends Service {
     }
 
     private void switchToBackground() {
-        final boolean broadcastLastActivity = broadcastLastActivity();
-        if (broadcastLastActivity) {
-            mLastActivity = System.currentTimeMillis();
-            final SharedPreferences.Editor editor = getPreferences().edit();
-            editor.putLong(SETTING_LAST_ACTIVITY_TS, mLastActivity);
-            editor.apply();
-        }
+        updateLastActivity();
         for (Account account : getAccounts()) {
             if (account.getStatus() == Account.State.ONLINE) {
                 XmppConnection connection = account.getXmppConnection();
-                if (connection != null) {
-                    if (broadcastLastActivity) {
-                        sendPresence(account, true);
-                    }
-                    if (connection.getFeatures().csi()) {
-                        connection.sendInactive();
-                    }
+                if (connection != null && connection.getFeatures().csi()) {
+                    connection.sendInactive();
                 }
             }
         }
@@ -6115,6 +6134,7 @@ public class XmppConnectionService extends Service {
             packet.addChild("idle", Namespace.IDLE).setAttribute("since", AbstractGenerator.getTimestamp(since));
         }
         sendPresencePacket(account, packet);
+        mLastSentPresenceStatus.put(account.getJid(), status);
     }
 
     private void deactivateGracePeriod() {
@@ -6127,6 +6147,11 @@ public class XmppConnectionService extends Service {
         boolean includeIdleTimestamp = checkListeners() && broadcastLastActivity();
         for (Account account : getAccounts()) {
             if (account.isConnectionEnabled()) {
+                final Presence.Status status = manuallyChangePresence() ? account.getPresenceStatus() : getTargetPresence();
+                if (status == mLastSentPresenceStatus.get(account.getJid())) {
+                    Log.d(Config.LOGTAG, account.getJid().asBareJid() + ": suppressing presence, status unchanged");
+                    continue;
+                }
                 sendPresence(account, includeIdleTimestamp);
             }
         }

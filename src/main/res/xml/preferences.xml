@@ -315,6 +315,13 @@
             android:key="led"
             android:summary="@string/pref_led_summary"
             android:title="@string/pref_led" />
+        <ListPreference
+            android:defaultValue="@integer/grace_period"
+            android:entries="@array/grace_periods"
+            android:entryValues="@array/grace_periods_values"
+            android:key="grace_period_length"
+            android:summary="@string/pref_notification_grace_period_summary"
+            android:title="@string/pref_notification_grace_period" />
         <PreferenceScreen
             android:key="message_notification_settings"
             android:summary="@string/pref_more_notification_settings_summary"
@@ -460,6 +467,20 @@
             android:key="manually_change_presence"
             android:summary="@string/pref_manually_change_presence_summary"
             android:title="@string/pref_manually_change_presence" />
+        <EditTextPreference
+            android:defaultValue="@integer/auto_away_minutes"
+            android:dependency="manually_change_presence"
+            android:inputType="number"
+            android:key="auto_away_minutes"
+            android:summary="@string/pref_auto_away_summary"
+            android:title="@string/pref_auto_away" />
+        <EditTextPreference
+            android:defaultValue="@integer/auto_dnd_minutes"
+            android:dependency="manually_change_presence"
+            android:inputType="number"
+            android:key="auto_dnd_minutes"
+            android:summary="@string/pref_auto_dnd_summary"
+            android:title="@string/pref_auto_dnd" />
         <SwitchPreference
             android:defaultValue="@bool/away_when_screen_off"
             android:dependency="manually_change_presence"

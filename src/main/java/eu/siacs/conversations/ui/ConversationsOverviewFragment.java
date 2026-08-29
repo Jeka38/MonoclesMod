@@ -30,6 +30,12 @@
 package eu.siacs.conversations.ui;
 
 import static android.view.View.VISIBLE;
+import static androidx.recyclerview.widget.ItemTouchHelper.DOWN;
+import static androidx.recyclerview.widget.ItemTouchHelper.UP;
+
+import android.graphics.RectF;
+import android.view.HapticFeedbackConstants;
+import androidx.core.view.ViewCompat;
 
 import android.animation.Animator;
 import android.animation.AnimatorInflater;
@@ -106,10 +112,48 @@ public class ConversationsOverviewFragment extends XmppFragment {
     private final PendingActionHelper pendingActionHelper = new PendingActionHelper();
 
     private final ItemTouchHelper.SimpleCallback callback = new ItemTouchHelper.SimpleCallback(0, 0) {
+        private float dragTranslationY = 0f;
+
         @Override
         public boolean onMove(RecyclerView recyclerView, RecyclerView.ViewHolder viewHolder, RecyclerView.ViewHolder target) {
-            //todo maybe we can manually changing the position of the conversation
-            return false;
+            int from = viewHolder.getAdapterPosition();
+            int to = target.getAdapterPosition();
+            if (from < 0 || to < 0) {
+                return true;
+            }
+            final String fromKey = conversationsAdapter.getHeaderKeyAt(from);
+            if (fromKey == null) {
+                return true;
+            }
+            final String toKey = conversationsAdapter.getHeaderKeyNearest(to);
+            if (toKey == null || toKey.equals(fromKey)) {
+                return true;
+            }
+            final float threshold = 8f * getResources().getDisplayMetrics().density;
+            final int direction = conversationsAdapter.directionOf(fromKey, toKey);
+            if (direction > 0 && dragTranslationY < threshold) {
+                return true;
+            }
+            if (direction < 0 && dragTranslationY > -threshold) {
+                return true;
+            }
+            conversationsAdapter.stepGroupTowards(fromKey, toKey);
+            return true;
+        }
+
+        @Override
+        public void onSelectedChanged(RecyclerView.ViewHolder viewHolder, int actionState) {
+            super.onSelectedChanged(viewHolder, actionState);
+            if (actionState == ItemTouchHelper.ACTION_STATE_DRAG && viewHolder != null) {
+                conversationsAdapter.resetDragState();
+                viewHolder.itemView.performHapticFeedback(HapticFeedbackConstants.LONG_PRESS);
+                ViewCompat.animate(viewHolder.itemView)
+                        .scaleX(1.04f)
+                        .scaleY(1.04f)
+                        .translationZ(16f)
+                        .setDuration(150)
+                        .start();
+            }
         }
 
         @Override
@@ -121,19 +165,46 @@ public class ConversationsOverviewFragment extends XmppFragment {
         public void onChildDraw(Canvas c, RecyclerView recyclerView, RecyclerView.ViewHolder viewHolder,
                                 float dX, float dY, int actionState, boolean isCurrentlyActive) {
             super.onChildDraw(c, recyclerView, viewHolder, dX, dY, actionState, isCurrentlyActive);
-            if (actionState != ItemTouchHelper.ACTION_STATE_IDLE) {
+            final float density = getResources().getDisplayMetrics().density;
+            if (actionState == ItemTouchHelper.ACTION_STATE_SWIPE) {
                 Paint paint = new Paint();
                 paint.setColor(StyledAttributes.getColor(activity, R.attr.color_warning));
                 paint.setStyle(Paint.Style.FILL);
                 c.drawRect(viewHolder.itemView.getLeft(), viewHolder.itemView.getTop()
                         , viewHolder.itemView.getRight(), viewHolder.itemView.getBottom(), paint);
+            } else if (actionState == ItemTouchHelper.ACTION_STATE_DRAG) {
+                dragTranslationY = dY;
+                drawDragHighlight(c, viewHolder, density);
             }
+        }
+
+        private void drawDragHighlight(Canvas c, RecyclerView.ViewHolder viewHolder, float density) {
+            final int accent = StyledAttributes.getColor(activity, R.attr.colorAccent);
+            final RectF bounds = new RectF(viewHolder.itemView.getLeft(), viewHolder.itemView.getTop(),
+                    viewHolder.itemView.getRight(), viewHolder.itemView.getBottom());
+            final float radius = 8f * density;
+            final Paint fill = new Paint(Paint.ANTI_ALIAS_FLAG);
+            fill.setColor((accent & 0x00FFFFFF) | 0x40000000);
+            c.drawRoundRect(bounds, radius, radius, fill);
+            final Paint stroke = new Paint(Paint.ANTI_ALIAS_FLAG);
+            stroke.setStyle(Paint.Style.STROKE);
+            stroke.setStrokeWidth(2f * density);
+            stroke.setColor(accent);
+            c.drawRoundRect(bounds, radius, radius, stroke);
         }
 
         @Override
         public void clearView(RecyclerView recyclerView, RecyclerView.ViewHolder viewHolder) {
             super.clearView(recyclerView, viewHolder);
             viewHolder.itemView.setAlpha(1f);
+            ViewCompat.animate(viewHolder.itemView)
+                    .scaleX(1f)
+                    .scaleY(1f)
+                    .translationZ(0f)
+                    .setDuration(150)
+                    .start();
+            conversationsAdapter.persistGroupOrder();
+            conversationsAdapter.resetDragState();
         }
 
         @Override
@@ -211,8 +282,13 @@ public class ConversationsOverviewFragment extends XmppFragment {
         @Override
         public int getMovementFlags(RecyclerView recyclerView, RecyclerView.ViewHolder viewHolder) {
             int dragFlags = 0;
+            int swipeFlags = 0;
             Conversation conversation = conversationsAdapter.getConversation(viewHolder.getLayoutPosition());
-            int swipeFlags = (conversation != null && (conversation.getMode() == Conversational.MODE_SINGLE || conversation.hasPermanentCounterpart())) ? RIGHT : 0;
+            if (conversation == null) {
+                dragFlags = UP | DOWN;
+            } else if (conversation.getMode() == Conversational.MODE_SINGLE || conversation.hasPermanentCounterpart()) {
+                swipeFlags = RIGHT;
+            }
             return makeMovementFlags(dragFlags, swipeFlags);
         }
     };

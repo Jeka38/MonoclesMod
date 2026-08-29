@@ -59,12 +59,22 @@ public class ConversationAdapter
     private static final int TYPE_HEADER = 0;
     private static final int TYPE_CONVERSATION = 1;
 
+    private static final String GROUP_CONTACTS = "contacts";
+    private static final String GROUP_TRANSPORTS = "transports";
+    private static final String GROUP_CONFERENCES = "conferences";
+    private static final String GROUP_PMS = "pms";
+    private static final String PREF_GROUP_ORDER = "group_order";
+    private static final String DEFAULT_GROUP_ORDER = GROUP_CONTACTS + "," + GROUP_TRANSPORTS + "," + GROUP_CONFERENCES + "," + GROUP_PMS;
+    private static final String[] KNOWN_GROUPS = {GROUP_CONTACTS, GROUP_TRANSPORTS, GROUP_CONFERENCES, GROUP_PMS};
+
     private static final float INACTIVE_ALPHA = 0.4684f;
     private static final float ACTIVE_ALPHA = 1.0f;
     private XmppActivity activity;
     private List<Conversation> conversations = new ArrayList<>();
     private List<ListItem> items = new ArrayList<>();
     private final Set<String> collapsedGroups = new HashSet<>();
+    private List<String> groupOrder = new ArrayList<>();
+    private String lastGroupSwap = null;
     private OnConversationClickListener listener;
     private boolean hasInternetConnection = false;
     private String readmarkervalue;
@@ -77,7 +87,25 @@ public class ConversationAdapter
         this.readmarkervalue = sharedPref.getString("readmarker_style", "blue_readmarkers");
         this.collapsedGroups.addAll(sharedPref.getStringSet("collapsed_groups", new HashSet<>()));
         this.showClientIcons = sharedPref.getBoolean(SettingsActivity.SHOW_CLIENT_ICONS, activity.getResources().getBoolean(R.bool.show_client_icons));
+        this.groupOrder = parseGroupOrder(sharedPref.getString(PREF_GROUP_ORDER, DEFAULT_GROUP_ORDER));
         updateItems();
+    }
+
+    private static List<String> parseGroupOrder(String order) {
+        final List<String> parsed = new ArrayList<>();
+        if (order != null) {
+            for (String key : order.split(",")) {
+                if (!parsed.contains(key)) {
+                    parsed.add(key);
+                }
+            }
+        }
+        for (String key : KNOWN_GROUPS) {
+            if (!parsed.contains(key)) {
+                parsed.add(key);
+            }
+        }
+        return parsed;
     }
 
     @Override
@@ -527,43 +555,35 @@ public class ConversationAdapter
             }
         }
 
-        if (!contacts.isEmpty()) {
-            String headerKey = "contacts";
-            String headerTitle = activity.getString(R.string.contacts);
-            items.add(new ListItem(headerTitle, headerKey));
-            if (!collapsedGroups.contains(headerKey)) {
-                for (Conversation c : contacts) {
-                    items.add(new ListItem(c));
-                }
+        for (String headerKey : groupOrder) {
+            final String headerTitle;
+            final List<Conversation> group;
+            switch (headerKey) {
+                case GROUP_CONTACTS:
+                    headerTitle = activity.getString(R.string.contacts);
+                    group = contacts;
+                    break;
+                case GROUP_TRANSPORTS:
+                    headerTitle = activity.getString(R.string.transports);
+                    group = transports;
+                    break;
+                case GROUP_CONFERENCES:
+                    headerTitle = activity.getString(R.string.group_conferences);
+                    group = conferences;
+                    break;
+                case GROUP_PMS:
+                    headerTitle = activity.getString(R.string.group_private_messages);
+                    group = pms;
+                    break;
+                default:
+                    continue;
             }
-        }
-        if (!transports.isEmpty()) {
-            String headerKey = "transports";
-            String headerTitle = activity.getString(R.string.transports);
-            items.add(new ListItem(headerTitle, headerKey));
-            if (!collapsedGroups.contains(headerKey)) {
-                for (Conversation c : transports) {
-                    items.add(new ListItem(c));
-                }
-            }
-        }
-        if (!conferences.isEmpty()) {
-            String headerKey = "conferences";
-            String headerTitle = activity.getString(R.string.group_conferences);
-            items.add(new ListItem(headerTitle, headerKey));
-            if (!collapsedGroups.contains(headerKey)) {
-                for (Conversation c : conferences) {
-                    items.add(new ListItem(c));
-                }
-            }
-        }
-        if (!pms.isEmpty()) {
-            String headerKey = "pms";
-            String headerTitle = activity.getString(R.string.group_private_messages);
-            items.add(new ListItem(headerTitle, headerKey));
-            if (!collapsedGroups.contains(headerKey)) {
-                for (Conversation c : pms) {
-                    items.add(new ListItem(c));
+            if (!group.isEmpty()) {
+                items.add(new ListItem(headerTitle, headerKey));
+                if (!collapsedGroups.contains(headerKey)) {
+                    for (Conversation c : group) {
+                        items.add(new ListItem(c));
+                    }
                 }
             }
         }
@@ -573,6 +593,111 @@ public class ConversationAdapter
         this.conversations = conversations;
         updateItems();
         super.notifyDataSetChanged();
+    }
+
+    public String getHeaderKeyAt(int position) {
+        if (position < 0 || position >= items.size()) {
+            return null;
+        }
+        return items.get(position).headerKey;
+    }
+
+    public int indexOfHeaderInItems(String headerKey) {
+        for (int i = 0; i < items.size(); i++) {
+            if (headerKey.equals(items.get(i).headerKey)) {
+                return i;
+            }
+        }
+        return -1;
+    }
+
+    public String getHeaderKeyNearest(int position) {
+        if (items.isEmpty()) {
+            return null;
+        }
+        position = Math.max(0, Math.min(position, items.size() - 1));
+        for (int i = position; i >= 0; i--) {
+            final String key = items.get(i).headerKey;
+            if (key != null) {
+                return key;
+            }
+        }
+        for (ListItem listItem : items) {
+            if (listItem.headerKey != null) {
+                return listItem.headerKey;
+            }
+        }
+        return null;
+    }
+
+    public int directionOf(String fromKey, String toKey) {
+        final int fromIndex = groupOrder.indexOf(fromKey);
+        final int toIndex = groupOrder.indexOf(toKey);
+        if (fromIndex < 0 || toIndex < 0 || fromIndex == toIndex) {
+            return 0;
+        }
+        return toIndex > fromIndex ? 1 : -1;
+    }
+
+    public boolean stepGroupTowards(String fromKey, String toKey) {
+        final int fromIndex = groupOrder.indexOf(fromKey);
+        final int toIndex = groupOrder.indexOf(toKey);
+        if (fromIndex < 0 || toIndex < 0 || fromIndex == toIndex) {
+            return false;
+        }
+        final int direction = toIndex > fromIndex ? 1 : -1;
+        final int neighborIndex = fromIndex + direction;
+        if (neighborIndex < 0 || neighborIndex >= groupOrder.size()) {
+            return false;
+        }
+        final String neighbor = groupOrder.get(neighborIndex);
+        final String swapId = fromKey + "|" + neighbor + "|" + direction;
+        if (swapId.equals(lastGroupSwap)) {
+            return false;
+        }
+        applyAdjacentBlockSwap(fromKey, neighbor, direction);
+        lastGroupSwap = swapId;
+        return true;
+    }
+
+    private void applyAdjacentBlockSwap(String fromKey, String neighbor, int direction) {
+        final int fromIndex = indexOfHeaderInItems(fromKey);
+        final int neighborIndex = indexOfHeaderInItems(neighbor);
+        if (fromIndex < 0 || neighborIndex < 0) {
+            return;
+        }
+        final int blockStart = Math.min(fromIndex, neighborIndex);
+        final int secondStart = Math.max(fromIndex, neighborIndex);
+        final int upperBlockLength = blockLength(blockStart);
+        final int lowerBlockLength = blockLength(secondStart);
+        for (int j = 0; j < lowerBlockLength; j++) {
+            notifyItemMoved(blockStart + upperBlockLength + j, blockStart + j);
+        }
+        groupOrder.remove(fromKey);
+        final int neighborPosition = groupOrder.indexOf(neighbor);
+        groupOrder.add(direction > 0 ? neighborPosition + 1 : neighborPosition, fromKey);
+        updateItems();
+    }
+
+    private int blockLength(int blockStart) {
+        final int limit = items.size();
+        int length = 0;
+        for (int i = blockStart; i < limit; i++) {
+            length++;
+            if (i + 1 < limit && items.get(i + 1).headerKey != null) {
+                break;
+            }
+        }
+        return length;
+    }
+
+    public void resetDragState() {
+        lastGroupSwap = null;
+    }
+
+    public void persistGroupOrder() {
+        SharedPreferences sharedPref = PreferenceManager.getDefaultSharedPreferences(activity);
+        sharedPref.edit().putString(PREF_GROUP_ORDER, TextUtils.join(",", groupOrder)).apply();
     }
 
     public Conversation getConversation(int position) {

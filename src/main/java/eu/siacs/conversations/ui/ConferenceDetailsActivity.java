@@ -8,6 +8,7 @@ import de.monocles.mod.Util;
 import android.graphics.drawable.Drawable;
 import android.view.LayoutInflater;
 import android.widget.ArrayAdapter;
+import android.widget.Button;
 import android.widget.TextView;
 import java.util.ArrayList;
 import java.util.Comparator;
@@ -30,6 +31,7 @@ import android.text.SpannableStringBuilder;
 import android.text.TextWatcher;
 import android.text.method.LinkMovementMethod;
 import android.util.Log;
+import android.util.TypedValue;
 import android.view.Menu;
 import android.view.MenuItem;
 import android.view.View;
@@ -99,6 +101,10 @@ public class ConferenceDetailsActivity extends XmppActivity implements OnConvers
             DestroyMucDialog.setTitle(groupChat ? R.string.destroy_room : R.string.destroy_channel);
             DestroyMucDialog.setMessage(getString(groupChat ? R.string.destroy_room_dialog : R.string.destroy_channel_dialog, mConversation.getName()));
             DestroyMucDialog.setPositiveButton(getString(R.string.delete), (dialogInterface, i) -> {
+                final Contact contact = mConversation.getAccount().getRoster().getContact(mConversation.getJid().asBareJid());
+                if (contact.getOption(Contact.Options.IN_ROSTER)) {
+                    xmppConnectionService.deleteContactOnServer(contact);
+                }
                 Intent intent = new Intent(xmppConnectionService, ConversationsActivity.class);
                 intent.setAction(ConversationsActivity.ACTION_DESTROY_MUC);
                 intent.putExtra("MUC_UUID", mConversation.getUuid());
@@ -252,16 +258,31 @@ public class ConferenceDetailsActivity extends XmppActivity implements OnConvers
     }
 
     private void showMucConfigDialog(Data form, Jid jid) {
+        final android.widget.LinearLayout root = new android.widget.LinearLayout(this);
+        root.setOrientation(android.widget.LinearLayout.VERTICAL);
         final android.widget.ScrollView scrollView = new android.widget.ScrollView(this);
         final android.widget.LinearLayout container = new android.widget.LinearLayout(this);
         container.setOrientation(android.widget.LinearLayout.VERTICAL);
         container.setPadding(48, 24, 48, 0);
         scrollView.addView(container);
+        root.addView(scrollView, new android.widget.LinearLayout.LayoutParams(
+                android.widget.LinearLayout.LayoutParams.MATCH_PARENT, 0, 1f));
+        final Button destroyButton = new Button(this);
+        destroyButton.setBackgroundResource(R.drawable.button_danger);
+        destroyButton.setTextColor(androidx.core.content.ContextCompat.getColor(this, R.color.red700));
+        final boolean groupChat = mConversation != null && mConversation.isPrivateAndNonAnonymous();
+        destroyButton.setText(groupChat ? R.string.destroy_room : R.string.destroy_channel);
+        destroyButton.setOnClickListener(destroyListener);
+        final android.widget.LinearLayout.LayoutParams destroyParams = new android.widget.LinearLayout.LayoutParams(
+                android.widget.LinearLayout.LayoutParams.MATCH_PARENT,
+                android.widget.LinearLayout.LayoutParams.WRAP_CONTENT);
+        destroyParams.setMargins(48, 16, 48, 8);
+        root.addView(destroyButton, destroyParams);
         final FormWrapper formWrapper = FormWrapper.createInLayout(this, container, form);
         final MaterialAlertDialogBuilder builder = new MaterialAlertDialogBuilder(this);
         final String title = form.getTitle();
         builder.setTitle(title != null ? title : getString(R.string.conference_settings));
-        builder.setView(scrollView);
+        builder.setView(root);
         builder.setPositiveButton(R.string.save, (dialog, which) -> {
             if (!formWrapper.validates()) return;
             final Data submitted = formWrapper.submit();
@@ -418,6 +439,14 @@ public class ConferenceDetailsActivity extends XmppActivity implements OnConvers
                 break;
             case R.id.action_edit_muc:
                 onMucEditButtonClicked(null);
+                break;
+            case R.id.action_save_bookmark:
+                if (mConversation.getBookmark() == null) {
+                    saveAsBookmark();
+                } else {
+                    deleteBookmark();
+                }
+                invalidateOptionsMenu();
                 break;
             case R.id.action_share_http:
                 shareLink(true);
@@ -605,6 +634,13 @@ public class ConferenceDetailsActivity extends XmppActivity implements OnConvers
         menuItemIndividualNotifications.setVisible(Compatibility.runsTwentySix());
         if (mConversation == null) {
             return true;
+        }
+        final MenuItem menuItemSaveBookmark = menu.findItem(R.id.action_save_bookmark);
+        if (menuItemSaveBookmark != null) {
+            final int iconAttr = mConversation.getBookmark() == null ? R.attr.icon_star_outline : R.attr.icon_star_filled;
+            final TypedValue typedvalueattr = new TypedValue();
+            getTheme().resolveAttribute(iconAttr, typedvalueattr, true);
+            menuItemSaveBookmark.setIcon(typedvalueattr.resourceId);
         }
         return true;
     }
@@ -825,7 +861,6 @@ public class ConferenceDetailsActivity extends XmppActivity implements OnConvers
                 }
             }
         });
-        binding.participantsCount.setText(String.valueOf(users.size()));
         if (bookmark == null) {
             binding.tags.setVisibility(View.GONE);
             return;

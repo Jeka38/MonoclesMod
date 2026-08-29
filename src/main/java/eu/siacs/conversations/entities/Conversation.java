@@ -2051,6 +2051,7 @@ public class Conversation extends AbstractEntity implements Blockable, Comparabl
         }
 
         public void startMucConfig(XmppConnectionService xmppConnectionService) {
+            show();
             MucConfigSession session = new MucConfigSession(xmppConnectionService);
             final IqPacket packet = new IqPacket(IqPacket.TYPE.GET);
             packet.setTo(Conversation.this.getJid().asBareJid());

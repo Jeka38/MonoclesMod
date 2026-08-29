@@ -10,6 +10,13 @@
         app:showAsAction="always" />
 
     <item
+        android:id="@+id/action_save_bookmark"
+        android:icon="?attr/icon_star_outline"
+        android:orderInCategory="6"
+        android:title="@string/save_as_bookmark"
+        app:showAsAction="always" />
+
+    <item
         android:id="@+id/action_share"
         android:icon="?attr/icon_action_share"
         android:orderInCategory="15"

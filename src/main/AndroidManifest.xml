@@ -536,6 +536,7 @@
             android:launchMode="singleTask" />
         <activity
             android:name=".ui.ManageMucListsActivity"
+            android:label="@string/manage_lists_users"
             android:exported="false" />
         <activity
             android:name=".ui.MucUsersActivity"

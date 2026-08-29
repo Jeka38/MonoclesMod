@@ -552,6 +552,10 @@
     <string name="pick_your_username">Choose your username</string>
     <string name="pref_manually_change_presence">Manage availability manually</string>
     <string name="pref_manually_change_presence_summary">Set your availability when editing your status message.</string>
+    <string name="pref_auto_away">Auto Away after</string>
+    <string name="pref_auto_away_summary">Set your status to Away after this many minutes of inactivity. 0 disables.</string>
+    <string name="pref_auto_dnd">Auto Do Not Disturb after</string>
+    <string name="pref_auto_dnd_summary">Set your status to Do Not Disturb after this many minutes of inactivity. 0 disables.</string>
     <string name="status_message">Status message</string>
     <string name="presence_chat">Free for Chat</string>
     <string name="presence_online">Online</string>
@@ -608,6 +612,8 @@
     <string name="data_saver_enabled_explained">Your operating system is restricting monocles mod from accessing the Internet when in background. To receive notifications of new messages you should allow monocles mod unrestricted access when Data saver is on.\n\nmonocles mod will still make an effort to save data when possible.</string>
     <string name="device_does_not_support_data_saver">Your device does not supporting disabling data saver for monocles mod.</string>
     <string name="add_to_contact_list">Add to contact list</string>
+    <string name="join_conference">Join conference</string>
+    <string name="join_conference_name">Join %1$s</string>
     <string name="contact">Contact</string>
     <string name="unable_to_start_recording">Unable to start recording</string>
     <string name="error_unable_to_create_temporary_file">Unable to create temporary file</string>
@@ -936,6 +942,7 @@
     <string name="remove_from_channel">Remove from room</string>
     <string name="ban_from_channel">Ban from room</string>
     <string name="manage_lists_users">Manage lists (users)</string>
+    <string name="manage_lists_hint">Choose a list to view or change its members</string>
     <string name="manage_permission">Manage privileges</string>
     <string name="change_role_affiliation">Change role/affiliation</string>
     <string name="destroy_channel">Destroy room</string>

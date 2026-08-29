@@ -5691,23 +5691,28 @@ public class ConversationFragment extends XmppFragment
         final Contact contact = message.getContact();
         if (message.getStatus() <= Message.STATUS_RECEIVED && (contact == null || !contact.isSelf())) {
             if (message.getConversation().getMode() == Conversation.MODE_MULTI) {
-                final Jid cp = message.getCounterpart();
-                if (cp == null || cp.isBareJid()) {
-                    return;
-                }
+                final Jid cp = message.getCounterpart() != null ? message.getCounterpart() : conversation.getJid();
                 final Jid tcp = message.getTrueCounterpart();
-                final User userByRealJid = tcp != null ? conversation.getMucOptions().findOrCreateUserByRealJid(tcp, cp) : null;
                 final String occupantId = message.getOccupantId();
-                final User userByOccupantId =
-                        occupantId != null
-                                ? conversation.getMucOptions().findUserByOccupantId(occupantId)
-                                : null;
-                final User user = userByRealJid != null ? userByRealJid : (userByOccupantId != null ? userByOccupantId : conversation.getMucOptions().findUserByFullJid(cp));
-                if (user == null) return;
+                User user = null;
+                if (!cp.isBareJid()) {
+                    final User userByRealJid = tcp != null ? conversation.getMucOptions().findOrCreateUserByRealJid(tcp, cp) : null;
+                    final User userByOccupantId =
+                            occupantId != null
+                                    ? conversation.getMucOptions().findUserByOccupantId(occupantId)
+                                    : null;
+                    user = userByRealJid != null ? userByRealJid : (userByOccupantId != null ? userByOccupantId : conversation.getMucOptions().findUserByFullJid(cp));
+                }
+                final User selectedUser;
+                if (user == null) {
+                    selectedUser = new MucOptions.User(conversation.getMucOptions(), cp, occupantId, null, null);
+                } else {
+                    selectedUser = user;
+                }
                 popupMenu.inflate(R.menu.muc_details_context);
                 final Menu menu = popupMenu.getMenu();
-                MucDetailsContextMenuHelper.configureMucDetailsContextMenu(activity, menu, conversation, user, true, getUsername(message));
-                popupMenu.setOnMenuItemClickListener(menuItem -> MucDetailsContextMenuHelper.onContextItemSelected(menuItem, user, activity, fingerprint));
+                MucDetailsContextMenuHelper.configureMucDetailsContextMenu(activity, menu, conversation, selectedUser, true, getUsername(message));
+                popupMenu.setOnMenuItemClickListener(menuItem -> MucDetailsContextMenuHelper.onContextItemSelected(menuItem, selectedUser, activity, fingerprint));
             } else {
                 popupMenu.inflate(R.menu.one_on_one_context);
                 popupMenu.setOnMenuItemClickListener(item -> {

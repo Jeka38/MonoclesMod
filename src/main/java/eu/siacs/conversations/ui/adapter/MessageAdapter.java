@@ -20,6 +20,9 @@ import android.animation.PropertyValuesHolder;
 import android.animation.ValueAnimator;
 import android.annotation.SuppressLint;
 import android.app.Activity;
+import android.content.ClipData;
+import android.content.ClipboardManager;
+import android.content.Context;
 import android.content.Intent;
 import android.content.SharedPreferences;
 import android.content.pm.PackageManager;
@@ -30,6 +33,8 @@ import android.graphics.Typeface;
 import android.graphics.drawable.Drawable;
 import android.net.Uri;
 import android.os.AsyncTask;
+import android.os.Handler;
+import android.os.Looper;
 import android.preference.PreferenceManager;
 import android.text.Editable;
 import android.text.Spannable;
@@ -48,7 +53,9 @@ import android.util.DisplayMetrics;
 import android.util.Log;
 import android.util.LruCache;
 import android.view.HapticFeedbackConstants;
+import android.view.MotionEvent;
 import android.view.View;
+import android.view.ViewConfiguration;
 import android.view.ViewGroup;
 import android.view.WindowManager;
 import android.widget.ArrayAdapter;
@@ -64,6 +71,7 @@ import android.widget.TextView;
 import android.widget.Toast;
 
 import androidx.annotation.Nullable;
+import androidx.appcompat.widget.PopupMenu;
 import androidx.core.app.ActivityCompat;
 import androidx.core.content.ContextCompat;
 import androidx.core.content.res.ResourcesCompat;
@@ -87,9 +95,11 @@ import java.net.URI;
 import java.net.URISyntaxException;
 import java.security.NoSuchAlgorithmException;
 import java.util.HashMap;
+import java.util.HashSet;
 import java.util.List;
 import java.util.Locale;
 import java.util.Map;
+import java.util.Set;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
@@ -101,15 +111,20 @@ import eu.siacs.conversations.Config;
 import eu.siacs.conversations.R;
 import eu.siacs.conversations.crypto.axolotl.FingerprintStatus;
 import eu.siacs.conversations.entities.Account;
+import eu.siacs.conversations.entities.Bookmark;
+import eu.siacs.conversations.entities.Contact;
+import eu.siacs.conversations.entities.ServiceDiscoveryResult;
 import eu.siacs.conversations.entities.Conversation;
 import eu.siacs.conversations.entities.Conversational;
 import eu.siacs.conversations.entities.DownloadableFile;
 import eu.siacs.conversations.entities.Message;
 import eu.siacs.conversations.entities.Message.FileParams;
 import eu.siacs.conversations.entities.MucOptions;
+import eu.siacs.conversations.entities.Room;
 import eu.siacs.conversations.entities.RtpSessionStatus;
 import eu.siacs.conversations.entities.Transferable;
 import eu.siacs.conversations.persistance.FileBackend;
+import eu.siacs.conversations.parser.IqParser;
 import eu.siacs.conversations.services.AudioPlayer;
 import eu.siacs.conversations.services.MessageArchiveService;
 import eu.siacs.conversations.services.NotificationService;
@@ -139,6 +154,7 @@ import eu.siacs.conversations.utils.UIHelper;
 import eu.siacs.conversations.xml.Element;
 import eu.siacs.conversations.xmpp.Jid;
 import eu.siacs.conversations.xmpp.mam.MamReference;
+import eu.siacs.conversations.xmpp.stanzas.IqPacket;
 import io.ipfs.cid.Cid;
 import me.drakeet.support.toast.ToastCompat;
 import me.saket.bettermovementmethod.BetterLinkMovementMethod;
@@ -172,6 +188,11 @@ public class MessageAdapter extends ArrayAdapter<Message> {
     private boolean mShowJoinLeave = false;
     private final boolean mForceNames;
     private final Map<String, WebxdcUpdate> lastWebxdcUpdate = new HashMap<>();
+    private final Map<String, String> mucNameCache = new HashMap<>();
+    private final Set<String> mucNameFetches = new HashSet<>();
+    private final Set<String> mucJidCache = new HashSet<>();
+    private final Set<String> mucJidFetches = new HashSet<>();
+    private final Handler handler = new Handler(Looper.getMainLooper());
     private String readmarkervalue;
     private ConversationFragment mConversationFragment = null;
     private boolean expandable;
@@ -550,46 +571,219 @@ public class MessageAdapter extends ArrayAdapter<Message> {
         viewHolder.messageBody.setText(body);
     }
 
-    private void displayXmppMessage(final ViewHolder viewHolder, final String body) {
-        String contact = body.toLowerCase();
-        contact = contact.split(":")[1];
+    private void displayXmppMessage(final ViewHolder viewHolder, final String rawBody, final Account account) {
+        final String body = rawBody.toLowerCase();
         boolean group;
-        try {
-            group = ((contact.split("\\?")[1]) != null && (contact.split("\\?")[1]).length() > 0 && (contact.split("\\?")[1]).equalsIgnoreCase("join"));
-        } catch (Exception e) {
+        String contact;
+        if (body.startsWith("xmpp:")) {
+            final String fragment = body.split(":", 2)[1];
+            try {
+                group = ((fragment.split("\\?")[1]) != null && (fragment.split("\\?")[1]).length() > 0 && (fragment.split("\\?")[1]).equalsIgnoreCase("join"));
+            } catch (Exception e) {
+                group = false;
+            }
+            contact = fragment.split("\\?")[0];
+        } else {
             group = false;
+            contact = body;
+            try {
+                if (mucJidCache.contains(contact) || account.getBookmark(Jid.of(contact)) != null) {
+                    group = true;
+                }
+            } catch (IllegalArgumentException e) {
+                // jid could not be parsed
+            }
         }
-        contact = contact.split("\\?")[0];
-        final String add_contact = activity.getString(R.string.add_to_contact_list) + " (" + contact + ")";
+        final boolean[] longPressUsed = {false};
+        final String buttonText;
+        if (group) {
+            Bookmark bookmark = null;
+            try {
+                bookmark = account.getBookmark(Jid.of(contact));
+            } catch (IllegalArgumentException e) {
+                // jid could not be parsed
+            }
+            final String cached = mucNameCache.get(contact);
+            final String name;
+            if (cached != null) {
+                name = cached;
+            } else if (bookmark != null) {
+                name = bookmark.getDisplayName();
+            } else {
+                name = null;
+            }
+            String displayName = name;
+            if (displayName == null || displayName.trim().isEmpty() || displayName.contains("@")) {
+                displayName = contact.contains("@") ? contact.split("@")[0] : contact;
+            }
+            if (displayName.length() > 10) {
+                displayName = displayName.substring(0, 10) + "…";
+            }
+            buttonText = activity.getString(R.string.join_conference) + " " + displayName;
+            fetchMucName(account, contact);
+        } else {
+            buttonText = activity.getString(R.string.add_to_contact_list) + " (" + contact + ")";
+        }
         viewHolder.audioPlayer.setVisibility(GONE);
         viewHolder.download_button.setVisibility(View.VISIBLE);
-        viewHolder.download_button.setText(add_contact);
-        if (group) {
-            final Drawable icon = activity.getResources().getDrawable(R.drawable.ic_account_multiple_plus_grey600_48dp);
-            final Drawable drawable = DrawableCompat.wrap(icon);
-            DrawableCompat.setTint(drawable, StyledAttributes.getColor(getContext(), R.attr.colorAccent));
-            viewHolder.download_button.setCompoundDrawablesWithIntrinsicBounds(drawable, null, null, null);
+        viewHolder.download_button.setText(buttonText);
+        viewHolder.download_button.setCompoundDrawablesWithIntrinsicBounds(null, null, null, null);
+        final String uri;
+        if (body.startsWith("xmpp:")) {
+            uri = body;
+        } else if (group) {
+            uri = "xmpp:" + contact + "?join";
         } else {
-            final Drawable icon = activity.getResources().getDrawable(R.drawable.ic_account_plus_grey600_48dp);
-            final Drawable drawable = DrawableCompat.wrap(icon);
-            DrawableCompat.setTint(drawable, StyledAttributes.getColor(getContext(), R.attr.colorAccent));
-            viewHolder.download_button.setCompoundDrawablesWithIntrinsicBounds(drawable, null, null, null);
+            uri = "xmpp:" + contact;
         }
         viewHolder.download_button.setOnClickListener(v -> {
+            if (longPressUsed[0]) {
+                longPressUsed[0] = false;
+                return;
+            }
             try {
                 Intent intent = new Intent(Intent.ACTION_VIEW);
-                intent.setData(Uri.parse(body));
+                intent.setData(Uri.parse(uri));
                 activity.startActivity(intent);
                 activity.overridePendingTransition(R.animator.fade_in, R.animator.fade_out);
             } catch (Exception e) {
                 ToastCompat.makeText(activity, R.string.no_application_found_to_view_contact, ToastCompat.LENGTH_LONG).show();
             }
-
+        });
+        final View anchor = viewHolder.download_button;
+        final Runnable existingRunnable = (Runnable) anchor.getTag();
+        if (existingRunnable != null) {
+            handler.removeCallbacks(existingRunnable);
+        }
+        final Runnable longPressRunnable = () -> {
+            if (!anchor.isAttachedToWindow()) {
+                return;
+            }
+            longPressUsed[0] = true;
+            showLongPressMenu(account, contact, anchor);
+        };
+        anchor.setTag(longPressRunnable);
+        final float[] downXY = new float[2];
+        final int touchSlop = ViewConfiguration.get(activity).getScaledTouchSlop();
+        anchor.setOnTouchListener((v, event) -> {
+            switch (event.getActionMasked()) {
+                case MotionEvent.ACTION_DOWN:
+                    downXY[0] = event.getRawX();
+                    downXY[1] = event.getRawY();
+                    handler.postDelayed(longPressRunnable, 200);
+                    break;
+                case MotionEvent.ACTION_MOVE:
+                    if (Math.abs(event.getRawX() - downXY[0]) > touchSlop
+                            || Math.abs(event.getRawY() - downXY[1]) > touchSlop) {
+                        handler.removeCallbacks(longPressRunnable);
+                    }
+                    break;
+                case MotionEvent.ACTION_UP:
+                case MotionEvent.ACTION_CANCEL:
+                    handler.removeCallbacks(longPressRunnable);
+                    break;
+            }
+            return false;
         });
         showImages(false, viewHolder);
         viewHolder.richlinkview.setVisibility(GONE);
         viewHolder.transfer.setVisibility(GONE);
         viewHolder.messageBody.setVisibility(GONE);
+    }
+
+    private void showLongPressMenu(final Account account, final String contact, final View anchor) {
+        try {
+            final Jid longPressJid = Jid.of(contact);
+            final PopupMenu popupMenu = new PopupMenu(activity, anchor);
+            popupMenu.getMenu().add(0, 1, 0, R.string.copy_jid);
+            popupMenu.getMenu().add(0, 2, 0, R.string.vcard_view);
+            popupMenu.setOnMenuItemClickListener(item -> {
+                if (item.getItemId() == 1) {
+                    final ClipboardManager clipboard = (ClipboardManager) activity.getSystemService(Context.CLIPBOARD_SERVICE);
+                    clipboard.setPrimaryClip(ClipData.newPlainText("JID", longPressJid.toEscapedString()));
+                    ToastCompat.makeText(activity, R.string.jabber_id_copied_to_clipboard, ToastCompat.LENGTH_SHORT).show();
+                    return true;
+                } else if (item.getItemId() == 2) {
+                    final Contact longPressContact = account.getRoster().getContact(longPressJid.asBareJid());
+                    activity.switchToContactDetails(longPressContact);
+                    return true;
+                }
+                return false;
+            });
+            popupMenu.show();
+        } catch (Exception e) {
+            // ignore
+        }
+    }
+
+    private boolean isMucLink(final Message message, final Account account) {
+        if (message.isXmppUri()) {
+            return true;
+        }
+        final String body = message.getBody().trim().toLowerCase();
+        if (body.isEmpty() || body.contains(" ")) {
+            return false;
+        }
+        final Jid jid;
+        try {
+            jid = Jid.of(body);
+        } catch (IllegalArgumentException e) {
+            return false;
+        }
+        if (jid == null || jid.getLocal() == null) {
+            return false;
+        }
+        fetchMucJidInfo(account, body);
+        return true;
+    }
+
+    private void fetchMucJidInfo(final Account account, final String body) {
+        if (mucJidCache.contains(body) || mucJidFetches.contains(body)) {
+            return;
+        }
+        final Jid jid;
+        try {
+            jid = Jid.of(body);
+        } catch (IllegalArgumentException e) {
+            return;
+        }
+        mucJidFetches.add(body);
+        final IqPacket request = activity.xmppConnectionService.getIqGenerator().queryDiscoInfo(jid);
+        activity.xmppConnectionService.sendIqPacket(account, request, (a, response) -> {
+            mucJidFetches.remove(body);
+            if (response.getType() == IqPacket.TYPE.RESULT) {
+                final ServiceDiscoveryResult result = new ServiceDiscoveryResult(response);
+                if (result.hasIdentity("conference", "text")) {
+                    mucJidCache.add(body);
+                    activity.runOnUiThread(MessageAdapter.this::notifyDataSetChanged);
+                }
+            }
+        });
+    }
+
+    private void fetchMucName(final Account account, final String room) {
+        if (mucNameCache.containsKey(room) || mucNameFetches.contains(room)) {
+            return;
+        }
+        final Jid roomJid;
+        try {
+            roomJid = Jid.of(room);
+        } catch (IllegalArgumentException e) {
+            return;
+        }
+        mucNameFetches.add(room);
+        final IqPacket request = activity.xmppConnectionService.getIqGenerator().queryDiscoInfo(roomJid);
+        activity.xmppConnectionService.sendIqPacket(account, request, (a, response) -> {
+            mucNameFetches.remove(room);
+            if (response.getType() == IqPacket.TYPE.RESULT) {
+                final Room roomInfo = IqParser.parseRoom(response);
+                final String name = roomInfo == null ? null : roomInfo.getName();
+                if (name != null && !name.trim().isEmpty() && !mucNameCache.containsKey(room)) {
+                    mucNameCache.put(room, name.trim());
+                    activity.runOnUiThread(MessageAdapter.this::notifyDataSetChanged);
+                }
+            }
+        });
     }
 
     private void applyQuoteSpan(
@@ -1574,12 +1768,26 @@ public class MessageAdapter extends ArrayAdapter<Message> {
                     throw new AssertionError("Unknown view type");
             }
             view.setTag(viewHolder);
+            if (viewHolder.contact_picture != null) {
+                final ViewHolder currentHolder = viewHolder;
+                viewHolder.contact_picture.setLongClickable(true);
+                viewHolder.contact_picture.setOnLongClickListener(v -> {
+                    if (MessageAdapter.this.mOnContactPictureLongClickedListener != null) {
+                        MessageAdapter.this.mOnContactPictureLongClickedListener.onContactPictureLongClicked(v, currentHolder.boundMessage);
+                        return true;
+                    } else {
+                        return false;
+                    }
+                });
+            }
         } else {
             viewHolder = (ViewHolder) view.getTag();
             if (viewHolder == null) {
                 return view;
             }
         }
+
+        viewHolder.boundMessage = message;
 
         boolean darkBackground = activity.isDarkTheme();
 
@@ -1815,15 +2023,6 @@ public class MessageAdapter extends ArrayAdapter<Message> {
             }
         });
 
-        viewHolder.contact_picture.setOnLongClickListener(v -> {
-            if (MessageAdapter.this.mOnContactPictureLongClickedListener != null) {
-                MessageAdapter.this.mOnContactPictureLongClickedListener.onContactPictureLongClicked(v, message);
-                return true;
-            } else {
-                return false;
-            }
-        });
-
         final Transferable transferable = message.getTransferable();
         final boolean unInitiatedButKnownSize = MessageUtils.unInitiatedButKnownSize(message);
 
@@ -1884,8 +2083,8 @@ public class MessageAdapter extends ArrayAdapter<Message> {
         } else {
             if (message.isGeoUri()) {
                 displayLocationMessage(viewHolder, message, darkBackground, type);
-            } else if (message.isXmppUri()) {
-                displayXmppMessage(viewHolder, message.getBody().trim());
+            } else if (isMucLink(message, account)) {
+                displayXmppMessage(viewHolder, message.getBody().trim(), account);
             } else if (message.treatAsDownloadable()) {
                 try {
                     final URI uri = message.getOob();
@@ -2149,6 +2348,7 @@ public class MessageAdapter extends ArrayAdapter<Message> {
         protected TextView user;
         protected TextView username;
         protected ImageView contact_picture;
+        protected Message boundMessage;
         protected TextView status_message;
         protected TextView encryption;
         protected ListView commands_list;

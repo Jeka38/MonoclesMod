@@ -133,6 +133,14 @@ public abstract class XmppActivity extends ActionBarActivity {
     public MediaBrowserActivity mediaBrowserActivity;
     public boolean xmppConnectionServiceBound = false;
 
+    @Override
+    public void onUserInteraction() {
+        super.onUserInteraction();
+        if (xmppConnectionService != null) {
+            xmppConnectionService.updateLastActivity();
+        }
+    }
+
     public AlertDialog AvatarPopup;
 
     protected int mColorWarningButton;

@@ -125,6 +125,8 @@
     <attr name="icon_notifications_paused" format="reference" />
     <attr name="icon_notifications_none" format="reference" />
     <attr name="icon_pinned_on_top" format="reference" />
+    <attr name="icon_star_outline" format="reference" />
+    <attr name="icon_star_filled" format="reference" />
 
     <attr name="dialog_horizontal_padding" format="dimension" />
     <attr name="dialog_vertical_padding" format="dimension" />

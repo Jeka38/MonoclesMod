@@ -78,6 +78,8 @@
     <string name="add_contact_or_create_or_join_group_chat">Добавьте контакт, создайте и войдите в конференцию или откройте конференции</string>
     <string name="add_phone_book_text">Хотите добавить %s в Вашу адресную книгу\?</string>
     <string name="add_to_contact_list">Добавить в контакты</string>
+    <string name="join_conference">Присоединиться к конференции</string>
+    <string name="join_conference_name">Войти в %1$s</string>
     <string name="add_to_favorites">Закрепить</string>
     <string name="admin">администратор</string>
     <string name="admins_can_edit_subject">Админы могут изменять эту тему.</string>
@@ -459,7 +461,7 @@
     <string name="gif">GIF</string>
     <string name="go_online_to_delete">Вы должны активировать и/или быть в сети для учетной записи, которую хотите удалить с сервера.</string>
     <string name="got_invitation_from" formatted="false">%s пригласил вас в чат %s.</string>
-    <string name="gp_disable">Выключить</string>
+    <string name="gp_disable">Отключить</string>
     <string name="gp_long">Длинный</string>
     <string name="gp_medium">Средний</string>
     <string name="gp_short">Короткий</string>
@@ -849,6 +851,10 @@
     <string name="pref_led_summary">Мигать светодиодом при получении нового сообщения</string>
     <string name="pref_manually_change_presence">Управлять доступностью вручную</string>
     <string name="pref_manually_change_presence_summary">Устанавливать доступность при редактировании статуса.</string>
+    <string name="pref_auto_away">Авто «Отсутствую» через</string>
+    <string name="pref_auto_away_summary">Устанавливать статус «Отсутствую» через указанное число минут бездействия. 0 — отключить.</string>
+    <string name="pref_auto_dnd">Авто «Недоступен» через</string>
+    <string name="pref_auto_dnd_summary">Устанавливать статус «Недоступен» через указанное число минут бездействия. 0 — отключить.</string>
     <string name="pref_mappreview_host">Хост предварительного просмотра карты</string>
     <string name="pref_mappreview_host_summary">Использование пользовательского узла предварительного просмотра карты</string>
     <string name="pref_max_resend_time_summary">При сбое отправки простого сообщения максимальное время для повторной отправки. Когда количество повторных отправок превышает половину максимального времени, сообщение будет задержано из-за трафика.</string>
@@ -1634,6 +1640,7 @@
     <string name="send_encrypted">Отправить зашифрованное</string>
     <string name="choose_webxdc">Выберите WebXDC</string>
     <string name="manage_lists_users">Управление списками (пользователи)</string>
+    <string name="manage_lists_hint">Выберите список, чтобы просмотреть или изменить его состав</string>
     <string name="change_role_affiliation">Изменить роль/аффилиацию</string>
     <string name="remove_from_all_lists">Удалить из списка</string>
     <string name="status_online">Подключен</string>

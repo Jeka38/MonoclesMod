@@ -29,7 +29,7 @@
     <bool name="use_i2p">false</bool>
     <bool name="use_proxy65">true</bool>
     <bool name="show_connection_options">false</bool>
-    <bool name="last_activity">true</bool>
+    <bool name="last_activity">false</bool>
     <bool name="dont_trust_system_cas">false</bool>
     <bool name="btbv">true</bool>
     <bool name="send_button_status">true</bool>
@@ -72,6 +72,8 @@
     <integer name="automatic_message_deletion">0</integer>
     <integer name="automatic_attachment_deletion">0</integer>
     <integer name="grace_period">144</integer>
+    <integer name="auto_away_minutes">30</integer>
+    <integer name="auto_dnd_minutes">90</integer>
     <string name="default_resource" translatable="false">Phone</string>
     <string name="notification_ringtone">content://settings/system/notification_sound</string>
     <string name="image_compression">mid</string>

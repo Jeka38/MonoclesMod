@@ -230,6 +230,8 @@
             @drawable/ic_new_releases_black_24dp
         </item>
         <item name="icon_pinned_on_top" type="reference">@drawable/ic_star_black_24dp</item>
+        <item name="icon_star_outline" type="reference">@drawable/ic_star_outline</item>
+        <item name="icon_star_filled" type="reference">@drawable/ic_star_filled</item>
         <item name="ic_settings_about" type="reference">@drawable/ic_help_black_24dp</item>
 
     </style>
@@ -425,6 +427,8 @@
             @drawable/ic_new_releases_white_24dp
         </item>
         <item name="icon_pinned_on_top" type="reference">@drawable/ic_star_white_24dp</item>
+        <item name="icon_star_outline" type="reference">@drawable/ic_star_outline_white</item>
+        <item name="icon_star_filled" type="reference">@drawable/ic_star_filled_white</item>
 
         <!-- settings-->
         <item name="ic_settings_ui" type="reference">@drawable/ic_image_white_24dp</item>
