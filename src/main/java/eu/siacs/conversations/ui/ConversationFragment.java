@@ -3904,8 +3904,37 @@ public class ConversationFragment extends XmppFragment
                 }
             }
         }
-        if (attempt < 12) {
+        if (attempt < 8) {
             binding.messagesView.postDelayed(() -> jumpToMessageUuid(messageUuid, attempt + 1), 90);
+            return;
+        }
+        if (attempt < 8 + 20 && activity != null && this.conversation != null && messageList.size() > 0) {
+            final long timestamp = this.conversation.loadMoreTimestamp();
+            if (timestamp == 0) {
+                return;
+            }
+            final Conversation conversation = this.conversation;
+            activity.xmppConnectionService.loadMoreMessages(conversation, timestamp, new XmppConnectionService.OnMoreMessagesLoaded() {
+                @Override
+                public void onMoreMessagesLoaded(final int c, final Conversation conversation) {
+                    if (ConversationFragment.this.conversation != conversation) {
+                        return;
+                    }
+                    activity.runOnUiThread(() -> {
+                        synchronized (messageList) {
+                            conversation.populateWithMessages(messageList, activity == null ? null : activity.xmppConnectionService);
+                            updateStatusMessages();
+                            messageListAdapter.notifyDataSetChanged();
+                        }
+                        jumpToMessageUuid(messageUuid, attempt + 1);
+                    });
+                }
+
+                @Override
+                public void informUser(final int resId) {
+
+                }
+            });
         }
     }
 
@@ -3930,18 +3959,28 @@ public class ConversationFragment extends XmppFragment
                 final int accentBase = StyledAttributes.getColor(activity, R.attr.colorAccent);
                 final int accent =
                         Color.argb(
-                                105,
+                                160,
+                                Color.red(accentBase),
+                                Color.green(accentBase),
+                                Color.blue(accentBase));
+                final int accentSoft =
+                        Color.argb(
+                                70,
                                 Color.red(accentBase),
                                 Color.green(accentBase),
                                 Color.blue(accentBase));
                 final ValueAnimator animator =
                         ValueAnimator.ofObject(
-                                new ArgbEvaluator(), Color.TRANSPARENT, accent, Color.TRANSPARENT);
-                animator.setDuration(850);
+                                new ArgbEvaluator(), Color.TRANSPARENT, accent, accentSoft, Color.TRANSPARENT);
+                animator.setDuration(2000);
                 animator.addUpdateListener(
                         animation -> target.setBackgroundColor((int) animation.getAnimatedValue()));
                 animator.start();
-                target.postDelayed(() -> target.setBackground(originalBackground), 900);
+                target.postDelayed(() -> {
+                    if (target.isAttachedToWindow()) {
+                        target.setBackground(originalBackground);
+                    }
+                }, 2150);
                 return;
             }
         }

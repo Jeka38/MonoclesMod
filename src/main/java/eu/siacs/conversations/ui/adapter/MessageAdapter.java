@@ -1770,14 +1770,34 @@ public class MessageAdapter extends ArrayAdapter<Message> {
             view.setTag(viewHolder);
             if (viewHolder.contact_picture != null) {
                 final ViewHolder currentHolder = viewHolder;
-                viewHolder.contact_picture.setLongClickable(true);
-                viewHolder.contact_picture.setOnLongClickListener(v -> {
-                    if (MessageAdapter.this.mOnContactPictureLongClickedListener != null) {
-                        MessageAdapter.this.mOnContactPictureLongClickedListener.onContactPictureLongClicked(v, currentHolder.boundMessage);
-                        return true;
-                    } else {
-                        return false;
+                final float[] downXY = new float[2];
+                final int touchSlop = ViewConfiguration.get(activity).getScaledTouchSlop();
+                viewHolder.contact_picture.setOnTouchListener((v, event) -> {
+                    switch (event.getActionMasked()) {
+                        case MotionEvent.ACTION_DOWN:
+                            currentHolder.longPressHandled = false;
+                            downXY[0] = event.getRawX();
+                            downXY[1] = event.getRawY();
+                            if (currentHolder.avatarLongPressRunnable != null
+                                    && MessageAdapter.this.mOnContactPictureLongClickedListener != null) {
+                                handler.postDelayed(currentHolder.avatarLongPressRunnable, 200);
+                            }
+                            return false;
+                        case MotionEvent.ACTION_MOVE:
+                            if (currentHolder.avatarLongPressRunnable != null
+                                    && (Math.abs(event.getRawX() - downXY[0]) > touchSlop
+                                    || Math.abs(event.getRawY() - downXY[1]) > touchSlop)) {
+                                handler.removeCallbacks(currentHolder.avatarLongPressRunnable);
+                            }
+                            return false;
+                        case MotionEvent.ACTION_UP:
+                        case MotionEvent.ACTION_CANCEL:
+                            if (currentHolder.avatarLongPressRunnable != null) {
+                                handler.removeCallbacks(currentHolder.avatarLongPressRunnable);
+                            }
+                            return false;
                     }
+                    return false;
                 });
             }
         } else {
@@ -1787,7 +1807,19 @@ public class MessageAdapter extends ArrayAdapter<Message> {
             }
         }
 
-        viewHolder.boundMessage = message;
+        if (viewHolder.avatarLongPressRunnable != null) {
+            handler.removeCallbacks(viewHolder.avatarLongPressRunnable);
+        }
+        final Message boundMessage = message;
+        viewHolder.avatarLongPressRunnable = () -> {
+            if (!viewHolder.contact_picture.isAttachedToWindow()) {
+                return;
+            }
+            viewHolder.longPressHandled = true;
+            if (MessageAdapter.this.mOnContactPictureLongClickedListener != null) {
+                MessageAdapter.this.mOnContactPictureLongClickedListener.onContactPictureLongClicked(viewHolder.contact_picture, boundMessage);
+            }
+        };
 
         boolean darkBackground = activity.isDarkTheme();
 
@@ -1916,6 +1948,8 @@ public class MessageAdapter extends ArrayAdapter<Message> {
             }
             if (mConversationFragment != null) {
                 mConversationFragment.showMessageContextMenu(v, message);
+            } else if (MessageAdapter.this.mOnMessageBoxClickedListener != null) {
+                MessageAdapter.this.mOnMessageBoxClickedListener.onContactPictureClicked(message);
             }
         };
         view.setOnClickListener(messageContextClickListener);
@@ -1933,6 +1967,10 @@ public class MessageAdapter extends ArrayAdapter<Message> {
         viewHolder.messageBody.setOnLongClickListener(messageContextLongClickListener);
 
         viewHolder.contact_picture.setOnClickListener(v -> {
+            if (viewHolder.longPressHandled) {
+                viewHolder.longPressHandled = false;
+                return;
+            }
             if (MessageAdapter.this.mOnContactPictureClickedListener != null) {
                 MessageAdapter.this.mOnContactPictureClickedListener.onContactPictureClicked(message);
             }
@@ -2348,7 +2386,8 @@ public class MessageAdapter extends ArrayAdapter<Message> {
         protected TextView user;
         protected TextView username;
         protected ImageView contact_picture;
-        protected Message boundMessage;
+        protected Runnable avatarLongPressRunnable;
+        protected boolean longPressHandled;
         protected TextView status_message;
         protected TextView encryption;
         protected ListView commands_list;
