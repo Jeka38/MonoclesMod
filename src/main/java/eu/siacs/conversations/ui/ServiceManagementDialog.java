@@ -22,6 +22,7 @@ import java.util.ArrayList;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Set;
+import java.util.stream.Collectors;
 
 import eu.siacs.conversations.R;
 import eu.siacs.conversations.databinding.ServiceManagementDialogBinding;
@@ -182,6 +183,7 @@ public class ServiceManagementDialog {
         if (!featuresKnown || features.contains(Namespace.MUC) || identities.contains("conference/text") || identities.contains("conference/irc")) {
             addAction(getString(R.string.join_room), this::joinRoom);
         }
+        addAction(getString(R.string.service_add_to_roster), () -> addToRoster(serviceJid));
         addAction(getString(R.string.copy_jid), this::copyJid);
         hideButtons();
     }
@@ -338,6 +340,11 @@ public class ServiceManagementDialog {
             return;
         }
         final Data form = formWrapper.submit();
+        for (final Field field : form.getFields()) {
+            if (field.getValues() != null) {
+                field.setValues(field.getValues().stream().map(value -> value == null ? null : value.replaceFirst("\\s+$", "")).collect(Collectors.toList()));
+            }
+        }
         showProgress(getString(R.string.service_searching));
         final IqPacket packet = new IqPacket(IqPacket.TYPE.SET);
         packet.setTo(serviceJid);
