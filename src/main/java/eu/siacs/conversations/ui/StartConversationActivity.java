@@ -20,6 +20,7 @@ import android.preference.PreferenceManager;
 import android.os.Build;
 import android.os.Bundle;
 import android.text.Editable;
+import android.text.TextUtils;
 import android.text.TextWatcher;
 import android.util.Log;
 import android.util.Pair;
@@ -82,6 +83,7 @@ import com.leinardi.android.speeddial.SpeedDialView;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
+import java.util.Set;
 import java.util.concurrent.atomic.AtomicBoolean;
 
 import eu.siacs.conversations.Config;
@@ -91,6 +93,7 @@ import eu.siacs.conversations.entities.Account;
 import eu.siacs.conversations.entities.Bookmark;
 import eu.siacs.conversations.entities.Contact;
 import eu.siacs.conversations.entities.Conversation;
+import eu.siacs.conversations.entities.GroupHeader;
 import eu.siacs.conversations.entities.ListItem;
 import eu.siacs.conversations.entities.MucOptions;
 import eu.siacs.conversations.entities.Presence;
@@ -235,7 +238,7 @@ public class StartConversationActivity extends XmppActivity implements XmppConne
         public boolean onEditorAction(TextView v, int actionId, KeyEvent event) {
             int pos = binding.startConversationViewPager.getCurrentItem();
             if (pos == 0) {
-                if (contacts.size() == 1) {
+                if (contacts.size() == 1 && contacts.get(0) instanceof Contact) {
                     openConversationForContact((Contact) contacts.get(0));
                     return true;
                 } else if (contacts.size() == 0 && conferences.size() == 1) {
@@ -246,7 +249,7 @@ public class StartConversationActivity extends XmppActivity implements XmppConne
                 if (conferences.size() == 1) {
                     openConversationsForBookmark((Bookmark) conferences.get(0));
                     return true;
-                } else if (conferences.size() == 0 && contacts.size() == 1) {
+                } else if (conferences.size() == 0 && contacts.size() == 1 && contacts.get(0) instanceof Contact) {
                     openConversationForContact((Contact) contacts.get(0));
                     return true;
                 }
@@ -333,6 +336,7 @@ public class StartConversationActivity extends XmppActivity implements XmppConne
         mConferenceAdapter = new ListItemAdapter(this, conferences);
         mContactsAdapter = new ListItemAdapter(this, contacts);
         mContactsAdapter.setOnTagClickedListener(this.mOnTagClickedListener);
+        mContactsAdapter.setOnGroupHeaderClickListener(this::toggleContactGroupCollapse);
         IntroHelper.showIntro(this, false);
         final SharedPreferences preferences = getPreferences();
 
@@ -492,8 +496,14 @@ public class StartConversationActivity extends XmppActivity implements XmppConne
     }
 
     protected void openConversationForContact(int position) {
-        Contact contact = (Contact) contacts.get(position);
-        openConversationForContact(contact);
+        if (position < 0 || position >= contacts.size()) {
+            return;
+        }
+        ListItem item = contacts.get(position);
+        if (!(item instanceof Contact)) {
+            return;
+        }
+        openConversationForContact((Contact) item);
     }
 
     protected void openConversationForContact(Contact contact) {
@@ -1246,6 +1256,9 @@ public class StartConversationActivity extends XmppActivity implements XmppConne
             if (getBooleanPreference(SettingsActivity.SORT_BY_LAST_MESSAGE, R.bool.sort_by_last_message)) {
                 this.contacts.sort(this::compareByLastMessage);
             }
+            if (TextUtils.isEmpty(needle)) {
+                groupContacts();
+            }
 /*                              //TODO: Make bridges deletable
         //Whatsapp bridge
         final boolean whatsappDeleted = getPreferences().getBoolean("whatsapp_bridge_bookmark_deleted", false);
@@ -1355,6 +1368,68 @@ public class StartConversationActivity extends XmppActivity implements XmppConne
         }
         final Conversation conversation = xmppConnectionService.find(item.getAccount(), jid);
         return conversation == null ? 0 : conversation.getSortableTimeExcludingStatusMessages();
+    }
+
+    private void groupContacts() {
+        if (contacts.isEmpty()) {
+            return;
+        }
+        final Set<String> collapsed = PreferenceManager.getDefaultSharedPreferences(this)
+                .getStringSet("collapsed_groups", Collections.emptySet());
+        final Map<String, List<ListItem>> groups = new java.util.TreeMap<>(String.CASE_INSENSITIVE_ORDER);
+        final List<ListItem> ungrouped = new ArrayList<>();
+        for (ListItem item : contacts) {
+            if (item instanceof GroupHeader) {
+                continue;
+            }
+            final List<String> contactTags = item instanceof Contact
+                    ? getGroupTagNames((Contact) item)
+                    : Collections.emptyList();
+            if (contactTags.isEmpty()) {
+                ungrouped.add(item);
+            } else {
+                for (String tag : contactTags) {
+                    groups.computeIfAbsent(tag, ignored -> new ArrayList<>()).add(item);
+                }
+            }
+        }
+        final List<ListItem> grouped = new ArrayList<>();
+        for (Map.Entry<String, List<ListItem>> entry : groups.entrySet()) {
+            grouped.add(new GroupHeader(entry.getKey()));
+            if (!collapsed.contains("contacttag:" + entry.getKey())) {
+                grouped.addAll(entry.getValue());
+            }
+        }
+        if (!ungrouped.isEmpty()) {
+            grouped.add(new GroupHeader(getString(R.string.contacts_without_labels)));
+            if (!collapsed.contains("contacttag:" + getString(R.string.contacts_without_labels))) {
+                grouped.addAll(ungrouped);
+            }
+        }
+        contacts.clear();
+        contacts.addAll(grouped);
+    }
+
+    private List<String> getGroupTagNames(Contact contact) {
+        final List<String> names = new ArrayList<>();
+        for (ListItem.Tag tag : contact.getGroupTags()) {
+            if (!names.contains(tag.getName())) {
+                names.add(tag.getName());
+            }
+        }
+        return names;
+    }
+
+    private void toggleContactGroupCollapse(String groupName) {
+        final String headerKey = "contacttag:" + groupName;
+        final Set<String> collapsed = new HashSet<>(PreferenceManager.getDefaultSharedPreferences(this)
+                .getStringSet("collapsed_groups", Collections.emptySet()));
+        if (!collapsed.add(headerKey)) {
+            collapsed.remove(headerKey);
+        }
+        PreferenceManager.getDefaultSharedPreferences(this)
+                .edit().putStringSet("collapsed_groups", collapsed).apply();
+        filter(mSearchEditText != null ? mSearchEditText.getText().toString() : null);
     }
 
     @Override
@@ -1559,8 +1634,13 @@ public class StartConversationActivity extends XmppActivity implements XmppConne
             if (activity == null) {
                 return;
             }
-            activity.getMenuInflater().inflate(mResContextMenu, menu);
             final AdapterView.AdapterContextMenuInfo acmi = (AdapterContextMenuInfo) menuInfo;
+            if (mResContextMenu == R.menu.contact_context
+                    && !(activity.contacts.get(acmi.position) instanceof Contact)) {
+                menu.clear();
+                return;
+            }
+            activity.getMenuInflater().inflate(mResContextMenu, menu);
             if (mResContextMenu == R.menu.conference_context) {
                 activity.conference_context_id = acmi.position;
                 final Bookmark bookmark = (Bookmark) activity.conferences.get(acmi.position);

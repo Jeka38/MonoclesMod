@@ -3339,22 +3339,29 @@ public class XmppConnectionService extends Service {
             }
             conversation = databaseBackend.findConversation(account, jid, counterpart);
             final boolean loadMessagesFromDb;
+            final boolean keepArchived = conversation != null
+                    && conversation.getStatus() == Conversation.STATUS_ARCHIVED
+                    && query != null;
             if (conversation != null) {
                 if (counterpart == null && conversation.getNextCounterpart() != null) {
                     conversation.setNextCounterpart(null);
                 }
-                conversation.setStatus(Conversation.STATUS_AVAILABLE);
-                conversation.setAccount(account);
-                if (muc) {
-                    conversation.setMode(Conversation.MODE_MULTI);
-                    conversation.setContactJid(jid);
-                    if (password != null) conversation.getMucOptions().setPassword(password);
+                if (!keepArchived) {
+                    conversation.setStatus(Conversation.STATUS_AVAILABLE);
+                    conversation.setAccount(account);
+                    if (muc) {
+                        conversation.setMode(Conversation.MODE_MULTI);
+                        conversation.setContactJid(jid);
+                        if (password != null) conversation.getMucOptions().setPassword(password);
+                    } else {
+                        conversation.setMode(Conversation.MODE_SINGLE);
+                        conversation.setContactJid(jid.asBareJid());
+                    }
+                    databaseBackend.updateConversation(conversation);
+                    loadMessagesFromDb = conversation.messagesLoaded.compareAndSet(true, false);
                 } else {
-                    conversation.setMode(Conversation.MODE_SINGLE);
-                    conversation.setContactJid(jid.asBareJid());
+                    loadMessagesFromDb = false;
                 }
-                databaseBackend.updateConversation(conversation);
-                loadMessagesFromDb = conversation.messagesLoaded.compareAndSet(true, false);
             } else {
                 String conversationName;
                 Contact contact = account.getRoster().getContact(jid);
@@ -3385,6 +3392,7 @@ public class XmppConnectionService extends Service {
                     c.messagesLoaded.set(true);
                 }
                 if (account.getXmppConnection() != null
+                        && !keepArchived
                         && !c.getContact().isBlocked()
                         && account.getXmppConnection().getFeatures().mam()
                         && !muc) {
@@ -3404,6 +3412,9 @@ public class XmppConnectionService extends Service {
                 mDatabaseReaderExecutor.execute(runnable);
             } else {
                 runnable.run();
+            }
+            if (keepArchived) {
+                return conversation;
             }
             this.conversations.add(conversation);
             updateConversationUi();

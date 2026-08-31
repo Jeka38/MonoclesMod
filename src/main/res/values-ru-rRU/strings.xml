@@ -81,6 +81,7 @@
     <string name="join_conference">Присоединиться к конференции</string>
     <string name="join_conference_name">Войти в %1$s</string>
     <string name="add_to_favorites">Закрепить</string>
+    <string name="contacts_without_labels">Контакты без меток</string>
     <string name="admin">администратор</string>
     <string name="admins_can_edit_subject">Админы могут изменять эту тему.</string>
     <string name="advanced_mode">Расширенный режим</string>

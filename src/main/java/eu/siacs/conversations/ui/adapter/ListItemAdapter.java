@@ -18,10 +18,12 @@ import androidx.core.graphics.ColorUtils;
 
 import com.wefika.flowlayout.FlowLayout;
 
+import java.util.HashSet;
 import java.util.List;
 
 import eu.siacs.conversations.R;
 import eu.siacs.conversations.databinding.ContactBinding;
+import eu.siacs.conversations.entities.GroupHeader;
 import eu.siacs.conversations.entities.ListItem;
 import eu.siacs.conversations.entities.Contact;
 import eu.siacs.conversations.ui.SettingsActivity;
@@ -35,6 +37,10 @@ import eu.siacs.conversations.xmpp.Jid;
 
 public class ListItemAdapter extends ArrayAdapter<ListItem> {
 
+    private static final int TYPE_CONTACT = 0;
+    private static final int TYPE_HEADER = 1;
+    private static final String GROUP_TAG_PREFIX = "contacttag:";
+
     private static final float INACTIVE_ALPHA = 0.4684f;
     private static final float ACTIVE_ALPHA = 1.0f;
     protected static XmppActivity activity;
@@ -42,6 +48,7 @@ public class ListItemAdapter extends ArrayAdapter<ListItem> {
     private boolean showPresenceColoredNames = false;
     private boolean showClientIcons = false;
     private OnTagClickedListener mOnTagClickedListener = null;
+    private OnGroupHeaderClickListener mOnGroupHeaderClickListener = null;
     protected int color = 0;
     protected boolean offline = false;
     private View.OnClickListener onTagTvClick = new View.OnClickListener() {
@@ -68,9 +75,40 @@ public class ListItemAdapter extends ArrayAdapter<ListItem> {
     }
 
     @Override
+    public int getViewTypeCount() {
+        return 2;
+    }
+
+    @Override
+    public int getItemViewType(int position) {
+        return getItem(position) instanceof GroupHeader ? TYPE_HEADER : TYPE_CONTACT;
+    }
+
+    @Override
     public View getView(int position, View view, ViewGroup parent) {
         LayoutInflater inflater = activity.getLayoutInflater();
         ListItem item = getItem(position);
+
+        if (item instanceof GroupHeader) {
+            if (view == null) {
+                view = inflater.inflate(R.layout.conversation_list_header, parent, false);
+            }
+            final GroupHeader header = (GroupHeader) item;
+            final TextView headerText = view.findViewById(R.id.header_text);
+            final ImageView headerIndicator = view.findViewById(R.id.header_indicator);
+            SharedPreferences sharedPref = PreferenceManager.getDefaultSharedPreferences(activity);
+            final String headerKey = GROUP_TAG_PREFIX + header.getName();
+            final boolean collapsed = sharedPref.getStringSet("collapsed_groups", new HashSet<>()).contains(headerKey);
+            headerText.setText(header.getName());
+            headerIndicator.setImageResource(collapsed ? R.drawable.ic_expand_more_black_24dp : R.drawable.ic_expand_less_black_24dp);
+            view.setOnClickListener(v -> {
+                if (mOnGroupHeaderClickListener != null) {
+                    mOnGroupHeaderClickListener.onGroupHeaderClicked(header.getName());
+                }
+            });
+            return view;
+        }
+
         ViewHolder viewHolder;
         if (view == null) {
             ContactBinding binding = DataBindingUtil.inflate(inflater, R.layout.contact, parent, false);
@@ -182,6 +220,14 @@ public class ListItemAdapter extends ArrayAdapter<ListItem> {
 
     public interface OnTagClickedListener {
         void onTagClicked(String tag);
+    }
+
+    public void setOnGroupHeaderClickListener(OnGroupHeaderClickListener listener) {
+        this.mOnGroupHeaderClickListener = listener;
+    }
+
+    public interface OnGroupHeaderClickListener {
+        void onGroupHeaderClicked(String groupName);
     }
 
     private static class ViewHolder {
