@@ -13,11 +13,7 @@ export JAVA_HOME=/home/eugene/.jdks/jbr-17.0.14
 export PATH=$JAVA_HOME/bin:$PATH
 ```
 
-Download WebRTC first (not committed):
-
-```bash
-wget -O libs/libwebrtc-m92.aar https://gultsch.de/files/libwebrtc-m92.aar
-```
+WebRTC is a Maven dependency (`im.conversations.webrtc:webrtc-android:119.0.1`) — no local `.aar` download needed.
 
 Build Git (F-Droid) flavor:
 
@@ -56,17 +52,17 @@ Both release and debug builds have ProGuard + shrinking enabled. `-dontobfuscate
 ## Key gotchas
 
 - **No tests exist.** No test directory. `libs:AXML` has a `// TODO UNIT TESTS` comment.
-- **WebRTC `.aar` must be downloaded before building** (see command above).
 - **Spotless plugin** is declared as a dependency but **not configured** — no formatting rules enforced.
 - **Data binding + view binding** are both enabled.
 - **Signing config** is conditional — requires `mStoreFile`, `mStorePassword`, `mKeyAlias`, `mKeyPassword` project properties. Without them, signing configs are omitted.
 - **JVM target:** 17, with Java 8+ desugaring enabled.
 - **Gradle daemon is disabled** (`org.gradle.daemon=false` in `gradle.properties`).
 - **Lint:** `abortOnError false`; disables `MissingTranslation`, `ExtraTranslation`, etc.
+- **Layout variants diverge.** `layout-land/fragment_conversation.xml` can differ significantly from portrait (e.g. was missing `live_location_banner` causing a crash on HONOR foldable). Always update both variants when adding views to `fragment_conversation.xml`.
 
 ## CI references
 
-- **CircleCI:** `lintGitDebug` (test job), `assembleGit` (build job). Uses F-Droid CI Docker image. Current.
+- **CircleCI:** `test` job runs `lintGitDebug`, build job runs `assembleGit`. Uses F-Droid CI Docker image. Current.
 - **GitLab CI:** uses `assembleStandard`, which does **not** exist in the current `build.gradle` (only `git`/`playstore` flavors) — the pipeline is broken/stale.
 - **GitHub Actions:** builds `QuicksyFree*` and `ConversationsFree*` variants — these flavor names do **not** exist in the current `build.gradle`; the workflow is outdated for this fork.
 

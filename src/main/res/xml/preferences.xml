@@ -475,18 +475,12 @@
             android:summary="@string/pref_auto_away_summary"
             android:title="@string/pref_auto_away" />
         <EditTextPreference
-            android:defaultValue="@integer/auto_dnd_minutes"
+            android:defaultValue="@integer/auto_xa_minutes"
             android:dependency="manually_change_presence"
             android:inputType="number"
-            android:key="auto_dnd_minutes"
-            android:summary="@string/pref_auto_dnd_summary"
-            android:title="@string/pref_auto_dnd" />
-        <SwitchPreference
-            android:defaultValue="@bool/away_when_screen_off"
-            android:dependency="manually_change_presence"
-            android:key="away_when_screen_off"
-            android:summary="@string/pref_away_when_screen_off_summary"
-            android:title="@string/pref_away_when_screen_off" />
+            android:key="auto_xa_minutes"
+            android:summary="@string/pref_auto_xa_summary"
+            android:title="@string/pref_auto_xa" />
         <SwitchPreference
             android:defaultValue="@bool/dnd_on_silent_mode"
             android:dependency="manually_change_presence"

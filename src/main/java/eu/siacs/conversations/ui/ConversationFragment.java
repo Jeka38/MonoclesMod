@@ -64,6 +64,7 @@ import android.text.Editable;
 import android.text.Html;
 import android.text.Spannable;
 import android.text.SpannableStringBuilder;
+import android.text.InputType;
 import android.text.TextUtils;
 import android.text.method.LinkMovementMethod;
 import android.text.style.ImageSpan;
@@ -287,6 +288,7 @@ public class ConversationFragment extends XmppFragment
     public static final int REQUEST_START_DOWNLOAD = 0x0210;
     public static final int REQUEST_ADD_EDITOR_CONTENT = 0x0211;
     public static final int REQUEST_COMMIT_ATTACHMENTS = 0x0212;
+    public static final int REQUEST_LIVE_LOCATION = 0x0219;
     public static final int ATTACHMENT_CHOICE = 0x0300;
     public static final int REQUEST_START_AUDIO_CALL = 0x213;
     public static final int REQUEST_START_VIDEO_CALL = 0x214;
@@ -1114,7 +1116,7 @@ public class ConversationFragment extends XmppFragment
         ConversationMenuConfigurator.configureQuickShareAttachmentMenu(conversation, menu, hideVoiceAndTakePicture);
         popup.setOnMenuItemClickListener(attachmentItem -> {
             int itemId = attachmentItem.getItemId();
-            if (itemId == R.id.attach_choose_picture || itemId == R.id.attach_choose_video || itemId == R.id.attach_take_picture || itemId == R.id.attach_record_video || itemId == R.id.attach_choose_file || itemId == R.id.attach_record_voice || itemId == R.id.attach_subject || itemId == R.id.attach_webxdc || itemId == R.id.attach_location) {
+            if (itemId == R.id.attach_choose_picture || itemId == R.id.attach_choose_video || itemId == R.id.attach_take_picture || itemId == R.id.attach_record_video || itemId == R.id.attach_choose_file || itemId == R.id.attach_record_voice || itemId == R.id.attach_subject || itemId == R.id.attach_webxdc || itemId == R.id.attach_location || itemId == R.id.attach_live_location) {
                 handleAttachmentSelection(attachmentItem);
             }
             return false;
@@ -1237,6 +1239,112 @@ public class ConversationFragment extends XmppFragment
 
             }
         });
+    }
+
+    private final Handler liveLocationUiHandler = new Handler();
+    private final Runnable liveLocationCountdown = this::updateLiveLocationBanner;
+
+    private void startLiveLocation() {
+        if (conversation == null || activity == null) {
+            return;
+        }
+        final List<String> permissions = new ArrayList<>();
+        permissions.add(Manifest.permission.ACCESS_FINE_LOCATION);
+        permissions.add(Manifest.permission.ACCESS_COARSE_LOCATION);
+        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.R
+                && activity.checkSelfPermission(Manifest.permission.ACCESS_BACKGROUND_LOCATION) != PackageManager.PERMISSION_GRANTED) {
+            permissions.add(Manifest.permission.ACCESS_BACKGROUND_LOCATION);
+        }
+        if (hasPermissions(REQUEST_LIVE_LOCATION, permissions)) {
+            showLiveLocationDialog();
+        }
+    }
+
+    private void showLiveLocationDialog() {
+        if (getActivity() == null) {
+            return;
+        }
+        final LinearLayout layout = new LinearLayout(getActivity());
+        layout.setOrientation(LinearLayout.VERTICAL);
+        layout.setPadding(64, 16, 64, 16);
+
+        final TextView hint = new TextView(getActivity());
+        hint.setText(R.string.live_location_hint);
+        hint.setTextSize(14);
+        hint.setPadding(0, 0, 0, 16);
+        layout.addView(hint);
+
+        final EditText durationInput = new EditText(getActivity());
+        durationInput.setHint(R.string.live_location_duration_hint);
+        durationInput.setInputType(InputType.TYPE_CLASS_NUMBER | InputType.TYPE_NUMBER_FLAG_DECIMAL);
+        durationInput.setSelection(durationInput.length());
+        layout.addView(durationInput);
+
+        final EditText intervalInput = new EditText(getActivity());
+        intervalInput.setHint(R.string.live_location_interval_hint);
+        intervalInput.setInputType(InputType.TYPE_CLASS_NUMBER | InputType.TYPE_NUMBER_FLAG_DECIMAL);
+        intervalInput.setSelection(intervalInput.length());
+        layout.addView(intervalInput);
+
+        final AlertDialog.Builder builder = new AlertDialog.Builder(activity);
+        builder.setTitle(R.string.live_location);
+        builder.setView(layout);
+        builder.setNegativeButton(R.string.cancel, null);
+        builder.setPositiveButton(R.string.start, (dialog, which) -> {
+            final int durationMinutes = parsePositiveInt(durationInput.getText().toString());
+            final int intervalSeconds = parsePositiveInt(intervalInput.getText().toString());
+            if (durationMinutes > 0 && intervalSeconds > 0) {
+                startLiveLocation(intervalSeconds, durationMinutes);
+            } else {
+                ToastCompat.makeText(activity, R.string.live_location_invalid, ToastCompat.LENGTH_SHORT).show();
+            }
+        });
+        builder.create().show();
+    }
+
+    private static int parsePositiveInt(final String value) {
+        if (value == null) {
+            return -1;
+        }
+        try {
+            return Integer.parseInt(value.trim());
+        } catch (final NumberFormatException e) {
+            return -1;
+        }
+    }
+
+    private void startLiveLocation(final int intervalSeconds, final int durationMinutes) {
+        if (conversation == null || activity == null || activity.xmppConnectionService == null) {
+            return;
+        }
+        activity.xmppConnectionService.startLiveLocation(conversation, durationMinutes, intervalSeconds);
+        updateLiveLocationBanner();
+    }
+
+    private void stopLiveLocation() {
+        if (conversation == null || activity == null || activity.xmppConnectionService == null) {
+            return;
+        }
+        activity.xmppConnectionService.stopLiveLocation(conversation);
+        updateLiveLocationBanner();
+    }
+
+    private void updateLiveLocationBanner() {
+        if (binding == null || binding.liveLocationBanner == null || conversation == null || activity == null || activity.xmppConnectionService == null) {
+            return;
+        }
+        final boolean active = activity.xmppConnectionService.isLiveLocationActive(conversation);
+        binding.liveLocationBanner.setVisibility(active ? View.VISIBLE : GONE);
+        if (active) {
+            final long remainingSeconds = activity.xmppConnectionService.getLiveLocationRemainingSeconds(conversation);
+            binding.liveLocationText.setText(getString(R.string.live_location_active,
+                    String.format(Locale.US, "%d:%02d", remainingSeconds / 60, remainingSeconds % 60)));
+            binding.liveLocationStop.setOnClickListener(v -> stopLiveLocation());
+            liveLocationUiHandler.removeCallbacks(liveLocationCountdown);
+            liveLocationUiHandler.postDelayed(liveLocationCountdown, 1000);
+        } else {
+            liveLocationUiHandler.removeCallbacks(liveLocationCountdown);
+        }
     }
 
     private void attachFileToConversation(Conversation conversation, Uri uri, String type) {
@@ -1866,7 +1974,7 @@ public class ConversationFragment extends XmppFragment
                 menuGroupDetails.setVisible(false);
                 menuContactDetails.setVisible(false);
             }
-            deleteCustomBg.setVisible(ChatBackgroundHelper.getBgFile(activity, conversation.getUuid()).exists());
+            deleteCustomBg.setVisible(conversation != null && ChatBackgroundHelper.getBgFile(activity, conversation.getUuid()).exists());
             super.onCreateOptionsMenu(menu, menuInflater);
         }
         Fragment secondaryFragment = activity.getFragmentManager().findFragmentById(R.id.secondary_fragment);
@@ -2706,7 +2814,7 @@ public class ConversationFragment extends XmppFragment
         int itemId = item.getItemId();
         if (itemId == R.id.encryption_choice_axolotl || itemId == R.id.encryption_choice_otr || itemId == R.id.encryption_choice_pgp || itemId == R.id.encryption_choice_none) {
             handleEncryptionSelection(item);
-        } else if (itemId == R.id.attach_choose_picture || itemId == R.id.attach_choose_video || itemId == R.id.attach_take_picture || itemId == R.id.attach_record_video || itemId == R.id.attach_choose_file || itemId == R.id.attach_record_voice || itemId == R.id.attach_location) {
+        } else if (itemId == R.id.attach_choose_picture || itemId == R.id.attach_choose_video || itemId == R.id.attach_take_picture || itemId == R.id.attach_record_video || itemId == R.id.attach_choose_file || itemId == R.id.attach_record_voice || itemId == R.id.attach_location || itemId == R.id.attach_live_location) {
             handleAttachmentSelection(item);
         } else if (itemId == R.id.attach_webxdc) {
             handleAttachmentSelection(item);
@@ -3017,6 +3125,8 @@ public class ConversationFragment extends XmppFragment
             activity.overridePendingTransition(R.animator.fade_in, R.animator.fade_out);
         } else if (itemId == R.id.attach_location) {
             attachFile(ATTACHMENT_CHOICE_LOCATION);
+        } else if (itemId == R.id.attach_live_location) {
+            startLiveLocation();
         } else if (itemId == R.id.attach_subject) {
             binding.textinputSubject.setVisibility(binding.textinputSubject.getVisibility() == GONE ? VISIBLE : GONE);
         }
@@ -3208,6 +3318,8 @@ public class ConversationFragment extends XmppFragment
                     if (mXmppActivity instanceof XmppActivity) {
                         CallManager.triggerRtpSession(RtpSessionActivity.ACTION_MAKE_VIDEO_CALL, (XmppActivity) mXmppActivity, conversation);
                     }
+                } else if (requestCode == REQUEST_LIVE_LOCATION) {
+                    startLiveLocation();
                 } else {
                     attachFile(requestCode);
                 }
@@ -3789,6 +3901,7 @@ public class ConversationFragment extends XmppFragment
         binding.messagesView.post(this::fireReadEvent);
         updateChatBG();
         setupEmojiSearch();
+        updateLiveLocationBanner();
     }
 
     private void disableEncrpytionForExceptions() {
@@ -4410,6 +4523,7 @@ public class ConversationFragment extends XmppFragment
     @Override
     public void onStop() {
         super.onStop();
+        liveLocationUiHandler.removeCallbacksAndMessages(null);
         if (activity != null) {
             hideSoftKeyboard(activity);
         }

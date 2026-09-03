@@ -74,6 +74,7 @@ public class ConversationMenuConfigurator {
         menu.findItem(R.id.attach_record_voice).setVisible(microphoneAvailable);
         menu.findItem(R.id.attach_take_picture).setVisible(cameraAvailable);
         menu.findItem(R.id.attach_location).setVisible(locationAvailable);
+        menu.findItem(R.id.attach_live_location).setVisible(locationAvailable);
         menu.findItem(R.id.attach_subject).setVisible(attachSubject);
     }
 
@@ -106,6 +107,7 @@ public class ConversationMenuConfigurator {
         menu.findItem(R.id.attach_record_voice).setVisible(microphoneAvailable);
         menu.findItem(R.id.attach_take_picture).setVisible(cameraAvailable);
         menu.findItem(R.id.attach_location).setVisible(locationAvailable);
+        menu.findItem(R.id.attach_live_location).setVisible(locationAvailable);
         menu.findItem(R.id.attach_subject).setVisible(attachSubject);
     }
 

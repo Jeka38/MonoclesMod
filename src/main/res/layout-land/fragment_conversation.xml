@@ -113,6 +113,37 @@
                         android:dividerHeight="0dp"
                         android:visibility="gone" />
 
+                    <LinearLayout
+                        android:id="@+id/live_location_banner"
+                        android:layout_width="match_parent"
+                        android:layout_height="wrap_content"
+                        android:orientation="horizontal"
+                        android:gravity="center_vertical"
+                        android:padding="8dp"
+                        android:background="?attr/color_background_secondary"
+                        android:layout_marginBottom="4dp"
+                        android:visibility="gone"
+                        android:animateLayoutChanges="true" >
+
+                        <TextView
+                            android:id="@+id/live_location_text"
+                            android:layout_width="0dp"
+                            android:layout_height="wrap_content"
+                            android:layout_weight="1"
+                            android:text="@string/live_location_active"
+                            android:textSize="14sp"
+                            android:layout_marginEnd="8dp"
+                            android:layout_marginRight="8dp" />
+
+                        <ImageView
+                            android:id="@+id/live_location_stop"
+                            android:layout_width="28dp"
+                            android:layout_height="28dp"
+                            android:contentDescription="@string/live_location_stop"
+                            android:src="@android:drawable/ic_menu_close_clear_cancel"
+                            android:background="?attr/selectableItemBackgroundBorderless" />
+                    </LinearLayout>
+
                     <RelativeLayout
                         android:id="@+id/recordingVoiceActivity"
                         android:layout_width="match_parent"

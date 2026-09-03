@@ -11,6 +11,18 @@
         android:layout_height="wrap_content"
         android:textAppearance="@style/TextAppearance.Conversations.Body1" />
 
+    <eu.siacs.conversations.ui.widget.TextInputEditText
+        android:id="@+id/search"
+        style="@style/Widget.Material3.TextInputEditText.FilledBox"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:layout_marginLeft="8dp"
+        android:layout_marginRight="8dp"
+        android:hint="@string/search"
+        android:imeOptions="actionNext"
+        android:minLines="1"
+        android:visibility="gone" />
+
     <ListView
         android:id="@+id/list"
         android:layout_width="match_parent"

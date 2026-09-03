@@ -634,6 +634,7 @@ public class ServiceManagementDialog {
             viewForm.addChild(field);
         }
         clearContent();
+        commandForm = form;
         binding.title.setText(getString(R.string.service_command));
         final String title = form.getTitle();
         if (title != null) {

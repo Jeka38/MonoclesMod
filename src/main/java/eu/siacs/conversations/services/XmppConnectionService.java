@@ -271,6 +271,7 @@ public class XmppConnectionService extends Service {
     public static final String ACTION_PING = "ping";
     public static final String ACTION_IDLE_PING = "idle_ping";
     public static final String ACTION_INTERNAL_PING = "internal_ping";
+    public static final String ACTION_AUTO_PRESENCE = "auto_presence";
     public static final String ACTION_FCM_TOKEN_REFRESH = "fcm_token_refresh";
     public static final String ACTION_FCM_MESSAGE_RECEIVED = "fcm_message_received";
     public static final String ACTION_DISMISS_CALL = "dismiss_call";
@@ -317,14 +318,27 @@ public class XmppConnectionService extends Service {
     private final ReplacingSerialSingleThreadExecutor mContactMergerExecutor = new ReplacingSerialSingleThreadExecutor("ContactMerger");
     private final ReplacingSerialSingleThreadExecutor mSmilesScanExecutor = new ReplacingSerialSingleThreadExecutor("SmilesScan");
     private long mLastActivity = 0;
+    private long mBackgroundStartedAt = -1L;
     private final Map<Jid, Presence.Status> mLastSentPresenceStatus = new HashMap<>();
-    private static final long AUTO_PRESENCE_CHECK_INTERVAL = 30L * 1000L;
+    private static final long AUTO_PRESENCE_CHECK_INTERVAL = 1L * 1000L;
     private final Handler mMainHandler = new Handler();
     private final Runnable mAutoPresenceRunnable = new Runnable() {
         @Override
         public void run() {
-            updateAutoPresence();
-            mMainHandler.postDelayed(this, AUTO_PRESENCE_CHECK_INTERVAL);
+            try {
+                updateAutoPresence();
+            } finally {
+                mMainHandler.postDelayed(this, AUTO_PRESENCE_CHECK_INTERVAL);
+            }
+        }
+    };
+    private static final long AUTO_PRESENCE_CONFIRM_DELAY = 2L * 1000L;
+    private final Runnable mAutoPresenceConfirmRunnable = new Runnable() {
+        @Override
+        public void run() {
+            if (mBackgroundStartedAt < 0) {
+                refreshAllPresences();
+            }
         }
     };
     private long mLastMucPing = 0;
@@ -336,6 +350,7 @@ public class XmppConnectionService extends Service {
     private final UnifiedPushBroker unifiedPushBroker = new UnifiedPushBroker(this);
     private final ChannelDiscoveryService mChannelDiscoveryService = new ChannelDiscoveryService(this);
     private final ShortcutService mShortcutService = new ShortcutService(this);
+    private final LiveLocationManager liveLocationManager = new LiveLocationManager(this);
     private final AtomicBoolean mInitialAddressbookSyncCompleted = new AtomicBoolean(false);
     private final AtomicBoolean mForceForegroundService = new AtomicBoolean(false);
     private final AtomicBoolean mForceDuringOnCreate = new AtomicBoolean(false);
@@ -628,8 +643,6 @@ public class XmppConnectionService extends Service {
     private final BroadcastReceiver mInternalEventReceiver = new InternalEventReceiver();
     private final BroadcastReceiver mInternalRestrictedEventReceiver = new RestrictedEventReceiver(Arrays.asList(TorServiceUtils.ACTION_STATUS));
 
-    private final BroadcastReceiver mInternalScreenEventReceiver = new InternalEventReceiver();
-
     //Gifspaths
     private File[] files;
     private String[] filesPaths;
@@ -797,6 +810,26 @@ public class XmppConnectionService extends Service {
             sendMessage(message);
             callback.success(message);
         }
+    }
+
+    public void startLiveLocation(final Conversation conversation, final int durationMinutes, final int intervalSeconds) {
+        liveLocationManager.start(conversation, durationMinutes, intervalSeconds);
+    }
+
+    public void stopLiveLocation(final Conversation conversation) {
+        liveLocationManager.stop(conversation);
+    }
+
+    public void stopAllLiveLocations() {
+        liveLocationManager.stopAll();
+    }
+
+    public boolean isLiveLocationActive(final Conversation conversation) {
+        return liveLocationManager.isActive(conversation);
+    }
+
+    public long getLiveLocationRemainingSeconds(final Conversation conversation) {
+        return liveLocationManager.remainingSeconds(conversation);
     }
 
     public void attachFileToConversation(final Conversation conversation, final Uri uri, final String type, final String subject, final UiCallback<Message> callback) {
@@ -1098,6 +1131,12 @@ public class XmppConnectionService extends Service {
             case ACTION_IDLE_PING:
                 if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.M) {
                     scheduleNextIdlePing();
+                }
+                break;
+            case ACTION_AUTO_PRESENCE:
+                if (mBackgroundStartedAt >= 0) {
+                    updateAutoPresence();
+                    scheduleAutoPresenceAlarm();
                 }
                 break;
             case ACTION_FCM_MESSAGE_RECEIVED:
@@ -1451,10 +1490,6 @@ public class XmppConnectionService extends Service {
         return getBooleanPreference(SettingsActivity.TREAT_VIBRATE_AS_SILENT, R.bool.treat_vibrate_as_silent);
     }
 
-    private boolean awayWhenScreenLocked() {
-        return getBooleanPreference(SettingsActivity.AWAY_WHEN_SCREEN_IS_OFF, R.bool.away_when_screen_off);
-    }
-
     public boolean alternativeVoiceSettings() {
         return getBooleanPreference("alternative_voice_settings", R.bool.alternative_voice_settings);
     }
@@ -1572,22 +1607,33 @@ public class XmppConnectionService extends Service {
     private Presence.Status getTargetPresence() {
         if (dndOnSilentMode() && isPhoneSilenced()) {
             return Presence.Status.DND;
-        } else if (awayWhenScreenLocked() && isScreenLocked()) {
-            return Presence.Status.AWAY;
         } else {
             return getAutoPresenceStatus();
         }
     }
 
+    public boolean isScreenLocked() {
+        final KeyguardManager keyguardManager = getSystemService(KeyguardManager.class);
+        final PowerManager powerManager = getSystemService(PowerManager.class);
+        final boolean locked = keyguardManager != null && keyguardManager.isKeyguardLocked();
+        final boolean interactive;
+        try {
+            interactive = powerManager != null && powerManager.isInteractive();
+        } catch (final Exception e) {
+            return false;
+        }
+        return locked || !interactive;
+    }
+
     private Presence.Status getAutoPresenceStatus() {
         final long awayMinutes = getLongPreference(SettingsActivity.AUTO_AWAY_MINUTES, R.integer.auto_away_minutes);
-        final long dndMinutes = getLongPreference(SettingsActivity.AUTO_DND_MINUTES, R.integer.auto_dnd_minutes);
-        if (mLastActivity == 0) {
+        final long xaMinutes = getLongPreference(SettingsActivity.AUTO_XA_MINUTES, R.integer.auto_xa_minutes);
+        if (mBackgroundStartedAt < 0) {
             return Presence.Status.ONLINE;
         }
-        final long idleMinutes = (System.currentTimeMillis() - mLastActivity) / 60000L;
-        if (dndMinutes > 0 && idleMinutes >= dndMinutes) {
-            return Presence.Status.DND;
+        final long idleMinutes = (System.currentTimeMillis() - mBackgroundStartedAt) / 60000L;
+        if (xaMinutes > 0 && idleMinutes >= xaMinutes) {
+            return Presence.Status.XA;
         } else if (awayMinutes > 0 && idleMinutes >= awayMinutes) {
             return Presence.Status.AWAY;
         }
@@ -1611,19 +1657,6 @@ public class XmppConnectionService extends Service {
     public void updateLastActivity() {
         mLastActivity = System.currentTimeMillis();
         getPreferences().edit().putLong(SETTING_LAST_ACTIVITY_TS, mLastActivity).apply();
-    }
-
-    public boolean isScreenLocked() {
-        final KeyguardManager keyguardManager = getSystemService(KeyguardManager.class);
-        final PowerManager powerManager = getSystemService(PowerManager.class);
-        final boolean locked = keyguardManager != null && keyguardManager.isKeyguardLocked();
-        final boolean interactive;
-        try {
-            interactive = powerManager != null && powerManager.isInteractive();
-        } catch (final Exception e) {
-            return false;
-        }
-        return locked || !interactive;
     }
 
     private boolean isPhoneSilenced() {
@@ -1873,7 +1906,6 @@ public class XmppConnectionService extends Service {
         this.wakeLock = pm.newWakeLock(PowerManager.PARTIAL_WAKE_LOCK, Config.LOGTAG + ":Service");
         toggleForegroundService();
         updateUnreadCountBadge();
-        toggleScreenEventReceiver();
         final IntentFilter systemBroadcastFilter = new IntentFilter();
         if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.M) {
             scheduleNextIdlePing();
@@ -1973,7 +2005,6 @@ public class XmppConnectionService extends Service {
         try {
             unregisterReceiver(this.mInternalEventReceiver);
             unregisterReceiver(this.mInternalRestrictedEventReceiver);
-            unregisterReceiver(this.mInternalScreenEventReceiver);
         } catch (final IllegalArgumentException e) {
             //ignored
         }
@@ -1989,22 +2020,6 @@ public class XmppConnectionService extends Service {
         Log.d(Config.LOGTAG, "restarting file observer");
         FILE_OBSERVER_EXECUTOR.execute(this.fileObserver::restartWatching);
         FILE_OBSERVER_EXECUTOR.execute(this::checkForDeletedFiles);
-    }
-
-    public void toggleScreenEventReceiver() {
-        if (awayWhenScreenLocked() && !manuallyChangePresence()) {
-            final IntentFilter filter = new IntentFilter();
-            filter.addAction(Intent.ACTION_SCREEN_ON);
-            filter.addAction(Intent.ACTION_SCREEN_OFF);
-            filter.addAction(Intent.ACTION_USER_PRESENT);
-            registerReceiver(this.mInternalScreenEventReceiver, filter);
-        } else {
-            try {
-                unregisterReceiver(this.mInternalScreenEventReceiver);
-            } catch (IllegalArgumentException e) {
-                //ignored
-            }
-        }
     }
 
     public void toggleForegroundService() {
@@ -2184,6 +2199,50 @@ public class XmppConnectionService extends Service {
         } catch (RuntimeException e) {
             Log.d(Config.LOGTAG, "unable to schedule alarm for idle ping", e);
         }
+    }
+
+    private PendingIntent autoPresencePendingIntent() {
+        final Intent intent = new Intent(this, EventReceiver.class);
+        intent.setAction(ACTION_AUTO_PRESENCE);
+        return PendingIntent.getBroadcast(this, 2, intent, s()
+                ? PendingIntent.FLAG_IMMUTABLE | PendingIntent.FLAG_UPDATE_CURRENT
+                : PendingIntent.FLAG_UPDATE_CURRENT);
+    }
+
+    private void scheduleAutoPresenceAlarm() {
+        final AlarmManager alarmManager = (AlarmManager) getSystemService(Context.ALARM_SERVICE);
+        if (alarmManager == null) {
+            return;
+        }
+        long nextTransition = Long.MAX_VALUE;
+        final long awayMinutes = getLongPreference(SettingsActivity.AUTO_AWAY_MINUTES, R.integer.auto_away_minutes);
+        final long xaMinutes = getLongPreference(SettingsActivity.AUTO_XA_MINUTES, R.integer.auto_xa_minutes);
+        if (mBackgroundStartedAt >= 0) {
+            if (awayMinutes > 0) {
+                nextTransition = Math.min(nextTransition, mBackgroundStartedAt + awayMinutes * 60_000L);
+            }
+            if (xaMinutes > 0) {
+                nextTransition = Math.min(nextTransition, mBackgroundStartedAt + xaMinutes * 60_000L);
+            }
+        }
+        if (nextTransition == Long.MAX_VALUE || nextTransition <= System.currentTimeMillis()) {
+            cancelAutoPresenceAlarm();
+            return;
+        }
+        final long triggerAtMillis = SystemClock.elapsedRealtime() + (nextTransition - System.currentTimeMillis());
+        try {
+            alarmManager.setAndAllowWhileIdle(AlarmManager.ELAPSED_REALTIME_WAKEUP, triggerAtMillis, autoPresencePendingIntent());
+        } catch (RuntimeException e) {
+            Log.e(Config.LOGTAG, "unable to schedule alarm for auto presence", e);
+        }
+    }
+
+    private void cancelAutoPresenceAlarm() {
+        final AlarmManager alarmManager = (AlarmManager) getSystemService(Context.ALARM_SERVICE);
+        if (alarmManager == null) {
+            return;
+        }
+        alarmManager.cancel(autoPresencePendingIntent());
     }
 
     public XmppConnection createConnection(final Account account) {
@@ -3982,6 +4041,11 @@ public class XmppConnectionService extends Service {
     private void switchToForeground() {
         toggleSoftDisabled(false);
         updateLastActivity();
+        mBackgroundStartedAt = -1L;
+        cancelAutoPresenceAlarm();
+        mMainHandler.removeCallbacks(mAutoPresenceConfirmRunnable);
+        refreshAllPresences();
+        mMainHandler.postDelayed(mAutoPresenceConfirmRunnable, AUTO_PRESENCE_CONFIRM_DELAY);
         for (Conversation conversation : getConversations()) {
             if (conversation.getMode() == Conversation.MODE_MULTI) {
                 conversation.getMucOptions().resetChatState();
@@ -4003,6 +4067,11 @@ public class XmppConnectionService extends Service {
 
     private void switchToBackground() {
         updateLastActivity();
+        mMainHandler.removeCallbacks(mAutoPresenceConfirmRunnable);
+        if (mBackgroundStartedAt < 0) {
+            mBackgroundStartedAt = System.currentTimeMillis();
+        }
+        scheduleAutoPresenceAlarm();
         for (Account account : getAccounts()) {
             if (account.getStatus() == Account.State.ONLINE) {
                 XmppConnection connection = account.getXmppConnection();
@@ -6083,6 +6152,12 @@ public class XmppConnectionService extends Service {
     public void sendMessagePacket(Account account, MessagePacket packet) {
         final XmppConnection connection = account.getXmppConnection();
         if (connection != null) {
+            // TEMP DIAG live-location: dump full outgoing message stanza
+            try {
+                Log.d(Config.LOGTAG, "TX <<< " + packet.toString());
+            } catch (Exception e) {
+                Log.d(Config.LOGTAG, "TX msg (log error)");
+            }
             connection.sendMessagePacket(packet);
         }
     }

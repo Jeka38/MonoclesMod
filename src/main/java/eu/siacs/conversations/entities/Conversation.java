@@ -1098,12 +1098,7 @@ public class Conversation extends AbstractEntity implements Blockable, Comparabl
             } else if (printableValue(bookmarkName, false)) {
                 return bookmarkName;
             } else {
-                final String generatedName = getMucOptions().createNameFromParticipants();
-                if (printableValue(generatedName)) {
-                    return generatedName;
-                } else {
-                    return contactJid.getLocal() != null ? contactJid.getLocal() : contactJid;
-                }
+                return contactJid.getLocal() != null ? contactJid.getLocal() : contactJid;
             }
         } else {
             return this.getContact().getDisplayName();

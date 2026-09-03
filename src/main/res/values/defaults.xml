@@ -16,7 +16,6 @@
     <bool name="headsup_notifications">true</bool>
     <bool name="enable_quiet_hours">false</bool>
     <bool name="manually_change_presence">true</bool>
-    <bool name="away_when_screen_off">false</bool>
     <string name="incoming_call_ringtone">content://settings/system/ringtone</string>
     <bool name="confirm_messages">true</bool>
     <bool name="allowmergemessages">false</bool>
@@ -73,7 +72,7 @@
     <integer name="automatic_attachment_deletion">0</integer>
     <integer name="grace_period">144</integer>
     <integer name="auto_away_minutes">30</integer>
-    <integer name="auto_dnd_minutes">90</integer>
+    <integer name="auto_xa_minutes">90</integer>
     <string name="default_resource" translatable="false">Phone</string>
     <string name="notification_ringtone">content://settings/system/notification_sound</string>
     <string name="image_compression">mid</string>

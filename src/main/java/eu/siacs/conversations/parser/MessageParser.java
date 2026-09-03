@@ -926,12 +926,15 @@ public class MessageParser extends AbstractParser implements OnMessagePacketRece
             }
 
             if (replacementId != null && mXmppConnectionService.allowMessageCorrection()) {
+                // TEMP DIAG live-location: log correction matching on receiver
+                Log.d(Config.LOGTAG, "RX correct replaceId=" + replacementId + " origin=" + (originId == null ? "null" : originId.getAttribute("id")) + " from=" + (from == null ? "null" : from.toString()));
                 Message replacedMessage = conversation.findMessageWithRemoteIdAndCounterpart(replacementId, counterpart);
 
                 if (replacedMessage == null) {
                     replacedMessage = conversation.findSentMessageWithUuidOrRemoteId(replacementId, true, true);
                 }
                 if (replacedMessage != null) {
+                    Log.d(Config.LOGTAG, "RX correct -> FOUND uuid=" + replacedMessage.getUuid() + " body=" + replacedMessage.getBody());
                     final boolean fingerprintsMatch = replacedMessage.getFingerprint() == null
                             || replacedMessage.getFingerprint().equals(message.getFingerprint());
                     final boolean trueCountersMatch = replacedMessage.getTrueCounterpart() != null
@@ -947,7 +950,7 @@ public class MessageParser extends AbstractParser implements OnMessagePacketRece
                             replacedMessage.putEdited(replacedMessage.getRemoteMsgId() != null ? replacedMessage.getRemoteMsgId() : replacedMessage.getUuid(), replacedMessage.getServerMsgId(), replacedMessage.getBody(), replacedMessage.getTimeSent());
 
                             replacedMessage.setUuid(UUID.randomUUID().toString());
-                            replacedMessage.setBody(message.getBody());
+                            replacedMessage.setBody(message.getRawBody());
                             replacedMessage.setSubject(message.getSubject());
                             replacedMessage.setThread(message.getThread());
                             replacedMessage.setRemoteMsgId(remoteMsgId);

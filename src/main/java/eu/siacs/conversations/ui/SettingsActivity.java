@@ -83,12 +83,11 @@ import p32929.easypasscodelock.Utils.EasyLock;
 
 public class SettingsActivity extends XmppActivity implements OnSharedPreferenceChangeListener {
 
-    public static final String AWAY_WHEN_SCREEN_IS_OFF = "away_when_screen_off";
     public static final String TREAT_VIBRATE_AS_SILENT = "treat_vibrate_as_silent";
     public static final String DND_ON_SILENT_MODE = "dnd_on_silent_mode";
     public static final String MANUALLY_CHANGE_PRESENCE = "manually_change_presence";
     public static final String AUTO_AWAY_MINUTES = "auto_away_minutes";
-    public static final String AUTO_DND_MINUTES = "auto_dnd_minutes";
+    public static final String AUTO_XA_MINUTES = "auto_xa_minutes";
     public static final String BLIND_TRUST_BEFORE_VERIFICATION = "btbv";
     public static final String AUTOMATIC_MESSAGE_DELETION = "automatic_message_deletion";
     public static final String AUTOMATIC_ATTACHMENT_DELETION = "automatic_attachment_deletion";
@@ -1128,7 +1127,6 @@ public class SettingsActivity extends XmppActivity implements OnSharedPreference
         final List<String> resendPresence = Arrays.asList(
                 CONFIRM_MESSAGES,
                 DND_ON_SILENT_MODE,
-                AWAY_WHEN_SCREEN_IS_OFF,
                 ALLOW_MESSAGE_CORRECTION,
                 TREAT_VIBRATE_AS_SILENT,
                 MANUALLY_CHANGE_PRESENCE,
@@ -1141,10 +1139,6 @@ public class SettingsActivity extends XmppActivity implements OnSharedPreference
             xmppConnectionService.toggleForegroundService();
         } else if (resendPresence.contains(name)) {
             if (xmppConnectionServiceBound) {
-                if (name.equals(AWAY_WHEN_SCREEN_IS_OFF)
-                        || name.equals(MANUALLY_CHANGE_PRESENCE)) {
-                    xmppConnectionService.toggleScreenEventReceiver();
-                }
                 xmppConnectionService.refreshAllPresences();
             }
         } else if (name.equals("dont_trust_system_cas")) {

@@ -36,6 +36,11 @@
         android:title="@string/send_location" />
 
     <item
+        android:id="@+id/attach_live_location"
+        android:icon="?attr/share_location"
+        android:title="@string/live_location" />
+
+    <item
         android:id="@+id/attach_webxdc"
         android:icon="?attr/icon_webxdcs"
         android:title="@string/choose_webxdc" />

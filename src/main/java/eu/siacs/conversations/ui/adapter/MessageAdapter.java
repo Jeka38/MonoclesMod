@@ -717,11 +717,17 @@ public class MessageAdapter extends ArrayAdapter<Message> {
     }
 
     private boolean isMucLink(final Message message, final Account account) {
+        if (message.isGeoUri()) {
+            return false;
+        }
         if (message.isXmppUri()) {
             return true;
         }
         final String body = message.getBody().trim().toLowerCase();
         if (body.isEmpty() || body.contains(" ")) {
+            return false;
+        }
+        if (body.contains("://")) {
             return false;
         }
         final Jid jid;
