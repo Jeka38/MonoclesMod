@@ -43,7 +43,6 @@ Both release and debug builds have ProGuard + shrinking enabled. `-dontobfuscate
 - `src/main/` — shared code (upstream Conversations + mod additions)
 - `src/playstore/` — Play Store flavor overrides (FCM, manifest)
 - `src/git/` — Git flavor overrides (manifest, migration info)
-- `src/conversations/`, `src/quicksy/`, `src/free/` — legacy, likely unused
 - `de.monocles.mod.*` — mod-specific additions; `eu.siacs.conversations.*` — upstream core
 
 **Launcher activity:** `de.monocles.mod.ui.StartUI`
@@ -52,7 +51,6 @@ Both release and debug builds have ProGuard + shrinking enabled. `-dontobfuscate
 ## Key gotchas
 
 - **No tests exist.** No test directory. `libs:AXML` has a `// TODO UNIT TESTS` comment.
-- **Spotless plugin** is declared as a dependency but **not configured** — no formatting rules enforced.
 - **Data binding + view binding** are both enabled.
 - **Signing config** is conditional — requires `mStoreFile`, `mStorePassword`, `mKeyAlias`, `mKeyPassword` project properties. Without them, signing configs are omitted.
 - **JVM target:** 17, with Java 8+ desugaring enabled.
