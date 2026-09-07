@@ -734,9 +734,13 @@ public class Message extends AbstractEntity implements AvatarService.Avatarable 
     }
 
     public Contact getContact() {
+        final Account account = this.conversation.getAccount();
+        if (account == null) {
+            return null;
+        }
         if (this.conversation.getMode() == Conversation.MODE_SINGLE) {
             if (this.trueCounterpart != null) {
-                return this.conversation.getAccount().getRoster()
+                return account.getRoster()
                         .getContact(this.trueCounterpart);
             }
 
@@ -745,7 +749,7 @@ public class Message extends AbstractEntity implements AvatarService.Avatarable 
             if (this.trueCounterpart == null) {
                 return null;
             } else {
-                return this.conversation.getAccount().getRoster()
+                return account.getRoster()
                         .getContactFromContactList(this.trueCounterpart);
             }
         }

@@ -952,9 +952,16 @@ public class MessageAdapter extends ArrayAdapter<Message> {
             viewHolder.messageBody.setVisibility(View.VISIBLE);
 
             String trimmedBody = message.getBody().trim();
-            String imageUrl = extractFirstImageUrl(trimmedBody);
+            String resolvedImageUrl = extractFirstImageUrl(trimmedBody);
+            if (resolvedImageUrl == null) {
+                final String firstUrl = extractFirstUrl(trimmedBody);
+                if (firstUrl != null && firstUrl.length() * 100 >= trimmedBody.length() * 60) {
+                    resolvedImageUrl = firstUrl;
+                }
+            }
+            final String imageUrl = resolvedImageUrl;
 
-            if (imageUrl != null && isDirectImageUrl(imageUrl)) {
+            if (imageUrl != null) {
                 viewHolder.images.setVisibility(View.GONE);
                 viewHolder.image.setImageDrawable(null);
                 final float target_size = activity.getResources().getDimension(R.dimen.image_preview_width);
@@ -1041,17 +1048,21 @@ public class MessageAdapter extends ArrayAdapter<Message> {
         }
     }
 
-    private boolean isDirectImageUrl(String url) {
-        if (url == null) return false;
-        return url.matches("(?i)^(http|https)://.*(\\.(jpg|jpeg|png|gif|webp|bmp|tiff|ico|webm|heif|heic|apng)(\\?.*)?$|\\?q=tbn:.*)");
-    }
-
     private String extractFirstImageUrl(String text) {
         if (text == null) return null;
         Pattern pattern = Pattern.compile("(?i)(http|https)://[^\\s]+?\\.(jpg|jpeg|png|gif|webp|bmp|tiff|ico|webm|heif|heic|apng)(?:\\?.*?)?(?=\\s|$)");
         Matcher matcher = pattern.matcher(text);
         if (matcher.find()) {
             return matcher.group();
+        }
+        return null;
+    }
+
+    private String extractFirstUrl(String text) {
+        if (text == null) return null;
+        Matcher matcher = Pattern.compile("(?i)(https?://[^\\s]+)").matcher(text);
+        if (matcher.find()) {
+            return matcher.group(1).replaceAll("[.,;:!?)}\\]>]+$", "");
         }
         return null;
     }
