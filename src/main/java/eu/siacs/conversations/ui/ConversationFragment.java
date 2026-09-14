@@ -292,6 +292,8 @@ public class ConversationFragment extends XmppFragment
     public static final int ATTACHMENT_CHOICE = 0x0300;
     public static final int REQUEST_START_AUDIO_CALL = 0x213;
     public static final int REQUEST_START_VIDEO_CALL = 0x214;
+    public static final int REQUEST_START_MUJI_CONFERENCE = 0x215;
+    private boolean mPendingMujiVideo = true;
     public static final int REQUEST_SAVE_GIF = 0x216;
     public static final int REQUEST_WEBXDC_STORE = 0x217;
     public static final int REQUEST_SAVE_AS = 0x218;
@@ -1903,6 +1905,7 @@ public class ConversationFragment extends XmppFragment
             final MenuItem menuParticipants = menu.findItem(R.id.action_participants);
             final MenuItem menuContactDetails = menu.findItem(R.id.action_contact_details);
             final MenuItem menuMucParticipants = menu.findItem(R.id.action_muc_participants);
+            final MenuItem menuMuji = menu.findItem(R.id.action_muji_conference);
             final MenuItem menuCall = menu.findItem(R.id.action_call);
             final MenuItem menuOngoingCall = menu.findItem(R.id.action_ongoing_call);
             final MenuItem menuVideoCall = menu.findItem(R.id.action_video_call);
@@ -1921,9 +1924,18 @@ public class ConversationFragment extends XmppFragment
                     menuParticipants.setVisible(true);
                     menuSettings.setVisible(false);
                     menuInviteToChat.setVisible(false);
+                    menuMuji.setTitle(R.string.muji_join);
+                    menuMuji.setVisible(conversation.getMode() == Conversation.MODE_MULTI);
                 } else {
                     menuMucParticipants.setVisible(false);
                     final XmppConnectionService service = activity == null ? null : activity.xmppConnectionService;
+                    final boolean mujiAvailable = conversation.getMode() == Conversation.MODE_MULTI;
+                    final boolean mujiActive = mujiAvailable
+                            && service != null
+                            && service.isMujiConferenceActive(conversation);
+                    menuMuji.setVisible(mujiAvailable);
+                    menuMuji.setTitle(
+                            mujiActive ? R.string.muji_conference : R.string.muji_join);
                     final Optional<OngoingRtpSession> ongoingRtpSession = service == null ? Optional.absent() : service.getJingleConnectionManager().getOngoingRtpConnection(conversation.getContact());
                     if (ongoingRtpSession.isPresent()) {
                         menuOngoingCall.setVisible(true);
@@ -1990,6 +2002,14 @@ public class ConversationFragment extends XmppFragment
     public View onCreateView(final LayoutInflater inflater, ViewGroup container, Bundle savedInstanceState) {
         this.binding = DataBindingUtil.inflate(inflater, R.layout.fragment_conversation, container, false);
         binding.getRoot().setOnClickListener(null); //TODO why did we do this?
+        binding.mucTopic.setOnClickListener(
+                v -> {
+                    if (activity != null
+                            && conversation != null
+                            && conversation.getMode() == Conversation.MODE_MULTI) {
+                        activity.switchToMUCDetails(conversation);
+                    }
+                });
 
         LoadGifs();
         setupSmiles();
@@ -2872,6 +2892,8 @@ public class ConversationFragment extends XmppFragment
             if (mXmppActivity instanceof XmppActivity) {
                 CallManager.returnToOngoingCall((XmppActivity) mXmppActivity, conversation);
             }
+        } else if (itemId == R.id.action_muji_conference) {
+            toggleMujiConference();
         } else if (itemId == R.id.action_toggle_pinned) {
             togglePinned();
         } else if (itemId == R.id.action_add_shortcut) {
@@ -2903,6 +2925,102 @@ public class ConversationFragment extends XmppFragment
             }
         }
         return super.onOptionsItemSelected(item);
+    }
+
+    // XEP-0272 Multiparty Jingle (Muji)
+    private void toggleMujiConference() {
+        if (activity == null || activity.xmppConnectionService == null || conversation == null) {
+            return;
+        }
+        if (activity.xmppConnectionService.isMujiConferenceActive(conversation)) {
+            openMujiConference();
+            return;
+        }
+        if (!conversation.getMucOptions().online()) {
+            ToastCompat.makeText(
+                            activity,
+                            R.string.muji_conference_not_joined,
+                            ToastCompat.LENGTH_SHORT)
+                    .show();
+            activity.xmppConnectionService.joinMuc(conversation);
+            return;
+        }
+        showMujiCallTypeDialog();
+    }
+
+    private void showMujiCallTypeDialog() {
+        if (activity == null) {
+            return;
+        }
+        final View view =
+                activity.getLayoutInflater().inflate(R.layout.dialog_muji_call_type, null);
+        final AlertDialog dialog =
+                new AlertDialog.Builder(activity)
+                        .setTitle(R.string.muji_conference)
+                        .setView(view)
+                        .setNegativeButton(R.string.cancel, null)
+                        .create();
+        view.findViewById(R.id.muji_choose_audio)
+                .setOnClickListener(
+                        v -> {
+                            dialog.dismiss();
+                            requestAndStartMujiConference(false);
+                        });
+        view.findViewById(R.id.muji_choose_video)
+                .setOnClickListener(
+                        v -> {
+                            dialog.dismiss();
+                            requestAndStartMujiConference(true);
+                        });
+        dialog.show();
+    }
+
+    private void requestAndStartMujiConference(final boolean video) {
+        if (activity == null || conversation == null) {
+            return;
+        }
+        mPendingMujiVideo = video;
+        final List<String> permissions = new ArrayList<>();
+        permissions.add(Manifest.permission.RECORD_AUDIO);
+        if (video && activity.isCameraFeatureAvailable()) {
+            permissions.add(Manifest.permission.CAMERA);
+        }
+        if (!hasPermissions(REQUEST_START_MUJI_CONFERENCE, permissions)) {
+            return; // startMujiConference() is called from onRequestPermissionsResult
+        }
+        startMujiConference(video);
+    }
+
+    private void startMujiConference(final boolean video) {
+        if (activity == null || activity.xmppConnectionService == null || conversation == null) {
+            return;
+        }
+        final com.google.common.collect.ImmutableSet.Builder<Media> media =
+                com.google.common.collect.ImmutableSet.builder();
+        media.add(Media.AUDIO);
+        if (video
+                && activity.isCameraFeatureAvailable()
+                && activity.checkSelfPermission(Manifest.permission.CAMERA)
+                        == PackageManager.PERMISSION_GRANTED) {
+            media.add(Media.VIDEO);
+        }
+        activity.xmppConnectionService.joinMujiConference(conversation, media.build());
+        openMujiConference();
+        activity.invalidateOptionsMenu();
+    }
+
+    private void openMujiConference() {
+        if (activity == null || conversation == null) {
+            return;
+        }
+        final Intent intent = new Intent(activity, MujiConferenceActivity.class);
+        intent.putExtra(
+                MujiConferenceActivity.EXTRA_ACCOUNT,
+                conversation.getAccount().getJid().asBareJid().toEscapedString());
+        intent.putExtra(
+                MujiConferenceActivity.EXTRA_ROOM,
+                conversation.getJid().asBareJid().toEscapedString());
+        activity.startActivity(intent);
     }
 
     public boolean onBackPressed() {
@@ -3318,6 +3436,8 @@ public class ConversationFragment extends XmppFragment
                     if (mXmppActivity instanceof XmppActivity) {
                         CallManager.triggerRtpSession(RtpSessionActivity.ACTION_MAKE_VIDEO_CALL, (XmppActivity) mXmppActivity, conversation);
                     }
+                } else if (requestCode == REQUEST_START_MUJI_CONFERENCE) {
+                    startMujiConference(mPendingMujiVideo);
                 } else if (requestCode == REQUEST_LIVE_LOCATION) {
                     startLiveLocation();
                 } else {
@@ -5155,6 +5275,7 @@ public class ConversationFragment extends XmppFragment
             if (this.conversation != null) {
                 conversation.populateWithMessages(this.messageList, activity == null ? null : activity.xmppConnectionService);
                 updateStatusMessages();
+                updateMucTopicStrip();
                 final int unreadCount = lastMessageUuid != null ? conversation.getReceivedMessagesCountSinceUuid(lastMessageUuid) : conversation.unreadCount();
                 if (unreadCount > 0) {
                     binding.unreadCountCustomView.setVisibility(View.VISIBLE);
@@ -5173,6 +5294,28 @@ public class ConversationFragment extends XmppFragment
                 updateEditablity();
                 conversation.refreshSessions();
             }
+        }
+    }
+
+    private void updateMucTopicStrip() {
+        if (binding == null || activity == null) {
+            return;
+        }
+        final boolean enabled =
+                PreferenceManager.getDefaultSharedPreferences(activity)
+                        .getBoolean(
+                                "show_muc_topic",
+                                activity.getResources().getBoolean(R.bool.show_muc_topic));
+        final String subject =
+                enabled && conversation != null
+                                && conversation.getMode() == Conversation.MODE_MULTI
+                        ? conversation.getMucOptions().getSubject()
+                        : null;
+        if (subject != null && !subject.trim().isEmpty()) {
+            binding.mucTopic.setText(subject.trim());
+            binding.mucTopic.setVisibility(View.VISIBLE);
+        } else {
+            binding.mucTopic.setVisibility(View.GONE);
         }
     }
 

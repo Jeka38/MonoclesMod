@@ -34,6 +34,7 @@ import eu.siacs.conversations.xmpp.XmppConnection;
 import eu.siacs.conversations.xmpp.jingle.stanzas.Content;
 import eu.siacs.conversations.xmpp.jingle.stanzas.GenericDescription;
 import eu.siacs.conversations.xmpp.jingle.stanzas.JinglePacket;
+import eu.siacs.conversations.xmpp.jingle.stanzas.Muji;
 import eu.siacs.conversations.xmpp.jingle.stanzas.Propose;
 import eu.siacs.conversations.xmpp.jingle.stanzas.Reason;
 import eu.siacs.conversations.xmpp.jingle.stanzas.RtpDescription;
@@ -77,6 +78,7 @@ public class JingleConnectionManager extends AbstractConnectionManager {
     }
 
     public void deliverPacket(final Account account, final JinglePacket packet) {
+        MujiLog.log(mXmppConnectionService.getFilesDir(), "RX " + packet);
         final String sessionId = packet.getSessionId();
         final JinglePacket.Action action = packet.getAction();
         if (sessionId == null) {
@@ -92,6 +94,11 @@ public class JingleConnectionManager extends AbstractConnectionManager {
         if (existingJingleConnection != null) {
             existingJingleConnection.deliverPacket(packet);
         } else if (action == JinglePacket.Action.SESSION_INITIATE) {
+            final Muji muji = packet.getMuji();
+            if (muji != null && muji.getRoom() != null) {
+                deliverMujiSessionInitiate(account, packet, id, muji);
+                return;
+            }
             final Jid from = packet.getFrom();
             final Content content = packet.getJingleContent();
             final String descriptionNamespace =
@@ -146,6 +153,33 @@ public class JingleConnectionManager extends AbstractConnectionManager {
         }
     }
 
+    // XEP-0272: Multiparty Jingle (Muji)
+    private void deliverMujiSessionInitiate(
+            final Account account,
+            final JinglePacket packet,
+            final AbstractJingleConnection.Id id,
+            final Muji muji) {
+        final MujiConference conference =
+                mXmppConnectionService.getMujiConferenceManager().get(account, muji.getRoom());
+        if (conference == null || !conference.isParticipant(id.with)) {
+            Log.d(
+                    Config.LOGTAG,
+                    id.account.getJid().asBareJid()
+                            + ": rejecting Muji session-initiate from "
+                            + id.with
+                            + " for room "
+                            + muji.getRoom()
+                            + " (not an active participant)");
+            respondWithJingleError(account, packet, "unsupported-info", "not-acceptable", "cancel");
+            return;
+        }
+        final JingleRtpConnection connection =
+                new JingleRtpConnection(this, id, packet.getFrom(), muji.getRoom());
+        connections.put(id, connection);
+        conference.attach(id);
+        connection.deliverPacket(packet);
+    }
+
     private void addNewIncomingCall(final JingleRtpConnection rtpConnection) {
         if (rtpConnection.isTerminated()) {
             Log.d(
@@ -178,6 +212,9 @@ public class JingleConnectionManager extends AbstractConnectionManager {
     public boolean isBusy() {
         for (final AbstractJingleConnection connection : this.connections.values()) {
             if (connection instanceof JingleRtpConnection rtpConnection) {
+                if (rtpConnection.isMuji()) {
+                    continue; // Muji conference sessions don't occupy the 1:1 call slot
+                }
                 if (connection.isTerminated() && rtpConnection.getCallIntegration().isDestroyed()) {
                     continue;
                 }
@@ -195,7 +232,7 @@ public class JingleConnectionManager extends AbstractConnectionManager {
     public boolean hasJingleRtpConnection(final Account account) {
         for (AbstractJingleConnection connection : this.connections.values()) {
             if (connection instanceof JingleRtpConnection rtpConnection) {
-                if (rtpConnection.isTerminated()) {
+                if (rtpConnection.isTerminated() || rtpConnection.isMuji()) {
                     continue;
                 }
                 if (rtpConnection.id.account == account) {
@@ -624,6 +661,9 @@ public class JingleConnectionManager extends AbstractConnectionManager {
         for (final Map.Entry<AbstractJingleConnection.Id, AbstractJingleConnection> entry :
                 this.connections.entrySet()) {
             if (entry.getValue() instanceof JingleRtpConnection jingleRtpConnection) {
+                if (jingleRtpConnection.isMuji()) {
+                    continue;
+                }
                 final AbstractJingleConnection.Id id = entry.getKey();
                 if (id.account == contact.getAccount()
                         && id.with.asBareJid().equals(contact.getJid().asBareJid())) {
@@ -653,6 +693,15 @@ public class JingleConnectionManager extends AbstractConnectionManager {
         if (this.connections.remove(id) == null) {
             throw new IllegalStateException(
                     String.format("Unable to finish connection with id=%s", id));
+        }
+        if (connection instanceof JingleRtpConnection rtpConnection && rtpConnection.isMuji()) {
+            final MujiConference conference =
+                    mXmppConnectionService
+                            .getMujiConferenceManager()
+                            .get(id.account, rtpConnection.getMujiRoom());
+            if (conference != null) {
+                conference.onSessionTerminated(id);
+            }
         }
         // update chat UI to remove 'ongoing call' icon
         mXmppConnectionService.updateConversationUi();
@@ -723,6 +772,22 @@ public class JingleConnectionManager extends AbstractConnectionManager {
         final AbstractJingleConnection.Id id = AbstractJingleConnection.Id.of(account, with);
         final JingleRtpConnection rtpConnection =
                 new JingleRtpConnection(this, id, account.getJid());
+        rtpConnection.setProposedMedia(media);
+        this.connections.put(id, rtpConnection);
+        rtpConnection.sendSessionInitiate();
+        return rtpConnection;
+    }
+
+    // XEP-0272: start a Jingle RTP session that belongs to a Muji conference
+    @Nullable
+    public JingleRtpConnection initializeMujiRtpSession(
+            final Account account, final Jid with, final Jid room, final Set<Media> media) {
+        final AbstractJingleConnection.Id id = AbstractJingleConnection.Id.of(account, with);
+        if (this.connections.containsKey(id)) {
+            return null;
+        }
+        final JingleRtpConnection rtpConnection =
+                new JingleRtpConnection(this, id, account.getJid(), room);
         rtpConnection.setProposedMedia(media);
         this.connections.put(id, rtpConnection);
         rtpConnection.sendSessionInitiate();

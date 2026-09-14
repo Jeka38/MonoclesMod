@@ -159,6 +159,13 @@
         app:showAsAction="ifRoom" />
 
     <item
+        android:id="@+id/action_muji_conference"
+        android:orderInCategory="41"
+        android:title="@string/muji_join"
+        android:visible="false"
+        app:showAsAction="never" />
+
+    <item
         android:id="@+id/action_contact_details"
         android:icon="?attr/icon_contact"
         android:orderInCategory="100"

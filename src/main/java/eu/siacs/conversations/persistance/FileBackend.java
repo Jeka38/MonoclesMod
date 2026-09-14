@@ -1116,6 +1116,15 @@ public class FileBackend {
             return;
         }
         tmp.renameTo(getFile(message));
+        final String originalName = getDisplayNameFromUri(image);
+        if (originalName != null && !originalName.isEmpty()) {
+            message.getFileParams().setName(originalName);
+        } else {
+            final String fallbackName = getFallbackNameFromUri(image, extension);
+            if (fallbackName != null && !fallbackName.isEmpty()) {
+                message.getFileParams().setName(fallbackName);
+            }
+        }
         updateFileParams(message, null, false);
     }
 

@@ -243,6 +243,7 @@ public abstract class AbstractJingleConnection {
     }
 
     protected void send(final JinglePacket jinglePacket) {
+        MujiLog.log(xmppConnectionService.getFilesDir(), "TX " + jinglePacket);
         jinglePacket.setTo(id.with);
         xmppConnectionService.sendIqPacket(id.account, jinglePacket, this::handleIqResponse);
     }
@@ -274,6 +275,12 @@ public abstract class AbstractJingleConnection {
     }
 
     private synchronized void handleIqResponse(final Account account, final IqPacket response) {
+        if (response.getType() == IqPacket.TYPE.ERROR
+                || response.getType() == IqPacket.TYPE.TIMEOUT) {
+            MujiLog.log(
+                    xmppConnectionService.getFilesDir(),
+                    "IQ " + response.getType() + " " + response);
+        }
         if (response.getType() == IqPacket.TYPE.ERROR) {
             handleIqErrorResponse(response);
             return;

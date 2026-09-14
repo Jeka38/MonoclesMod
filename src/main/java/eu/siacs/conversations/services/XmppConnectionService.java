@@ -242,6 +242,7 @@ import eu.siacs.conversations.xmpp.jingle.AbstractJingleConnection;
 import eu.siacs.conversations.xmpp.jingle.JingleConnectionManager;
 import eu.siacs.conversations.xmpp.jingle.JingleRtpConnection;
 import eu.siacs.conversations.xmpp.jingle.Media;
+import eu.siacs.conversations.xmpp.jingle.MujiConferenceManager;
 import eu.siacs.conversations.xmpp.jingle.RtpEndUserState;
 import eu.siacs.conversations.xmpp.mam.MamReference;
 import eu.siacs.conversations.xmpp.pep.Avatar;
@@ -384,6 +385,7 @@ public class XmppConnectionService extends Service {
     private final PresenceGenerator mPresenceGenerator = new PresenceGenerator(this);
     private List<Account> accounts;
     private final JingleConnectionManager mJingleConnectionManager = new JingleConnectionManager(this);
+    private final MujiConferenceManager mMujiConferenceManager = new MujiConferenceManager(this);
     public final HttpConnectionManager mHttpConnectionManager = new HttpConnectionManager(this);
     private final AvatarService mAvatarService = new AvatarService(this);
     private final MessageArchiveService mMessageArchiveService = new MessageArchiveService(this);
@@ -2093,6 +2095,15 @@ public class XmppConnectionService extends Service {
                         == PackageManager.PERMISSION_GRANTED) {
                     foregroundServiceType = ServiceInfo.FOREGROUND_SERVICE_TYPE_MICROPHONE;
                  }
+                // XEP-0272 / video calls: also request the camera type, otherwise Android blocks
+                // camera capture while the app is not in the foreground ("device policy" error)
+                final OngoingCall ongoing = ongoingCall.get();
+                if (ongoing != null
+                        && ongoing.media.contains(Media.VIDEO)
+                        && ContextCompat.checkSelfPermission(this, Manifest.permission.CAMERA)
+                        == PackageManager.PERMISSION_GRANTED) {
+                    foregroundServiceType |= ServiceInfo.FOREGROUND_SERVICE_TYPE_CAMERA;
+                }
 
                 startForeground(id, notification, foregroundServiceType);
             } else {
@@ -6275,6 +6286,22 @@ public class XmppConnectionService extends Service {
 
     public JingleConnectionManager getJingleConnectionManager() {
         return this.mJingleConnectionManager;
+    }
+
+    public MujiConferenceManager getMujiConferenceManager() {
+        return this.mMujiConferenceManager;
+    }
+
+    public void joinMujiConference(final Conversation conversation, final Set<Media> media) {
+        this.mMujiConferenceManager.join(conversation, media);
+    }
+
+    public void leaveMujiConference(final Conversation conversation) {
+        this.mMujiConferenceManager.leave(conversation);
+    }
+
+    public boolean isMujiConferenceActive(final Conversation conversation) {
+        return this.mMujiConferenceManager.get(conversation) != null;
     }
 
     private boolean hasJingleRtpConnection(final Account account) {

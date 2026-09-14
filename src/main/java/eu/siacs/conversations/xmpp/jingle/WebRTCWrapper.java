@@ -82,7 +82,7 @@ public class WebRTCWrapper {
         TONE_CODES = builder.build();
     }
 
-    private static final Set<String> HARDWARE_AEC_BLACKLIST =
+    static final Set<String> HARDWARE_AEC_BLACKLIST =
             new ImmutableSet.Builder<String>()
                     .add("Pixel")
                     .add("Pixel XL")
@@ -203,6 +203,9 @@ public class WebRTCWrapper {
                                     + ")");
                     if (track instanceof VideoTrack) {
                         remoteVideoTrack = (VideoTrack) track;
+                        if (sharedResources != null) {
+                            MujiLog.log(requireContext().getFilesDir(), "remote video track added");
+                        }
                     }
                 }
 
@@ -229,6 +232,9 @@ public class WebRTCWrapper {
     private Context context = null;
     private EglBase eglBase = null;
     private VideoSourceWrapper videoSourceWrapper;
+    // When set, this wrapper is part of a multiparty session and shares the factory, EGL context and
+    // microphone track with the other peer connections of the same conference (XEP-0272).
+    @Nullable private WebRTCResources sharedResources = null;
 
     WebRTCWrapper(final EventCallback eventCallback) {
         this.eventCallback = eventCallback;
@@ -259,6 +265,15 @@ public class WebRTCWrapper {
         this.context = service;
     }
 
+    /** Set up this wrapper on top of shared conference resources (XEP-0272). */
+    void setupShared(final XmppConnectionService service, final WebRTCResources resources) {
+        this.sharedResources = resources;
+        resources.retain();
+        this.context = service;
+        this.eglBase = resources.eglBase;
+        this.peerConnectionFactory = resources.peerConnectionFactory;
+    }
+
     synchronized void initializePeerConnection(
             final Set<Media> media,
             final List<PeerConnection.IceServer> iceServers,
@@ -268,26 +283,28 @@ public class WebRTCWrapper {
         Preconditions.checkNotNull(media);
         Preconditions.checkArgument(
                 media.size() > 0, "media can not be empty when initializing peer connection");
-        final boolean setUseHardwareAcousticEchoCanceler =
-                !HARDWARE_AEC_BLACKLIST.contains(Build.MODEL);
-        Log.d(
-                Config.LOGTAG,
-                String.format(
-                        "setUseHardwareAcousticEchoCanceler(%s) model=%s",
-                        setUseHardwareAcousticEchoCanceler, Build.MODEL));
-        this.peerConnectionFactory =
-                PeerConnectionFactory.builder()
-                        .setVideoDecoderFactory(
-                                new DefaultVideoDecoderFactory(eglBase.getEglBaseContext()))
-                        .setVideoEncoderFactory(
-                                new DefaultVideoEncoderFactory(
-                                        eglBase.getEglBaseContext(), true, true))
-                        .setAudioDeviceModule(
-                                JavaAudioDeviceModule.builder(requireContext())
-                                        .setUseHardwareAcousticEchoCanceler(
-                                                setUseHardwareAcousticEchoCanceler)
-                                        .createAudioDeviceModule())
-                        .createPeerConnectionFactory();
+        if (this.sharedResources == null) {
+            final boolean setUseHardwareAcousticEchoCanceler =
+                    !HARDWARE_AEC_BLACKLIST.contains(Build.MODEL);
+            Log.d(
+                    Config.LOGTAG,
+                    String.format(
+                            "setUseHardwareAcousticEchoCanceler(%s) model=%s",
+                            setUseHardwareAcousticEchoCanceler, Build.MODEL));
+            this.peerConnectionFactory =
+                    PeerConnectionFactory.builder()
+                            .setVideoDecoderFactory(
+                                    new DefaultVideoDecoderFactory(eglBase.getEglBaseContext()))
+                            .setVideoEncoderFactory(
+                                    new DefaultVideoEncoderFactory(
+                                            eglBase.getEglBaseContext(), true, true))
+                            .setAudioDeviceModule(
+                                    JavaAudioDeviceModule.builder(requireContext())
+                                            .setUseHardwareAcousticEchoCanceler(
+                                                    setUseHardwareAcousticEchoCanceler)
+                                            .createAudioDeviceModule())
+                            .createPeerConnectionFactory();
+        }
 
         final PeerConnection.RTCConfiguration rtcConfig = buildConfiguration(iceServers, trickle);
         final PeerConnection peerConnection =
@@ -344,16 +361,25 @@ public class WebRTCWrapper {
     }
 
     private boolean addAudioTrack(final PeerConnection peerConnection) {
-        final AudioSource audioSource =
-                requirePeerConnectionFactory().createAudioSource(new MediaConstraints());
-        final AudioTrack audioTrack =
-                requirePeerConnectionFactory()
-                        .createAudioTrack(TrackWrapper.id(AudioTrack.class), audioSource);
+        final AudioTrack audioTrack;
+        if (this.sharedResources != null) {
+            // One microphone capture shared by every peer connection of the conference
+            audioTrack = this.sharedResources.audioTrack;
+        } else {
+            final AudioSource audioSource =
+                    requirePeerConnectionFactory().createAudioSource(new MediaConstraints());
+            audioTrack =
+                    requirePeerConnectionFactory()
+                            .createAudioTrack(TrackWrapper.id(AudioTrack.class), audioSource);
+        }
         this.localAudioTrack = TrackWrapper.addTrack(peerConnection, audioTrack);
         return true;
     }
 
     private boolean addVideoTrack(final PeerConnection peerConnection) {
+        if (this.sharedResources != null) {
+            return addSharedVideoTrack(peerConnection);
+        }
         final TrackWrapper<VideoTrack> existing = this.localVideoTrack;
         if (existing != null) {
             final RtpTransceiver transceiver =
@@ -382,6 +408,27 @@ public class WebRTCWrapper {
         return true;
     }
 
+    private boolean addSharedVideoTrack(final PeerConnection peerConnection) {
+        final TrackWrapper<VideoTrack> existing = this.localVideoTrack;
+        if (existing != null) {
+            final RtpTransceiver transceiver = TrackWrapper.getTransceiver(peerConnection, existing);
+            if (transceiver == null) {
+                Log.w(EXTENDED_LOGGING_TAG, "unable to restart shared video transceiver");
+                return false;
+            }
+            transceiver.setDirection(RtpTransceiver.RtpTransceiverDirection.SEND_RECV);
+            return true;
+        }
+        final VideoTrack videoTrack = this.sharedResources.getOrCreateVideoTrack();
+        if (videoTrack == null) {
+            Log.d(Config.LOGTAG, "could not add shared video track");
+            MujiLog.log(requireContext().getFilesDir(), "local video track unavailable");
+            return false;
+        }
+        this.localVideoTrack = TrackWrapper.addTrack(peerConnection, videoTrack);
+        return true;
+    }
+
     private void removeVideoTrack(final PeerConnection peerConnection) {
         final TrackWrapper<VideoTrack> localVideoTrack = this.localVideoTrack;
         if (localVideoTrack != null) {
@@ -392,6 +439,10 @@ public class WebRTCWrapper {
                 throw new IllegalStateException();
             }
             exactTransceiver.setDirection(RtpTransceiver.RtpTransceiverDirection.INACTIVE);
+        }
+        if (this.sharedResources != null) {
+            // the camera capture is shared with the other peer connections; keep it running
+            return;
         }
         final VideoSourceWrapper videoSourceWrapper = this.videoSourceWrapper;
         if (videoSourceWrapper != null) {
@@ -460,6 +511,8 @@ public class WebRTCWrapper {
         final PeerConnectionFactory peerConnectionFactory = this.peerConnectionFactory;
         final VideoSourceWrapper videoSourceWrapper = this.videoSourceWrapper;
         final EglBase eglBase = this.eglBase;
+        final WebRTCResources sharedResources = this.sharedResources;
+        this.sharedResources = null;
         if (peerConnection != null) {
             this.peerConnection = null;
             dispose(peerConnection);
@@ -476,12 +529,19 @@ public class WebRTCWrapper {
             videoSourceWrapper.dispose();
         }
         if (eglBase != null) {
-            eglBase.release();
+            if (sharedResources == null) {
+                eglBase.release();
+            }
             this.eglBase = null;
         }
         if (peerConnectionFactory != null) {
+            if (sharedResources == null) {
+                peerConnectionFactory.dispose();
+            }
             this.peerConnectionFactory = null;
-            peerConnectionFactory.dispose();
+        }
+        if (sharedResources != null) {
+            sharedResources.release();
         }
     }
 
@@ -498,16 +558,25 @@ public class WebRTCWrapper {
     }
 
     boolean isCameraSwitchable() {
+        if (this.sharedResources != null) {
+            return this.sharedResources.isCameraSwitchable();
+        }
         final VideoSourceWrapper videoSourceWrapper = this.videoSourceWrapper;
         return videoSourceWrapper != null && videoSourceWrapper.isCameraSwitchable();
     }
 
     boolean isFrontCamera() {
+        if (this.sharedResources != null) {
+            return this.sharedResources.isFrontCamera();
+        }
         final VideoSourceWrapper videoSourceWrapper = this.videoSourceWrapper;
         return videoSourceWrapper == null || videoSourceWrapper.isFrontCamera();
     }
 
     ListenableFuture<Boolean> switchCamera() {
+        if (this.sharedResources != null) {
+            return this.sharedResources.switchCamera();
+        }
         final VideoSourceWrapper videoSourceWrapper = this.videoSourceWrapper;
         if (videoSourceWrapper == null) {
             return Futures.immediateFailedFuture(
@@ -803,11 +872,11 @@ public class WebRTCWrapper {
 
     static class InitializationException extends Exception {
 
-        private InitializationException(final String message, final Throwable throwable) {
+        InitializationException(final String message, final Throwable throwable) {
             super(message, throwable);
         }
 
-        private InitializationException(final String message) {
+        InitializationException(final String message) {
             super(message);
         }
     }

@@ -167,6 +167,11 @@
             android:summary="@string/show_join_leave_summary"
             android:title="@string/show_join_leave" />
         <SwitchPreference
+            android:defaultValue="@bool/show_muc_topic"
+            android:key="show_muc_topic"
+            android:summary="@string/show_muc_topic_summary"
+            android:title="@string/show_muc_topic" />
+        <SwitchPreference
             android:defaultValue="@bool/show_nav_bar"
             android:key="show_nav_bar"
             android:summary="@string/pref_show_navigation_bar_summary"

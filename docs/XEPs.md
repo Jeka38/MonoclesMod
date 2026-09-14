@@ -19,6 +19,7 @@
 * XEP-0249: Direct MUC Invitations (receiving only)
 * XEP-0260: Jingle SOCKS5 Bytestreams Transport Method
 * XEP-0261: Jingle In-Band Bytestreams Transport Method
+* XEP-0272: Multiparty Jingle (Muji) - audio/video mesh with conference UI
 * XEP-0280: Message Carbons
 * XEP-0308: Last Message Correction
 * XEP-0313: Message Archive Management

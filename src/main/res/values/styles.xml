@@ -279,4 +279,21 @@
         <item name="android:height">24dp</item>
         <item name="android:width">62dp</item>
     </style>
+
+    <style name="MujiCircleButton" parent="Widget.MaterialComponents.Button">
+        <item name="android:layout_width">56dp</item>
+        <item name="android:layout_height">56dp</item>
+        <item name="android:layout_marginHorizontal">8dp</item>
+        <item name="android:insetTop">0dp</item>
+        <item name="android:insetBottom">0dp</item>
+        <item name="android:insetLeft">0dp</item>
+        <item name="android:insetRight">0dp</item>
+        <item name="android:minWidth">0dp</item>
+        <item name="android:minHeight">0dp</item>
+        <item name="android:padding">0dp</item>
+        <item name="cornerRadius">28dp</item>
+        <item name="iconPadding">0dp</item>
+        <item name="iconGravity">textStart</item>
+        <item name="iconSize">26dp</item>
+    </style>
 </resources>

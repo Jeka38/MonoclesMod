@@ -1088,16 +1088,14 @@ public class Conversation extends AbstractEntity implements Blockable, Comparabl
                 return String.format("%s (%s)", nextCounterpart.getResource(), roomName);
             }
             final String roomName = getMucOptions().getName();
-            final String subject = getMucOptions().getSubject();
             final Bookmark bookmark = getBookmark();
             final String bookmarkName = bookmark != null ? bookmark.getBookmarkName() : null;
             if (printableValue(roomName)) {
                 return roomName;
-            } else if (printableValue(subject)) {
-                return subject;
             } else if (printableValue(bookmarkName, false)) {
                 return bookmarkName;
             } else {
+                // fall back to the room name before the '@', not the topic/subject
                 return contactJid.getLocal() != null ? contactJid.getLocal() : contactJid;
             }
         } else {
@@ -1390,7 +1388,9 @@ public class Conversation extends AbstractEntity implements Blockable, Comparabl
 
 
     public Bookmark getBookmark() {
-        return this.account.getBookmark(this.contactJid);
+        // account is null for conversations restored from the database until they are attached
+        final Account account = this.account;
+        return account == null ? null : account.getBookmark(this.contactJid);
     }
 
     public Message findDuplicateMessage(Message message, boolean withremoteid) {

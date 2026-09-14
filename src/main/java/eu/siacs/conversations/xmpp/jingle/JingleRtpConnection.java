@@ -44,6 +44,7 @@ import eu.siacs.conversations.xmpp.jingle.stanzas.Content;
 import eu.siacs.conversations.xmpp.jingle.stanzas.Group;
 import eu.siacs.conversations.xmpp.jingle.stanzas.IceUdpTransportInfo;
 import eu.siacs.conversations.xmpp.jingle.stanzas.JinglePacket;
+import eu.siacs.conversations.xmpp.jingle.stanzas.Muji;
 import eu.siacs.conversations.xmpp.jingle.stanzas.Proceed;
 import eu.siacs.conversations.xmpp.jingle.stanzas.Propose;
 import eu.siacs.conversations.xmpp.jingle.stanzas.Reason;
@@ -86,6 +87,8 @@ public class JingleRtpConnection extends AbstractJingleConnection
     private final OmemoVerification omemoVerification = new OmemoVerification();
     public final CallIntegration callIntegration;
     private final Message message;
+    // XEP-0272: Multiparty Jingle (Muji). Non-null when this session belongs to a Muji conference
+    private final Jid mujiRoom;
 
     private Set<Media> proposedMedia;
     private RtpContentMap initiatorRtpContentMap;
@@ -108,10 +111,28 @@ public class JingleRtpConnection extends AbstractJingleConnection
                 new CallIntegration(
                         jingleConnectionManager
                                 .getXmppConnectionService()
-                                .getApplicationContext()));
+                                .getApplicationContext()),
+                null);
         this.callIntegration.setAddress(
                 CallIntegration.address(id.with.asBareJid()), TelecomManager.PRESENTATION_ALLOWED);
         this.callIntegration.setInitialized();
+    }
+
+    // XEP-0272: session belonging to a Muji conference
+    JingleRtpConnection(
+            final JingleConnectionManager jingleConnectionManager,
+            final Id id,
+            final Jid initiator,
+            final Jid mujiRoom) {
+        this(
+                jingleConnectionManager,
+                id,
+                initiator,
+                new CallIntegration(
+                        jingleConnectionManager
+                                .getXmppConnectionService()
+                                .getApplicationContext()),
+                mujiRoom);
     }
 
     JingleRtpConnection(
@@ -119,11 +140,25 @@ public class JingleRtpConnection extends AbstractJingleConnection
             final Id id,
             final Jid initiator,
             final CallIntegration callIntegration) {
+        this(jingleConnectionManager, id, initiator, callIntegration, null);
+    }
+
+    private JingleRtpConnection(
+            final JingleConnectionManager jingleConnectionManager,
+            final Id id,
+            final Jid initiator,
+            final CallIntegration callIntegration,
+            final Jid mujiRoom) {
         super(jingleConnectionManager, id, initiator);
+        // Muji sessions must not create a 1:1 conversation with every participant; use the MUC
         final Conversation conversation =
                 jingleConnectionManager
                         .getXmppConnectionService()
-                        .findOrCreateConversation(id.account, id.with.asBareJid(), false, false);
+                        .findOrCreateConversation(
+                                id.account,
+                                mujiRoom != null ? mujiRoom : id.with.asBareJid(),
+                                mujiRoom != null,
+                                false);
         this.message =
                 new Message(
                         conversation,
@@ -132,6 +167,15 @@ public class JingleRtpConnection extends AbstractJingleConnection
                         id.sessionId);
         this.callIntegration = callIntegration;
         this.callIntegration.setCallback(this);
+        this.mujiRoom = mujiRoom;
+    }
+
+    public boolean isMuji() {
+        return mujiRoom != null;
+    }
+
+    public Jid getMujiRoom() {
+        return mujiRoom;
     }
 
     @Override
@@ -1206,6 +1250,13 @@ public class JingleRtpConnection extends AbstractJingleConnection
                         id.account.getJid().asBareJid()
                                 + ": automatically accepting session-initiate");
                 sendSessionAccept();
+            } else if (isMuji()) {
+                Log.d(
+                        Config.LOGTAG,
+                        id.account.getJid().asBareJid()
+                                + ": automatically accepting Muji session-initiate for "
+                                + mujiRoom);
+                sendSessionAccept();
             } else {
                 Log.d(
                         Config.LOGTAG,
@@ -1941,6 +1992,9 @@ public class JingleRtpConnection extends AbstractJingleConnection
         this.transitionOrThrow(targetState);
         final JinglePacket sessionInitiate =
                 rtpContentMap.toJinglePacket(JinglePacket.Action.SESSION_INITIATE, id.sessionId);
+        if (mujiRoom != null) {
+            sessionInitiate.addMuji(Muji.ofRoom(mujiRoom));
+        }
         send(sessionInitiate);
     }
 
@@ -2326,6 +2380,19 @@ public class JingleRtpConnection extends AbstractJingleConnection
             final boolean trickle)
             throws WebRTCWrapper.InitializationException {
         this.jingleConnectionManager.ensureConnectionIsRegistered(this);
+        if (mujiRoom != null) {
+            final MujiConference conference =
+                    xmppConnectionService
+                            .getMujiConferenceManager()
+                            .get(id.account, mujiRoom);
+            final WebRTCResources resources =
+                    conference == null ? null : conference.getWebRTCResources();
+            if (resources != null) {
+                this.webRTCWrapper.setupShared(this.xmppConnectionService, resources);
+                this.webRTCWrapper.initializePeerConnection(media, iceServers, trickle);
+                return;
+            }
+        }
         this.webRTCWrapper.setup(this.xmppConnectionService);
         this.webRTCWrapper.initializePeerConnection(media, iceServers, trickle);
     }
@@ -2442,6 +2509,9 @@ public class JingleRtpConnection extends AbstractJingleConnection
         Log.d(
                 Config.LOGTAG,
                 id.account.getJid().asBareJid() + ": PeerConnectionState changed to " + newState);
+        if (isMuji()) {
+            MujiLog.log(xmppConnectionService.getFilesDir(), "PC " + newState);
+        }
         this.stateHistory.add(newState);
         if (newState == PeerConnection.PeerConnectionState.CONNECTED) {
             this.sessionDuration.start();
@@ -2845,6 +2915,10 @@ public class JingleRtpConnection extends AbstractJingleConnection
     }
 
     private void writeLogMessage(final State state) {
+        if (isMuji()) {
+            // do not create call log messages / 1:1 chats for conference participants
+            return;
+        }
         final long duration = getCallDuration();
         if (state == State.TERMINATED_SUCCESS
                 || (state == State.TERMINATED_CONNECTIVITY_ERROR && duration > 0)) {

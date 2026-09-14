@@ -47,7 +47,6 @@ import android.text.style.ForegroundColorSpan;
 import android.text.style.ImageSpan;
 import android.text.style.RelativeSizeSpan;
 import android.text.style.StyleSpan;
-import android.text.style.URLSpan;
 import android.util.Base64;
 import android.util.DisplayMetrics;
 import android.util.Log;

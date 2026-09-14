@@ -167,6 +167,7 @@ public abstract class AbstractParser {
         MucOptions.User user = new MucOptions.User(conference.getMucOptions(), fullJid, occupantId == null ? null : occupantId.getAttribute("id"), nickname, hatsEl == null ? null : hats);
         if (InvalidJid.isValid(realJid)) {
             user.setRealJid(realJid);
+            user.setRealFullJid(realJid);
         }
         user.setAffiliation(affiliation);
         user.setRole(role);

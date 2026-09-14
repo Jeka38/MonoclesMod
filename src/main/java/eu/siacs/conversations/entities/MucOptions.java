@@ -27,6 +27,7 @@ import eu.siacs.conversations.utils.JidHelper;
 import eu.siacs.conversations.utils.UIHelper;
 import eu.siacs.conversations.xmpp.Jid;
 import eu.siacs.conversations.xmpp.chatstate.ChatState;
+import eu.siacs.conversations.xmpp.jingle.stanzas.Muji;
 import eu.siacs.conversations.xmpp.forms.Data;
 import eu.siacs.conversations.xmpp.forms.Field;
 import eu.siacs.conversations.xmpp.pep.Avatar;
@@ -493,6 +494,18 @@ public class MucOptions {
     }
 
     public String getProposedNick(final String mucNick) {
+        // account is null for conversations restored from the database until they are attached; this
+        // method is called from the constructor, which can happen during early connection setup
+        final Account account = getAccount();
+        if (account == null) {
+            if (mucNick != null) {
+                return mucNick;
+            } else if (!conversation.getJid().isBareJid()) {
+                return conversation.getJid().getResource();
+            } else {
+                return JidHelper.localPartOrFallback(conversation.getJid());
+            }
+        }
         final Bookmark bookmark = this.conversation.getBookmark();
         final String bookmarkedNick = normalize(account.getJid(), bookmark == null ? null : bookmark.getNick());
         if (bookmarkedNick != null) {
@@ -876,6 +889,8 @@ public class MucOptions {
         private Role role = Role.NONE;
         private Affiliation affiliation = Affiliation.NONE;
         private Jid realJid;
+        // The full real JID as exposed by the MUC <item jid>, if the server provides one.
+        private Jid realFullJid;
         private Jid fullJid;
         protected String nick;
         private long pgpKeyId = 0;
@@ -886,6 +901,7 @@ public class MucOptions {
         protected String occupantId;
         protected boolean online = true;
         protected Presence presence;
+        protected Muji muji;
         private String softwareVersion;
 
         public User(MucOptions options, Jid fullJid, final String occupantId, final String nick, final Set<Hat> hats) {
@@ -1091,6 +1107,14 @@ public class MucOptions {
             this.realJid = jid != null ? jid.asBareJid() : null;
         }
 
+        public Jid getRealFullJid() {
+            return realFullJid;
+        }
+
+        public void setRealFullJid(final Jid fullJid) {
+            this.realFullJid = fullJid != null && fullJid.isFullJid() ? fullJid : null;
+        }
+
         public boolean setChatState(ChatState chatState) {
             if (this.chatState == chatState) {
                 return false;
@@ -1124,6 +1148,15 @@ public class MucOptions {
 
         public void setPresence(final Presence presence) {
             this.presence = presence;
+        }
+
+        // XEP-0272: Multiparty Jingle (Muji). Null when the occupant does not advertise a conference
+        public Muji getMuji() {
+            return muji;
+        }
+
+        public void setMuji(final Muji muji) {
+            this.muji = muji;
         }
     }
 }

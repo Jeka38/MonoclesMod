@@ -54,6 +54,8 @@ public final class Namespace {
     public static final String JINGLE_TRANSPORT_WEBRTC_DATA_CHANNEL = "urn:xmpp:jingle:transports:webrtc-datachannel:1";
     public static final String JINGLE_TRANSPORT = "urn:xmpp:jingle:transports:dtls-sctp:1";
     public static final String JINGLE_APPS_RTP = "urn:xmpp:jingle:apps:rtp:1";
+    // XEP-0272: Multiparty Jingle (Muji)
+    public static final String JINGLE_MUJI = "urn:xmpp:jingle:muji:0";
 
     public static final String JINGLE_APPS_FILE_TRANSFER = "urn:xmpp:jingle:apps:file-transfer:5";
     public static final String JINGLE_APPS_DTLS = "urn:xmpp:jingle:apps:dtls:0";

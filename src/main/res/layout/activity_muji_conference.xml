@@ -1,0 +1,66 @@
+<?xml version="1.0" encoding="utf-8"?>
+<LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:app="http://schemas.android.com/apk/res-auto"
+    android:layout_width="match_parent"
+    android:layout_height="match_parent"
+    android:orientation="vertical">
+
+    <com.google.android.material.appbar.MaterialToolbar
+        android:id="@+id/toolbar"
+        android:layout_width="match_parent"
+        android:layout_height="?attr/actionBarSize"
+        app:title="@string/muji_conference" />
+
+    <TextView
+        android:id="@+id/muji_status"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:padding="8dp"
+        android:text="@string/muji_conference_connecting" />
+
+    <eu.siacs.conversations.ui.widget.MujiParticipantGridView
+        android:id="@+id/muji_participants"
+        android:layout_width="match_parent"
+        android:layout_height="0dp"
+        android:layout_weight="1" />
+
+    <LinearLayout
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:gravity="center"
+        android:orientation="horizontal"
+        android:paddingVertical="10dp">
+
+        <com.google.android.material.button.MaterialButton
+            android:id="@+id/muji_mic"
+            style="@style/MujiCircleButton"
+            android:contentDescription="@string/muji_mic_off"
+            app:backgroundTint="#525252"
+            app:icon="@drawable/ic_mic_black_24dp"
+            app:iconTint="@android:color/white" />
+
+        <com.google.android.material.button.MaterialButton
+            android:id="@+id/muji_video"
+            style="@style/MujiCircleButton"
+            android:contentDescription="@string/muji_video_off"
+            app:backgroundTint="#525252"
+            app:icon="@drawable/ic_videocam_black_24dp"
+            app:iconTint="@android:color/white" />
+
+        <com.google.android.material.button.MaterialButton
+            android:id="@+id/muji_switch_camera"
+            style="@style/MujiCircleButton"
+            android:contentDescription="@string/muji_switch_camera"
+            app:backgroundTint="#525252"
+            app:icon="@drawable/ic_flip_camera_android_black_24dp"
+            app:iconTint="@android:color/white" />
+
+        <com.google.android.material.button.MaterialButton
+            android:id="@+id/muji_leave"
+            style="@style/MujiCircleButton"
+            android:contentDescription="@string/muji_leave"
+            app:backgroundTint="#D32F2F"
+            app:icon="@drawable/ic_call_end_white_48dp"
+            app:iconTint="@android:color/white" />
+    </LinearLayout>
+</LinearLayout>

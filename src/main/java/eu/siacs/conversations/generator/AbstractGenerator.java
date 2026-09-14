@@ -64,7 +64,8 @@ public abstract class AbstractGenerator {
             Namespace.JINGLE_FEATURE_VIDEO,
             Namespace.JINGLE_APPS_RTP,
             Namespace.JINGLE_APPS_DTLS,
-            Namespace.JINGLE_MESSAGE
+            Namespace.JINGLE_MESSAGE,
+            Namespace.JINGLE_MUJI
     };
 
     protected XmppConnectionService mXmppConnectionService;

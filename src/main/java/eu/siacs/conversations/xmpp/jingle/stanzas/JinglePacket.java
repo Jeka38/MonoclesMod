@@ -52,6 +52,20 @@ public class JinglePacket extends IqPacket {
         this.addJingleChild(group);
     }
 
+    // XEP-0272: Multiparty Jingle (Muji)
+    public Muji getMuji() {
+        final Element jingle = findChild("jingle", Namespace.JINGLE);
+        if (jingle == null) {
+            return null;
+        }
+        final Element muji = jingle.findChild("muji", Namespace.JINGLE_MUJI);
+        return muji == null ? null : Muji.upgrade(muji);
+    }
+
+    public void addMuji(final Muji muji) {
+        addJingleChild(muji);
+    }
+
     public Map<String, Content> getJingleContents() {
         final Element jingle = findChild("jingle", Namespace.JINGLE);
         ImmutableMap.Builder<String, Content> builder = new ImmutableMap.Builder<>();

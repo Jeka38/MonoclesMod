@@ -29,6 +29,8 @@ import eu.siacs.conversations.xmpp.InvalidJid;
 import eu.siacs.conversations.xmpp.Jid;
 import eu.siacs.conversations.xmpp.OnPresencePacketReceived;
 import eu.siacs.conversations.xmpp.forms.Data;
+import eu.siacs.conversations.xmpp.jingle.MujiLog;
+import eu.siacs.conversations.xmpp.jingle.stanzas.Muji;
 import eu.siacs.conversations.xmpp.pep.Avatar;
 import eu.siacs.conversations.xmpp.stanzas.PresencePacket;
 
@@ -87,6 +89,12 @@ public class PresenceParser extends AbstractParser implements
                         final String show = packet.findChildContent("show");
                         final String presenceStatus = packet.findChildContent("status");
                         user.setPresence(Presence.parse(show, caps, presenceStatus));
+                        final Element muji = packet.findChild("muji", Namespace.JINGLE_MUJI);
+                        user.setMuji(muji == null ? null : Muji.upgrade(muji));
+                        if (muji != null) {
+                            MujiLog.log(
+                                    mXmppConnectionService.getFilesDir(), "RX MUC " + packet);
+                        }
                         final String itemNick = item.getAttribute("nick");
                         if (itemNick != null) {
                             user.setNick(itemNick);
@@ -230,6 +238,7 @@ public class PresenceParser extends AbstractParser implements
                                 mXmppConnectionService.fetchAvatar(mucOptions.getAccount(), avatar);
                             }
                         }
+                        mXmppConnectionService.getMujiConferenceManager().onOccupantPresence(conversation, user);
                     }
                 }
             } else if (type.equals("unavailable")) {

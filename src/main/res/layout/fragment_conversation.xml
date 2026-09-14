@@ -29,9 +29,24 @@
         app:tabSelectedTextColor="?attr/text_Color_Main"
         app:tabTextColor="?attr/button_text_color_disabled" />
 
+    <TextView
+        android:id="@+id/muc_topic"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:layout_below="@id/tab_layout"
+        android:background="?attr/color_background_secondary"
+        android:clickable="true"
+        android:ellipsize="end"
+        android:focusable="true"
+        android:maxLines="1"
+        android:paddingHorizontal="16dp"
+        android:paddingVertical="6dp"
+        android:textSize="13sp"
+        android:visibility="gone" />
+
     <de.monocles.mod.WebviewAwareViewPager
         android:id="@+id/conversation_view_pager"
-        android:layout_below="@id/tab_layout"
+        android:layout_below="@id/muc_topic"
         android:layout_width="fill_parent"
         android:layout_height="fill_parent" >
 

@@ -589,5 +589,12 @@
             android:launchMode="singleInstance"
             android:exported="false"
             android:supportsPictureInPicture="true" />
+
+        <activity
+            android:name=".ui.MujiConferenceActivity"
+            android:configChanges="orientation|screenSize"
+            android:label="@string/muji_conference"
+            android:launchMode="singleTask"
+            android:exported="false" />
     </application>
 </manifest>
