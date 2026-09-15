@@ -90,6 +90,16 @@
             android:textColor="@android:color/white"
             android:textSize="13sp"
             app:backgroundTint="?attr/colorAccent" />
+
+        <ImageButton
+            android:id="@+id/muji_call_bar_close"
+            android:layout_width="48dp"
+            android:layout_height="48dp"
+            android:layout_gravity="center_vertical"
+            android:background="?attr/selectableItemBackgroundBorderless"
+            android:contentDescription="@string/muji_call_bar_close"
+            android:src="@drawable/ic_cancel_black_24dp"
+            app:tint="?attr/text_Color_Main" />
     </LinearLayout>
 
     <de.monocles.mod.WebviewAwareViewPager

@@ -294,6 +294,7 @@ public class ConversationFragment extends XmppFragment
     public static final int REQUEST_START_VIDEO_CALL = 0x214;
     public static final int REQUEST_START_MUJI_CONFERENCE = 0x215;
     private boolean mPendingMujiVideo = true;
+    private int dismissedMujiCallBarCount = -1;
     public static final int REQUEST_SAVE_GIF = 0x216;
     public static final int REQUEST_WEBXDC_STORE = 0x217;
     public static final int REQUEST_SAVE_AS = 0x218;
@@ -2998,6 +2999,9 @@ public class ConversationFragment extends XmppFragment
         if (video && activity.isCameraFeatureAvailable()) {
             permissions.add(Manifest.permission.CAMERA);
         }
+        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.S) {
+            permissions.add(Manifest.permission.BLUETOOTH_CONNECT);
+        }
         if (!hasPermissions(REQUEST_START_MUJI_CONFERENCE, permissions)) {
             return; // startMujiConference() is called from onRequestPermissionsResult
         }
@@ -5337,9 +5341,17 @@ public class ConversationFragment extends XmppFragment
         final boolean active = service != null && service.isMujiConferenceActive(conversation);
         final int count = Math.max(mujiParticipantCount(conversation), active ? 1 : 0);
         if (!active && count == 0) {
+            dismissedMujiCallBarCount = -1;
             binding.mujiCallBar.setVisibility(View.GONE);
             return;
         }
+        if (dismissedMujiCallBarCount >= 0
+                && dismissedMujiCallBarCount == count
+                && !active) {
+            binding.mujiCallBar.setVisibility(View.GONE);
+            return;
+        }
+        dismissedMujiCallBarCount = -1;
         binding.mujiCallBarParticipants.setText(
                 activity.getResources()
                         .getQuantityString(R.plurals.muji_call_bar_participants, count, count));
@@ -5356,6 +5368,11 @@ public class ConversationFragment extends XmppFragment
             }
         }
         binding.mujiCallBarJoin.setOnClickListener(v -> toggleMujiConference());
+        binding.mujiCallBarClose.setOnClickListener(
+                v -> {
+                    dismissedMujiCallBarCount = count;
+                    binding.mujiCallBar.setVisibility(View.GONE);
+                });
         binding.mujiCallBar.setVisibility(View.VISIBLE);
     }
 

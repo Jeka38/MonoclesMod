@@ -964,23 +964,39 @@ public class Conversation extends AbstractEntity implements Blockable, Comparabl
                 .result();
     }
 
+    private long mujiCallTimestamp = 0;
+
+    /**
+     * Timestamp of when a Muji voice chat became active in this room, so it can be sorted into the
+     * conversation list as if a new message had arrived.
+     */
+    public void setMujiCallTimestamp(final long timestamp) {
+        this.mujiCallTimestamp = timestamp;
+    }
+
+    public long getMujiCallTimestamp() {
+        return mujiCallTimestamp;
+    }
+
     public long getSortableTime() {
         Draft draft = getDraft();
         long messageTime = getLatestMessage().getTimeReceived();
+        long time = Math.max(messageTime, mujiCallTimestamp);
         if (draft == null) {
-            return messageTime;
+            return time;
         } else {
-            return Math.max(messageTime, draft.getTimestamp());
+            return Math.max(time, draft.getTimestamp());
         }
     }
 
     public long getSortableTimeExcludingStatusMessages() {
         Draft draft = getDraft();
         long messageTime = getLatestMessageTimeExcludingStatusMessages();
+        long time = Math.max(messageTime, mujiCallTimestamp);
         if (draft == null) {
-            return messageTime;
+            return time;
         } else {
-            return Math.max(messageTime, draft.getTimestamp());
+            return Math.max(time, draft.getTimestamp());
         }
     }
 

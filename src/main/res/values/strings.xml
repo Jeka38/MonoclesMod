@@ -1312,6 +1312,7 @@
     <string name="muji_call_bar_title">Video chat</string>
     <string name="muji_call_bar_join">Join</string>
     <string name="muji_call_bar_open">Open</string>
+    <string name="muji_call_bar_close">Close</string>
     <plurals name="muji_call_bar_participants">
         <item quantity="one">%d participant</item>
         <item quantity="other">%d participants</item>

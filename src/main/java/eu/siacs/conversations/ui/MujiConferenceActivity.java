@@ -1,13 +1,21 @@
 package eu.siacs.conversations.ui;
 
+import android.Manifest;
 import android.animation.ValueAnimator;
+import android.bluetooth.BluetoothDevice;
+import android.content.BroadcastReceiver;
 import android.content.Context;
 import android.content.Intent;
+import android.content.IntentFilter;
+import android.content.pm.PackageManager;
 import android.content.res.ColorStateList;
+import android.media.AudioDeviceInfo;
 import android.media.AudioManager;
+import android.os.Build;
 import android.os.Bundle;
 import android.os.Handler;
 import android.os.Looper;
+import android.os.PowerManager;
 import android.util.Log;
 import android.view.LayoutInflater;
 import android.view.View;
@@ -15,7 +23,9 @@ import android.view.animation.AccelerateDecelerateInterpolator;
 import android.widget.TextView;
 
 import androidx.annotation.Nullable;
+import androidx.annotation.RequiresApi;
 import androidx.appcompat.widget.Toolbar;
+import androidx.core.content.ContextCompat;
 
 import com.google.android.material.button.MaterialButton;
 import com.google.android.material.imageview.ShapeableImageView;
@@ -63,11 +73,14 @@ public class MujiConferenceActivity extends XmppActivity {
     public static final String EXTRA_ROOM = "room";
 
     private static final long REFRESH_INTERVAL = 1000L;
-    private static final long AUDIO_LEVEL_INTERVAL = 300L;
+    private static final long AUDIO_LEVEL_INTERVAL = 10L;
     private static final long SPEAKING_HOLD_MS = 500L;
     private static final double AUDIO_LEVEL_THRESHOLD = 0.04d;
     private static final int SPEAKING_COLOR = 0xFF4CAF50;
     private static final String SELF_KEY = "self";
+    private static final int MAX_SCO_RETRIES = 30;
+    private static final long SCO_RETRY_DELAY = 1000L;
+    private static final long BLUETOOTH_ROUTING_INTERVAL = 2000L;
 
     private final Handler handler = new Handler(Looper.getMainLooper());
     private final Map<String, ParticipantView> views = new HashMap<>();
@@ -88,6 +101,80 @@ public class MujiConferenceActivity extends XmppActivity {
                 }
             };
 
+    /**
+     * Polls for a Bluetooth headset while the call is active and the speaker is off. The
+     * {@code ACTION_ACL_CONNECTED} broadcast is not reliably delivered on all devices (Android
+     * 13+/EMUI huawei), so this is the robust fallback that picks up a mid-call headset connection
+     * (and re-routes if the headset is disconnected and reconnected).
+     */
+    private final Runnable bluetoothRoutingRunnable =
+            new Runnable() {
+                @Override
+                public void run() {
+                    maybeRouteToBluetooth();
+                    handler.postDelayed(bluetoothRoutingRunnable, BLUETOOTH_ROUTING_INTERVAL);
+                }
+            };
+
+    private void maybeRouteToBluetooth() {
+        if (audioManager == null
+                || speakerOn
+                || !bluetoothPermissionGranted()
+                || getActiveConference() == null) {
+            return;
+        }
+        // On API 31+, setCommunicationDevice() is used instead of startBluetoothSco(). The
+        // legacy ACTION_SCO_AUDIO_STATE_CHANGED broadcast does not fire when the communication
+        // device disappears, so scoRequested can go stale after a headset disconnects — the poll
+        // corrects this by checking whether the BT device is still in the output device list.
+        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.S && scoRequested) {
+            if (findBluetoothAudioDevice() == null) {
+                scoRequested = false;
+            }
+        }
+        requestBluetoothSco();
+    }
+
+    private final BroadcastReceiver bluetoothScoReceiver =
+            new BroadcastReceiver() {
+                @Override
+                public void onReceive(final Context context, final Intent intent) {
+                    final String action = intent.getAction();
+                    if (BluetoothDevice.ACTION_ACL_CONNECTED.equals(action)) {
+                        // A Bluetooth headset was (re)connected mid-call — the call was started
+                        // without one, so re-route audio to the headset.
+                        if (getActiveConference() != null
+                                && !speakerOn
+                                && bluetoothPermissionGranted()) {
+                            logBt("Bluetooth device connected, re-routing audio");
+                            scoRequested = false;
+                            scoRetries = 0;
+                            requestBluetoothRouteRetry();
+                        }
+                        return;
+                    }
+                    if (!AudioManager.ACTION_SCO_AUDIO_STATE_CHANGED.equals(action)) {
+                        return;
+                    }
+                    final int state =
+                            intent.getIntExtra(
+                                    AudioManager.EXTRA_SCO_AUDIO_STATE,
+                                    AudioManager.SCO_AUDIO_STATE_DISCONNECTED);
+                    if (state == AudioManager.SCO_AUDIO_STATE_CONNECTED) {
+                        logBt("Bluetooth SCO connected");
+                        scoRetries = 0;
+                    } else if (state == AudioManager.SCO_AUDIO_STATE_DISCONNECTED) {
+                        logBt("Bluetooth SCO disconnected");
+                        scoRequested = false;
+                        if (getActiveConference() != null
+                                && !speakerOn
+                                && bluetoothPermissionGranted()) {
+                            requestBluetoothRouteRetry();
+                        }
+                    }
+                }
+            };
+
     private Toolbar toolbar;
     private MujiParticipantGridView container;
     private TextView status;
@@ -97,7 +184,10 @@ public class MujiConferenceActivity extends XmppActivity {
     private MaterialButton speakerButton;
 
     private AudioManager audioManager;
+    private PowerManager.WakeLock wakeLock;
     private boolean speakerOn = false;
+    private boolean scoRequested = false;
+    private int scoRetries = 0;
 
     private Account account;
     private Jid room;
@@ -145,6 +235,15 @@ public class MujiConferenceActivity extends XmppActivity {
         this.switchCameraButton = findViewById(R.id.muji_switch_camera);
         this.speakerButton = findViewById(R.id.muji_speaker);
         this.audioManager = (AudioManager) getSystemService(Context.AUDIO_SERVICE);
+        final IntentFilter bluetoothFilter =
+                new IntentFilter(AudioManager.ACTION_SCO_AUDIO_STATE_CHANGED);
+        bluetoothFilter.addAction(BluetoothDevice.ACTION_ACL_CONNECTED);
+        ContextCompat.registerReceiver(
+                getApplicationContext(),
+                bluetoothScoReceiver,
+                bluetoothFilter,
+                ContextCompat.RECEIVER_NOT_EXPORTED);
+        acquireWakelock();
         micButton.setOnClickListener(v -> toggleMicrophone());
         videoButton.setOnClickListener(v -> toggleVideo());
         switchCameraButton.setOnClickListener(v -> switchCamera());
@@ -158,6 +257,7 @@ public class MujiConferenceActivity extends XmppActivity {
         super.onStart();
         handler.post(refreshRunnable);
         handler.post(audioLevelRunnable);
+        handler.post(bluetoothRoutingRunnable);
     }
 
     @Override
@@ -165,13 +265,46 @@ public class MujiConferenceActivity extends XmppActivity {
         super.onStop();
         handler.removeCallbacks(refreshRunnable);
         handler.removeCallbacks(audioLevelRunnable);
+        handler.removeCallbacks(bluetoothRoutingRunnable);
     }
 
     @Override
     protected void onDestroy() {
         super.onDestroy();
+        releaseWakeLock();
+        releaseBluetoothSco();
+        try {
+            getApplicationContext().unregisterReceiver(bluetoothScoReceiver);
+        } catch (final IllegalArgumentException ignored) {
+            // receiver was not registered
+        }
         handler.removeCallbacksAndMessages(null);
         clearParticipants();
+    }
+
+    private void acquireWakelock() {
+        if (wakeLock != null) {
+            return;
+        }
+        final PowerManager powerManager = (PowerManager) getSystemService(Context.POWER_SERVICE);
+        if (powerManager == null) {
+            return;
+        }
+        wakeLock =
+                powerManager.newWakeLock(
+                        PowerManager.PARTIAL_WAKE_LOCK, "monocles:MujiConferenceActivity");
+        wakeLock.acquire();
+        Log.d(Config.LOGTAG, "Muji: partial wakelock acquired");
+    }
+
+    private void releaseWakeLock() {
+        if (wakeLock != null) {
+            if (wakeLock.isHeld()) {
+                wakeLock.release();
+            }
+            wakeLock = null;
+            Log.d(Config.LOGTAG, "Muji: partial wakelock released");
+        }
     }
 
     private void leaveConference() {
@@ -190,15 +323,13 @@ public class MujiConferenceActivity extends XmppActivity {
         status.setText(R.string.muji_conference_active);
         toolbar.setVisibility(View.GONE);
         final Set<String> present = new HashSet<>();
+        present.add(SELF_KEY);
+        final ParticipantView selfView = getOrCreateView(SELF_KEY);
+        selfView.label.setText(R.string.muji_self);
+        bindAvatar(selfView, selfAvatarable());
         final VideoTrack selfVideo = conference.getLocalVideoTrack();
         final boolean selfVideoEnabled = conference.getMedia().contains(Media.VIDEO);
-        if (selfVideo != null) {
-            present.add(SELF_KEY);
-            final ParticipantView view = getOrCreateView(SELF_KEY);
-            view.label.setText(R.string.muji_self);
-            bindAvatar(view, selfAvatarable());
-            bindSelfVideo(view, conference, selfVideo, selfVideoEnabled);
-        }
+        bindSelfVideo(selfView, conference, selfVideo, selfVideoEnabled);
         final List<MujiConference.Participant> participants = conference.getParticipants();
         for (final MujiConference.Participant participant : participants) {
             final String key = participant.jid.asBareJid().toString();
@@ -244,21 +375,26 @@ public class MujiConferenceActivity extends XmppActivity {
                 connections.add(connection);
             }
         }
-        boolean microphone = false;
+boolean microphone = conference.isMicrophoneEnabled();
         boolean video = false;
         boolean hasVideo = false;
         boolean cameraSwitchable = false;
-        for (final JingleRtpConnection connection : connections) {
-            if (connection.isMicrophoneEnabled()) {
-                microphone = true;
-            }
-            if (connection.getLocalVideoTrack().isPresent()) {
-                hasVideo = true;
-                if (connection.isVideoEnabled()) {
-                    video = true;
-                }
-                if (connection.isCameraSwitchable()) {
-                    cameraSwitchable = true;
+        if (connections.isEmpty()) {
+            // Nobody has joined yet — reflect our own call state so the controls
+            // look exactly like they do once two or more participants are talking.
+            final VideoTrack selfVideo = conference.getLocalVideoTrack();
+            hasVideo = selfVideo != null;
+            video = hasVideo && conference.getMedia().contains(Media.VIDEO);
+        } else {
+            for (final JingleRtpConnection connection : connections) {
+                if (connection.getLocalVideoTrack().isPresent()) {
+                    hasVideo = true;
+                    if (connection.isVideoEnabled()) {
+                        video = true;
+                    }
+                    if (connection.isCameraSwitchable()) {
+                        cameraSwitchable = true;
+                    }
                 }
             }
         }
@@ -267,7 +403,6 @@ public class MujiConferenceActivity extends XmppActivity {
         micButton.setIconResource(
                 microphone ? R.drawable.ic_mic_black_24dp : R.drawable.ic_mic_off_black_24dp);
         micButton.setBackgroundTintList(ColorStateList.valueOf(microphone ? neutral : red));
-        micButton.setVisibility(connections.isEmpty() ? View.GONE : View.VISIBLE);
         videoButton.setIconResource(
                 video
                         ? R.drawable.ic_videocam_black_24dp
@@ -275,7 +410,8 @@ public class MujiConferenceActivity extends XmppActivity {
         videoButton.setBackgroundTintList(ColorStateList.valueOf(video ? neutral : red));
         videoButton.setVisibility(hasVideo ? View.VISIBLE : View.GONE);
         switchCameraButton.setVisibility(cameraSwitchable ? View.VISIBLE : View.GONE);
-        speakerButton.setVisibility(connections.isEmpty() ? View.GONE : View.VISIBLE);
+        micButton.setVisibility(View.VISIBLE);
+        speakerButton.setVisibility(View.VISIBLE);
         updateSpeakerButton();
     }
 
@@ -315,20 +451,11 @@ public class MujiConferenceActivity extends XmppActivity {
     }
 
     private void toggleMicrophone() {
-        final List<JingleRtpConnection> connections = connections();
-        if (connections.isEmpty()) {
+        final MujiConference conference = getActiveConference();
+        if (conference == null) {
             return;
         }
-        boolean enable = true;
-        for (final JingleRtpConnection connection : connections) {
-            if (connection.isMicrophoneEnabled()) {
-                enable = false;
-                break;
-            }
-        }
-        for (final JingleRtpConnection connection : connections) {
-            connection.setMicrophoneEnabled(enable);
-        }
+        conference.setMicrophoneEnabled(!conference.isMicrophoneEnabled());
         refresh();
     }
 
@@ -398,9 +525,136 @@ public class MujiConferenceActivity extends XmppActivity {
         }
         try {
             audioManager.setMode(AudioManager.MODE_IN_COMMUNICATION);
-            audioManager.setSpeakerphoneOn(speakerOn);
+            if (speakerOn) {
+                releaseBluetoothSco();
+                audioManager.setSpeakerphoneOn(true);
+            } else {
+                scoRetries = 0;
+                requestBluetoothSco();
+                audioManager.setSpeakerphoneOn(false);
+            }
         } catch (final RuntimeException e) {
             Log.w(Config.LOGTAG, "unable to change speakerphone state", e);
+        }
+    }
+
+    @SuppressWarnings("deprecation")
+    private boolean bluetoothPermissionGranted() {
+        return Build.VERSION.SDK_INT < Build.VERSION_CODES.S
+                || ContextCompat.checkSelfPermission(this, Manifest.permission.BLUETOOTH_CONNECT)
+                        == PackageManager.PERMISSION_GRANTED;
+    }
+
+    private void logBt(final String message) {
+        Log.d(Config.LOGTAG, message);
+        if (xmppConnectionService != null) {
+            MujiLog.log(xmppConnectionService.getFilesDir(), message);
+        }
+    }
+
+    /**
+     * Attempts to route audio to the Bluetooth headset, and keeps retrying on a delay until either a
+     * route is established, the call ends, the speaker is turned on, or the retry budget runs out.
+     * Needed because the audio profile may become available a moment after the link is reported.
+     */
+    private void requestBluetoothRouteRetry() {
+        if (scoRequested) {
+            return;
+        }
+        if (audioManager == null
+                || getActiveConference() == null
+                || speakerOn
+                || !bluetoothPermissionGranted()) {
+            return;
+        }
+        if (scoRetries >= MAX_SCO_RETRIES) {
+            logBt("giving up on Bluetooth routing after " + scoRetries + " retries");
+            return;
+        }
+        scoRetries++;
+        requestBluetoothSco();
+        if (!scoRequested && scoRetries < MAX_SCO_RETRIES) {
+            logBt("no Bluetooth route yet, retry " + scoRetries + "/" + MAX_SCO_RETRIES);
+            handler.postDelayed(
+                    MujiConferenceActivity.this::requestBluetoothRouteRetry, SCO_RETRY_DELAY);
+        }
+    }
+
+    /** Routes the conference audio to a connected Bluetooth headset when available. */
+    @SuppressWarnings("deprecation")
+    private void requestBluetoothSco() {
+        if (audioManager == null || scoRequested || !bluetoothPermissionGranted()) {
+            return;
+        }
+        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.S) {
+            final AudioDeviceInfo bluetoothDevice = findBluetoothAudioDevice();
+            if (bluetoothDevice == null) {
+                return;
+            }
+            try {
+                audioManager.setCommunicationDevice(bluetoothDevice);
+                scoRequested = true;
+                logBt(
+                        "routed audio to Bluetooth device via setCommunicationDevice (type="
+                                + bluetoothDevice.getType()
+                                + ", product="
+                                + bluetoothDevice.getProductName()
+                                + ")");
+            } catch (final RuntimeException e) {
+                logBt("unable to set Bluetooth communication device: " + e.getMessage());
+            }
+        } else {
+            try {
+                audioManager.startBluetoothSco();
+                audioManager.setBluetoothScoOn(true);
+                scoRequested = true;
+                logBt("Bluetooth SCO requested (legacy)");
+            } catch (final RuntimeException e) {
+                Log.w(Config.LOGTAG, "unable to start Bluetooth SCO", e);
+            }
+        }
+    }
+
+    /** The preferred Bluetooth output device for a voice call, or null if none is available. */
+    @RequiresApi(api = Build.VERSION_CODES.S)
+    @Nullable
+    private AudioDeviceInfo findBluetoothAudioDevice() {
+        if (audioManager == null) {
+            return null;
+        }
+        for (final AudioDeviceInfo device : audioManager.getDevices(AudioManager.GET_DEVICES_OUTPUTS)) {
+            final int type = device.getType();
+            if (type == AudioDeviceInfo.TYPE_BLUETOOTH_SCO
+                    || type == AudioDeviceInfo.TYPE_BLE_HEADSET
+                    || type == AudioDeviceInfo.TYPE_BLE_SPEAKER
+                    || type == AudioDeviceInfo.TYPE_HEARING_AID) {
+                return device;
+            }
+        }
+        return null;
+    }
+
+    /** Releases the Bluetooth routing; the call falls back to the default output device. */
+    @SuppressWarnings("deprecation")
+    private void releaseBluetoothSco() {
+        if (audioManager == null || !scoRequested) {
+            return;
+        }
+        scoRequested = false;
+        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.S) {
+            try {
+                audioManager.clearCommunicationDevice();
+                logBt("cleared Bluetooth communication device");
+            } catch (final RuntimeException e) {
+                Log.w(Config.LOGTAG, "unable to clear Bluetooth communication device", e);
+            }
+        } else {
+            try {
+                audioManager.setBluetoothScoOn(false);
+                audioManager.stopBluetoothSco();
+            } catch (final RuntimeException e) {
+                Log.w(Config.LOGTAG, "unable to stop Bluetooth SCO", e);
+            }
         }
     }
 

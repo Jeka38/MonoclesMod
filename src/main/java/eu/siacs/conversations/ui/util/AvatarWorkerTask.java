@@ -112,6 +112,7 @@ public class AvatarWorkerTask extends AsyncTask<AvatarService.Avatarable, Void, 
                         imageView.setImageDrawable(bm);
                     }
                     imageView.setBackgroundColor(0x00000000);
+                    startIfAnimated(bm);
                 } else if (JidFromJabberNetwork != null) {
                     try {
                         new GetAvatarFromJabberNetwork(activity.xmppConnectionService, avatarable, imageView, size, overlay).execute(Config.CHANNEL_DISCOVERY + "/avatar/v1/" + JidFromJabberNetwork);
@@ -123,20 +124,31 @@ public class AvatarWorkerTask extends AsyncTask<AvatarService.Avatarable, Void, 
                         ((AnimatedImageDrawable) bm).start();
                     }
                 } else {
-                    imageView.setBackgroundColor(avatarable.getAvatarBackgroundColor());
-                    imageView.setImageDrawable(null);
-                    final AvatarWorkerTask task = new AvatarWorkerTask(imageView, size);
-                    final AsyncDrawable asyncDrawable = new AsyncDrawable(activity.getResources(), null, task);
-                    if (overlay) {
-                        activity.xmppConnectionService.fileBackend.drawOverlayFromDrawable(asyncDrawable, R.drawable.pencil_overlay, 1.0f);
-                        imageView.setImageDrawable(asyncDrawable);
+                    // Cache miss — try a synchronous load first so the user does
+                    // not see a placeholder blink.
+                    final Drawable synchronous = activity.avatarService().get(avatarable, (int) activity.getResources().getDimension(size), false);
+                    if (synchronous != null) {
+                        cancelPotentialWork(avatarable, imageView);
+                        imageView.setImageDrawable(synchronous);
+                        imageView.setBackgroundColor(0x00000000);
+                        startIfAnimated(synchronous);
                     } else {
-                        imageView.setImageDrawable(asyncDrawable);
-
-                    }
-                    try {
-                        task.execute(avatarable);
-                    } catch (final RejectedExecutionException ignored) {
+                        // Truly no avatar available yet (e.g. new occupant) — fall
+                        // back to the async worker so the list stays responsive.
+                        imageView.setBackgroundColor(avatarable.getAvatarBackgroundColor());
+                        imageView.setImageDrawable(null);
+                        final AvatarWorkerTask task = new AvatarWorkerTask(imageView, size);
+                        final AsyncDrawable asyncDrawable = new AsyncDrawable(activity.getResources(), null, task);
+                        if (overlay) {
+                            activity.xmppConnectionService.fileBackend.drawOverlayFromDrawable(asyncDrawable, R.drawable.pencil_overlay, 1.0f);
+                            imageView.setImageDrawable(asyncDrawable);
+                        } else {
+                            imageView.setImageDrawable(asyncDrawable);
+                        }
+                        try {
+                            task.execute(avatarable);
+                        } catch (final RejectedExecutionException ignored) {
+                        }
                     }
                 }
             } else {
@@ -179,6 +191,12 @@ public class AvatarWorkerTask extends AsyncTask<AvatarService.Avatarable, Void, 
                     }
                 }
             }
+        }
+    }
+
+    private static void startIfAnimated(final Drawable drawable) {
+        if (Build.VERSION.SDK_INT >= 28 && drawable instanceof AnimatedImageDrawable) {
+            ((AnimatedImageDrawable) drawable).start();
         }
     }
 

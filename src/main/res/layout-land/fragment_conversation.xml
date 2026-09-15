@@ -79,18 +79,28 @@
                     android:textSize="12sp" />
             </LinearLayout>
 
-            <com.google.android.material.button.MaterialButton
-                android:id="@+id/muji_call_bar_join"
-                style="@style/Widget.Conversations.Button"
-                android:layout_width="wrap_content"
-                android:layout_height="match_parent"
-                android:layout_gravity="center_vertical"
-                android:minWidth="0dp"
-                android:text="@string/muji_call_bar_join"
-                android:textColor="@android:color/white"
-                android:textSize="13sp"
-                app:backgroundTint="?attr/colorAccent" />
-        </LinearLayout>
+<com.google.android.material.button.MaterialButton
+            android:id="@+id/muji_call_bar_join"
+            style="@style/Widget.Conversations.Button"
+            android:layout_width="wrap_content"
+            android:layout_height="match_parent"
+            android:layout_gravity="center_vertical"
+            android:minWidth="0dp"
+            android:text="@string/muji_call_bar_join"
+            android:textColor="@android:color/white"
+            android:textSize="13sp"
+            app:backgroundTint="?attr/colorAccent" />
+
+        <ImageButton
+            android:id="@+id/muji_call_bar_close"
+            android:layout_width="48dp"
+            android:layout_height="48dp"
+            android:layout_gravity="center_vertical"
+            android:background="?attr/selectableItemBackgroundBorderless"
+            android:contentDescription="@string/muji_call_bar_close"
+            android:src="@drawable/ic_cancel_black_24dp"
+            app:tint="?attr/text_Color_Main" />
+    </LinearLayout>
 
         <de.monocles.mod.WebviewAwareViewPager
             android:id="@+id/conversation_view_pager"

@@ -13,6 +13,7 @@ import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
+import java.util.concurrent.atomic.AtomicBoolean;
 
 import org.webrtc.VideoTrack;
 
@@ -49,6 +50,8 @@ public class MujiConference {
     private final Set<Media> media = new HashSet<>();
     private final Map<String, AbstractJingleConnection.Id> sessions = new HashMap<>();
     private final Set<String> announced = new HashSet<>();
+    private final AtomicBoolean joinChimePlayed = new AtomicBoolean(false);
+    private final int existingMujiParticipantsAtCreation;
     private final Handler handler = new Handler(Looper.getMainLooper());
 
     @Nullable private WebRTCResources webRTCResources;
@@ -64,6 +67,19 @@ public class MujiConference {
         this.conversation = conversation;
         this.room = conversation.getJid().asBareJid();
         this.media.addAll(media);
+        this.existingMujiParticipantsAtCreation = countExistingMujiParticipants(conversation);
+        this.conversation.setMujiCallTimestamp(System.currentTimeMillis());
+        this.xmppConnectionService.updateConversationUi();
+    }
+
+    private static int countExistingMujiParticipants(final Conversation conversation) {
+        int count = 0;
+        for (final MucOptions.User user : conversation.getMucOptions().getUsers(false)) {
+            if (!user.realJidMatchesAccount() && user.getMuji() != null) {
+                count++;
+            }
+        }
+        return count;
     }
 
     public Jid getRoom() {
@@ -193,6 +209,42 @@ public class MujiConference {
         return resources == null || resources.isFrontCamera();
     }
 
+    /**
+     * Whether the shared conference microphone track is enabled. The same {@code AudioTrack} is used
+     * by every peer connection, so this is the single source of truth even before any participant
+     * session exists.
+     */
+    public boolean isMicrophoneEnabled() {
+        final WebRTCResources resources = this.webRTCResources;
+        if (resources == null) {
+            return true;
+        }
+        try {
+            return resources.audioTrack.enabled();
+        } catch (final IllegalStateException e) {
+            Log.w(Config.LOGTAG, "unable to check conference microphone", e);
+            return false;
+        }
+    }
+
+    /**
+     * Enables or disables the shared conference microphone track. Works both before and after other
+     * participants join, since every session references the same track.
+     */
+    public boolean setMicrophoneEnabled(final boolean enabled) {
+        final WebRTCResources resources = this.webRTCResources;
+        if (resources == null) {
+            return false;
+        }
+        try {
+            resources.audioTrack.setEnabled(enabled);
+            return true;
+        } catch (final IllegalStateException e) {
+            Log.w(Config.LOGTAG, "unable to toggle conference microphone", e);
+            return false;
+        }
+    }
+
     @Nullable
     private RtpEndUserState sessionState(final AbstractJingleConnection.Id id) {
         final WeakReference<JingleRtpConnection> reference =
@@ -267,6 +319,29 @@ public class MujiConference {
             return false;
         }
         return conversation.getMucOptions().findUserByRealJid(realJid.asBareJid()) != null;
+    }
+
+    /**
+     * Decides whether a just-connected session should play the local join chime. The chime is played
+     * exactly once per conference lifetime and only on the devices of people actually in the call:
+     *
+     * <ul>
+     *   <li>the conference starter (no other Muji participants when this conference was created)
+     *       hears the very first participant joining on their first connected responder session;
+     *   <li>the participant who joins a call that is already populated (2+ participants) hears a
+     *       single chime when their first locally initiated session connects;
+     *   <li>the first joiner of an empty-looking call and established participants stay silent.
+     * </ul>
+     */
+    boolean shouldPlayJoinChime(final boolean locallyInitiated) {
+        if (locallyInitiated) {
+            if (existingMujiParticipantsAtCreation < 2) {
+                return false;
+            }
+        } else if (existingMujiParticipantsAtCreation != 0) {
+            return false;
+        }
+        return joinChimePlayed.compareAndSet(false, true);
     }
 
     private void initiateSessions() {

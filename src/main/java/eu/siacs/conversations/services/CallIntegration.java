@@ -61,6 +61,10 @@ public class CallIntegration extends Connection {
     private final AtomicBoolean delayedDestructionInitiated = new AtomicBoolean(false);
     private final AtomicBoolean isDestroyed = new AtomicBoolean(false);
 
+    // audible call cues (ring-back, connected tone, drop/busy/error tones) are turned off for
+    // Muji conference sessions so only the participant who actually joins hears a single chime
+    private volatile boolean audioCuesEnabled = true;
+
     private List<CallEndpoint> availableEndpoints = Collections.emptyList();
 
     private Callback callback = null;
@@ -85,6 +89,14 @@ public class CallIntegration extends Connection {
 
     public void setCallback(final Callback callback) {
         this.callback = callback;
+    }
+
+    public void setAudioCuesEnabled(final boolean audioCuesEnabled) {
+        this.audioCuesEnabled = audioCuesEnabled;
+    }
+
+    public void playMujiJoinSound() {
+        playConnectedSound();
     }
 
     @Override
@@ -337,7 +349,7 @@ public class CallIntegration extends Connection {
     @Override
     public void onStateChanged(final int state) {
         Log.d(Config.LOGTAG, "onStateChanged(" + state + ")");
-        if (notSelfManaged(context)) {
+        if (audioCuesEnabled && notSelfManaged(context)) {
             if (state == STATE_DIALING) {
                 requireAppRtcAudioManager().startRingBack();
             } else {
@@ -345,7 +357,9 @@ public class CallIntegration extends Connection {
             }
         }
         if (state == STATE_ACTIVE) {
-            playConnectedSound();
+            if (audioCuesEnabled) {
+                playConnectedSound();
+            }
         } else if (state == STATE_DISCONNECTED) {
             final var audioManager = this.appRTCAudioManager;
             if (audioManager != null) {
@@ -372,7 +386,9 @@ public class CallIntegration extends Connection {
 
     public void success() {
         Log.d(Config.LOGTAG, "CallIntegration.success()");
-        startTone(DEFAULT_TONE_VOLUME, ToneGenerator.TONE_CDMA_CALLDROP_LITE, 375);
+        if (audioCuesEnabled) {
+            startTone(DEFAULT_TONE_VOLUME, ToneGenerator.TONE_CDMA_CALLDROP_LITE, 375);
+        }
         this.destroyWithDelay(new DisconnectCause(DisconnectCause.LOCAL, null), 375);
     }
 
@@ -387,7 +403,9 @@ public class CallIntegration extends Connection {
 
     public void error() {
         Log.d(Config.LOGTAG, "CallIntegration.error()");
-        startTone(DEFAULT_TONE_VOLUME, ToneGenerator.TONE_CDMA_CALLDROP_LITE, 375);
+        if (audioCuesEnabled) {
+            startTone(DEFAULT_TONE_VOLUME, ToneGenerator.TONE_CDMA_CALLDROP_LITE, 375);
+        }
         this.destroyWithDelay(new DisconnectCause(DisconnectCause.ERROR, null), 375);
     }
 
@@ -404,7 +422,9 @@ public class CallIntegration extends Connection {
 
     public void busy() {
         Log.d(Config.LOGTAG, "CallIntegration.busy()");
-        startTone(80, ToneGenerator.TONE_CDMA_NETWORK_BUSY, 2500);
+        if (audioCuesEnabled) {
+            startTone(80, ToneGenerator.TONE_CDMA_NETWORK_BUSY, 2500);
+        }
         this.destroyWithDelay(new DisconnectCause(DisconnectCause.BUSY, null), 2500);
     }
 

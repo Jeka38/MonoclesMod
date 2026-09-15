@@ -168,10 +168,21 @@ public class JingleRtpConnection extends AbstractJingleConnection
         this.callIntegration = callIntegration;
         this.callIntegration.setCallback(this);
         this.mujiRoom = mujiRoom;
+        if (mujiRoom != null) {
+            // Muji conference sessions must not beep for every peer connection on every
+            // participant's device; the join chime is played once for the local joiner instead
+            this.callIntegration.setAudioCuesEnabled(false);
+        }
     }
 
     public boolean isMuji() {
         return mujiRoom != null;
+    }
+
+    private boolean shouldPlayMujiJoinChime() {
+        final MujiConference conference =
+                xmppConnectionService.getMujiConferenceManager().get(id.account, mujiRoom);
+        return conference != null && conference.shouldPlayJoinChime(isInitiator());
     }
 
     public Jid getMujiRoom() {
@@ -2176,6 +2187,10 @@ public class JingleRtpConnection extends AbstractJingleConnection
             case SESSION_ACCEPTED -> {
                 if (isPeerConnectionConnected()) {
                     this.callIntegration.setActive();
+                    if (isMuji()
+                            && shouldPlayMujiJoinChime()) {
+                        this.callIntegration.playMujiJoinSound();
+                    }
                 } else {
                     this.callIntegration.setInitialized();
                 }

@@ -194,6 +194,9 @@ public class PresenceParser extends AbstractParser implements
                         boolean isNew = mucOptions.updateUser(user);
                         if (mujiChanged) {
                             addedStatusMessage = true;
+                            if (parsedMuji != null) {
+                                conversation.setMujiCallTimestamp(System.currentTimeMillis());
+                            }
                         }
                         if (isNew && !isSelf && mucOptions.online() && !codes.contains(MucOptions.STATUS_CODE_CHANGED_NICK)) {
                             String body = mXmppConnectionService.getString(R.string.muc_occupant_joined, from.getResource());

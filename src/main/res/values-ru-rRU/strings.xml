@@ -935,6 +935,7 @@
     <string name="muji_call_bar_title">Видеочат</string>
     <string name="muji_call_bar_join">Вступить</string>
     <string name="muji_call_bar_open">Открыть</string>
+    <string name="muji_call_bar_close">Закрыть</string>
     <plurals name="muji_call_bar_participants">
         <item quantity="one">%d участник</item>
         <item quantity="few">%d участника</item>
