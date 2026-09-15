@@ -72,6 +72,10 @@ public class PresenceGenerator extends AbstractGenerator {
                 packet.addChild("x", "jabber:x:signed").setContent(sig);
             }
         }
+        final int priority = account.getPresencePriority();
+        if (priority != 0) {
+            packet.addChild("priority").setContent(Integer.toString(priority));
+        }
         if (nickname != null) {
             Element nick = packet.addChild("nick", "http://jabber.org/protocol/nick");
             nick.setContent(nickname);

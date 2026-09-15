@@ -14,6 +14,8 @@ import java.util.List;
 import java.util.Map;
 import java.util.Set;
 
+import org.webrtc.VideoTrack;
+
 import eu.siacs.conversations.Config;
 import eu.siacs.conversations.entities.Account;
 import eu.siacs.conversations.entities.Conversation;
@@ -46,6 +48,7 @@ public class MujiConference {
     private final Jid room;
     private final Set<Media> media = new HashSet<>();
     private final Map<String, AbstractJingleConnection.Id> sessions = new HashMap<>();
+    private final Set<String> announced = new HashSet<>();
     private final Handler handler = new Handler(Looper.getMainLooper());
 
     @Nullable private WebRTCResources webRTCResources;
@@ -96,7 +99,7 @@ public class MujiConference {
         handler.postDelayed(this::finishPreparation, PREPARATION_DELAY);
     }
 
-    synchronized void updateMedia(final Set<Media> media) {
+    public synchronized void updateMedia(final Set<Media> media) {
         this.media.clear();
         this.media.addAll(media);
         if (active) {
@@ -163,6 +166,33 @@ public class MujiConference {
         return resources == null ? null : resources.eglBase.getEglBaseContext();
     }
 
+    /**
+     * Returns the local camera track shared by the conference, so the UI can render a self preview.
+     * Only available when this conference was joined with video.
+     */
+    @Nullable
+    public VideoTrack getLocalVideoTrack() {
+        final WebRTCResources resources = this.webRTCResources;
+        if (resources == null) {
+            return null;
+        }
+        // Keep showing the (disabled, avatar-covered) self view after the user turns the camera
+        // off, so only create/start the camera when video is actually contributed.
+        final VideoTrack existing = resources.getVideoTrack();
+        if (existing != null) {
+            return existing;
+        }
+        if (!media.contains(Media.VIDEO)) {
+            return null;
+        }
+        return resources.getOrCreateVideoTrack();
+    }
+
+    public boolean isFrontCamera() {
+        final WebRTCResources resources = this.webRTCResources;
+        return resources == null || resources.isFrontCamera();
+    }
+
     @Nullable
     private RtpEndUserState sessionState(final AbstractJingleConnection.Id id) {
         final WeakReference<JingleRtpConnection> reference =
@@ -210,9 +240,18 @@ public class MujiConference {
         if (user.realJidMatchesAccount()) {
             return;
         }
-        if (user.getMuji() == null) {
-            terminateSession(user.getRealJid());
+        final Jid realJid = user.getRealJid();
+        if (user.getMuji() != null) {
+            if (realJid != null) {
+                announced.remove(realJid.asBareJid().toString());
+            }
+            return;
         }
+        if (realJid != null && announced.add(realJid.asBareJid().toString())) {
+            // an occupant that is not (yet) in the conference; re-advertise so latecomers see the call
+            sendPresence();
+        }
+        terminateSession(realJid);
     }
 
     synchronized void attach(final AbstractJingleConnection.Id id) {
@@ -257,7 +296,7 @@ public class MujiConference {
         final JingleRtpConnection connection =
                 xmppConnectionService
                         .getJingleConnectionManager()
-                        .initializeMujiRtpSession(account, target, room, intersectMedia(theirMuji));
+                        .initializeMujiRtpSession(account, target, room, unionMedia(theirMuji));
         if (connection != null) {
             sessions.put(key(realJid), connection.getId());
         }
@@ -292,15 +331,10 @@ public class MujiConference {
         }
     }
 
-    private Set<Media> intersectMedia(final Muji theirMuji) {
-        final Set<Media> theirs = new HashSet<>();
-        for (final MujiContent content : theirMuji.getContents()) {
-            theirs.add(content.getMedia());
-        }
+    private Set<Media> unionMedia(final Muji theirMuji) {
         final Set<Media> result = new HashSet<>(media);
-        result.retainAll(theirs);
-        if (result.isEmpty()) {
-            result.addAll(media);
+        for (final MujiContent content : theirMuji.getContents()) {
+            result.add(content.getMedia());
         }
         return result;
     }

@@ -17,6 +17,10 @@
     <string name="account_settings_jabber_id">Аккаунт</string>
     <string name="account_settings_port">Порт</string>
     <string name="account_settings_proxy_port">Порт прокси</string>
+    <string name="account_settings_priority_online">Online</string>
+    <string name="account_settings_priority_away">Away</string>
+    <string name="account_settings_priority_xa">XA</string>
+    <string name="account_settings_priority_dnd">DND</string>
     <string name="account_status_bind_failure">Неудачная связка</string>
     <string name="account_status_connecting">Подключение…</string>
     <string name="account_status_disabled">Временно отключено</string>
@@ -700,6 +704,7 @@
     <string name="non_anonymous">Сделать JID видимыми для всех</string>
     <string name="none">Нет</string>
     <string name="not_a_valid_port">Не корректный номер порта</string>
+    <string name="not_a_valid_number">Некорректное число</string>
     <string name="not_connected_try_again">Вы не подключены. Попробуйте позже</string>
     <string name="not_encrypted">Не зашифровано</string>
     <string name="not_encrypted_for_this_device">Сообщение не было зашифровано для этого устройства.</string>
@@ -927,6 +932,18 @@
     <string name="pref_show_record_voice_btn_summary">Показывать кнопку записи голоса и кнопку сфотографировать в поле ввода как быстрое действие</string>
     <string name="pref_showtextformatting">Показать панель инструментов форматирования текста</string>
     <string name="muji_join">Начать групповой звонок</string>
+    <string name="muji_call_bar_title">Видеочат</string>
+    <string name="muji_call_bar_join">Вступить</string>
+    <string name="muji_call_bar_open">Открыть</string>
+    <plurals name="muji_call_bar_participants">
+        <item quantity="one">%d участник</item>
+        <item quantity="few">%d участника</item>
+        <item quantity="many">%d участников</item>
+        <item quantity="other">%d участника</item>
+    </plurals>
+    <string name="muji_join_failed_permission">Не удалось присоединиться к звонку: требуется доступ к микрофону</string>
+    <string name="muji_join_failed_generic">Не удалось присоединиться к звонку: не получилось настроить аудио/видео. Попробуйте ещё раз.</string>
+    <string name="muji_channel_name">Групповые звонки</string>
     <string name="muji_leave">Покинуть конференцию Muji</string>
     <string name="muji_conference">Групповой звонок</string>
     <string name="muji_conference_connecting">Подготовка конференции\u2026</string>
@@ -939,6 +956,9 @@
     <string name="muji_video_on">Камера вкл</string>
     <string name="muji_video_off">Камера выкл</string>
     <string name="muji_switch_camera">Сменить камеру</string>
+    <string name="muji_speaker_on">Динамик включён</string>
+    <string name="muji_speaker_off">Динамик выключен</string>
+    <string name="muji_self">Вы</string>
     <string name="muji_state_ended">Завершено</string>
     <string name="pref_showtextformatting_sum">Показывать панель инструментов форматирования текста в чате, когда отображается клавиатура</string>
     <string name="pref_sound">Рингтон</string>

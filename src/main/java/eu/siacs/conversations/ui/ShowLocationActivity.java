@@ -6,6 +6,7 @@ import android.content.ClipData;
 import android.content.ClipboardManager;
 import android.content.Intent;
 import android.content.pm.ActivityInfo;
+import android.graphics.Color;
 import android.location.Address;
 import android.location.Geocoder;
 import android.location.Location;
@@ -25,8 +26,10 @@ import androidx.databinding.DataBindingUtil;
 
 import org.jetbrains.annotations.NotNull;
 import org.osmdroid.util.GeoPoint;
+import org.osmdroid.views.overlay.Polyline;
 
 import java.lang.ref.WeakReference;
+import java.util.ArrayList;
 import java.util.List;
 import java.util.Locale;
 
@@ -42,6 +45,7 @@ import me.drakeet.support.toast.ToastCompat;
 public class ShowLocationActivity extends LocationActivity implements LocationListener {
 
     private GeoPoint loc = LocationProvider.FALLBACK;
+    private final ArrayList<GeoPoint> track = new ArrayList<>();
     private ActivityShowLocationBinding binding;
     private String name;
 
@@ -69,9 +73,30 @@ public class ShowLocationActivity extends LocationActivity implements LocationLi
                 final double latitude = intent.getDoubleExtra("latitude", 0);
                 this.loc = new GeoPoint(latitude, longitude);
             }
-
+            final ArrayList<GeoPoint> receivedTrack = intent.getParcelableArrayListExtra("track");
+            if (receivedTrack != null) {
+                this.track.addAll(receivedTrack);
+            }
         }
         updateLocationMarkers();
+        if (savedInstanceState == null && this.track.size() > 1) {
+            frameTrack();
+        }
+    }
+
+    private void frameTrack() {
+        double minLat = Double.MAX_VALUE, maxLat = -Double.MAX_VALUE;
+        double minLon = Double.MAX_VALUE, maxLon = -Double.MAX_VALUE;
+        for (final GeoPoint point : this.track) {
+            minLat = Math.min(minLat, point.getLatitude());
+            maxLat = Math.max(maxLat, point.getLatitude());
+            minLon = Math.min(minLon, point.getLongitude());
+            maxLon = Math.max(maxLon, point.getLongitude());
+        }
+        final double padLat = Math.max((maxLat - minLat) * 0.12, 0.0005);
+        final double padLon = Math.max((maxLon - minLon) * 0.12, 0.0005);
+        mapController.zoomToSpan(maxLat - minLat + 2 * padLat, maxLon - minLon + 2 * padLon);
+        mapController.setCenter(new GeoPoint((minLat + maxLat) / 2, (minLon + maxLon) / 2));
     }
 
     @Override
@@ -111,6 +136,13 @@ public class ShowLocationActivity extends LocationActivity implements LocationLi
         super.updateLocationMarkers();
         if (this.myLoc != null) {
             this.binding.map.getOverlays().add(new MyLocation(this, null, this.myLoc));
+        }
+        if (this.track.size() > 1) {
+            final Polyline polyline = new Polyline();
+            polyline.setColor(Color.rgb(0, 128, 255));
+            polyline.setWidth(8f * getResources().getDisplayMetrics().density);
+            polyline.setPoints(this.track);
+            this.binding.map.getOverlays().add(polyline);
         }
         this.binding.map.getOverlays().add(new Marker(this.marker_icon, this.loc));
         new getAddressAsync(this, this.loc, this.name).execute();

@@ -88,6 +88,14 @@ public class Account extends AbstractEntity implements AvatarService.Avatarable 
     public static final String KEY_PRE_AUTH_REGISTRATION_TOKEN = "pre_auth_registration";
     public static final String KEY_PROXY65_HOST = "proxy65_host";
     public static final String KEY_PROXY65_PORT = "proxy65_port";
+    public static final String KEY_PRESENCE_PRIORITY_ONLINE = "presence_priority_online";
+    public static final String KEY_PRESENCE_PRIORITY_AWAY = "presence_priority_away";
+    public static final String KEY_PRESENCE_PRIORITY_XA = "presence_priority_xa";
+    public static final String KEY_PRESENCE_PRIORITY_DND = "presence_priority_dnd";
+    public static final int DEFAULT_PRESENCE_PRIORITY_ONLINE = 50;
+    public static final int DEFAULT_PRESENCE_PRIORITY_AWAY = 30;
+    public static final int DEFAULT_PRESENCE_PRIORITY_XA = 20;
+    public static final int DEFAULT_PRESENCE_PRIORITY_DND = 10;
 
 
     protected final JSONObject keys;
@@ -542,6 +550,50 @@ public class Account extends AbstractEntity implements AvatarService.Avatarable 
 
     public String getPrivateKeyAlias() {
         return getKey("private_key_alias");
+    }
+
+    private static String presencePriorityKey(final Presence.Status status) {
+        if (status == null) {
+            return KEY_PRESENCE_PRIORITY_ONLINE;
+        }
+        switch (status) {
+            case AWAY:
+                return KEY_PRESENCE_PRIORITY_AWAY;
+            case XA:
+                return KEY_PRESENCE_PRIORITY_XA;
+            case DND:
+                return KEY_PRESENCE_PRIORITY_DND;
+            default:
+                return KEY_PRESENCE_PRIORITY_ONLINE;
+        }
+    }
+
+    private static int defaultPresencePriority(final Presence.Status status) {
+        if (status == null) {
+            return DEFAULT_PRESENCE_PRIORITY_ONLINE;
+        }
+        switch (status) {
+            case AWAY:
+                return DEFAULT_PRESENCE_PRIORITY_AWAY;
+            case XA:
+                return DEFAULT_PRESENCE_PRIORITY_XA;
+            case DND:
+                return DEFAULT_PRESENCE_PRIORITY_DND;
+            default:
+                return DEFAULT_PRESENCE_PRIORITY_ONLINE;
+        }
+    }
+
+    public void setPresencePriority(final Presence.Status status, final int priority) {
+        setKey(presencePriorityKey(status), Integer.toString(Math.max(-128, Math.min(127, priority))));
+    }
+
+    public int getPresencePriority(final Presence.Status status) {
+        return getKeyAsInt(presencePriorityKey(status), defaultPresencePriority(status));
+    }
+
+    public int getPresencePriority() {
+        return getPresencePriority(getPresenceStatus());
     }
 
     @Override

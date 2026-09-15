@@ -514,8 +514,13 @@
     <string name="account_settings_port">Port</string>
     <string name="account_settings_proxy_hostname">Proxy hostname</string>
     <string name="account_settings_proxy_port">Proxy port</string>
+    <string name="account_settings_priority_online">Online</string>
+    <string name="account_settings_priority_away">Away</string>
+    <string name="account_settings_priority_xa">XA</string>
+    <string name="account_settings_priority_dnd">DND</string>
     <string name="hostname_or_onion">Hostname or .onion address</string>
     <string name="not_a_valid_port">This is not a valid port number</string>
+    <string name="not_a_valid_number">This is not a valid number</string>
     <string name="not_valid_hostname">This is not a valid hostname</string>
     <string name="connected_accounts">%1$d of %2$d accounts connected</string>
     <plurals name="x_messages">
@@ -1304,6 +1309,16 @@
     <string name="pref_showtextformatting_sum">Show text formatting toolbar in chat while keyboard is shown</string>
     <string name="pref_showtextformatting">Show text formatting toolbar</string>
     <string name="muji_join">Start group call</string>
+    <string name="muji_call_bar_title">Video chat</string>
+    <string name="muji_call_bar_join">Join</string>
+    <string name="muji_call_bar_open">Open</string>
+    <plurals name="muji_call_bar_participants">
+        <item quantity="one">%d participant</item>
+        <item quantity="other">%d participants</item>
+    </plurals>
+    <string name="muji_join_failed_permission">Cannot join the call: microphone permission is required</string>
+    <string name="muji_join_failed_generic">Cannot join the call: could not set up audio/video. Try again.</string>
+    <string name="muji_channel_name">Group calls</string>
     <string name="muji_leave">Leave Muji conference</string>
     <string name="muji_conference">Group call</string>
     <string name="muji_conference_connecting">Preparing conference\u2026</string>
@@ -1316,6 +1331,9 @@
     <string name="muji_video_on">Camera on</string>
     <string name="muji_video_off">Camera off</string>
     <string name="muji_switch_camera">Switch camera</string>
+    <string name="muji_speaker_on">Speaker on</string>
+    <string name="muji_speaker_off">Speaker off</string>
+    <string name="muji_self">You</string>
     <string name="muji_state_ended">Ended</string>
     <string name="help_format_text">You can use simple styling options to format your text. The keys to identify the beginning and the end of a formatting is exactly at the beginning and the end of the word or word group. There must be a space before the beginning key and a space after the ending key, otherwise the formatting will not be recognized.\n\nYou can use the tools directly while writing, pressing a tool will insert the key at the cursors position. Or you can mark a word or word group and press a formatting button.</string>
     <string name="close">Close</string>

@@ -2928,6 +2928,19 @@ public class ConversationFragment extends XmppFragment
     }
 
     // XEP-0272 Multiparty Jingle (Muji)
+    private int mujiParticipantCount(final Conversation conversation) {
+        if (conversation == null) {
+            return 0;
+        }
+        int count = 0;
+        for (final MucOptions.User user : conversation.getMucOptions().getUsers(false)) {
+            if (user.getMuji() != null) {
+                count++;
+            }
+        }
+        return count;
+    }
+
     private void toggleMujiConference() {
         if (activity == null || activity.xmppConnectionService == null || conversation == null) {
             return;
@@ -3005,6 +3018,13 @@ public class ConversationFragment extends XmppFragment
             media.add(Media.VIDEO);
         }
         activity.xmppConnectionService.joinMujiConference(conversation, media.build());
+        if (!activity.xmppConnectionService.isMujiConferenceActive(conversation)) {
+            activity.xmppConnectionService
+                    .getNotificationService()
+                    .notifyMujiJoinFailed(R.string.muji_join_failed_generic);
+            activity.invalidateOptionsMenu();
+            return;
+        }
         openMujiConference();
         activity.invalidateOptionsMenu();
     }
@@ -3467,6 +3487,13 @@ public class ConversationFragment extends XmppFragment
                 if (Compatibility.runsThirtyThree()){          //TODO: Actually not needed, check this later again
                 } else {
                     ToastCompat.makeText(getActivity(), res, ToastCompat.LENGTH_SHORT).show();
+                }
+                if (requestCode == REQUEST_START_MUJI_CONFERENCE
+                        && activity != null
+                        && activity.xmppConnectionService != null) {
+                    activity.xmppConnectionService
+                            .getNotificationService()
+                            .notifyMujiJoinFailed(R.string.muji_join_failed_permission);
                 }
             }
             ChatBackgroundHelper.onRequestPermissionsResult(this, requestCode, permissions, grantResults);
@@ -5276,6 +5303,7 @@ public class ConversationFragment extends XmppFragment
                 conversation.populateWithMessages(this.messageList, activity == null ? null : activity.xmppConnectionService);
                 updateStatusMessages();
                 updateMucTopicStrip();
+                updateMujiCallBar();
                 final int unreadCount = lastMessageUuid != null ? conversation.getReceivedMessagesCountSinceUuid(lastMessageUuid) : conversation.unreadCount();
                 if (unreadCount > 0) {
                     binding.unreadCountCustomView.setVisibility(View.VISIBLE);
@@ -5295,6 +5323,40 @@ public class ConversationFragment extends XmppFragment
                 conversation.refreshSessions();
             }
         }
+    }
+
+    private void updateMujiCallBar() {
+        if (binding == null || activity == null || conversation == null) {
+            return;
+        }
+        if (conversation.getMode() != Conversation.MODE_MULTI) {
+            binding.mujiCallBar.setVisibility(View.GONE);
+            return;
+        }
+        final XmppConnectionService service = activity.xmppConnectionService;
+        final boolean active = service != null && service.isMujiConferenceActive(conversation);
+        final int count = Math.max(mujiParticipantCount(conversation), active ? 1 : 0);
+        if (!active && count == 0) {
+            binding.mujiCallBar.setVisibility(View.GONE);
+            return;
+        }
+        binding.mujiCallBarParticipants.setText(
+                activity.getResources()
+                        .getQuantityString(R.plurals.muji_call_bar_participants, count, count));
+        binding.mujiCallBarJoin.setText(
+                active ? R.string.muji_call_bar_open : R.string.muji_call_bar_join);
+        final int barHeight = binding.mujiCallBar.getLayoutParams().height;
+        if (barHeight > 0) {
+            final android.view.ViewGroup.LayoutParams lp =
+                    binding.mujiCallBarJoin.getLayoutParams();
+            final int desired = Math.round(barHeight * 0.95f);
+            if (lp.height != desired) {
+                lp.height = desired;
+                binding.mujiCallBarJoin.setLayoutParams(lp);
+            }
+        }
+        binding.mujiCallBarJoin.setOnClickListener(v -> toggleMujiConference());
+        binding.mujiCallBar.setVisibility(View.VISIBLE);
     }
 
     private void updateMucTopicStrip() {

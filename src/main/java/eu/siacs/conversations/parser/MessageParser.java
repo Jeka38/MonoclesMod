@@ -947,7 +947,8 @@ public class MessageParser extends AbstractParser implements OnMessagePacketRece
                         synchronized (replacedMessage) {
                             final String uuid = replacedMessage.getUuid();
 
-                            replacedMessage.putEdited(replacedMessage.getRemoteMsgId() != null ? replacedMessage.getRemoteMsgId() : replacedMessage.getUuid(), replacedMessage.getServerMsgId(), replacedMessage.getBody(), replacedMessage.getTimeSent());
+                            final String previousBody = replacedMessage.isGeoUri() ? replacedMessage.getRawBody() : replacedMessage.getBody();
+                            replacedMessage.putEdited(replacedMessage.getRemoteMsgId() != null ? replacedMessage.getRemoteMsgId() : replacedMessage.getUuid(), replacedMessage.getServerMsgId(), previousBody, replacedMessage.getTimeSent());
 
                             replacedMessage.setUuid(UUID.randomUUID().toString());
                             replacedMessage.setBody(message.getRawBody());

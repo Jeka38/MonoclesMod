@@ -131,6 +131,11 @@ public final class WebRTCResources {
         return videoTrack;
     }
 
+    @Nullable
+    synchronized VideoTrack getVideoTrack() {
+        return videoTrack;
+    }
+
     boolean isCameraSwitchable() {
         final VideoSourceWrapper wrapper = this.videoSourceWrapper;
         return wrapper != null && wrapper.isCameraSwitchable();

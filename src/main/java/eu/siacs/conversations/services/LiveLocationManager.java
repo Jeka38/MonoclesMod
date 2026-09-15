@@ -10,12 +10,10 @@ import android.os.Looper;
 import android.util.Log;
 
 import java.util.HashMap;
-import java.util.List;
 import java.util.Map;
 
 import eu.siacs.conversations.Config;
 import eu.siacs.conversations.entities.Conversation;
-import eu.siacs.conversations.entities.Edit;
 import eu.siacs.conversations.entities.Message;
 import eu.siacs.conversations.ui.UiCallback;
 
@@ -128,16 +126,11 @@ public class LiveLocationManager {
     private void correctMessage(final Message message, final String body) {
         final String previousUuid = message.getUuid();
         final long timeSent = message.getTimeSent();
+        final String previousBody = message.getRawBody();
         message.setBody(body);
         message.setServerMsgId(null);
         message.setUuid(java.util.UUID.randomUUID().toString());
-        final List<Edit> edits = message.getEditedList();
-        if (edits.size() > 1) {
-            final Edit first = edits.get(0);
-            edits.clear();
-            edits.add(first);
-        }
-        message.putEdited(previousUuid, null, body, timeSent);
+        message.putEdited(previousUuid, null, previousBody != null && !previousBody.isEmpty() ? previousBody : body, timeSent);
         service.sendMessage(message);
     }
 

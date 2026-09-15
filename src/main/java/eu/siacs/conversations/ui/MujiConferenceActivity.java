@@ -1,19 +1,24 @@
 package eu.siacs.conversations.ui;
 
+import android.animation.ValueAnimator;
+import android.content.Context;
 import android.content.Intent;
 import android.content.res.ColorStateList;
+import android.media.AudioManager;
 import android.os.Bundle;
 import android.os.Handler;
 import android.os.Looper;
 import android.util.Log;
 import android.view.LayoutInflater;
 import android.view.View;
+import android.view.animation.AccelerateDecelerateInterpolator;
 import android.widget.TextView;
 
 import androidx.annotation.Nullable;
 import androidx.appcompat.widget.Toolbar;
 
 import com.google.android.material.button.MaterialButton;
+import com.google.android.material.imageview.ShapeableImageView;
 import com.google.common.base.Optional;
 
 import org.webrtc.EglBase;
@@ -33,13 +38,20 @@ import eu.siacs.conversations.Config;
 import eu.siacs.conversations.R;
 import eu.siacs.conversations.entities.Account;
 import eu.siacs.conversations.entities.Conversation;
+import eu.siacs.conversations.entities.MucOptions;
+import eu.siacs.conversations.services.AvatarService;
+import eu.siacs.conversations.ui.util.AvatarWorkerTask;
 import eu.siacs.conversations.ui.widget.MujiParticipantGridView;
 import eu.siacs.conversations.ui.widget.SurfaceViewRenderer;
+import eu.siacs.conversations.ui.util.StyledAttributes;
 import eu.siacs.conversations.xmpp.Jid;
 import eu.siacs.conversations.xmpp.jingle.JingleRtpConnection;
+import eu.siacs.conversations.xmpp.jingle.Media;
 import eu.siacs.conversations.xmpp.jingle.MujiConference;
 import eu.siacs.conversations.xmpp.jingle.MujiLog;
 import eu.siacs.conversations.xmpp.jingle.RtpEndUserState;
+import eu.siacs.conversations.xmpp.jingle.stanzas.Muji;
+import eu.siacs.conversations.xmpp.jingle.stanzas.MujiContent;
 
 /**
  * Participant overview for an XEP-0272 Multiparty Jingle (Muji) conference. Shows one tile per mesh
@@ -51,6 +63,11 @@ public class MujiConferenceActivity extends XmppActivity {
     public static final String EXTRA_ROOM = "room";
 
     private static final long REFRESH_INTERVAL = 1000L;
+    private static final long AUDIO_LEVEL_INTERVAL = 300L;
+    private static final long SPEAKING_HOLD_MS = 500L;
+    private static final double AUDIO_LEVEL_THRESHOLD = 0.04d;
+    private static final int SPEAKING_COLOR = 0xFF4CAF50;
+    private static final String SELF_KEY = "self";
 
     private final Handler handler = new Handler(Looper.getMainLooper());
     private final Map<String, ParticipantView> views = new HashMap<>();
@@ -62,6 +79,14 @@ public class MujiConferenceActivity extends XmppActivity {
                     handler.postDelayed(this, REFRESH_INTERVAL);
                 }
             };
+    private final Runnable audioLevelRunnable =
+            new Runnable() {
+                @Override
+                public void run() {
+                    updateAudioLevels();
+                    handler.postDelayed(this, AUDIO_LEVEL_INTERVAL);
+                }
+            };
 
     private Toolbar toolbar;
     private MujiParticipantGridView container;
@@ -69,6 +94,10 @@ public class MujiConferenceActivity extends XmppActivity {
     private MaterialButton micButton;
     private MaterialButton videoButton;
     private MaterialButton switchCameraButton;
+    private MaterialButton speakerButton;
+
+    private AudioManager audioManager;
+    private boolean speakerOn = false;
 
     private Account account;
     private Jid room;
@@ -114,21 +143,28 @@ public class MujiConferenceActivity extends XmppActivity {
         this.micButton = findViewById(R.id.muji_mic);
         this.videoButton = findViewById(R.id.muji_video);
         this.switchCameraButton = findViewById(R.id.muji_switch_camera);
+        this.speakerButton = findViewById(R.id.muji_speaker);
+        this.audioManager = (AudioManager) getSystemService(Context.AUDIO_SERVICE);
         micButton.setOnClickListener(v -> toggleMicrophone());
         videoButton.setOnClickListener(v -> toggleVideo());
         switchCameraButton.setOnClickListener(v -> switchCamera());
+        speakerButton.setOnClickListener(v -> toggleSpeaker());
+        applySpeaker();
+        updateSpeakerButton();
     }
 
     @Override
     protected void onStart() {
         super.onStart();
         handler.post(refreshRunnable);
+        handler.post(audioLevelRunnable);
     }
 
     @Override
     protected void onStop() {
         super.onStop();
         handler.removeCallbacks(refreshRunnable);
+        handler.removeCallbacks(audioLevelRunnable);
     }
 
     @Override
@@ -153,15 +189,25 @@ public class MujiConferenceActivity extends XmppActivity {
         }
         status.setText(R.string.muji_conference_active);
         toolbar.setVisibility(View.GONE);
-        final List<MujiConference.Participant> participants = conference.getParticipants();
         final Set<String> present = new HashSet<>();
+        final VideoTrack selfVideo = conference.getLocalVideoTrack();
+        final boolean selfVideoEnabled = conference.getMedia().contains(Media.VIDEO);
+        if (selfVideo != null) {
+            present.add(SELF_KEY);
+            final ParticipantView view = getOrCreateView(SELF_KEY);
+            view.label.setText(R.string.muji_self);
+            bindAvatar(view, selfAvatarable());
+            bindSelfVideo(view, conference, selfVideo, selfVideoEnabled);
+        }
+        final List<MujiConference.Participant> participants = conference.getParticipants();
         for (final MujiConference.Participant participant : participants) {
             final String key = participant.jid.asBareJid().toString();
             present.add(key);
             final ParticipantView view = getOrCreateView(key);
             view.label.setText(
                     participant.nick + " - " + stateLabel(participant.state));
-            bindVideo(view, conference, participant);
+            bindAvatar(view, participantAvatarable(participant));
+            bindVideo(view, conference, participant, remoteProvidesVideo(participant));
         }
         final List<String> stale = new ArrayList<>();
         for (final String key : views.keySet()) {
@@ -229,6 +275,43 @@ public class MujiConferenceActivity extends XmppActivity {
         videoButton.setBackgroundTintList(ColorStateList.valueOf(video ? neutral : red));
         videoButton.setVisibility(hasVideo ? View.VISIBLE : View.GONE);
         switchCameraButton.setVisibility(cameraSwitchable ? View.VISIBLE : View.GONE);
+        speakerButton.setVisibility(connections.isEmpty() ? View.GONE : View.VISIBLE);
+        updateSpeakerButton();
+    }
+
+    private void updateAudioLevels() {
+        final boolean animationsEnabled =
+                getBooleanPreference("play_gif_inside", R.bool.play_gif_inside);
+        final MujiConference conference = getActiveConference();
+        if (!animationsEnabled || conference == null) {
+            for (final ParticipantView view : views.values()) {
+                view.setSpeaking(false);
+            }
+            return;
+        }
+        for (final MujiConference.Participant participant : conference.getParticipants()) {
+            final JingleRtpConnection connection = conference.getConnection(participant);
+            if (connection == null) {
+                continue;
+            }
+            final String key = participant.jid.asBareJid().toString();
+            connection.getRemoteAudioLevel(
+                    level -> handler.post(() -> applyAudioLevel(key, level)));
+        }
+    }
+
+    private void applyAudioLevel(final String key, final double level) {
+        final ParticipantView view = views.get(key);
+        if (view == null) {
+            return;
+        }
+        final long now = System.currentTimeMillis();
+        if (level > AUDIO_LEVEL_THRESHOLD) {
+            view.lastSpeaking = now;
+            view.setSpeaking(true);
+        } else if (now - view.lastSpeaking > SPEAKING_HOLD_MS) {
+            view.setSpeaking(false);
+        }
     }
 
     private void toggleMicrophone() {
@@ -272,7 +355,25 @@ public class MujiConferenceActivity extends XmppActivity {
                 connection.setVideoEnabled(enable);
             }
         }
+        updateConferenceVideoMedia(enable);
         refresh();
+    }
+
+    private void updateConferenceVideoMedia(final boolean videoEnabled) {
+        final MujiConference conference = getActiveConference();
+        if (conference == null) {
+            return;
+        }
+        final Set<Media> media = new HashSet<>(conference.getMedia());
+        final boolean changed;
+        if (videoEnabled) {
+            changed = media.add(Media.VIDEO);
+        } else {
+            changed = media.remove(Media.VIDEO);
+        }
+        if (changed) {
+            conference.updateMedia(media);
+        }
     }
 
     private void switchCamera() {
@@ -281,6 +382,43 @@ public class MujiConferenceActivity extends XmppActivity {
             return;
         }
         connections.get(0).switchCamera();
+    }
+
+    @SuppressWarnings("deprecation")
+    private void toggleSpeaker() {
+        speakerOn = !speakerOn;
+        applySpeaker();
+        updateSpeakerButton();
+    }
+
+    @SuppressWarnings("deprecation")
+    private void applySpeaker() {
+        if (audioManager == null) {
+            return;
+        }
+        try {
+            audioManager.setMode(AudioManager.MODE_IN_COMMUNICATION);
+            audioManager.setSpeakerphoneOn(speakerOn);
+        } catch (final RuntimeException e) {
+            Log.w(Config.LOGTAG, "unable to change speakerphone state", e);
+        }
+    }
+
+    private void updateSpeakerButton() {
+        if (speakerButton == null) {
+            return;
+        }
+        speakerButton.setIconResource(
+                speakerOn
+                        ? R.drawable.ic_volume_up_black_24dp
+                        : R.drawable.ic_volume_off_black_24dp);
+        speakerButton.setContentDescription(
+                getString(speakerOn ? R.string.muji_speaker_on : R.string.muji_speaker_off));
+        speakerButton.setBackgroundTintList(
+                ColorStateList.valueOf(
+                        speakerOn
+                                ? StyledAttributes.getColor(this, R.attr.colorAccent)
+                                : 0xFF525252));
     }
 
     @Nullable
@@ -296,26 +434,75 @@ public class MujiConferenceActivity extends XmppActivity {
         return conference;
     }
 
+    @Nullable
+    private AvatarService.Avatarable selfAvatarable() {
+        if (conversation == null) {
+            return null;
+        }
+        return conversation.getMucOptions().getSelf();
+    }
+
+    @Nullable
+    private AvatarService.Avatarable participantAvatarable(
+            final MujiConference.Participant participant) {
+        return participantUser(participant);
+    }
+
+    @Nullable
+    private MucOptions.User participantUser(final MujiConference.Participant participant) {
+        if (conversation == null || participant.jid == null) {
+            return null;
+        }
+        return conversation.getMucOptions().findUserByRealJid(participant.jid.asBareJid());
+    }
+
+    /**
+     * Whether the remote participant currently advertises a video content in the MUC. When a
+     * participant turns the camera off, the {@code <muji>} element stops carrying video and the tile
+     * falls back to the avatar.
+     */
+    private boolean remoteProvidesVideo(final MujiConference.Participant participant) {
+        final MucOptions.User user = participantUser(participant);
+        if (user == null) {
+            return true;
+        }
+        final Muji muji = user.getMuji();
+        if (muji == null) {
+            return false;
+        }
+        for (final MujiContent content : muji.getContents()) {
+            if (content.getMedia() == Media.VIDEO) {
+                return true;
+            }
+        }
+        return false;
+    }
+
     private void bindVideo(
             final ParticipantView view,
             final MujiConference conference,
-            final MujiConference.Participant participant) {
+            final MujiConference.Participant participant,
+            final boolean videoExpected) {
         final JingleRtpConnection connection = conference.getConnection(participant);
         final VideoTrack remoteVideo =
                 connection == null ? null : connection.getRemoteVideoTrack().orNull();
-        if (remoteVideo == view.boundTrack) {
-            return;
-        }
         final EglBase.Context eglContext = conference.getEglBaseContext();
-        if (remoteVideo == null || eglContext == null) {
+        if (!videoExpected || remoteVideo == null || eglContext == null) {
+            showAvatar(view);
             MujiLog.log(
                     xmppConnectionService.getFilesDir(),
                     "UI no video for "
                             + participant.nick
+                            + " expected="
+                            + videoExpected
                             + " remote="
                             + (remoteVideo != null)
                             + " egl="
                             + (eglContext != null));
+            return;
+        }
+        showRenderer(view);
+        if (remoteVideo == view.boundTrack) {
             return;
         }
         view.ensureRendererInitialized(eglContext);
@@ -362,6 +549,36 @@ public class MujiConferenceActivity extends XmppActivity {
                         + view.renderer.getHeight());
     }
 
+    private void bindSelfVideo(
+            final ParticipantView view,
+            final MujiConference conference,
+            final VideoTrack track,
+            final boolean videoEnabled) {
+        final EglBase.Context eglContext = conference.getEglBaseContext();
+        if (!videoEnabled || track == null || eglContext == null) {
+            showAvatar(view);
+            return;
+        }
+        showRenderer(view);
+        if (track == view.boundTrack) {
+            return;
+        }
+        view.ensureRendererInitialized(eglContext);
+        if (view.boundTrack != null) {
+            try {
+                view.boundTrack.removeSink(view.renderer);
+            } catch (final IllegalStateException e) {
+                // track already disposed
+            }
+        }
+        track.addSink(view.renderer);
+        view.renderer.setMirror(conference.isFrontCamera());
+        view.boundTrack = track;
+        MujiLog.log(
+                xmppConnectionService.getFilesDir(),
+                "UI bound local self video mirror=" + conference.isFrontCamera());
+    }
+
     private ParticipantView getOrCreateView(final String key) {
         final ParticipantView existing = views.get(key);
         if (existing != null) {
@@ -374,10 +591,34 @@ public class MujiConferenceActivity extends XmppActivity {
                 new ParticipantView(
                         root,
                         root.findViewById(R.id.participant_video),
+                        root.findViewById(R.id.participant_avatar),
                         root.findViewById(R.id.participant_label));
         container.addView(root);
         views.put(key, view);
         return view;
+    }
+
+    private void bindAvatar(
+            final ParticipantView view,
+            @Nullable final AvatarService.Avatarable avatarable) {
+        if (view.boundAvatarable == avatarable) {
+            return;
+        }
+        view.boundAvatarable = avatarable;
+        if (avatarable == null) {
+            return;
+        }
+        AvatarWorkerTask.loadAvatar(avatarable, view.avatar, R.dimen.avatar_big);
+    }
+
+    private void showAvatar(final ParticipantView view) {
+        view.avatar.setVisibility(View.VISIBLE);
+        view.renderer.setVisibility(View.GONE);
+    }
+
+    private void showRenderer(final ParticipantView view) {
+        view.avatar.setVisibility(View.GONE);
+        view.renderer.setVisibility(View.VISIBLE);
     }
 
     private void removeView(final String key) {
@@ -404,6 +645,7 @@ public class MujiConferenceActivity extends XmppActivity {
         micButton.setVisibility(View.GONE);
         videoButton.setVisibility(View.GONE);
         switchCameraButton.setVisibility(View.GONE);
+        speakerButton.setVisibility(View.GONE);
     }
 
     private String stateLabel(@Nullable final RtpEndUserState state) {
@@ -430,16 +672,75 @@ public class MujiConferenceActivity extends XmppActivity {
     private static final class ParticipantView {
         final View root;
         final SurfaceViewRenderer renderer;
+        final ShapeableImageView avatar;
         final TextView label;
         @Nullable VideoTrack boundTrack;
         @Nullable VideoSink frameLogger;
+        @Nullable Object boundAvatarable;
+        @Nullable ValueAnimator pulse;
+        long lastSpeaking = 0L;
+        boolean speaking = false;
         private boolean rendererInitialized = false;
 
         ParticipantView(
-                final View root, final SurfaceViewRenderer renderer, final TextView label) {
+                final View root,
+                final SurfaceViewRenderer renderer,
+                final ShapeableImageView avatar,
+                final TextView label) {
             this.root = root;
             this.renderer = renderer;
+            this.avatar = avatar;
             this.label = label;
+        }
+
+        void setSpeaking(final boolean speaking) {
+            if (this.speaking == speaking) {
+                return;
+            }
+            this.speaking = speaking;
+            if (speaking) {
+                final float density = root.getResources().getDisplayMetrics().density;
+                float size = Math.min(avatar.getWidth(), avatar.getHeight());
+                if (size <= 0f) {
+                    size = 96f * density;
+                }
+                // ring thickness = 5% of the avatar size
+                final float maxStroke = 0.05f * size;
+                avatar.setStrokeColor(ColorStateList.valueOf(SPEAKING_COLOR));
+                avatar.setStrokeWidth(0.6f * maxStroke);
+                startPulse(maxStroke);
+            } else {
+                stopPulse();
+                avatar.setStrokeWidth(0f);
+            }
+        }
+
+        private void startPulse(final float maxStroke) {
+            stopPulse();
+            final ValueAnimator animator = ValueAnimator.ofFloat(0f, 1f);
+            animator.setDuration(700L);
+            animator.setRepeatCount(ValueAnimator.INFINITE);
+            animator.setRepeatMode(ValueAnimator.REVERSE);
+            animator.setInterpolator(new AccelerateDecelerateInterpolator());
+            animator.addUpdateListener(
+                    a -> {
+                        final float f = (float) a.getAnimatedValue();
+                        final float scale = 1.0f + 0.05f * f;
+                        avatar.setScaleX(scale);
+                        avatar.setScaleY(scale);
+                        avatar.setStrokeWidth(maxStroke * (0.6f + 0.4f * f));
+                    });
+            animator.start();
+            this.pulse = animator;
+        }
+
+        private void stopPulse() {
+            if (pulse != null) {
+                pulse.cancel();
+                pulse = null;
+            }
+            avatar.setScaleX(1f);
+            avatar.setScaleY(1f);
         }
 
         void ensureRendererInitialized(final EglBase.Context eglContext) {
@@ -464,6 +765,7 @@ public class MujiConferenceActivity extends XmppActivity {
         }
 
         void releaseRenderer() {
+            stopPulse();
             if (boundTrack != null) {
                 try {
                     boundTrack.removeSink(renderer);

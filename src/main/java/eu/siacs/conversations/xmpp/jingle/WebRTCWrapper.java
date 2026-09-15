@@ -32,6 +32,8 @@ import org.webrtc.MediaStream;
 import org.webrtc.MediaStreamTrack;
 import org.webrtc.PeerConnection;
 import org.webrtc.PeerConnectionFactory;
+import org.webrtc.RTCStats;
+import org.webrtc.RTCStatsReport;
 import org.webrtc.RtpReceiver;
 import org.webrtc.RtpTransceiver;
 import org.webrtc.SdpObserver;
@@ -279,10 +281,26 @@ public class WebRTCWrapper {
             final List<PeerConnection.IceServer> iceServers,
             final boolean trickle)
             throws InitializationException {
+        initializePeerConnection(media, ImmutableSet.of(), iceServers, trickle);
+    }
+
+    /**
+     * Sets up the peer connection. {@code media} are the media we send locally; {@code receiveOnly}
+     * are media that only the remote party sends, for which a receive-only transceiver is created so
+     * this side can display/listen without providing a local track (used by the Muji mesh where
+     * participants may contribute different sets of media).
+     */
+    synchronized void initializePeerConnection(
+            final Set<Media> media,
+            final Set<Media> receiveOnly,
+            final List<PeerConnection.IceServer> iceServers,
+            final boolean trickle)
+            throws InitializationException {
         Preconditions.checkState(this.eglBase != null);
         Preconditions.checkNotNull(media);
         Preconditions.checkArgument(
-                media.size() > 0, "media can not be empty when initializing peer connection");
+                media.size() > 0 || !receiveOnly.isEmpty(),
+                "media and receiveOnly can not both be empty when initializing peer connection");
         if (this.sharedResources == null) {
             final boolean setUseHardwareAcousticEchoCanceler =
                     !HARDWARE_AEC_BLACKLIST.contains(Build.MODEL);
@@ -321,10 +339,28 @@ public class WebRTCWrapper {
         if (media.contains(Media.AUDIO)) {
             addAudioTrack(peerConnection);
         }
+
+        for (final Media receive : receiveOnly) {
+            if (!media.contains(receive)) {
+                addReceiveOnlyTransceiver(peerConnection, receive);
+            }
+        }
         peerConnection.setAudioPlayout(true);
         peerConnection.setAudioRecording(true);
 
         this.peerConnection = peerConnection;
+    }
+
+    private void addReceiveOnlyTransceiver(
+            final PeerConnection peerConnection, final Media media) {
+        final MediaStreamTrack.MediaType type =
+                media == Media.VIDEO
+                        ? MediaStreamTrack.MediaType.MEDIA_TYPE_VIDEO
+                        : MediaStreamTrack.MediaType.MEDIA_TYPE_AUDIO;
+        peerConnection.addTransceiver(
+                type,
+                new RtpTransceiver.RtpTransceiverInit(
+                        RtpTransceiver.RtpTransceiverDirection.RECV_ONLY));
     }
 
     private VideoSourceWrapper initializeVideoSourceWrapper() {
@@ -836,6 +872,66 @@ public class WebRTCWrapper {
 
     Optional<VideoTrack> getRemoteVideoTrack() {
         return Optional.fromNullable(this.remoteVideoTrack);
+    }
+
+    public interface AudioLevelCallback {
+        void onAudioLevel(double level);
+    }
+
+    private long lastAudioLevelLog = 0L;
+
+    /**
+     * Reports the current audio level (0..1) of the audio received from the remote party, taken from
+     * the WebRTC receive stats of this peer connection. Used for the "speaking" indicator. The
+     * callback may be invoked on a WebRTC internal thread.
+     */
+    void getRemoteAudioLevel(final AudioLevelCallback callback) {
+        final PeerConnection peerConnection = this.peerConnection;
+        if (peerConnection == null) {
+            callback.onAudioLevel(0.0d);
+            return;
+        }
+        try {
+            peerConnection.getStats(report -> callback.onAudioLevel(extractRemoteAudioLevel(report)));
+        } catch (final RuntimeException e) {
+            callback.onAudioLevel(0.0d);
+        }
+    }
+
+    /**
+     * Extracts the loudest {@code audioLevel} from the stats of this peer connection, ignoring
+     * {@code media-source} (which describes our own microphone). Remote audio may be reported in
+     * {@code media-playout}, {@code track} or {@code inbound-rtp} stats depending on the WebRTC
+     * version, so all of them are considered.
+     */
+    private double extractRemoteAudioLevel(final RTCStatsReport report) {
+        double max = 0.0d;
+        final StringBuilder found = new StringBuilder();
+        for (final RTCStats stats : report.getStatsMap().values()) {
+            final String type = stats.getType();
+            if ("media-source".equals(type)) {
+                continue;
+            }
+            final Object level = stats.getMembers().get("audioLevel");
+            if (level instanceof Number) {
+                final double value = ((Number) level).doubleValue();
+                if (value > 0.0d) {
+                    found.append(type).append('=').append(value).append(' ');
+                }
+                max = Math.max(max, value);
+            }
+        }
+        final Context context = this.context;
+        if (context != null) {
+            final long now = System.currentTimeMillis();
+            if (now - lastAudioLevelLog > 1000L) {
+                lastAudioLevelLog = now;
+                MujiLog.log(
+                        context.getFilesDir(),
+                        "audioLevel=" + max + (found.length() == 0 ? "" : " [" + found + "]"));
+            }
+        }
+        return max;
     }
 
     private Context requireContext() {

@@ -64,9 +64,10 @@ public class PresenceParser extends AbstractParser implements
     private boolean processConferencePresence(PresencePacket packet, Conversation conversation) {
         final Account account = conversation.getAccount();
         final MucOptions mucOptions = conversation.getMucOptions();
-        final Jid jid = conversation.getAccount().getJid();
+        final         Jid jid = conversation.getAccount().getJid();
         final Jid from = packet.getFrom();
         boolean addedStatusMessage = false;
+        boolean mujiChanged = false;
         if (from != null) {
             final String type = packet.getAttribute("type");
             final Element x = packet.findChild("x", Namespace.MUC_USER);
@@ -90,7 +91,15 @@ public class PresenceParser extends AbstractParser implements
                         final String presenceStatus = packet.findChildContent("status");
                         user.setPresence(Presence.parse(show, caps, presenceStatus));
                         final Element muji = packet.findChild("muji", Namespace.JINGLE_MUJI);
-                        user.setMuji(muji == null ? null : Muji.upgrade(muji));
+                        final Muji parsedMuji = muji == null ? null : Muji.upgrade(muji);
+                        final MucOptions.User previousUser = mucOptions.findUserByFullJid(from);
+                        mujiChanged =
+                                !String.valueOf(
+                                                previousUser == null
+                                                        ? null
+                                                        : previousUser.getMuji())
+                                        .equals(String.valueOf(parsedMuji));
+                        user.setMuji(parsedMuji);
                         if (muji != null) {
                             MujiLog.log(
                                     mXmppConnectionService.getFilesDir(), "RX MUC " + packet);
@@ -183,6 +192,9 @@ public class PresenceParser extends AbstractParser implements
                         }
                         syncMucPresenceToRealJidContact(account, from, user, packet);
                         boolean isNew = mucOptions.updateUser(user);
+                        if (mujiChanged) {
+                            addedStatusMessage = true;
+                        }
                         if (isNew && !isSelf && mucOptions.online() && !codes.contains(MucOptions.STATUS_CODE_CHANGED_NICK)) {
                             String body = mXmppConnectionService.getString(R.string.muc_occupant_joined, from.getResource());
                             Message statusMessage = Message.createStatusMessage(conversation, "MUC_JOINED:" + body);

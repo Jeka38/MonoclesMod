@@ -44,9 +44,57 @@
             android:textSize="13sp"
             android:visibility="gone" />
 
+        <LinearLayout
+            android:id="@+id/muji_call_bar"
+            android:layout_width="match_parent"
+            android:layout_height="56dp"
+            android:layout_below="@id/muc_topic"
+            android:background="?attr/color_background_secondary"
+            android:elevation="@dimen/toolbar_elevation"
+            android:gravity="center_vertical"
+            android:orientation="horizontal"
+            android:paddingStart="16dp"
+            android:paddingEnd="4dp"
+            android:visibility="gone">
+
+            <LinearLayout
+                android:layout_width="0dp"
+                android:layout_height="wrap_content"
+                android:layout_weight="1"
+                android:orientation="vertical">
+
+                <TextView
+                    android:id="@+id/muji_call_bar_title"
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:text="@string/muji_call_bar_title"
+                    android:textColor="?attr/text_Color_Main"
+                    android:textSize="14sp"
+                    android:textStyle="bold" />
+
+                <TextView
+                    android:id="@+id/muji_call_bar_participants"
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:textSize="12sp" />
+            </LinearLayout>
+
+            <com.google.android.material.button.MaterialButton
+                android:id="@+id/muji_call_bar_join"
+                style="@style/Widget.Conversations.Button"
+                android:layout_width="wrap_content"
+                android:layout_height="match_parent"
+                android:layout_gravity="center_vertical"
+                android:minWidth="0dp"
+                android:text="@string/muji_call_bar_join"
+                android:textColor="@android:color/white"
+                android:textSize="13sp"
+                app:backgroundTint="?attr/colorAccent" />
+        </LinearLayout>
+
         <de.monocles.mod.WebviewAwareViewPager
             android:id="@+id/conversation_view_pager"
-            android:layout_below="@id/muc_topic"
+            android:layout_below="@id/muji_call_bar"
             android:layout_width="fill_parent"
             android:layout_height="fill_parent" >
 

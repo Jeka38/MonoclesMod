@@ -14,6 +14,7 @@ import org.osmdroid.util.GeoPoint;
 import java.io.UnsupportedEncodingException;
 import java.net.URLEncoder;
 import java.util.ArrayList;
+import java.util.List;
 import java.util.Locale;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
@@ -22,6 +23,7 @@ import eu.siacs.conversations.Config;
 import eu.siacs.conversations.R;
 import eu.siacs.conversations.entities.Contact;
 import eu.siacs.conversations.entities.Conversational;
+import eu.siacs.conversations.entities.Edit;
 import eu.siacs.conversations.entities.Message;
 import eu.siacs.conversations.ui.SettingsActivity;
 import eu.siacs.conversations.ui.ShowLocationActivity;
@@ -103,6 +105,50 @@ public class GeoHelper {
         return new GeoPoint(latitude, longitude);
     }
 
+    private static final double TRACK_MIN_DISTANCE_METERS = 1.0;
+
+    /**
+     * Ordered movement track for a (live-)location message: every corrected geo body from the
+     * edit history plus the current body, deduplicated. Empty for a one-shot location.
+     */
+    public static ArrayList<GeoPoint> getTrackPoints(final Message message) {
+        final ArrayList<GeoPoint> track = new ArrayList<>();
+        if (message == null) {
+            return track;
+        }
+        for (final Edit edit : message.getEditedList()) {
+            addTrackPoint(track, edit.getBody());
+        }
+        addTrackPoint(track, message.getRawBody());
+        return track;
+    }
+
+    private static void addTrackPoint(final List<GeoPoint> track, final String body) {
+        if (body == null || body.isEmpty()) {
+            return;
+        }
+        final GeoPoint point;
+        try {
+            point = parseGeoPoint(body);
+        } catch (IllegalArgumentException e) {
+            return;
+        }
+        if (!track.isEmpty()) {
+            final GeoPoint last = track.get(track.size() - 1);
+            if (last.distanceToAsDouble(point) < TRACK_MIN_DISTANCE_METERS) {
+                return;
+            }
+        }
+        track.add(point);
+    }
+
+    public static void addTrackPointsToIntent(final Intent intent, final Message message) {
+        final ArrayList<GeoPoint> track = getTrackPoints(message);
+        if (track.size() > 1) {
+            intent.putParcelableArrayListExtra("track", track);
+        }
+    }
+
     public static ArrayList<Intent> createGeoIntentsFromMessage(Context context, Message message) {
         final ArrayList<Intent> intents = new ArrayList<>();
         final GeoPoint geoPoint;
@@ -117,6 +163,7 @@ public class GeoHelper {
         final Intent locationPluginIntent = new Intent(context, ShowLocationActivity.class);
         locationPluginIntent.putExtra("latitude", geoPoint.getLatitude());
         locationPluginIntent.putExtra("longitude", geoPoint.getLongitude());
+        addTrackPointsToIntent(locationPluginIntent, message);
         if (message.getStatus() != Message.STATUS_RECEIVED) {
             locationPluginIntent.putExtra("jid", conversation.getAccount().getJid().toString());
             locationPluginIntent.putExtra("name", context.getString(R.string.me));

@@ -2389,7 +2389,14 @@ public class JingleRtpConnection extends AbstractJingleConnection
                     conference == null ? null : conference.getWebRTCResources();
             if (resources != null) {
                 this.webRTCWrapper.setupShared(this.xmppConnectionService, resources);
-                this.webRTCWrapper.initializePeerConnection(media, iceServers, trickle);
+                // XEP-0272: send only the media this participant contributes. Media that only the
+                // peer contributes is received through a receive-only transceiver so a voice-only
+                // participant can still watch a video-capable peer (and vice versa).
+                final Set<Media> contribution = Sets.newHashSet(conference.getMedia());
+                final Set<Media> sendMedia = Sets.intersection(media, contribution);
+                final Set<Media> receiveOnly = Sets.difference(media, sendMedia);
+                this.webRTCWrapper.initializePeerConnection(
+                        sendMedia, receiveOnly, iceServers, trickle);
                 return;
             }
         }
@@ -2755,6 +2762,14 @@ public class JingleRtpConnection extends AbstractJingleConnection
 
     public boolean isMicrophoneEnabled() {
         return webRTCWrapper.isMicrophoneEnabled();
+    }
+
+    public interface AudioLevelListener {
+        void onAudioLevel(double level);
+    }
+
+    public void getRemoteAudioLevel(final AudioLevelListener listener) {
+        webRTCWrapper.getRemoteAudioLevel(listener::onAudioLevel);
     }
 
     public boolean setMicrophoneEnabled(final boolean enabled) {

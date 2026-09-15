@@ -1116,7 +1116,11 @@ public class Conversation extends AbstractEntity implements Blockable, Comparabl
     }
 
     public Contact getContact() {
-        return this.account.getRoster().getContact(this.contactJid);
+        final Account account = this.account;
+        if (account == null) {
+            return null;
+        }
+        return account.getRoster().getContact(this.contactJid);
     }
 
     @Override
@@ -1505,7 +1509,8 @@ public class Conversation extends AbstractEntity implements Blockable, Comparabl
     }
 
     public boolean alwaysNotify() {
-        return mode == MODE_SINGLE || getBooleanAttribute(ATTRIBUTE_ALWAYS_NOTIFY, Config.ALWAYS_NOTIFY_BY_DEFAULT || isPrivateAndNonAnonymous());
+        return mode == MODE_SINGLE
+                || getBooleanAttribute(ATTRIBUTE_ALWAYS_NOTIFY, Config.ALWAYS_NOTIFY_BY_DEFAULT);
     }
 
     public boolean notifyReplies() {
@@ -1786,7 +1791,8 @@ public class Conversation extends AbstractEntity implements Blockable, Comparabl
 
     public boolean isWithStranger() {
         final Contact contact = getContact();
-        return mode == MODE_SINGLE
+        return contact != null
+                && mode == MODE_SINGLE
                 && !contact.isOwnServer()
                 && !contact.showInContactList()
                 && !contact.isSelf()

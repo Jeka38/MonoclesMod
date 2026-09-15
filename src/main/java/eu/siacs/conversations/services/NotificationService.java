@@ -138,6 +138,8 @@ public class NotificationService {
     public static final int EXPORT_BACKUP_NOTIFICATION_ID = NOTIFICATION_ID_MULTIPLIER * 18;
     public static final int UPDATE_NOTIFICATION_ID = NOTIFICATION_ID_MULTIPLIER * 20;
     public static final int SUBSCRIPTION_REQUEST_NOTIFICATION_ID = NOTIFICATION_ID_MULTIPLIER * 22;
+    public static final int MUJI_NOTIFICATION_ID = NOTIFICATION_ID_MULTIPLIER * 24;
+    public static final String MUJI_CHANNEL_ID = "muji";
     private final XmppConnectionService mXmppConnectionService;
     private final LinkedHashMap<String, ArrayList<Message>> notifications = new LinkedHashMap<>();
     private final LinkedHashMap<Conversational, MissedCallsInfo> mMissedCalls =
@@ -284,6 +286,17 @@ public class NotificationService {
                     .build());
             deliveryFailedChannel.setGroup("chats");
             notificationManager.createNotificationChannel(deliveryFailedChannel);
+        }
+
+        NotificationChannel mujiChannel = notificationManager.getNotificationChannel(MUJI_CHANNEL_ID);
+        if (mujiChannel == null) {
+            mujiChannel = new NotificationChannel(MUJI_CHANNEL_ID,
+                    c.getString(R.string.muji_channel_name),
+                    NotificationManager.IMPORTANCE_HIGH);
+            mujiChannel.setShowBadge(false);
+            mujiChannel.setSound(null, null);
+            mujiChannel.setGroup("calls");
+            notificationManager.createNotificationChannel(mujiChannel);
         }
 
         createDefaultMessageNotificationChannel(notificationManager);
@@ -2369,6 +2382,25 @@ public class NotificationService {
 
     public void AppUpdateServiceNotification(Notification notification) {
         notify(UPDATE_NOTIFICATION_ID, notification);
+    }
+
+    public void notifyMujiJoinFailed(final int textRes) {
+        final NotificationCompat.Builder builder =
+                new NotificationCompat.Builder(mXmppConnectionService, MUJI_CHANNEL_ID);
+        final String text = mXmppConnectionService.getString(textRes);
+        builder.setContentTitle(mXmppConnectionService.getString(R.string.muji_conference));
+        builder.setContentText(text);
+        builder.setStyle(new NotificationCompat.BigTextStyle().bigText(text));
+        builder.setSmallIcon(R.drawable.ic_call_white_48dp);
+        builder.setAutoCancel(true);
+        builder.setLocalOnly(true);
+        builder.setPriority(NotificationCompat.PRIORITY_HIGH);
+        builder.setCategory(NotificationCompat.CATEGORY_CALL);
+        final Intent intent = new Intent(mXmppConnectionService, ConversationsActivity.class);
+        builder.setContentIntent(PendingIntent.getActivity(mXmppConnectionService, 171, intent, s()
+                ? PendingIntent.FLAG_IMMUTABLE | PendingIntent.FLAG_UPDATE_CURRENT
+                : PendingIntent.FLAG_UPDATE_CURRENT));
+        notify(MUJI_NOTIFICATION_ID, builder.build());
     }
 
     private void notify(final String tag, final int id, final Notification notification) {

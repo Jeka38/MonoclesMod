@@ -30,6 +30,7 @@ import org.osmdroid.views.CustomZoomButtonsController;
 import org.osmdroid.views.MapView;
 import org.osmdroid.views.overlay.CopyrightOverlay;
 import org.osmdroid.views.overlay.Overlay;
+import org.osmdroid.views.overlay.Polyline;
 
 import eu.siacs.conversations.Config;
 import eu.siacs.conversations.R;
@@ -60,7 +61,7 @@ public abstract class LocationActivity extends XmppActivity implements LocationL
     protected void clearMarkers() {
         synchronized (this.map.getOverlays()) {
             for (final Overlay overlay : this.map.getOverlays()) {
-                if (overlay instanceof Marker || overlay instanceof MyLocation) {
+                if (overlay instanceof Marker || overlay instanceof MyLocation || overlay instanceof Polyline) {
                     this.map.getOverlays().remove(overlay);
                 }
             }
