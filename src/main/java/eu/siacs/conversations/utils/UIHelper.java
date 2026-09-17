@@ -393,8 +393,10 @@ public class UIHelper {
             final String body = MessageUtils.filterLtrRtl(message.getBody());
             if (message.hasDeletedBody()) {
                 return new Pair<>(context.getString(R.string.message_deleted), false);
-            } else if (body.startsWith(Message.ME_COMMAND)) {
-                return new Pair<>(body.replaceAll("^" + Message.ME_COMMAND, UIHelper.getMessageDisplayName(message)), false);
+            } else if (message.hasMeCommand()) {
+                final int meIndex = message.getMeCommandIndex();
+                final String raw = message.getBody();
+                return new Pair<>(raw.substring(0, meIndex) + UIHelper.getMessageDisplayName(message) + raw.substring(meIndex + Message.ME_COMMAND.length()), false);
             } else if (message.isGeoUri()) {
                 return new Pair<>(context.getString(R.string.location), true);
             } else if (message.isXmppUri()) {

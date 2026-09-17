@@ -60,7 +60,7 @@ public class MessageUtils {
             } else {
                 nick = UIHelper.getMessageDisplayName(message);
             }
-            body = nick + " " + message.getQuoteableBody().substring(Message.ME_COMMAND.length());
+            body = nick + " " + message.getQuoteableBody().substring(message.getMeCommandIndex() + Message.ME_COMMAND.length());
         } else {
             body = message.getQuoteableBody();
         }

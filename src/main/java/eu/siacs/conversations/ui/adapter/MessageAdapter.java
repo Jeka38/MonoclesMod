@@ -1001,8 +1001,19 @@ public class MessageAdapter extends ArrayAdapter<Message> {
 
             // Обработка текста сообщения
             SpannableStringBuilder body = getSpannableBody(message);
-            boolean hasMeCommand = message.hasMeCommand();
+            final int meCommandIndex = message.getMeCommandIndex();
+            final boolean hasMeCommand = meCommandIndex >= 0;
             final SpannableString nick = UIHelper.getColoredUsername(activity.xmppConnectionService, message);
+
+            // Форматирование /me (в т.ч. когда команда идёт после цитаты). Заменяем команду и
+            // вешаем стиль ДО обработки цитат, чтобы исходная позиция оставалась валидной;
+            // span стиля отследит последующие правки цитатного блока, стиль не заденет цитату.
+            if (hasMeCommand) {
+                body = body.replace(meCommandIndex, meCommandIndex + Message.ME_COMMAND.length(), "* " + nick);
+                if (!message.isPrivateMessage()) {
+                    body.setSpan(new StyleSpan(Typeface.BOLD_ITALIC), meCommandIndex, body.length(), Spannable.SPAN_EXCLUSIVE_EXCLUSIVE);
+                }
+            }
 
             // Обработка цитат
             final boolean startsWithQuote = handleTextQuotes(viewHolder.messageBody, body, darkBackground, true);
@@ -1023,15 +1034,6 @@ public class MessageAdapter extends ArrayAdapter<Message> {
                         body.setSpan(new StyleSpan(Typeface.BOLD_ITALIC), 0, body.length(), Spannable.SPAN_EXCLUSIVE_EXCLUSIVE);
                     }
                 }
-            }
-
-            if (hasMeCommand) {
-                body = body.replace(0, Message.ME_COMMAND.length(), "* " + nick);
-            }
-
-            // Стилизация для /me
-            if (!message.isPrivateMessage() && hasMeCommand) {
-                body.setSpan(new StyleSpan(Typeface.BOLD_ITALIC), 0, body.length(), Spannable.SPAN_EXCLUSIVE_EXCLUSIVE);
             }
 
             MyLinkify.addLinks(body, message.getConversation().getAccount(), message.getConversation().getJid());

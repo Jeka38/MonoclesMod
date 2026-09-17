@@ -1322,8 +1322,31 @@ public class Message extends AbstractEntity implements AvatarService.Avatarable 
         return body;
     }
 
+    public int getMeCommandIndex() {
+        if (this.body == null) {
+            return -1;
+        }
+        final String body = this.body;
+        int from = 0;
+        while (true) {
+            final int index = body.indexOf(ME_COMMAND, from);
+            if (index < 0) {
+                return -1;
+            }
+            final int lineStart = body.lastIndexOf('\n', index - 1) + 1;
+            boolean commandLine = index == lineStart;
+            for (int i = lineStart; !commandLine && i < index; i++) {
+                commandLine = Character.isWhitespace(body.charAt(i));
+            }
+            if (commandLine) {
+                return index;
+            }
+            from = index + ME_COMMAND.length();
+        }
+    }
+
     public boolean hasMeCommand() {
-        return this.body.trim().startsWith(ME_COMMAND);
+        return this.body != null && getMeCommandIndex() >= 0;
     }
 
     public boolean hasDeletedBody() {
