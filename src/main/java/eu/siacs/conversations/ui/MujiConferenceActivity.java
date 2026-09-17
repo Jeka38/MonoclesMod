@@ -542,7 +542,16 @@ boolean microphone = conference.isMicrophoneEnabled();
             view.boundAt = now;
         }
         final boolean framesLively = framesLively(view, now);
-        if (!videoExpected || remoteVideo == null || eglContext == null || !framesLively) {
+        // Trust the live track over the (possibly stale) <muji> presence: MUC servers sometimes
+        // drop the re-sent <muji> element, so a participant who turned its camera back on would
+        // otherwise stay stuck on the avatar although the session already delivers video again.
+        // The presence flag only decides whether to wait for the first frame during the grace
+        // period; black-frame tracking keeps a genuinely disabled camera on the avatar.
+        final boolean videoLive =
+                remoteVideo != null
+                        && framesLively
+                        && (videoExpected || view.lastFrameAt > 0L);
+        if (!videoLive || eglContext == null) {
             showAvatar(view);
             MujiLog.log(
                     xmppConnectionService.getFilesDir(),

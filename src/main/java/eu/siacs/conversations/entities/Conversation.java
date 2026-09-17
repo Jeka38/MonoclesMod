@@ -1088,11 +1088,14 @@ public class Conversation extends AbstractEntity implements Blockable, Comparabl
         if (getMode() == MODE_MULTI) {
             if (nextCounterpart != null) {
                 String roomName = null;
-                XmppConnection connection = account.getXmppConnection();
-                if (connection != null) {
-                    Conversation main = connection.getXmppConnectionService().findFirstMuc(getJid());
-                    if (main != null) {
-                        roomName = main.getMucOptions().getName();
+                final Account account = this.account;
+                if (account != null) {
+                    XmppConnection connection = account.getXmppConnection();
+                    if (connection != null) {
+                        Conversation main = connection.getXmppConnectionService().findFirstMuc(getJid());
+                        if (main != null) {
+                            roomName = main.getMucOptions().getName();
+                        }
                     }
                 }
                 if (roomName == null) {
@@ -1115,7 +1118,12 @@ public class Conversation extends AbstractEntity implements Blockable, Comparabl
                 return contactJid.getLocal() != null ? contactJid.getLocal() : contactJid;
             }
         } else {
-            return this.getContact().getDisplayName();
+            final Contact contact = this.getContact();
+            if (contact != null) {
+                return contact.getDisplayName();
+            }
+            // conversation restored from DB may still have a null account (no roster to look up)
+            return contactJid.getLocal() != null ? contactJid.getLocal() : contactJid.toString();
         }
     }
 

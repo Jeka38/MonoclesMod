@@ -170,6 +170,8 @@ public final class Config {
     public static final boolean USE_LMC_VERSION_1_1 = true;
 
     public static final long MAM_MAX_CATCHUP = MILLISECONDS_IN_DAY * 30;
+    //hard ceiling for a single catchup page chain; MAM_MAX_MESSAGES would truncate the newest messages in busy archives
+    public static final int MAM_MAX_CATCHUP_MESSAGES = 10000;
     public static final int MAM_MAX_MESSAGES = 750;
 
     public static final ChatState DEFAULT_CHAT_STATE = ChatState.ACTIVE;
