@@ -1,42 +1,32 @@
 package eu.siacs.conversations.ui;
 
-import android.Manifest;
 import android.animation.ValueAnimator;
-import android.bluetooth.BluetoothDevice;
-import android.content.BroadcastReceiver;
-import android.content.Context;
+import android.graphics.Color;
 import android.content.Intent;
-import android.content.IntentFilter;
-import android.content.pm.PackageManager;
 import android.content.res.ColorStateList;
-import android.media.AudioDeviceInfo;
-import android.media.AudioManager;
-import android.os.Build;
 import android.os.Bundle;
 import android.os.Handler;
 import android.os.Looper;
-import android.os.PowerManager;
 import android.util.Log;
 import android.view.LayoutInflater;
 import android.view.View;
+import android.view.ViewGroup;
 import android.view.animation.AccelerateDecelerateInterpolator;
 import android.widget.TextView;
 
 import androidx.annotation.Nullable;
-import androidx.annotation.RequiresApi;
 import androidx.appcompat.widget.Toolbar;
-import androidx.core.content.ContextCompat;
 
 import com.google.android.material.button.MaterialButton;
 import com.google.android.material.imageview.ShapeableImageView;
 import com.google.common.base.Optional;
 
 import org.webrtc.EglBase;
-import org.webrtc.RendererCommon;
 import org.webrtc.VideoFrame;
 import org.webrtc.VideoSink;
 import org.webrtc.VideoTrack;
 
+import java.nio.ByteBuffer;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.HashSet;
@@ -52,7 +42,8 @@ import eu.siacs.conversations.entities.MucOptions;
 import eu.siacs.conversations.services.AvatarService;
 import eu.siacs.conversations.ui.util.AvatarWorkerTask;
 import eu.siacs.conversations.ui.widget.MujiParticipantGridView;
-import eu.siacs.conversations.ui.widget.SurfaceViewRenderer;
+import eu.siacs.conversations.ui.widget.SpeakingBorderView;
+import eu.siacs.conversations.ui.widget.TextureViewRenderer;
 import eu.siacs.conversations.ui.util.StyledAttributes;
 import eu.siacs.conversations.xmpp.Jid;
 import eu.siacs.conversations.xmpp.jingle.JingleRtpConnection;
@@ -74,13 +65,26 @@ public class MujiConferenceActivity extends XmppActivity {
 
     private static final long REFRESH_INTERVAL = 1000L;
     private static final long AUDIO_LEVEL_INTERVAL = 10L;
+    /** A remote video track whose frames stopped for longer than this is treated as dead - the
+     * sink then falls back to the avatar instead of rendering a black window. Covers the case of a
+     * participant disabling their camera when their <muji> presence update never reaches us. */
+    private static final long FRAME_TIMEOUT_MS = 3000L;
+    /** Grace period after (re)binding a track during which the absence of frames is tolerated
+     * (connection setup / first keyframe). Afterwards a track that never delivered a single frame
+     * falls back to the avatar instead of staying a permanent black window. */
+    private static final long FIRST_FRAME_GRACE_MS = 5000L;
+    /** WebRTC keeps sending *black* frames when a remote disables its camera (it does not simply
+     * stop the stream), so a frame-liveness check alone cannot detect it. A track whose frames are
+     * continuously black for this long is treated as camera-off and falls back to the avatar. */
+    private static final long BLACK_FRAME_TIMEOUT_MS = 2000L;
+    /** How often (at most) the incoming frames are sampled for the black-frame check. */
+    private static final long BLACK_FRAME_CHECK_INTERVAL_MS = 1000L;
+    /** Average luma (0..255) below which a frame is considered black. */
+    private static final int BLACK_FRAME_LUMA_THRESHOLD = 24;
     private static final long SPEAKING_HOLD_MS = 500L;
     private static final double AUDIO_LEVEL_THRESHOLD = 0.04d;
     private static final int SPEAKING_COLOR = 0xFF4CAF50;
     private static final String SELF_KEY = "self";
-    private static final int MAX_SCO_RETRIES = 30;
-    private static final long SCO_RETRY_DELAY = 1000L;
-    private static final long BLUETOOTH_ROUTING_INTERVAL = 2000L;
 
     private final Handler handler = new Handler(Looper.getMainLooper());
     private final Map<String, ParticipantView> views = new HashMap<>();
@@ -101,80 +105,6 @@ public class MujiConferenceActivity extends XmppActivity {
                 }
             };
 
-    /**
-     * Polls for a Bluetooth headset while the call is active and the speaker is off. The
-     * {@code ACTION_ACL_CONNECTED} broadcast is not reliably delivered on all devices (Android
-     * 13+/EMUI huawei), so this is the robust fallback that picks up a mid-call headset connection
-     * (and re-routes if the headset is disconnected and reconnected).
-     */
-    private final Runnable bluetoothRoutingRunnable =
-            new Runnable() {
-                @Override
-                public void run() {
-                    maybeRouteToBluetooth();
-                    handler.postDelayed(bluetoothRoutingRunnable, BLUETOOTH_ROUTING_INTERVAL);
-                }
-            };
-
-    private void maybeRouteToBluetooth() {
-        if (audioManager == null
-                || speakerOn
-                || !bluetoothPermissionGranted()
-                || getActiveConference() == null) {
-            return;
-        }
-        // On API 31+, setCommunicationDevice() is used instead of startBluetoothSco(). The
-        // legacy ACTION_SCO_AUDIO_STATE_CHANGED broadcast does not fire when the communication
-        // device disappears, so scoRequested can go stale after a headset disconnects — the poll
-        // corrects this by checking whether the BT device is still in the output device list.
-        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.S && scoRequested) {
-            if (findBluetoothAudioDevice() == null) {
-                scoRequested = false;
-            }
-        }
-        requestBluetoothSco();
-    }
-
-    private final BroadcastReceiver bluetoothScoReceiver =
-            new BroadcastReceiver() {
-                @Override
-                public void onReceive(final Context context, final Intent intent) {
-                    final String action = intent.getAction();
-                    if (BluetoothDevice.ACTION_ACL_CONNECTED.equals(action)) {
-                        // A Bluetooth headset was (re)connected mid-call — the call was started
-                        // without one, so re-route audio to the headset.
-                        if (getActiveConference() != null
-                                && !speakerOn
-                                && bluetoothPermissionGranted()) {
-                            logBt("Bluetooth device connected, re-routing audio");
-                            scoRequested = false;
-                            scoRetries = 0;
-                            requestBluetoothRouteRetry();
-                        }
-                        return;
-                    }
-                    if (!AudioManager.ACTION_SCO_AUDIO_STATE_CHANGED.equals(action)) {
-                        return;
-                    }
-                    final int state =
-                            intent.getIntExtra(
-                                    AudioManager.EXTRA_SCO_AUDIO_STATE,
-                                    AudioManager.SCO_AUDIO_STATE_DISCONNECTED);
-                    if (state == AudioManager.SCO_AUDIO_STATE_CONNECTED) {
-                        logBt("Bluetooth SCO connected");
-                        scoRetries = 0;
-                    } else if (state == AudioManager.SCO_AUDIO_STATE_DISCONNECTED) {
-                        logBt("Bluetooth SCO disconnected");
-                        scoRequested = false;
-                        if (getActiveConference() != null
-                                && !speakerOn
-                                && bluetoothPermissionGranted()) {
-                            requestBluetoothRouteRetry();
-                        }
-                    }
-                }
-            };
-
     private Toolbar toolbar;
     private MujiParticipantGridView container;
     private TextView status;
@@ -182,12 +112,6 @@ public class MujiConferenceActivity extends XmppActivity {
     private MaterialButton videoButton;
     private MaterialButton switchCameraButton;
     private MaterialButton speakerButton;
-
-    private AudioManager audioManager;
-    private PowerManager.WakeLock wakeLock;
-    private boolean speakerOn = false;
-    private boolean scoRequested = false;
-    private int scoRetries = 0;
 
     private Account account;
     private Jid room;
@@ -234,21 +158,10 @@ public class MujiConferenceActivity extends XmppActivity {
         this.videoButton = findViewById(R.id.muji_video);
         this.switchCameraButton = findViewById(R.id.muji_switch_camera);
         this.speakerButton = findViewById(R.id.muji_speaker);
-        this.audioManager = (AudioManager) getSystemService(Context.AUDIO_SERVICE);
-        final IntentFilter bluetoothFilter =
-                new IntentFilter(AudioManager.ACTION_SCO_AUDIO_STATE_CHANGED);
-        bluetoothFilter.addAction(BluetoothDevice.ACTION_ACL_CONNECTED);
-        ContextCompat.registerReceiver(
-                getApplicationContext(),
-                bluetoothScoReceiver,
-                bluetoothFilter,
-                ContextCompat.RECEIVER_NOT_EXPORTED);
-        acquireWakelock();
         micButton.setOnClickListener(v -> toggleMicrophone());
         videoButton.setOnClickListener(v -> toggleVideo());
         switchCameraButton.setOnClickListener(v -> switchCamera());
         speakerButton.setOnClickListener(v -> toggleSpeaker());
-        applySpeaker();
         updateSpeakerButton();
     }
 
@@ -257,7 +170,6 @@ public class MujiConferenceActivity extends XmppActivity {
         super.onStart();
         handler.post(refreshRunnable);
         handler.post(audioLevelRunnable);
-        handler.post(bluetoothRoutingRunnable);
     }
 
     @Override
@@ -265,46 +177,13 @@ public class MujiConferenceActivity extends XmppActivity {
         super.onStop();
         handler.removeCallbacks(refreshRunnable);
         handler.removeCallbacks(audioLevelRunnable);
-        handler.removeCallbacks(bluetoothRoutingRunnable);
     }
 
     @Override
     protected void onDestroy() {
         super.onDestroy();
-        releaseWakeLock();
-        releaseBluetoothSco();
-        try {
-            getApplicationContext().unregisterReceiver(bluetoothScoReceiver);
-        } catch (final IllegalArgumentException ignored) {
-            // receiver was not registered
-        }
         handler.removeCallbacksAndMessages(null);
         clearParticipants();
-    }
-
-    private void acquireWakelock() {
-        if (wakeLock != null) {
-            return;
-        }
-        final PowerManager powerManager = (PowerManager) getSystemService(Context.POWER_SERVICE);
-        if (powerManager == null) {
-            return;
-        }
-        wakeLock =
-                powerManager.newWakeLock(
-                        PowerManager.PARTIAL_WAKE_LOCK, "monocles:MujiConferenceActivity");
-        wakeLock.acquire();
-        Log.d(Config.LOGTAG, "Muji: partial wakelock acquired");
-    }
-
-    private void releaseWakeLock() {
-        if (wakeLock != null) {
-            if (wakeLock.isHeld()) {
-                wakeLock.release();
-            }
-            wakeLock = null;
-            Log.d(Config.LOGTAG, "Muji: partial wakelock released");
-        }
     }
 
     private void leaveConference() {
@@ -338,7 +217,7 @@ public class MujiConferenceActivity extends XmppActivity {
             view.label.setText(
                     participant.nick + " - " + stateLabel(participant.state));
             bindAvatar(view, participantAvatarable(participant));
-            bindVideo(view, conference, participant, remoteProvidesVideo(participant));
+            bindVideo(view, conference, participant, remoteProvidesVideo(conference, participant));
         }
         final List<String> stale = new ArrayList<>();
         for (final String key : views.keySet()) {
@@ -349,7 +228,28 @@ public class MujiConferenceActivity extends XmppActivity {
         for (final String key : stale) {
             removeView(key);
         }
+        applyExpandedStyling();
         updateControls(conference);
+    }
+
+    /**
+     * Applies the thumbnail/"floating avatar" look to every tile that is not the currently expanded
+     * one (and restores the full tile look when nothing is expanded).
+     *
+     * <p>In expanded mode all thumbnails overlap the expanded tile. Android draws later-index
+     * children on top of earlier ones, and since every thumbnailed tile (self is always index 0)
+     * sits at a lower child index than most expanded tiles, they would be hidden behind the
+     * expanded tile. Raising the thumbnails' Z above the expanded tile puts them back on top in
+     * both the software and the SurfaceView (video) render paths.
+     */
+    private void applyExpandedStyling() {
+        final View expanded = container.getExpandedChild();
+        final float thumbnailZ = 2f * getResources().getDisplayMetrics().density;
+        for (final ParticipantView view : views.values()) {
+            final boolean thumbnail = expanded != null && view.root != expanded;
+            view.setThumbnailStyle(thumbnail);
+            view.root.setTranslationZ(thumbnail ? thumbnailZ : 0f);
+        }
     }
 
     private List<JingleRtpConnection> connections() {
@@ -511,157 +411,21 @@ boolean microphone = conference.isMicrophoneEnabled();
         connections.get(0).switchCamera();
     }
 
-    @SuppressWarnings("deprecation")
     private void toggleSpeaker() {
-        speakerOn = !speakerOn;
-        applySpeaker();
+        final MujiConference conference = getActiveConference();
+        if (conference == null) {
+            return;
+        }
+        conference.toggleSpeaker();
         updateSpeakerButton();
-    }
-
-    @SuppressWarnings("deprecation")
-    private void applySpeaker() {
-        if (audioManager == null) {
-            return;
-        }
-        try {
-            audioManager.setMode(AudioManager.MODE_IN_COMMUNICATION);
-            if (speakerOn) {
-                releaseBluetoothSco();
-                audioManager.setSpeakerphoneOn(true);
-            } else {
-                scoRetries = 0;
-                requestBluetoothSco();
-                audioManager.setSpeakerphoneOn(false);
-            }
-        } catch (final RuntimeException e) {
-            Log.w(Config.LOGTAG, "unable to change speakerphone state", e);
-        }
-    }
-
-    @SuppressWarnings("deprecation")
-    private boolean bluetoothPermissionGranted() {
-        return Build.VERSION.SDK_INT < Build.VERSION_CODES.S
-                || ContextCompat.checkSelfPermission(this, Manifest.permission.BLUETOOTH_CONNECT)
-                        == PackageManager.PERMISSION_GRANTED;
-    }
-
-    private void logBt(final String message) {
-        Log.d(Config.LOGTAG, message);
-        if (xmppConnectionService != null) {
-            MujiLog.log(xmppConnectionService.getFilesDir(), message);
-        }
-    }
-
-    /**
-     * Attempts to route audio to the Bluetooth headset, and keeps retrying on a delay until either a
-     * route is established, the call ends, the speaker is turned on, or the retry budget runs out.
-     * Needed because the audio profile may become available a moment after the link is reported.
-     */
-    private void requestBluetoothRouteRetry() {
-        if (scoRequested) {
-            return;
-        }
-        if (audioManager == null
-                || getActiveConference() == null
-                || speakerOn
-                || !bluetoothPermissionGranted()) {
-            return;
-        }
-        if (scoRetries >= MAX_SCO_RETRIES) {
-            logBt("giving up on Bluetooth routing after " + scoRetries + " retries");
-            return;
-        }
-        scoRetries++;
-        requestBluetoothSco();
-        if (!scoRequested && scoRetries < MAX_SCO_RETRIES) {
-            logBt("no Bluetooth route yet, retry " + scoRetries + "/" + MAX_SCO_RETRIES);
-            handler.postDelayed(
-                    MujiConferenceActivity.this::requestBluetoothRouteRetry, SCO_RETRY_DELAY);
-        }
-    }
-
-    /** Routes the conference audio to a connected Bluetooth headset when available. */
-    @SuppressWarnings("deprecation")
-    private void requestBluetoothSco() {
-        if (audioManager == null || scoRequested || !bluetoothPermissionGranted()) {
-            return;
-        }
-        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.S) {
-            final AudioDeviceInfo bluetoothDevice = findBluetoothAudioDevice();
-            if (bluetoothDevice == null) {
-                return;
-            }
-            try {
-                audioManager.setCommunicationDevice(bluetoothDevice);
-                scoRequested = true;
-                logBt(
-                        "routed audio to Bluetooth device via setCommunicationDevice (type="
-                                + bluetoothDevice.getType()
-                                + ", product="
-                                + bluetoothDevice.getProductName()
-                                + ")");
-            } catch (final RuntimeException e) {
-                logBt("unable to set Bluetooth communication device: " + e.getMessage());
-            }
-        } else {
-            try {
-                audioManager.startBluetoothSco();
-                audioManager.setBluetoothScoOn(true);
-                scoRequested = true;
-                logBt("Bluetooth SCO requested (legacy)");
-            } catch (final RuntimeException e) {
-                Log.w(Config.LOGTAG, "unable to start Bluetooth SCO", e);
-            }
-        }
-    }
-
-    /** The preferred Bluetooth output device for a voice call, or null if none is available. */
-    @RequiresApi(api = Build.VERSION_CODES.S)
-    @Nullable
-    private AudioDeviceInfo findBluetoothAudioDevice() {
-        if (audioManager == null) {
-            return null;
-        }
-        for (final AudioDeviceInfo device : audioManager.getDevices(AudioManager.GET_DEVICES_OUTPUTS)) {
-            final int type = device.getType();
-            if (type == AudioDeviceInfo.TYPE_BLUETOOTH_SCO
-                    || type == AudioDeviceInfo.TYPE_BLE_HEADSET
-                    || type == AudioDeviceInfo.TYPE_BLE_SPEAKER
-                    || type == AudioDeviceInfo.TYPE_HEARING_AID) {
-                return device;
-            }
-        }
-        return null;
-    }
-
-    /** Releases the Bluetooth routing; the call falls back to the default output device. */
-    @SuppressWarnings("deprecation")
-    private void releaseBluetoothSco() {
-        if (audioManager == null || !scoRequested) {
-            return;
-        }
-        scoRequested = false;
-        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.S) {
-            try {
-                audioManager.clearCommunicationDevice();
-                logBt("cleared Bluetooth communication device");
-            } catch (final RuntimeException e) {
-                Log.w(Config.LOGTAG, "unable to clear Bluetooth communication device", e);
-            }
-        } else {
-            try {
-                audioManager.setBluetoothScoOn(false);
-                audioManager.stopBluetoothSco();
-            } catch (final RuntimeException e) {
-                Log.w(Config.LOGTAG, "unable to stop Bluetooth SCO", e);
-            }
-        }
     }
 
     private void updateSpeakerButton() {
         if (speakerButton == null) {
             return;
         }
+        final MujiConference conference = getActiveConference();
+        final boolean speakerOn = conference != null && conference.isSpeakerOn();
         speakerButton.setIconResource(
                 speakerOn
                         ? R.drawable.ic_volume_up_black_24dp
@@ -699,7 +463,16 @@ boolean microphone = conference.isMicrophoneEnabled();
     @Nullable
     private AvatarService.Avatarable participantAvatarable(
             final MujiConference.Participant participant) {
-        return participantUser(participant);
+        final MucOptions.User user = participantUser(participant);
+        if (user != null) {
+            return user;
+        }
+        // Fall back to the roster contact for the real JID so the tile still shows an avatar
+        // instead of a blank circle when the occupant could not be matched to a MucOptions.User.
+        if (conversation != null && participant.jid != null) {
+            return conversation.getAccount().getRoster().getContact(participant.jid.asBareJid());
+        }
+        return null;
     }
 
     @Nullable
@@ -715,20 +488,42 @@ boolean microphone = conference.isMicrophoneEnabled();
      * participant turns the camera off, the {@code <muji>} element stops carrying video and the tile
      * falls back to the avatar.
      */
-    private boolean remoteProvidesVideo(final MujiConference.Participant participant) {
+    private boolean remoteProvidesVideo(
+            final MujiConference conference, final MujiConference.Participant participant) {
         final MucOptions.User user = participantUser(participant);
         if (user == null) {
             return true;
         }
         final Muji muji = user.getMuji();
         if (muji == null) {
-            return false;
+            // Distinguish between two causes of a missing <muji>:
+            //  * hasEverSeenMuji(): the occupant previously advertised the conference and stopped
+            //    (they left the call). The stale renderer must fall back to the avatar instead of
+            //    staying bound to an orphaned session, which would render a black window.
+            //  * !hasEverSeenMuji(): we never received any muji presence from them at all - the
+            //    active voice/video presence of a participant who joined after us is often not
+            //    delivered, so the resolved Jingle session is authoritative: a live remote video
+            //    track means they are really in the call and the tile renders video.
+            if (user.hasEverSeenMuji()) {
+                return false;
+            }
+            final JingleRtpConnection connection = conference.getConnection(participant);
+            return connection != null && connection.getRemoteVideoTrack().isPresent();
+        }
+        if (muji.isPreparing()) {
+            // Only a <preparing/> placeholder: the active voice/video presence was not delivered to
+            // us (the participant joined while we were already in the room and the roster never
+            // refreshed). The capability element is not authoritative then - the resolved session
+            // is: a received remote video track means the session really negotiated video.
+            final JingleRtpConnection connection = conference.getConnection(participant);
+            return connection != null && connection.getRemoteVideoTrack().isPresent();
         }
         for (final MujiContent content : muji.getContents()) {
             if (content.getMedia() == Media.VIDEO) {
                 return true;
             }
         }
+        // the participant advertises an active <muji> without video (e.g. camera turned off)
         return false;
     }
 
@@ -741,7 +536,13 @@ boolean microphone = conference.isMicrophoneEnabled();
         final VideoTrack remoteVideo =
                 connection == null ? null : connection.getRemoteVideoTrack().orNull();
         final EglBase.Context eglContext = conference.getEglBaseContext();
-        if (!videoExpected || remoteVideo == null || eglContext == null) {
+        final long now = System.currentTimeMillis();
+        // A fresh (or changed) track restarts the first-frame grace period.
+        if (remoteVideo != null && remoteVideo != view.boundTrack) {
+            view.boundAt = now;
+        }
+        final boolean framesLively = framesLively(view, now);
+        if (!videoExpected || remoteVideo == null || eglContext == null || !framesLively) {
             showAvatar(view);
             MujiLog.log(
                     xmppConnectionService.getFilesDir(),
@@ -752,47 +553,16 @@ boolean microphone = conference.isMicrophoneEnabled();
                             + " remote="
                             + (remoteVideo != null)
                             + " egl="
-                            + (eglContext != null));
+                            + (eglContext != null)
+                            + " lively="
+                            + framesLively);
             return;
         }
         showRenderer(view);
         if (remoteVideo == view.boundTrack) {
             return;
         }
-        view.ensureRendererInitialized(eglContext);
-        if (view.boundTrack != null) {
-            try {
-                view.boundTrack.removeSink(view.renderer);
-            } catch (final IllegalStateException e) {
-                // track already disposed
-            }
-        }
-        if (view.frameLogger == null) {
-            view.frameLogger =
-                    new VideoSink() {
-                        private long last = 0L;
-
-                        @Override
-                        public void onFrame(final VideoFrame frame) {
-                            final long now = System.currentTimeMillis();
-                            if (now - last > 1000L) {
-                                last = now;
-                                final VideoFrame.Buffer buffer = frame.getBuffer();
-                                MujiLog.log(
-                                        xmppConnectionService.getFilesDir(),
-                                        "UI frame "
-                                                + buffer.getWidth()
-                                                + "x"
-                                                + buffer.getHeight()
-                                                + " rot="
-                                                + frame.getRotation());
-                            }
-                        }
-                    };
-        }
-        remoteVideo.addSink(view.frameLogger);
-        remoteVideo.addSink(view.renderer);
-        view.boundTrack = remoteVideo;
+        bindTrack(view, remoteVideo, false, eglContext);
         MujiLog.log(
                 xmppConnectionService.getFilesDir(),
                 "UI bound video for "
@@ -809,7 +579,12 @@ boolean microphone = conference.isMicrophoneEnabled();
             final VideoTrack track,
             final boolean videoEnabled) {
         final EglBase.Context eglContext = conference.getEglBaseContext();
-        if (!videoEnabled || track == null || eglContext == null) {
+        final long now = System.currentTimeMillis();
+        if (track != null && track != view.boundTrack) {
+            view.boundAt = now;
+        }
+        final boolean framesLively = framesLively(view, now);
+        if (!videoEnabled || track == null || eglContext == null || !framesLively) {
             showAvatar(view);
             return;
         }
@@ -817,20 +592,134 @@ boolean microphone = conference.isMicrophoneEnabled();
         if (track == view.boundTrack) {
             return;
         }
-        view.ensureRendererInitialized(eglContext);
-        if (view.boundTrack != null) {
-            try {
-                view.boundTrack.removeSink(view.renderer);
-            } catch (final IllegalStateException e) {
-                // track already disposed
-            }
-        }
-        track.addSink(view.renderer);
-        view.renderer.setMirror(conference.isFrontCamera());
-        view.boundTrack = track;
+        bindTrack(view, track, conference.isFrontCamera(), eglContext);
         MujiLog.log(
                 xmppConnectionService.getFilesDir(),
                 "UI bound local self video mirror=" + conference.isFrontCamera());
+    }
+
+    /** A track counts as live if frames arrived within {@link #FRAME_TIMEOUT_MS} - or, for a track
+     *  whose first frame has not arrived yet, within {@link #FIRST_FRAME_GRACE_MS} of binding. A
+     *  track that keeps delivering black frames (remote camera disabled) is not live either. */
+    private static boolean framesLively(final ParticipantView view, final long now) {
+        if (view.blackFrameSince > 0L && now - view.blackFrameSince >= BLACK_FRAME_TIMEOUT_MS) {
+            return false;
+        }
+        if (view.lastFrameAt > 0L) {
+            return now - view.lastFrameAt <= FRAME_TIMEOUT_MS;
+        }
+        return now - view.boundAt <= FIRST_FRAME_GRACE_MS;
+    }
+
+    private void bindTrack(
+            final ParticipantView view,
+            final VideoTrack track,
+            final boolean mirror,
+            final EglBase.Context eglContext) {
+        view.ensureRendererInitialized(eglContext);
+        if (view.boundTrack != null) {
+            removeSink(view.boundTrack, view.renderer);
+            if (view.frameLogger != null) {
+                removeSink(view.boundTrack, view.frameLogger);
+            }
+        }
+        if (view.frameLogger == null) {
+            view.frameLogger = createFrameLogger(view);
+        }
+        track.addSink(view.frameLogger);
+        track.addSink(view.renderer);
+        view.renderer.setMirror(mirror);
+        view.boundTrack = track;
+        view.lastFrameAt = 0L;
+        view.blackFrameSince = 0L;
+        view.boundAt = System.currentTimeMillis();
+    }
+
+    private static void removeSink(final VideoTrack track, final VideoSink sink) {
+        try {
+            track.removeSink(sink);
+        } catch (final IllegalStateException e) {
+            // track already disposed
+        }
+    }
+
+    private VideoSink createFrameLogger(final ParticipantView view) {
+        return new VideoSink() {
+            private long last = 0L;
+            private long lastBlackCheck = 0L;
+
+            @Override
+            public void onFrame(final VideoFrame frame) {
+                final long now = System.currentTimeMillis();
+                view.lastFrameAt = now;
+                if (now - lastBlackCheck >= BLACK_FRAME_CHECK_INTERVAL_MS) {
+                    lastBlackCheck = now;
+                    updateBlackFrameState(view, frame, now);
+                }
+                if (now - last > 1000L) {
+                    last = now;
+                    final VideoFrame.Buffer buffer = frame.getBuffer();
+                    MujiLog.log(
+                            xmppConnectionService.getFilesDir(),
+                            "UI frame "
+                                    + buffer.getWidth()
+                                    + "x"
+                                    + buffer.getHeight()
+                                    + " rot="
+                                    + frame.getRotation()
+                                    + " black="
+                                    + (view.blackFrameSince > 0L));
+                }
+            }
+        };
+    }
+
+    /**
+     * WebRTC keeps producing (black) frames after a remote disables its camera. Sample the luma of
+     * the incoming frames and remember since when they have been continuously black so that the tile
+     * can fall back to the avatar even when the {@code <muji>} presence update never arrives.
+     */
+    private static void updateBlackFrameState(
+            final ParticipantView view, final VideoFrame frame, final long now) {
+        boolean black = false;
+        try {
+            final VideoFrame.I420Buffer i420 = frame.getBuffer().toI420();
+            try {
+                black = isBlack(i420);
+            } finally {
+                i420.release();
+            }
+        } catch (final RuntimeException e) {
+            // Some buffers cannot be read back; never let that keep the tile black forever.
+            black = false;
+        }
+        if (black) {
+            if (view.blackFrameSince == 0L) {
+                view.blackFrameSince = now;
+            }
+        } else {
+            view.blackFrameSince = 0L;
+        }
+    }
+
+    private static boolean isBlack(final VideoFrame.I420Buffer i420) {
+        final ByteBuffer y = i420.getDataY();
+        final int stride = i420.getStrideY();
+        final int width = i420.getWidth();
+        final int height = i420.getHeight();
+        if (width <= 0 || height <= 0 || stride <= 0) {
+            return false;
+        }
+        long sum = 0L;
+        int count = 0;
+        for (int row = 0; row < height; row += 8) {
+            final int rowOffset = row * stride;
+            for (int col = 0; col < width; col += 8) {
+                sum += y.get(rowOffset + col) & 0xFF;
+                count++;
+            }
+        }
+        return count > 0 && (sum / count) < BLACK_FRAME_LUMA_THRESHOLD;
     }
 
     private ParticipantView getOrCreateView(final String key) {
@@ -846,7 +735,14 @@ boolean microphone = conference.isMicrophoneEnabled();
                         root,
                         root.findViewById(R.id.participant_video),
                         root.findViewById(R.id.participant_avatar),
+                        root.findViewById(R.id.participant_speaking),
                         root.findViewById(R.id.participant_label));
+        root.setOnClickListener(
+                v -> {
+                    final View expanded = container.getExpandedChild();
+                    container.setExpandedChild(expanded == root ? null : root);
+                    applyExpandedStyling();
+                });
         container.addView(root);
         views.put(key, view);
         return view;
@@ -855,30 +751,65 @@ boolean microphone = conference.isMicrophoneEnabled();
     private void bindAvatar(
             final ParticipantView view,
             @Nullable final AvatarService.Avatarable avatarable) {
-        if (view.boundAvatarable == avatarable) {
+        if (avatarable == null) {
+            if (view.boundAvatarable != null) {
+                view.boundAvatarable = null;
+                view.avatar.setImageDrawable(null);
+                view.avatar.setBackgroundColor(0x00000000);
+                MujiLog.log(xmppConnectionService.getFilesDir(), "UI avatar null");
+            }
             return;
         }
-        view.boundAvatarable = avatarable;
-        if (avatarable == null) {
+        // Re-request the avatar if the same source is bound but nothing was ever loaded (e.g. the
+        // first attempt ran before the view was attached), otherwise skip the redundant work.
+        if (view.boundAvatarable == avatarable && view.avatar.getDrawable() != null) {
             return;
+        }
+        final boolean changed = view.boundAvatarable != avatarable;
+        view.boundAvatarable = avatarable;
+        if (changed) {
+            MujiLog.log(
+                    xmppConnectionService.getFilesDir(),
+                    "UI avatar " + avatarable.getAvatarName());
         }
         AvatarWorkerTask.loadAvatar(avatarable, view.avatar, R.dimen.avatar_big);
+        if (changed) {
+            MujiLog.log(
+                    xmppConnectionService.getFilesDir(),
+                    "UI avatar loaded drawable=" + (view.avatar.getDrawable() != null));
+        }
     }
 
     private void showAvatar(final ParticipantView view) {
+        final boolean wasVisible = view.avatar.getVisibility() == View.VISIBLE;
         view.avatar.setVisibility(View.VISIBLE);
         view.renderer.setVisibility(View.GONE);
+        view.updateSpeakingIndicator();
+        if (!wasVisible) {
+            MujiLog.log(
+                    xmppConnectionService.getFilesDir(),
+                    "UI show avatar drawable="
+                            + (view.avatar.getDrawable() != null)
+                            + " size="
+                            + view.avatar.getWidth()
+                            + "x"
+                            + view.avatar.getHeight());
+        }
     }
 
     private void showRenderer(final ParticipantView view) {
         view.avatar.setVisibility(View.GONE);
         view.renderer.setVisibility(View.VISIBLE);
+        view.updateSpeakingIndicator();
     }
 
     private void removeView(final String key) {
         final ParticipantView view = views.remove(key);
         if (view == null) {
             return;
+        }
+        if (container.getExpandedChild() == view.root) {
+            container.setExpandedChild(null);
         }
         container.removeView(view.root);
         view.releaseRenderer();
@@ -925,26 +856,80 @@ boolean microphone = conference.isMicrophoneEnabled();
 
     private static final class ParticipantView {
         final View root;
-        final SurfaceViewRenderer renderer;
+        final TextureViewRenderer renderer;
         final ShapeableImageView avatar;
+        final SpeakingBorderView speakingBorder;
         final TextView label;
         @Nullable VideoTrack boundTrack;
         @Nullable VideoSink frameLogger;
         @Nullable Object boundAvatarable;
         @Nullable ValueAnimator pulse;
+        @Nullable ValueAnimator borderPulse;
         long lastSpeaking = 0L;
         boolean speaking = false;
+        /** System.currentTimeMillis of the last WebRTC frame received on the bound track. 0 = no
+         *  frame received yet (don't treat as stale during initial connection setup). */
+        long lastFrameAt;
+        /** System.currentTimeMillis when the current track was (re)bound; starts the first-frame
+         *  grace period so a track that never renders falls back to the avatar. */
+        long boundAt;
+        /** System.currentTimeMillis since when the incoming frames have been continuously black;
+         *  0 = the last sampled frame was not black. Detects a remote turning its camera off. */
+        volatile long blackFrameSince = 0L;
         private boolean rendererInitialized = false;
+        private boolean thumbnailStyle = false;
 
         ParticipantView(
                 final View root,
-                final SurfaceViewRenderer renderer,
+                final TextureViewRenderer renderer,
                 final ShapeableImageView avatar,
+                final SpeakingBorderView speakingBorder,
                 final TextView label) {
             this.root = root;
             this.renderer = renderer;
             this.avatar = avatar;
+            this.speakingBorder = speakingBorder;
             this.label = label;
+            this.speakingBorder.setBorderColor(SPEAKING_COLOR);
+        }
+
+        /**
+         * Switches this tile between the small "thumbnail" look used in the left-hand strip of an
+         * expanded grid (no tile background, no label, compact floating round avatar) and the
+         * regular full tile look (solid background, label, big avatar).
+         */
+        void setThumbnailStyle(final boolean thumbnail) {
+            if (this.thumbnailStyle == thumbnail) {
+                return;
+            }
+            this.thumbnailStyle = thumbnail;
+            final float density = root.getResources().getDisplayMetrics().density;
+            if (thumbnail) {
+                root.setBackgroundColor(Color.TRANSPARENT);
+                label.setVisibility(View.GONE);
+                final int size = Math.round(48f * density);
+                setAvatarSize(size);
+                renderer.setCircleDiameterPx(size);
+                speakingBorder.setCircleDiameterPx(size);
+            } else {
+                root.setBackgroundColor(
+                        StyledAttributes.getColor(
+                                root.getContext(), R.attr.color_background_secondary));
+                label.setVisibility(View.VISIBLE);
+                setAvatarSize(Math.round(96f * density));
+                renderer.setCircleDiameterPx(0);
+                speakingBorder.setCircleDiameterPx(0);
+            }
+        }
+
+        private void setAvatarSize(final int size) {
+            final ViewGroup.LayoutParams params = avatar.getLayoutParams();
+            if (params.width == size && params.height == size) {
+                return;
+            }
+            params.width = size;
+            params.height = size;
+            avatar.requestLayout();
         }
 
         void setSpeaking(final boolean speaking) {
@@ -952,25 +937,55 @@ boolean microphone = conference.isMicrophoneEnabled();
                 return;
             }
             this.speaking = speaking;
-            if (speaking) {
-                final float density = root.getResources().getDisplayMetrics().density;
-                float size = Math.min(avatar.getWidth(), avatar.getHeight());
-                if (size <= 0f) {
-                    size = 96f * density;
+            updateSpeakingIndicator();
+        }
+
+        /**
+         * Shows the speaking indicator on whichever surface is currently visible: the pulsing green
+         * ring around the avatar, or a pulsing green border around the video renderer. Idempotent -
+         * a running animation is not restarted.
+         */
+        void updateSpeakingIndicator() {
+            final boolean videoShown = renderer.getVisibility() == View.VISIBLE;
+            if (speaking && videoShown) {
+                if (pulse != null) {
+                    stopPulse();
                 }
-                // ring thickness = 5% of the avatar size
-                final float maxStroke = 0.05f * size;
-                avatar.setStrokeColor(ColorStateList.valueOf(SPEAKING_COLOR));
-                avatar.setStrokeWidth(0.6f * maxStroke);
-                startPulse(maxStroke);
-            } else {
-                stopPulse();
                 avatar.setStrokeWidth(0f);
+                speakingBorder.setVisibility(View.VISIBLE);
+                if (borderPulse == null) {
+                    startBorderPulse();
+                }
+            } else if (speaking) {
+                if (borderPulse != null) {
+                    stopBorderPulse();
+                }
+                speakingBorder.setVisibility(View.GONE);
+                if (pulse == null) {
+                    startAvatarPulse();
+                }
+            } else {
+                if (pulse != null) {
+                    stopPulse();
+                }
+                if (borderPulse != null) {
+                    stopBorderPulse();
+                }
+                avatar.setStrokeWidth(0f);
+                speakingBorder.setVisibility(View.GONE);
             }
         }
 
-        private void startPulse(final float maxStroke) {
-            stopPulse();
+        private void startAvatarPulse() {
+            final float density = root.getResources().getDisplayMetrics().density;
+            float size = Math.min(avatar.getWidth(), avatar.getHeight());
+            if (size <= 0f) {
+                size = 96f * density;
+            }
+            // ring thickness = 5% of the avatar size
+            final float maxStroke = 0.05f * size;
+            avatar.setStrokeColor(ColorStateList.valueOf(SPEAKING_COLOR));
+            avatar.setStrokeWidth(0.6f * maxStroke);
             final ValueAnimator animator = ValueAnimator.ofFloat(0f, 1f);
             animator.setDuration(700L);
             animator.setRepeatCount(ValueAnimator.INFINITE);
@@ -997,6 +1012,25 @@ boolean microphone = conference.isMicrophoneEnabled();
             avatar.setScaleY(1f);
         }
 
+        private void startBorderPulse() {
+            final ValueAnimator animator = ValueAnimator.ofFloat(0.35f, 1f);
+            animator.setDuration(700L);
+            animator.setRepeatCount(ValueAnimator.INFINITE);
+            animator.setRepeatMode(ValueAnimator.REVERSE);
+            animator.setInterpolator(new AccelerateDecelerateInterpolator());
+            animator.addUpdateListener(a -> speakingBorder.setAlpha((float) a.getAnimatedValue()));
+            animator.start();
+            this.borderPulse = animator;
+        }
+
+        private void stopBorderPulse() {
+            if (borderPulse != null) {
+                borderPulse.cancel();
+                borderPulse = null;
+            }
+            speakingBorder.setAlpha(1f);
+        }
+
         void ensureRendererInitialized(final EglBase.Context eglContext) {
             if (rendererInitialized) {
                 return;
@@ -1004,22 +1038,16 @@ boolean microphone = conference.isMicrophoneEnabled();
             rendererInitialized = true;
             renderer.setVisibility(View.VISIBLE);
             try {
-                renderer.init(eglContext, null);
-            } catch (final IllegalStateException ignored) {
-                // SurfaceViewRenderer was already initialized
+                renderer.init(eglContext);
             } catch (final RuntimeException e) {
                 Log.w(Config.LOGTAG, "could not set up participant video renderer", e);
             }
-            renderer.setEnableHardwareScaler(false);
-            // Keep the tile size fixed: using SCALE_ASPECT_FIT as the layout aspect ratio makes the
-            // renderer resize itself and fight the grid's fixed 16:9 layout.
-            renderer.setScalingType(
-                    RendererCommon.ScalingType.SCALE_ASPECT_FILL,
-                    RendererCommon.ScalingType.SCALE_ASPECT_FILL);
+            updateSpeakingIndicator();
         }
 
         void releaseRenderer() {
             stopPulse();
+            stopBorderPulse();
             if (boundTrack != null) {
                 try {
                     boundTrack.removeSink(renderer);

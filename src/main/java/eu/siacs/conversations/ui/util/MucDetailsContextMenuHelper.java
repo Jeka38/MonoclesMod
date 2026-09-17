@@ -174,6 +174,9 @@ public final class MucDetailsContextMenuHelper {
             return;
         }
 
+        final MenuItem copyJid = menu.findItem(R.id.action_copy_jid);
+        if (copyJid != null) copyJid.setVisible(user != null && user.getRealJid() != null);
+
         MenuItem muteParticipant = menu.findItem(R.id.action_mute_participant);
         MenuItem unmuteParticipant = menu.findItem(R.id.action_unmute_participant);
         if (user != null && user.getOccupantId() != null) {

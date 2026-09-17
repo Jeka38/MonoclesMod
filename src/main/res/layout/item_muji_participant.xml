@@ -5,10 +5,16 @@
     android:layout_height="wrap_content"
     android:background="?attr/color_background_secondary">
 
-    <eu.siacs.conversations.ui.widget.SurfaceViewRenderer
+    <eu.siacs.conversations.ui.widget.TextureViewRenderer
         android:id="@+id/participant_video"
         android:layout_width="match_parent"
         android:layout_height="match_parent" />
+
+    <eu.siacs.conversations.ui.widget.SpeakingBorderView
+        android:id="@+id/participant_speaking"
+        android:layout_width="match_parent"
+        android:layout_height="match_parent"
+        android:visibility="gone" />
 
     <com.google.android.material.imageview.ShapeableImageView
         android:id="@+id/participant_avatar"

@@ -45,7 +45,6 @@ import androidx.databinding.DataBindingUtil;
 
 import com.google.android.material.dialog.MaterialAlertDialogBuilder;
 
-import java.util.Collections;
 import java.util.List;
 import java.util.concurrent.atomic.AtomicInteger;
 
@@ -62,7 +61,6 @@ import eu.siacs.conversations.services.XmppConnectionService;
 import eu.siacs.conversations.services.XmppConnectionService.OnConversationUpdate;
 import eu.siacs.conversations.services.XmppConnectionService.OnMucRosterUpdate;
 import eu.siacs.conversations.ui.adapter.MediaAdapter;
-import eu.siacs.conversations.ui.adapter.UserPreviewAdapter;
 import eu.siacs.conversations.ui.interfaces.OnMediaLoaded;
 import eu.siacs.conversations.ui.util.ClientIconUtils;
 import eu.siacs.conversations.ui.util.Attachment;
@@ -70,7 +68,6 @@ import eu.siacs.conversations.ui.util.AvatarWorkerTask;
 import eu.siacs.conversations.ui.util.GridManager;
 import eu.siacs.conversations.ui.util.JidDialog;
 import eu.siacs.conversations.ui.util.MucConfiguration;
-import eu.siacs.conversations.ui.util.MucDetailsContextMenuHelper;
 import eu.siacs.conversations.ui.util.MyLinkify;
 import eu.siacs.conversations.ui.util.SoftKeyboardUtils;
 import eu.siacs.conversations.utils.Compatibility;
@@ -119,7 +116,6 @@ public class ConferenceDetailsActivity extends XmppActivity implements OnConvers
     };
     private ActivityMucDetailsBinding binding;
     private MediaAdapter mMediaAdapter;
-    private UserPreviewAdapter mUserPreviewAdapter;
     private String uuid = null;
 
     private boolean mAdvancedMode = false;
@@ -347,6 +343,12 @@ public class ConferenceDetailsActivity extends XmppActivity implements OnConvers
                 e.printStackTrace();
             }
         });
+        this.binding.jid.setOnClickListener(v -> {
+            if (mConversation == null) return;
+            if (copyTextToClipboard(mConversation.getJid().asBareJid().toEscapedString(), R.string.copy_jabber_id)) {
+                ToastCompat.makeText(this, R.string.jabber_id_copied_to_clipboard, ToastCompat.LENGTH_SHORT).show();
+            }
+        });
         this.binding.detailsMucAvatar.setOnClickListener(v -> {
             try {
                 final MucOptions mucOptions = mConversation.getMucOptions();
@@ -379,9 +381,7 @@ public class ConferenceDetailsActivity extends XmppActivity implements OnConvers
         // this.binding.mucEditSubject.addTextChangedListener(new StylingHelper.MessageEditorStyler(this.binding.mucEditSubject));
         this.binding.editTags.addTextChangedListener(this);
         this.mMediaAdapter = new MediaAdapter(this, R.dimen.media_size);
-        this.mUserPreviewAdapter = new UserPreviewAdapter();
         this.binding.media.setAdapter(mMediaAdapter);
-        //TODO: Implement recyclerview for users list and media list
         GridManager.setupLayoutManager(this, this.binding.media, R.dimen.media_size);
         this.binding.manageMucListsButton.setOnClickListener(v -> {
             if (mConversation == null) {
@@ -506,19 +506,6 @@ public class ConferenceDetailsActivity extends XmppActivity implements OnConvers
                 break;
         }
         return super.onOptionsItemSelected(menuItem);
-    }
-
-    @Override
-    public boolean onContextItemSelected(MenuItem item) {
-        final User user = mUserPreviewAdapter.getSelectedUser();
-        if (user == null) {
-            ToastCompat.makeText(this, R.string.unable_to_perform_this_action, ToastCompat.LENGTH_SHORT).show();
-            return true;
-        }
-        if (!MucDetailsContextMenuHelper.onContextItemSelected(item, mUserPreviewAdapter.getSelectedUser(), this)) {
-            return super.onContextItemSelected(item);
-        }
-        return true;
     }
 
     public void onMucEditButtonClicked(View v) {
@@ -750,6 +737,7 @@ public class ConferenceDetailsActivity extends XmppActivity implements OnConvers
         final XmppConnection connection = mConversation.getAccount().getXmppConnection();
         this.binding.detailsAccount.setText(getString(R.string.using_account, account));
         this.binding.jid.setText(mConversation.getJid().asBareJid().toEscapedString());
+        this.binding.jid.setVisibility(View.VISIBLE);
         final Jid jid = mConversation.getJid().asBareJid();
         final Contact contact = mConversation.getAccount().getRoster().getContact(jid);
         final boolean hasClientIcon = ClientIconUtils.applyRosterClientIcon(binding.resource, contact);
@@ -810,7 +798,6 @@ public class ConferenceDetailsActivity extends XmppActivity implements OnConvers
         this.binding.mucYourNick.setText(mucOptions.getActualNick());
         if (mucOptions.online()) {
             this.binding.mucInfoMore.setVisibility(this.mAdvancedMode ? View.VISIBLE : View.GONE);
-            this.binding.jid.setVisibility(this.mAdvancedMode ? View.VISIBLE : View.GONE);
             this.binding.mucRole.setVisibility(View.VISIBLE);
             this.binding.mucRole.setText(getStatus(self));
             if (mucOptions.getSelf().getAffiliation().ranks(MucOptions.Affiliation.OWNER)) {
@@ -845,22 +832,6 @@ public class ConferenceDetailsActivity extends XmppActivity implements OnConvers
             this.binding.notificationStatusText.setText(R.string.notify_only_when_highlighted);
         }
 
-        final List<User> users = mucOptions.getUsers();
-        Collections.sort(users, (a, b) -> {
-            if (b.getAffiliation().outranks(a.getAffiliation())) {
-                return 1;
-            } else if (a.getAffiliation().outranks(b.getAffiliation())) {
-                return -1;
-            } else {
-                if (a.getAvatar() != null && b.getAvatar() == null) {
-                    return -1;
-                } else if (a.getAvatar() == null && b.getAvatar() != null) {
-                    return 1;
-                } else {
-                    return a.getComparableName().compareToIgnoreCase(b.getComparableName());
-                }
-            }
-        });
         if (bookmark == null) {
             binding.tags.setVisibility(View.GONE);
             return;

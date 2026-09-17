@@ -697,10 +697,15 @@ public class NotificationService {
 
     public void push(final Message message) {
         synchronized (CATCHUP_LOCK) {
-            final XmppConnection connection = message.getConversation().getAccount().getXmppConnection();
+            final Account account = message.getConversation().getAccount();
+            final XmppConnection connection = account == null ? null : account.getXmppConnection();
             if (connection != null && connection.isWaitingForSmCatchup()) {
                 connection.incrementSmCatchupMessageCounter();
                 pushFromBacklog(message);
+            } else if (account == null) {
+                // conversation not yet attached to its account (DB restore window); the notification
+                // subsystem assumes a non-null account, so skip it instead of crashing
+                Log.d(Config.LOGTAG, "skipping notification for not yet attached conversation");
             } else {
                 pushNow(message);
             }

@@ -495,14 +495,6 @@
                             android:src="?attr/icon_edit_body"
                             android:tint="?attr/icon_tint" />
                     </LinearLayout>
-
-                    <!-- User list RecyclerView (for additional participants) -->
-                    <androidx.recyclerview.widget.RecyclerView
-                        android:id="@+id/user_list"
-                        android:layout_width="match_parent"
-                        android:layout_height="wrap_content"
-                        android:nestedScrollingEnabled="false"
-                        android:visibility="gone" />
                 </LinearLayout>
 
                 <!-- Advanced Info (MAM, JID etc.) - shown in advanced mode -->

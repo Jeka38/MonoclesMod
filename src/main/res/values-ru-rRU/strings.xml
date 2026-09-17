@@ -932,7 +932,7 @@
     <string name="pref_show_record_voice_btn_summary">Показывать кнопку записи голоса и кнопку сфотографировать в поле ввода как быстрое действие</string>
     <string name="pref_showtextformatting">Показать панель инструментов форматирования текста</string>
     <string name="muji_join">Начать групповой звонок</string>
-    <string name="muji_call_bar_title">Видеочат</string>
+    <string name="muji_call_bar_title">Голосовой чат</string>
     <string name="muji_call_bar_join">Вступить</string>
     <string name="muji_call_bar_open">Открыть</string>
     <string name="muji_call_bar_close">Закрыть</string>

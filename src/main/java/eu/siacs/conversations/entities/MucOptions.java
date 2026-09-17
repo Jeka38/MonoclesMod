@@ -902,6 +902,7 @@ public class MucOptions {
         protected boolean online = true;
         protected Presence presence;
         protected Muji muji;
+        protected boolean mujiSeen;
         private String softwareVersion;
 
         public User(MucOptions options, Jid fullJid, final String occupantId, final String nick, final Set<Hat> hats) {
@@ -1155,8 +1156,17 @@ public class MucOptions {
             return muji;
         }
 
+        /** True once this occupant ever advertised a <muji> - used to tell "muji presence was
+         * never delivered to us" apart from "the occupant stopped advertising the conference". */
+        public boolean hasEverSeenMuji() {
+            return mujiSeen;
+        }
+
         public void setMuji(final Muji muji) {
             this.muji = muji;
+            if (muji != null) {
+                this.mujiSeen = true;
+            }
         }
     }
 }
