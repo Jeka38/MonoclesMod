@@ -431,6 +431,9 @@ public class MyLinkify {
 
     public static void addLinks(Editable body, Account account, Jid context) {
         addLinks(body, true);
+        if (account == null) {
+            return;
+        }
         Roster roster = account.getRoster();
         for (final URLSpan urlspan : body.getSpans(0, body.length() - 1, URLSpan.class)) {
             Uri uri = Uri.parse(urlspan.getURL());

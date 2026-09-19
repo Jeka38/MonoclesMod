@@ -2347,6 +2347,9 @@ public class XmppConnectionService extends Service {
                             if ("http".equals(link.getScheme()) || "https".equals(link.getScheme())) {
                                 try {
                                     HttpUrl url = HttpUrl.parse(link.toString());
+                                    if (url == null) {
+                                        continue;
+                                    }
                                     OkHttpClient http = getHttpConnectionManager().buildHttpClient(url, account, false);
                                     okhttp3.Response response = http.newCall(new okhttp3.Request.Builder().url(url).head().build()).execute();
                                     final String mimeType = response.header("Content-Type") == null ? "" : response.header("Content-Type");
