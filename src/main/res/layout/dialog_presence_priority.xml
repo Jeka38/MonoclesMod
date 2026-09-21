@@ -1,0 +1,98 @@
+<?xml version="1.0" encoding="utf-8"?>
+<layout xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:app="http://schemas.android.com/apk/res-auto">
+
+    <ScrollView
+        android:layout_width="match_parent"
+        android:layout_height="match_parent">
+
+        <LinearLayout
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:orientation="vertical"
+            android:paddingStart="?attr/dialog_horizontal_padding"
+            android:paddingLeft="?attr/dialog_horizontal_padding"
+            android:paddingTop="?attr/dialog_vertical_padding"
+            android:paddingEnd="?attr/dialog_horizontal_padding"
+            android:paddingRight="?attr/dialog_horizontal_padding"
+            android:paddingBottom="?attr/dialog_vertical_padding">
+
+            <com.google.android.material.textfield.TextInputLayout
+                android:id="@+id/priority_online_layout"
+                style="@style/Widget.Conversations.TextInputLayout.OutlinedBox"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:hint="@string/account_settings_priority_online"
+                app:errorTextAppearance="@style/TextAppearance.Conversations.Design.Error"
+                app:hintTextAppearance="@style/TextAppearance.Conversations.Design.Hint">
+
+                <eu.siacs.conversations.ui.widget.TextInputEditText
+                    android:id="@+id/priority_online"
+                    style="@style/Widget.Material3.TextInputEditText.FilledBox"
+                    android:fontFamily="notosansregular"
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:inputType="numberSigned"
+                    android:maxLength="4" />
+            </com.google.android.material.textfield.TextInputLayout>
+
+            <com.google.android.material.textfield.TextInputLayout
+                android:id="@+id/priority_away_layout"
+                style="@style/Widget.Conversations.TextInputLayout.OutlinedBox"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:hint="@string/account_settings_priority_away"
+                app:errorTextAppearance="@style/TextAppearance.Conversations.Design.Error"
+                app:hintTextAppearance="@style/TextAppearance.Conversations.Design.Hint">
+
+                <eu.siacs.conversations.ui.widget.TextInputEditText
+                    android:id="@+id/priority_away"
+                    style="@style/Widget.Material3.TextInputEditText.FilledBox"
+                    android:fontFamily="notosansregular"
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:inputType="numberSigned"
+                    android:maxLength="4" />
+            </com.google.android.material.textfield.TextInputLayout>
+
+            <com.google.android.material.textfield.TextInputLayout
+                android:id="@+id/priority_xa_layout"
+                style="@style/Widget.Conversations.TextInputLayout.OutlinedBox"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:hint="@string/account_settings_priority_xa"
+                app:errorTextAppearance="@style/TextAppearance.Conversations.Design.Error"
+                app:hintTextAppearance="@style/TextAppearance.Conversations.Design.Hint">
+
+                <eu.siacs.conversations.ui.widget.TextInputEditText
+                    android:id="@+id/priority_xa"
+                    style="@style/Widget.Material3.TextInputEditText.FilledBox"
+                    android:fontFamily="notosansregular"
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:inputType="numberSigned"
+                    android:maxLength="4" />
+            </com.google.android.material.textfield.TextInputLayout>
+
+            <com.google.android.material.textfield.TextInputLayout
+                android:id="@+id/priority_dnd_layout"
+                style="@style/Widget.Conversations.TextInputLayout.OutlinedBox"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:hint="@string/account_settings_priority_dnd"
+                app:errorTextAppearance="@style/TextAppearance.Conversations.Design.Error"
+                app:hintTextAppearance="@style/TextAppearance.Conversations.Design.Hint">
+
+                <eu.siacs.conversations.ui.widget.TextInputEditText
+                    android:id="@+id/priority_dnd"
+                    style="@style/Widget.Material3.TextInputEditText.FilledBox"
+                    android:fontFamily="notosansregular"
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:inputType="numberSigned"
+                    android:maxLength="4" />
+            </com.google.android.material.textfield.TextInputLayout>
+
+        </LinearLayout>
+    </ScrollView>
+</layout>

@@ -748,6 +748,14 @@
                 android:title="@string/pref_app_lock_enable_title" />
         </PreferenceCategory>
         <PreferenceCategory
+            android:key="presence_category"
+            android:title="@string/pref_presence_options">
+            <Preference
+                android:key="presence_priorities"
+                android:summary="@string/pref_presence_priorities_summary"
+                android:title="@string/pref_presence_priorities" />
+        </PreferenceCategory>
+        <PreferenceCategory
             android:key="connection_options"
             android:title="@string/pref_connection_options">
             <SwitchPreference

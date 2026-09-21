@@ -43,7 +43,6 @@ import androidx.appcompat.widget.Toolbar;
 import androidx.databinding.DataBindingUtil;
 
 import com.google.android.material.materialswitch.MaterialSwitch;
-import com.google.android.material.textfield.TextInputEditText;
 import com.google.android.material.textfield.TextInputLayout;
 import com.google.common.base.CharMatcher;
 
@@ -288,11 +287,6 @@ public class EditAccountActivity extends OmemoActivity implements OnAccountUpdat
                 proxyHost = "";
             }
 
-            final int[] priorities = parsePriorities();
-            if (priorities == null) {
-                return;
-            }
-
             if (jid.getLocal() == null) {
                 if (mUsernameMode) {
                     binding.accountJidLayout.setError(getString(R.string.invalid_username));
@@ -325,10 +319,6 @@ public class EditAccountActivity extends OmemoActivity implements OnAccountUpdat
                 mAccount.setKey(Account.KEY_PROXY65_HOST, proxyHost);
                 mAccount.setKey(
                         Account.KEY_PROXY65_PORT, proxyHost.isEmpty() ? "" : String.valueOf(numericProxyPort));
-                mAccount.setPresencePriority(Presence.Status.ONLINE, priorities[0]);
-                mAccount.setPresencePriority(Presence.Status.AWAY, priorities[1]);
-                mAccount.setPresencePriority(Presence.Status.XA, priorities[2]);
-                mAccount.setPresencePriority(Presence.Status.DND, priorities[3]);
                 if (!xmppConnectionService.updateAccount(mAccount)) {
                     ToastCompat.makeText(EditAccountActivity.this, R.string.unable_to_update_account, ToastCompat.LENGTH_SHORT).show();
                     return;
@@ -346,10 +336,6 @@ public class EditAccountActivity extends OmemoActivity implements OnAccountUpdat
                 mAccount.setKey(Account.KEY_PROXY65_HOST, proxyHost);
                 mAccount.setKey(
                         Account.KEY_PROXY65_PORT, proxyHost.isEmpty() ? "" : String.valueOf(numericProxyPort));
-                mAccount.setPresencePriority(Presence.Status.ONLINE, priorities[0]);
-                mAccount.setPresencePriority(Presence.Status.AWAY, priorities[1]);
-                mAccount.setPresencePriority(Presence.Status.XA, priorities[2]);
-                mAccount.setPresencePriority(Presence.Status.DND, priorities[3]);
                 mAccount.setOption(Account.OPTION_REGISTER, registerNewAccount);
                 xmppConnectionService.createAccount(mAccount);
             }
@@ -357,10 +343,6 @@ public class EditAccountActivity extends OmemoActivity implements OnAccountUpdat
             binding.portLayout.setError(null);
             binding.proxyHostnameLayout.setError(null);
             binding.proxyPortLayout.setError(null);
-            binding.priorityOnlineLayout.setError(null);
-            binding.priorityAwayLayout.setError(null);
-            binding.priorityXaLayout.setError(null);
-            binding.priorityDndLayout.setError(null);
             if (mAccount.isOnion()) {
                 ToastCompat.makeText(EditAccountActivity.this, R.string.audio_video_disabled_tor, ToastCompat.LENGTH_LONG).show();
             }
@@ -639,52 +621,6 @@ public class EditAccountActivity extends OmemoActivity implements OnAccountUpdat
         }
     }
 
-    private int parsePriority(final TextInputEditText field, final int defaultValue) {
-        final String value = CharMatcher.whitespace().removeFrom(field.getText());
-        if (value.isEmpty()) {
-            return defaultValue;
-        }
-        try {
-            final int priority = Integer.parseInt(value);
-            if (priority < -128 || priority > 127) {
-                return Integer.MIN_VALUE;
-            }
-            return priority;
-        } catch (NumberFormatException e) {
-            return Integer.MIN_VALUE;
-        }
-    }
-
-    private int[] parsePriorities() {
-        final TextInputEditText[] fields = {
-                binding.priorityOnline, binding.priorityAway, binding.priorityXa, binding.priorityDnd
-        };
-        final TextInputLayout[] layouts = {
-                binding.priorityOnlineLayout,
-                binding.priorityAwayLayout,
-                binding.priorityXaLayout,
-                binding.priorityDndLayout
-        };
-        final int[] defaults = {
-                Account.DEFAULT_PRESENCE_PRIORITY_ONLINE,
-                Account.DEFAULT_PRESENCE_PRIORITY_AWAY,
-                Account.DEFAULT_PRESENCE_PRIORITY_XA,
-                Account.DEFAULT_PRESENCE_PRIORITY_DND
-        };
-        final int[] priorities = new int[fields.length];
-        for (int i = 0; i < fields.length; i++) {
-            final int priority = parsePriority(fields[i], defaults[i]);
-            if (priority == Integer.MIN_VALUE) {
-                layouts[i].setError(getString(R.string.not_a_valid_number));
-                fields[i].requestFocus();
-                removeErrorsOnAllBut(layouts[i]);
-                return null;
-            }
-            priorities[i] = priority;
-        }
-        return priorities;
-    }
-
     protected void updateSaveButton() {
         boolean accountInfoEdited = accountInfoEdited();
         if (accountInfoEdited && !mInitMode) {
@@ -760,10 +696,6 @@ public class EditAccountActivity extends OmemoActivity implements OnAccountUpdat
                 !this.mAccount.getHostname().equals(this.binding.hostname.getText().toString()) ||
                 this.mAccount.getColor(isDarkTheme()) != (previewColor == null ? 0 : previewColor.getColor()) ||
                 !String.valueOf(this.mAccount.getPort()).equals(this.binding.port.getText().toString()) ||
-                this.mAccount.getPresencePriority(Presence.Status.ONLINE) != parsePriority(binding.priorityOnline, Account.DEFAULT_PRESENCE_PRIORITY_ONLINE) ||
-                this.mAccount.getPresencePriority(Presence.Status.AWAY) != parsePriority(binding.priorityAway, Account.DEFAULT_PRESENCE_PRIORITY_AWAY) ||
-                this.mAccount.getPresencePriority(Presence.Status.XA) != parsePriority(binding.priorityXa, Account.DEFAULT_PRESENCE_PRIORITY_XA) ||
-                this.mAccount.getPresencePriority(Presence.Status.DND) != parsePriority(binding.priorityDnd, Account.DEFAULT_PRESENCE_PRIORITY_DND) ||
                 (mShowOptions && !Strings.nullToEmpty(this.mAccount.getKey(Account.KEY_PROXY65_HOST)).equals(this.binding.proxyHostname.getText().toString())) ||
                 (mShowOptions && !Strings.nullToEmpty(this.mAccount.getKey(Account.KEY_PROXY65_PORT)).equals(this.binding.proxyPort.getText().toString()));
     }
@@ -1428,22 +1360,6 @@ public class EditAccountActivity extends OmemoActivity implements OnAccountUpdat
             }
             this.binding.port.setText("");
             this.binding.port.getEditableText().append(String.valueOf(this.mAccount.getPort()));
-            this.binding.priorityOnline.setText("");
-            this.binding.priorityOnline
-                    .getEditableText()
-                    .append(String.valueOf(this.mAccount.getPresencePriority(Presence.Status.ONLINE)));
-            this.binding.priorityAway.setText("");
-            this.binding.priorityAway
-                    .getEditableText()
-                    .append(String.valueOf(this.mAccount.getPresencePriority(Presence.Status.AWAY)));
-            this.binding.priorityXa.setText("");
-            this.binding.priorityXa
-                    .getEditableText()
-                    .append(String.valueOf(this.mAccount.getPresencePriority(Presence.Status.XA)));
-            this.binding.priorityDnd.setText("");
-            this.binding.priorityDnd
-                    .getEditableText()
-                    .append(String.valueOf(this.mAccount.getPresencePriority(Presence.Status.DND)));
             this.binding.namePort.setVisibility(mShowOptions ? View.VISIBLE : View.GONE);
             this.binding.proxyHostname.setText("");
             this.binding.proxyHostname

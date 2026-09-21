@@ -4,6 +4,8 @@ import static eu.siacs.conversations.persistance.FileBackend.APP_DIRECTORY;
 import static eu.siacs.conversations.persistance.FileBackend.updateMediaScanner;
 import static eu.siacs.conversations.utils.StorageHelper.getBackupDirectory;
 
+import com.google.android.material.textfield.TextInputEditText;
+import com.google.android.material.textfield.TextInputLayout;
 import com.google.common.base.Strings;
 import com.google.common.collect.ImmutableList;
 import com.google.common.collect.Lists;
@@ -37,6 +39,7 @@ import static eu.siacs.conversations.utils.CameraUtils.showCameraChooser;
 import androidx.annotation.NonNull;
 import androidx.appcompat.app.AlertDialog;
 import androidx.core.content.ContextCompat;
+import androidx.databinding.DataBindingUtil;
 import androidx.exifinterface.media.ExifInterface;
 
 import eu.siacs.conversations.utils.CameraUtils;
@@ -66,8 +69,10 @@ import android.widget.Toast;
 import eu.siacs.conversations.Config;
 import eu.siacs.conversations.R;
 import eu.siacs.conversations.crypto.OmemoSetting;
+import eu.siacs.conversations.databinding.DialogPresencePriorityBinding;
 import eu.siacs.conversations.entities.Account;
 import eu.siacs.conversations.entities.Contact;
+import eu.siacs.conversations.entities.Presence;
 import eu.siacs.conversations.persistance.FileBackend;
 import eu.siacs.conversations.services.MemorizingTrustManager;
 import eu.siacs.conversations.ui.util.StyledAttributes;
@@ -781,6 +786,14 @@ public class SettingsActivity extends XmppActivity implements OnSharedPreference
             });
         }
 
+        final Preference presencePrioritiesPreference = mSettingsFragment.findPreference("presence_priorities");
+        if (presencePrioritiesPreference != null) {
+            presencePrioritiesPreference.setOnPreferenceClickListener(preference -> {
+                editPresencePriorities();
+                return true;
+            });
+        }
+
         final Preference appLockPreference = mSettingsFragment.findPreference("app_lock_enabled");
         if (appLockPreference != null) {
             appLockPreference.setOnPreferenceChangeListener((preference, newValue) -> {
@@ -1228,6 +1241,100 @@ public class SettingsActivity extends XmppActivity implements OnSharedPreference
 
     private void displayToast(final String msg) {
         runOnUiThread(() -> ToastCompat.makeText(SettingsActivity.this, msg, ToastCompat.LENGTH_LONG).show());
+    }
+
+    private void editPresencePriorities() {
+        final List<Account> accounts = xmppConnectionService.getAccounts();
+        if (accounts.isEmpty()) {
+            displayToast(getString(R.string.no_accounts));
+            return;
+        }
+        if (accounts.size() == 1) {
+            showPresencePriorityDialog(accounts.get(0));
+            return;
+        }
+        final CharSequence[] jids = new CharSequence[accounts.size()];
+        for (int i = 0; i < accounts.size(); i++) {
+            jids[i] = accounts.get(i).getJid().asBareJid().toEscapedString();
+        }
+        new AlertDialog.Builder(this)
+                .setTitle(R.string.choose_account)
+                .setItems(jids, (dialog, which) -> showPresencePriorityDialog(accounts.get(which)))
+                .setNegativeButton(R.string.cancel, null)
+                .show();
+    }
+
+    private void showPresencePriorityDialog(final Account account) {
+        final DialogPresencePriorityBinding binding = DataBindingUtil.inflate(
+                getLayoutInflater(), R.layout.dialog_presence_priority, null, false);
+        binding.priorityOnline.setText(String.valueOf(account.getPresencePriority(Presence.Status.ONLINE)));
+        binding.priorityAway.setText(String.valueOf(account.getPresencePriority(Presence.Status.AWAY)));
+        binding.priorityXa.setText(String.valueOf(account.getPresencePriority(Presence.Status.XA)));
+        binding.priorityDnd.setText(String.valueOf(account.getPresencePriority(Presence.Status.DND)));
+        final AlertDialog dialog = new AlertDialog.Builder(this)
+                .setTitle(R.string.pref_presence_priorities)
+                .setView(binding.getRoot())
+                .setPositiveButton(R.string.ok, null)
+                .setNegativeButton(R.string.cancel, null)
+                .create();
+        dialog.show();
+        dialog.getButton(DialogInterface.BUTTON_POSITIVE).setOnClickListener(v -> {
+            final TextInputEditText[] fields = {
+                    binding.priorityOnline, binding.priorityAway, binding.priorityXa, binding.priorityDnd
+            };
+            final TextInputLayout[] layouts = {
+                    binding.priorityOnlineLayout,
+                    binding.priorityAwayLayout,
+                    binding.priorityXaLayout,
+                    binding.priorityDndLayout
+            };
+            final int[] defaults = {
+                    Account.DEFAULT_PRESENCE_PRIORITY_ONLINE,
+                    Account.DEFAULT_PRESENCE_PRIORITY_AWAY,
+                    Account.DEFAULT_PRESENCE_PRIORITY_XA,
+                    Account.DEFAULT_PRESENCE_PRIORITY_DND
+            };
+            final Presence.Status[] statuses = {
+                    Presence.Status.ONLINE, Presence.Status.AWAY, Presence.Status.XA, Presence.Status.DND
+            };
+            final int[] priorities = new int[fields.length];
+            for (int i = 0; i < fields.length; i++) {
+                final Integer priority = parsePriority(fields[i], defaults[i]);
+                if (priority == null) {
+                    layouts[i].setError(getString(R.string.not_a_valid_number));
+                    fields[i].requestFocus();
+                    return;
+                }
+                priorities[i] = priority;
+            }
+            for (int i = 0; i < statuses.length; i++) {
+                account.setPresencePriority(statuses[i], priorities[i]);
+            }
+            xmppConnectionService.databaseBackend.updateAccount(account);
+            if (xmppConnectionServiceBound) {
+                xmppConnectionService.sendPresence(account);
+            }
+            dialog.dismiss();
+        });
+    }
+
+    private Integer parsePriority(final TextInputEditText field, final int defaultValue) {
+        final String value = field.getText().toString().replaceAll("\\s", "");
+        if (value.isEmpty()) {
+            return defaultValue;
+        }
+        if (value.equals("-")) {
+            return null;
+        }
+        try {
+            final int priority = Integer.parseInt(value);
+            if (priority < -128 || priority > 127) {
+                return null;
+            }
+            return priority;
+        } catch (NumberFormatException e) {
+            return null;
+        }
     }
 
     private void reconnectAccounts() {

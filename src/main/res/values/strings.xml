@@ -487,6 +487,9 @@
     <string name="account_status_host_unknown">Server not responsible for domain</string>
     <string name="server_info_broken">Broken</string>
     <string name="pref_presence_settings">Availability</string>
+    <string name="pref_presence_options">Presence</string>
+    <string name="pref_presence_priorities">Presence priorities</string>
+    <string name="pref_presence_priorities_summary">Per-account XMPP presence priority for each status (Online / Away / XA / DND)</string>
     <string name="pref_dnd_on_silent_mode">\"Do not disturb\" in silent mode</string>
     <string name="update_info">monocles mod is downloading and installing the new version automatically.\n\nPlease wait…</string>
     <string name="pref_dnd_on_silent_mode_summary">Marks your resource as \"Do not disturb\" when device is in silent mode</string>

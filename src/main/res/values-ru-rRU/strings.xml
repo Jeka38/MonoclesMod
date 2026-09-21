@@ -894,6 +894,9 @@
     <string name="pref_prefer_xmpp_avatar">Предпочитаемый аватар XMPP</string>
     <string name="pref_prefer_xmpp_avatar_summary">Предпочитать XMPP-аватар пользователя аватару из адресной книги</string>
     <string name="pref_presence_settings">Доступность</string>
+    <string name="pref_presence_options">Присутствие</string>
+    <string name="pref_presence_priorities">Приоритеты присутствия</string>
+    <string name="pref_presence_priorities_summary">Приоритет присутствия XMPP для каждого статуса, отдельно по аккаунтам (Online / Away / XA / DND)</string>
     <string name="pref_quick_action">Быстрое действие</string>
     <string name="pref_quick_action_summary">Заменить кнопку \"Отправить\" на кнопку быстрого действия</string>
     <string name="pref_quick_share_attachment_choice">Выбор вложений</string>
