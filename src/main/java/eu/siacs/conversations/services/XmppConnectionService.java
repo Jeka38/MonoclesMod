@@ -243,6 +243,8 @@ import eu.siacs.conversations.xmpp.jingle.JingleConnectionManager;
 import eu.siacs.conversations.xmpp.jingle.JingleRtpConnection;
 import eu.siacs.conversations.xmpp.jingle.Media;
 import eu.siacs.conversations.xmpp.jingle.MujiConferenceManager;
+import eu.siacs.conversations.xmpp.rosterx.RosterExchange;
+import eu.siacs.conversations.xmpp.rosterx.RosterExchangeManager;
 import eu.siacs.conversations.xmpp.jingle.RtpEndUserState;
 import eu.siacs.conversations.xmpp.mam.MamReference;
 import eu.siacs.conversations.xmpp.pep.Avatar;
@@ -351,6 +353,7 @@ public class XmppConnectionService extends Service {
     private final UnifiedPushBroker unifiedPushBroker = new UnifiedPushBroker(this);
     private final ChannelDiscoveryService mChannelDiscoveryService = new ChannelDiscoveryService(this);
     private final ShortcutService mShortcutService = new ShortcutService(this);
+    private final RosterExchangeManager mRosterExchangeManager = new RosterExchangeManager(this);
     private final LiveLocationManager liveLocationManager = new LiveLocationManager(this);
     private final AtomicBoolean mInitialAddressbookSyncCompleted = new AtomicBoolean(false);
     private final AtomicBoolean mForceForegroundService = new AtomicBoolean(false);
@@ -448,12 +451,14 @@ public class XmppConnectionService extends Service {
     private final Set<OnAccountUpdate> mOnAccountUpdates = Collections.newSetFromMap(new WeakHashMap<OnAccountUpdate, Boolean>());
     private final Set<OnCaptchaRequested> mOnCaptchaRequested = Collections.newSetFromMap(new WeakHashMap<OnCaptchaRequested, Boolean>());
     private final Set<OnMucCaptchaRequested> mOnMucCaptchaRequested = Collections.newSetFromMap(new WeakHashMap<OnMucCaptchaRequested, Boolean>());
+    private final Set<OnRosterExchangeRequested> mOnRosterExchangeRequested = Collections.newSetFromMap(new WeakHashMap<OnRosterExchangeRequested, Boolean>());
     private final Set<OnRosterUpdate> mOnRosterUpdates = Collections.newSetFromMap(new WeakHashMap<OnRosterUpdate, Boolean>());
     private final Set<OnUpdateBlocklist> mOnUpdateBlocklist = Collections.newSetFromMap(new WeakHashMap<OnUpdateBlocklist, Boolean>());
     private final Set<OnMucRosterUpdate> mOnMucRosterUpdate = Collections.newSetFromMap(new WeakHashMap<OnMucRosterUpdate, Boolean>());
     private final Set<OnKeyStatusUpdated> mOnKeyStatusUpdated = Collections.newSetFromMap(new WeakHashMap<OnKeyStatusUpdated, Boolean>());
     private final Set<OnJingleRtpConnectionUpdate> onJingleRtpConnectionUpdate = Collections.newSetFromMap(new WeakHashMap<OnJingleRtpConnectionUpdate, Boolean>());
     private final Map<String, PendingMucCaptchaRequest> pendingMucCaptchaRequests = new ConcurrentHashMap<>();
+    private final List<PendingRosterExchange> mPendingRosterExchanges = new CopyOnWriteArrayList<>();
 
     private final Object LISTENER_LOCK = new Object();
     public final Set<String> FILENAMES_TO_IGNORE_DELETION = new HashSet<>();
@@ -3919,6 +3924,60 @@ public class XmppConnectionService extends Service {
         }
     }
 
+    public void setOnRosterExchangeRequestedListener(OnRosterExchangeRequested listener) {
+        final boolean remainingListeners;
+        synchronized (LISTENER_LOCK) {
+            remainingListeners = checkListeners();
+            if (!this.mOnRosterExchangeRequested.add(listener)) {
+                Log.w(Config.LOGTAG, listener.getClass().getName() + " is already registered as OnRosterExchangeRequestedListener");
+            }
+        }
+        if (remainingListeners) {
+            switchToForeground();
+        }
+    }
+
+    public void removeOnRosterExchangeRequestedListener(OnRosterExchangeRequested listener) {
+        final boolean remainingListeners;
+        synchronized (LISTENER_LOCK) {
+            this.mOnRosterExchangeRequested.remove(listener);
+            remainingListeners = checkListeners();
+        }
+        if (remainingListeners) {
+            switchToBackground();
+        }
+    }
+
+    public RosterExchangeManager getRosterExchangeManager() {
+        return this.mRosterExchangeManager;
+    }
+
+    /**
+     * Dispatches an incoming roster exchange to the foreground UI. Returns {@code false} when no
+     * listener is registered (app in background); the exchange is queued so the UI can pick it up,
+     * and the caller falls back to a notification.
+     */
+    public boolean displayRosterExchangeRequest(final Account account, final Jid from, final RosterExchange exchange) {
+        final List<OnRosterExchangeRequested> listeners;
+        synchronized (LISTENER_LOCK) {
+            listeners = threadSafeList(this.mOnRosterExchangeRequested);
+        }
+        if (listeners.isEmpty()) {
+            mPendingRosterExchanges.add(new PendingRosterExchange(account, from, exchange));
+            return false;
+        }
+        for (final OnRosterExchangeRequested listener : listeners) {
+            listener.onRosterExchangeRequested(account, from, exchange);
+        }
+        return true;
+    }
+
+    public List<PendingRosterExchange> drainPendingRosterExchanges() {
+        final List<PendingRosterExchange> pending = new ArrayList<>(mPendingRosterExchanges);
+        mPendingRosterExchanges.clear();
+        return pending;
+    }
+
     public void setOnRosterUpdateListener(final OnRosterUpdate listener) {
         final boolean remainingListeners;
         synchronized (LISTENER_LOCK) {
@@ -4045,6 +4104,7 @@ public class XmppConnectionService extends Service {
                 && this.mOnRosterUpdates.size() == 0
                 && this.mOnCaptchaRequested.size() == 0
                 && this.mOnMucCaptchaRequested.size() == 0
+                && this.mOnRosterExchangeRequested.size() == 0
                 && this.mOnMucRosterUpdate.size() == 0
                 && this.mOnUpdateBlocklist.size() == 0
                 && this.mOnShowErrorToasts.size() == 0
@@ -6999,6 +7059,22 @@ public class XmppConnectionService extends Service {
 
     public interface OnMucCaptchaRequested {
         void onMucCaptchaRequested(Conversation conversation, Data data, String challenge);
+    }
+
+    public interface OnRosterExchangeRequested {
+        void onRosterExchangeRequested(Account account, Jid from, RosterExchange exchange);
+    }
+
+    public static class PendingRosterExchange {
+        public final Account account;
+        public final Jid from;
+        public final RosterExchange exchange;
+
+        PendingRosterExchange(final Account account, final Jid from, final RosterExchange exchange) {
+            this.account = account;
+            this.from = from;
+            this.exchange = exchange;
+        }
     }
 
     public static class PendingMucCaptchaRequest {

@@ -112,6 +112,7 @@ import eu.siacs.conversations.utils.XmppUri;
 import eu.siacs.conversations.xmpp.Jid;
 import eu.siacs.conversations.xmpp.OnUpdateBlocklist;
 import eu.siacs.conversations.xmpp.XmppConnection;
+import eu.siacs.conversations.xmpp.rosterx.RosterItem;
 import me.drakeet.support.toast.ToastCompat;
 import eu.siacs.conversations.ui.widget.SwipeRefreshListFragment;
 
@@ -121,11 +122,13 @@ public class StartConversationActivity extends XmppActivity implements XmppConne
 
     private final int REQUEST_SYNC_CONTACTS = 0x28cf;
     private final int REQUEST_CREATE_CONFERENCE = 0x39da;
+    private final int REQUEST_SEND_CONTACT = 0x39db;
     private final PendingItem<Intent> pendingViewIntent = new PendingItem<>();
     private final PendingItem<String> mInitialSearchValue = new PendingItem<>();
     private final AtomicBoolean oneShotKeyboardSuppress = new AtomicBoolean();
     public int conference_context_id;
     public int contact_context_id;
+    private Contact mPendingRosterExchangeContact;
     private ListPagerAdapter mListPagerAdapter;
     private final List<ListItem> contacts = new ArrayList<>();
     private ListItemAdapter mContactsAdapter;
@@ -566,6 +569,12 @@ public class StartConversationActivity extends XmppActivity implements XmppConne
         showQrCode("xmpp:" + contact.getJid().asBareJid().toEscapedString());
     }
 
+    protected void sendContactTo() {
+        final Contact contact = (Contact) contacts.get(contact_context_id);
+        mPendingRosterExchangeContact = contact;
+        startActivityForResult(ChooseContactActivity.createForRosterExchange(this), REQUEST_SEND_CONTACT);
+    }
+
     protected void toggleContactBlock() {
         final int position = contact_context_id;
         BlockContactDialog.show(this, (Contact) contacts.get(position));
@@ -932,7 +941,20 @@ public class StartConversationActivity extends XmppActivity implements XmppConne
         if (resultCode == RESULT_OK) {
             if (xmppConnectionServiceBound) {
                 this.mPostponedActivityResult = null;
-                if (requestCode == REQUEST_CREATE_CONFERENCE) {
+                if (requestCode == REQUEST_SEND_CONTACT) {
+                    final Contact contact = mPendingRosterExchangeContact;
+                    mPendingRosterExchangeContact = null;
+                    final List<Jid> recipients = ChooseContactActivity.extractJabberIds(intent);
+                    if (contact != null && !recipients.isEmpty()) {
+                        final Account account = contact.getAccount();
+                        final RosterItem item = RosterItem.of(contact);
+                        final var manager = xmppConnectionService.getRosterExchangeManager();
+                        for (final Jid recipient : recipients) {
+                            manager.send(account, recipient, item);
+                        }
+                        Toast.makeText(this, R.string.roster_exchange_sent, Toast.LENGTH_SHORT).show();
+                    }
+                } else if (requestCode == REQUEST_CREATE_CONFERENCE) {
                     Account account = extractAccount(intent);
                     final String name = intent.getStringExtra(ChooseContactActivity.EXTRA_GROUP_CHAT_NAME);
                     final List<Jid> jids = ChooseContactActivity.extractJabberIds(intent);
@@ -1682,6 +1704,9 @@ public class StartConversationActivity extends XmppActivity implements XmppConne
                     break;
                 case R.id.context_show_qr:
                     activity.showQrForContact();
+                    break;
+                case R.id.context_send_contact:
+                    activity.sendContactTo();
                     break;
                 case R.id.context_contact_block_unblock:
                     activity.toggleContactBlock();

@@ -8,6 +8,9 @@ public final class Namespace {
     public static final String EXTERNAL_SERVICE_DISCOVERY = "urn:xmpp:extdisco:2";
     public static final String BLOCKING = "urn:xmpp:blocking";
     public static final String ROSTER = "jabber:iq:roster";
+    // XEP-0144: Roster Item Exchange
+    public static final String ROSTERX = "http://jabber.org/protocol/rosterx";
+    public static final String ROSTER_LEGACY = "jabber:x:roster";
     public static final String REGISTER = "jabber:iq:register";
     public static final String REGISTER_STREAM_FEATURE = "http://jabber.org/features/iq-register";
     public static final String SEARCH = "jabber:iq:search";

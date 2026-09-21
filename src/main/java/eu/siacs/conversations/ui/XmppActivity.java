@@ -373,6 +373,9 @@ public abstract class XmppActivity extends ActionBarActivity {
         if (this instanceof XmppConnectionService.OnMucCaptchaRequested) {
             this.xmppConnectionService.setOnMucCaptchaRequestedListener((XmppConnectionService.OnMucCaptchaRequested) this);
         }
+        if (this instanceof XmppConnectionService.OnRosterExchangeRequested) {
+            this.xmppConnectionService.setOnRosterExchangeRequestedListener((XmppConnectionService.OnRosterExchangeRequested) this);
+        }
         if (this instanceof XmppConnectionService.OnRosterUpdate) {
             this.xmppConnectionService.setOnRosterUpdateListener((XmppConnectionService.OnRosterUpdate) this);
         }
@@ -405,6 +408,9 @@ public abstract class XmppActivity extends ActionBarActivity {
         }
         if (this instanceof XmppConnectionService.OnMucCaptchaRequested) {
             this.xmppConnectionService.removeOnMucCaptchaRequestedListener((XmppConnectionService.OnMucCaptchaRequested) this);
+        }
+        if (this instanceof XmppConnectionService.OnRosterExchangeRequested) {
+            this.xmppConnectionService.removeOnRosterExchangeRequestedListener((XmppConnectionService.OnRosterExchangeRequested) this);
         }
         if (this instanceof XmppConnectionService.OnRosterUpdate) {
             this.xmppConnectionService.removeOnRosterUpdateListener((XmppConnectionService.OnRosterUpdate) this);

@@ -57,6 +57,11 @@
         </menu>
     </item>
     <item
+        android:id="@+id/action_send_contact"
+        android:orderInCategory="16"
+        app:showAsAction="never"
+        android:title="@string/roster_exchange_send" />
+    <item
         android:id="@+id/action_block"
         android:orderInCategory="72"
         app:showAsAction="never"

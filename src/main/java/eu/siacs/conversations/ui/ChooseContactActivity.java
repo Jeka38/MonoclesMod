@@ -87,8 +87,10 @@ public class ChooseContactActivity extends AbstractSearchableListItemActivity im
         try {
             if (result.getBooleanExtra(EXTRA_SELECT_MULTIPLE, false)) {
                 String[] toAdd = result.getStringArrayExtra("contacts");
-                for (String item : toAdd) {
-                    jabberIds.add(Jid.of(item));
+                if (toAdd != null) {
+                    for (String item : toAdd) {
+                        jabberIds.add(Jid.of(item));
+                    }
                 }
             } else {
                 jabberIds.add(Jid.of(result.getStringExtra("contact")));
@@ -97,6 +99,14 @@ public class ChooseContactActivity extends AbstractSearchableListItemActivity im
         } catch (IllegalArgumentException e) {
             return jabberIds;
         }
+    }
+
+    public static Intent createForRosterExchange(final Activity activity) {
+        final Intent intent = new Intent(activity, ChooseContactActivity.class);
+        intent.putExtra(EXTRA_SELECT_MULTIPLE, true);
+        intent.putExtra(EXTRA_SHOW_ENTER_JID, true);
+        intent.putExtra(EXTRA_TITLE_RES_ID, R.string.roster_exchange_choose_recipient);
+        return intent;
     }
 
     @Override

@@ -91,6 +91,7 @@ import eu.siacs.conversations.ui.util.CallManager;
 import eu.siacs.conversations.ui.util.GridManager;
 import eu.siacs.conversations.ui.util.JidDialog;
 import eu.siacs.conversations.ui.util.ShareUtil;
+import eu.siacs.conversations.ui.util.RosterExchangeDialog;
 import eu.siacs.conversations.ui.util.SoftKeyboardUtils;
 import eu.siacs.conversations.ui.util.ClientIconUtils;
 import eu.siacs.conversations.utils.Compatibility;
@@ -108,11 +109,14 @@ import eu.siacs.conversations.xmpp.OnUpdateBlocklist;
 import eu.siacs.conversations.xmpp.XmppConnection;
 import eu.siacs.conversations.xmpp.jingle.OngoingRtpSession;
 import eu.siacs.conversations.xmpp.jingle.RtpCapability;
+import eu.siacs.conversations.xmpp.rosterx.RosterExchange;
+import eu.siacs.conversations.xmpp.rosterx.RosterItem;
 import me.drakeet.support.toast.ToastCompat;
 
-public class ContactDetailsActivity extends OmemoActivity implements OnAccountUpdate, OnRosterUpdate, OnConversationUpdate, OnUpdateBlocklist, OnKeyStatusUpdated, OnMediaLoaded {
+public class ContactDetailsActivity extends OmemoActivity implements OnAccountUpdate, OnRosterUpdate, OnConversationUpdate, OnUpdateBlocklist, OnKeyStatusUpdated, OnMediaLoaded, XmppConnectionService.OnRosterExchangeRequested {
     public static final String ACTION_VIEW_CONTACT = "view_contact";
     private final int REQUEST_SYNC_CONTACTS = 0x28cf;
+    private final int REQUEST_SEND_CONTACT = 0x28d0;
     private Contact contact;
     private Conversation mConversation;
     private ConversationFragment mConversationFragment;
@@ -412,6 +416,9 @@ public class ContactDetailsActivity extends OmemoActivity implements OnAccountUp
                 break;
             case R.id.action_share_uri:
                 shareLink(false);
+                break;
+            case R.id.action_send_contact:
+                startActivityForResult(ChooseContactActivity.createForRosterExchange(this), REQUEST_SEND_CONTACT);
                 break;
             case R.id.action_save:
                 saveEdits();
@@ -1077,6 +1084,29 @@ public class ContactDetailsActivity extends OmemoActivity implements OnAccountUp
                 ToastCompat.makeText(this, R.string.no_application_found_to_view_contact, ToastCompat.LENGTH_SHORT).show();
             }
         }
+    }
+
+    @Override
+    public void onActivityResult(int requestCode, int resultCode, Intent data) {
+        super.onActivityResult(requestCode, resultCode, data);
+        if (requestCode == REQUEST_SEND_CONTACT && resultCode == RESULT_OK && data != null && contact != null) {
+            final List<Jid> recipients = ChooseContactActivity.extractJabberIds(data);
+            if (recipients.isEmpty()) {
+                return;
+            }
+            final Account account = contact.getAccount();
+            final RosterItem item = RosterItem.of(contact);
+            final var manager = xmppConnectionService.getRosterExchangeManager();
+            for (final Jid recipient : recipients) {
+                manager.send(account, recipient, item);
+            }
+            ToastCompat.makeText(this, R.string.roster_exchange_sent, ToastCompat.LENGTH_SHORT).show();
+        }
+    }
+
+    @Override
+    public void onRosterExchangeRequested(final Account account, final Jid from, final RosterExchange exchange) {
+        RosterExchangeDialog.show(this, xmppConnectionService.getRosterExchangeManager(), account, exchange.getItems());
     }
 
     public void onBackendConnected() {

@@ -641,6 +641,17 @@ public class MessageParser extends AbstractParser implements OnMessagePacketRece
             selfAddressed = false;
         }
 
+        // XEP-0144 Roster Item Exchange (also legacy jabber:x:roster). Consumed here so the
+        // payload does not turn into a chat message; adding to the roster needs user confirmation.
+        // Only accepted from live 1:1 traffic (not MUC groupchat/PM, not replayed MAM history).
+        if (!packet.fromAccount(account)
+                && !isTypeGroupChat
+                && mucUserElement == null
+                && query == null
+                && mXmppConnectionService.getRosterExchangeManager().onStanzaReceived(account, counterpart, packet)) {
+            return;
+        }
+
         final Invite invite = extractInvite(packet);
         if (invite != null) {
             if (invite.jid.asBareJid().equals(account.getJid().asBareJid())) {

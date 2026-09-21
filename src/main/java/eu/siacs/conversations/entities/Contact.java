@@ -393,6 +393,10 @@ public class Contact implements ListItem, Blockable {
         this.groups = new JSONArray(groups);
     }
 
+    public List<String> getGroupNames() {
+        return new ArrayList<>(getGroups(false));
+    }
+
     private Collection<String> getGroups(final boolean unique) {
         final Collection<String> groups = unique ? new HashSet<>() : new ArrayList<>();
         for (int i = 0; i < this.groups.length(); ++i) {

@@ -121,6 +121,7 @@ import eu.siacs.conversations.ui.util.IntroHelper;
 import eu.siacs.conversations.ui.util.PendingItem;
 import eu.siacs.conversations.ui.util.StyledAttributes;
 import eu.siacs.conversations.ui.util.UpdateHelper;
+import eu.siacs.conversations.ui.util.RosterExchangeDialog;
 import eu.siacs.conversations.utils.ExceptionHelper;
 import eu.siacs.conversations.utils.MenuDoubleTabUtil;
 import eu.siacs.conversations.xml.Namespace;
@@ -129,6 +130,7 @@ import eu.siacs.conversations.utils.UIHelper;
 import eu.siacs.conversations.utils.XmppUri;
 import eu.siacs.conversations.utils.PhoneNumberUtilWrapper;
 import eu.siacs.conversations.xmpp.Jid;
+import eu.siacs.conversations.xmpp.rosterx.RosterExchange;
 import eu.siacs.conversations.xmpp.OnUpdateBlocklist;
 import eu.siacs.conversations.xmpp.chatstate.ChatState;
 import me.drakeet.support.toast.ToastCompat;
@@ -138,7 +140,7 @@ import p32929.easypasscodelock.Utils.EasyLock;
 import com.google.android.material.bottomnavigation.BottomNavigationView;
 
 
-public class ConversationsActivity extends XmppActivity implements OnConversationSelected, OnConversationArchived, OnConversationsListItemUpdated, OnConversationRead, XmppConnectionService.OnAccountUpdate, XmppConnectionService.OnConversationUpdate, XmppConnectionService.OnRosterUpdate, OnUpdateBlocklist, XmppConnectionService.OnShowErrorToast, XmppConnectionService.OnAffiliationChanged, XmppConnectionService.OnRoomDestroy {
+public class ConversationsActivity extends XmppActivity implements OnConversationSelected, OnConversationArchived, OnConversationsListItemUpdated, OnConversationRead, XmppConnectionService.OnAccountUpdate, XmppConnectionService.OnConversationUpdate, XmppConnectionService.OnRosterUpdate, OnUpdateBlocklist, XmppConnectionService.OnShowErrorToast, XmppConnectionService.OnAffiliationChanged, XmppConnectionService.OnRoomDestroy, XmppConnectionService.OnRosterExchangeRequested {
 
     public static final String ACTION_VIEW_CONVERSATION = "eu.siacs.conversations.VIEW";
     public static final String EXTRA_CONVERSATION = "conversationUuid";
@@ -225,6 +227,21 @@ public class ConversationsActivity extends XmppActivity implements OnConversatio
     }
 
     @Override
+    public void onRosterExchangeRequested(final Account account, final Jid from, final RosterExchange exchange) {
+        RosterExchangeDialog.show(this, xmppConnectionService.getRosterExchangeManager(), account, exchange.getItems());
+    }
+
+    private void showPendingRosterExchanges() {
+        final List<XmppConnectionService.PendingRosterExchange> pending =
+                xmppConnectionService.drainPendingRosterExchanges();
+        for (final XmppConnectionService.PendingRosterExchange request : pending) {
+            if (request.account != null && request.account.isEnabled()) {
+                RosterExchangeDialog.show(this, xmppConnectionService.getRosterExchangeManager(),
+                        request.account, request.exchange.getItems());
+            }
+        }
+    }
+
     protected void onBackendConnected() {
         if (performRedirectIfNecessary(true)) {
             return;
@@ -248,6 +265,8 @@ public class ConversationsActivity extends XmppActivity implements OnConversatio
                 return;
             }
         }
+
+        showPendingRosterExchanges();
 
         if (FirstStartTime == 0) {
             Log.d(Config.LOGTAG, "First start time: " + FirstStartTime + ", restarting App");

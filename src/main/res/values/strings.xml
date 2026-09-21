@@ -490,6 +490,13 @@
     <string name="pref_presence_options">Presence</string>
     <string name="pref_presence_priorities">Presence priorities</string>
     <string name="pref_presence_priorities_summary">Per-account XMPP presence priority for each status (Online / Away / XA / DND)</string>
+    <string name="roster_exchange_send">Send contact</string>
+    <string name="roster_exchange_choose_recipient">Send contact to…</string>
+    <string name="roster_exchange_sent">Contact sent</string>
+    <string name="roster_exchange_received">Contact suggestion</string>
+    <string name="roster_exchange_from">%1$s suggests adding a contact</string>
+    <string name="roster_exchange_add">Add</string>
+    <string name="roster_exchange_already">(already in roster)</string>
     <string name="pref_dnd_on_silent_mode">\"Do not disturb\" in silent mode</string>
     <string name="update_info">monocles mod is downloading and installing the new version automatically.\n\nPlease wait…</string>
     <string name="pref_dnd_on_silent_mode_summary">Marks your resource as \"Do not disturb\" when device is in silent mode</string>

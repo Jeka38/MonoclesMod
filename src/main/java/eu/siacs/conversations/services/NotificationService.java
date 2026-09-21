@@ -139,6 +139,7 @@ public class NotificationService {
     public static final int UPDATE_NOTIFICATION_ID = NOTIFICATION_ID_MULTIPLIER * 20;
     public static final int SUBSCRIPTION_REQUEST_NOTIFICATION_ID = NOTIFICATION_ID_MULTIPLIER * 22;
     public static final int MUJI_NOTIFICATION_ID = NOTIFICATION_ID_MULTIPLIER * 24;
+    public static final int ROSTER_EXCHANGE_NOTIFICATION_ID = NOTIFICATION_ID_MULTIPLIER * 26;
     public static final String MUJI_CHANNEL_ID = "muji";
     private final XmppConnectionService mXmppConnectionService;
     private final LinkedHashMap<String, ArrayList<Message>> notifications = new LinkedHashMap<>();
@@ -2387,6 +2388,20 @@ public class NotificationService {
 
     public void AppUpdateServiceNotification(Notification notification) {
         notify(UPDATE_NOTIFICATION_ID, notification);
+    }
+
+    public void notifyRosterExchange(final Jid from, final int itemCount) {
+        final String channelId = MESSAGES_CHANNEL_ID + "_" + DEFAULT;
+        final NotificationCompat.Builder builder =
+                new NotificationCompat.Builder(mXmppConnectionService, channelId);
+        builder.setContentTitle(mXmppConnectionService.getString(R.string.roster_exchange_received));
+        builder.setContentText(mXmppConnectionService.getString(R.string.roster_exchange_from, from.asBareJid().toEscapedString()));
+        builder.setSmallIcon(R.drawable.ic_notification);
+        builder.setAutoCancel(true);
+        builder.setLocalOnly(true);
+        builder.setPriority(NotificationCompat.PRIORITY_DEFAULT);
+        builder.setContentIntent(createOpenConversationsIntent());
+        notify(ROSTER_EXCHANGE_NOTIFICATION_ID, builder.build());
     }
 
     public void notifyMujiJoinFailed(final int textRes) {
