@@ -27,6 +27,20 @@ public final class RosterExchangeDialog {
             final RosterExchangeManager manager,
             final Account account,
             final List<RosterItem> items) {
+        // This is called from the network/parser thread (MessageParser), where an AlertDialog
+        // cannot be created ("Can't create handler inside thread that has not called
+        // Looper.prepare()"), so always marshal to the UI thread.
+        activity.runOnUiThread(() -> showOnUiThread(activity, manager, account, items));
+    }
+
+    private static void showOnUiThread(
+            final Activity activity,
+            final RosterExchangeManager manager,
+            final Account account,
+            final List<RosterItem> items) {
+        if (activity.isFinishing() || activity.isDestroyed()) {
+            return;
+        }
         final List<RosterItem> addable = new ArrayList<>();
         for (final RosterItem item : items) {
             if (item.getAction() == RosterItem.Action.ADD || item.getAction() == RosterItem.Action.MODIFY) {
