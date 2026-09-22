@@ -343,11 +343,10 @@ public class ConferenceDetailsActivity extends XmppActivity implements OnConvers
                 e.printStackTrace();
             }
         });
-        this.binding.jid.setOnClickListener(v -> {
-            if (mConversation == null) return;
-            if (copyTextToClipboard(mConversation.getJid().asBareJid().toEscapedString(), R.string.copy_jabber_id)) {
-                ToastCompat.makeText(this, R.string.jabber_id_copied_to_clipboard, ToastCompat.LENGTH_SHORT).show();
-            }
+        this.binding.jid.setOnClickListener(v -> copyConferenceJid());
+        this.binding.jid.setOnLongClickListener(v -> {
+            copyConferenceJid();
+            return true;
         });
         this.binding.detailsMucAvatar.setOnClickListener(v -> {
             try {
@@ -584,6 +583,15 @@ public class ConferenceDetailsActivity extends XmppActivity implements OnConvers
 
     private void hideEditor() {
         this.binding.mucEditor.setVisibility(View.GONE);
+    }
+
+    private void copyConferenceJid() {
+        if (mConversation == null) {
+            return;
+        }
+        if (copyTextToClipboard(mConversation.getJid().asBareJid().toEscapedString(), R.string.copy_jabber_id)) {
+            ToastCompat.makeText(this, R.string.jabber_id_copied_to_clipboard, ToastCompat.LENGTH_SHORT).show();
+        }
     }
 
     private void onMucInfoUpdated(String subject, String name) {
