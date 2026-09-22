@@ -1086,6 +1086,9 @@ public class Conversation extends AbstractEntity implements Blockable, Comparabl
     public @NonNull
     CharSequence getName() {
         if (getMode() == MODE_MULTI) {
+            final Bookmark bookmark = getBookmark();
+            final String bookmarkName = bookmark != null ? bookmark.getBookmarkName() : null;
+            final boolean hasBookmarkName = printableValue(bookmarkName, false);
             if (nextCounterpart != null) {
                 String roomName = null;
                 final Account account = this.account;
@@ -1101,18 +1104,22 @@ public class Conversation extends AbstractEntity implements Blockable, Comparabl
                 if (roomName == null) {
                     roomName = getMucOptions().getName();
                 }
+                if (hasBookmarkName) {
+                    roomName = bookmarkName.trim();
+                }
                 if (roomName == null) {
                     roomName = getJid().getLocal();
                 }
                 return String.format("%s (%s)", nextCounterpart.getResource(), roomName);
             }
+            // Prefer the bookmark name (the label the user saved the room under) over the room
+            // name from the server-side configurator, which must not override it.
+            if (hasBookmarkName) {
+                return bookmarkName.trim();
+            }
             final String roomName = getMucOptions().getName();
-            final Bookmark bookmark = getBookmark();
-            final String bookmarkName = bookmark != null ? bookmark.getBookmarkName() : null;
             if (printableValue(roomName)) {
                 return roomName;
-            } else if (printableValue(bookmarkName, false)) {
-                return bookmarkName;
             } else {
                 // fall back to the room name before the '@', not the topic/subject
                 return contactJid.getLocal() != null ? contactJid.getLocal() : contactJid;

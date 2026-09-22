@@ -665,7 +665,15 @@ public class ConferenceDetailsActivity extends XmppActivity implements OnConvers
     }
 
     protected void saveAsBookmark() {
-        xmppConnectionService.saveConversationAsBookmark(mConversation, mConversation.getMucOptions().getName());
+        final Bookmark existing = mConversation.getBookmark();
+        final String name;
+        if (existing != null && Bookmark.printableValue(existing.getBookmarkName(), false)) {
+            // keep the name the room was already saved under
+            name = existing.getBookmarkName();
+        } else {
+            name = mConversation.getMucOptions().getName();
+        }
+        xmppConnectionService.saveConversationAsBookmark(mConversation, name);
         updateView();
     }
 

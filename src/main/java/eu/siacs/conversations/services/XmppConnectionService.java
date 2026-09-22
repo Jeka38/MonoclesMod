@@ -4739,14 +4739,16 @@ public class XmppConnectionService extends Service {
                 if (packet.getType() == IqPacket.TYPE.RESULT) {
                     final MucOptions mucOptions = conversation.getMucOptions();
                     final Bookmark bookmark = conversation.getBookmark();
-                    final boolean sameBefore = StringUtils.equals(bookmark == null ? null : bookmark.getBookmarkName(), mucOptions.getName());
 
                     if (mucOptions.updateConfiguration(new ServiceDiscoveryResult(packet))) {
                         Log.d(Config.LOGTAG, account.getJid().asBareJid() + ": muc configuration changed for " + conversation.getJid().asBareJid());
                         updateConversation(conversation);
                     }
 
-                    if (bookmark != null && (sameBefore || bookmark.getBookmarkName() == null)) {
+                    // Only seed a missing bookmark name from the room name; never overwrite an
+                    // existing bookmark name with the server-side configurator value. The bookmark
+                    // name is the label the user saved the room under and must stay stable.
+                    if (bookmark != null && !Bookmark.printableValue(bookmark.getBookmarkName(), false)) {
                         if (bookmark.setBookmarkName(StringUtils.nullOnEmpty(mucOptions.getName()))) {
                             createBookmark(account, bookmark);
                         }
