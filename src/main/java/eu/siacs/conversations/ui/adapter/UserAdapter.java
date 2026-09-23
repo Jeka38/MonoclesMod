@@ -5,7 +5,6 @@ import android.content.Context;
 import android.content.IntentSender;
 import android.graphics.drawable.Drawable;
 import android.content.SharedPreferences;
-import android.text.TextUtils;
 import android.view.ContextMenu;
 import android.view.LayoutInflater;
 import android.view.View;
@@ -26,7 +25,7 @@ import java.util.List;
 
 import eu.siacs.conversations.R;
 import eu.siacs.conversations.crypto.PgpEngine;
-import eu.siacs.conversations.databinding.ContactBinding;
+import eu.siacs.conversations.databinding.ContactUserBinding;
 import eu.siacs.conversations.entities.Contact;
 import eu.siacs.conversations.entities.MucOptions;
 import eu.siacs.conversations.services.XmppConnectionService;
@@ -73,7 +72,7 @@ public class UserAdapter extends ListAdapter<MucOptions.User, UserAdapter.ViewHo
     @NonNull
     @Override
     public ViewHolder onCreateViewHolder(@NonNull ViewGroup viewGroup, int position) {
-        return new ViewHolder(DataBindingUtil.inflate(LayoutInflater.from(viewGroup.getContext()), R.layout.contact, viewGroup, false));
+        return new ViewHolder(DataBindingUtil.inflate(LayoutInflater.from(viewGroup.getContext()), R.layout.contact_user, viewGroup, false));
     }
 
     private boolean isAffiliationList = false;
@@ -181,19 +180,10 @@ public class UserAdapter extends ListAdapter<MucOptions.User, UserAdapter.ViewHo
         if (showClientIcons && user.isOnline() && user.getSoftwareVersion() == null && service != null && user.getFullJid() != null) {
             service.fetchVersion(user.getAccount(), user.getFullJid());
         }
+        // Client icon is rendered below the user's tags; the client version is not shown in the
+        // participants list.
         final boolean applied = showClientIcons && ClientIconUtils.applyMucUserClientIcon(viewHolder.binding.clientIcon, user);
-        final String version = ClientIconUtils.getSoftwareVersion(user);
-        if (!applied) {
-            viewHolder.binding.clientInfo.setVisibility(View.GONE);
-        } else {
-            viewHolder.binding.clientInfo.setVisibility(View.VISIBLE);
-            if (!TextUtils.isEmpty(version)) {
-                viewHolder.binding.clientVersion.setText(version);
-                viewHolder.binding.clientVersion.setVisibility(View.VISIBLE);
-            } else {
-                viewHolder.binding.clientVersion.setVisibility(View.GONE);
-            }
-        }
+        viewHolder.binding.clientInfo.setVisibility(applied ? View.VISIBLE : View.GONE);
     }
 
     public MucOptions.User getSelectedUser() {
@@ -211,9 +201,9 @@ public class UserAdapter extends ListAdapter<MucOptions.User, UserAdapter.ViewHo
 
     protected class ViewHolder extends RecyclerView.ViewHolder {
 
-        public final ContactBinding binding;
+        public final ContactUserBinding binding;
 
-        private ViewHolder(ContactBinding binding) {
+        private ViewHolder(ContactUserBinding binding) {
             super(binding.getRoot());
             this.binding = binding;
         }
