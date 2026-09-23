@@ -242,12 +242,20 @@ public class MessageParser extends AbstractParser implements OnMessagePacketRece
 
 
     private Message parseAxolotlChat(Element axolotlMessage, Jid from, Conversation conversation, int status, final boolean checkedForDuplicates, boolean postpone) {
-        final AxolotlService service = conversation.getAccount().getAxolotlService();
+        final Account account = conversation.getAccount();
+        if (account == null) {
+            // The conversation was restored from the database but is not attached to its account
+            // yet (e.g. a message processed during early connection setup). Without an account we
+            // cannot decrypt OMEMO; skip the message instead of crashing.
+            Log.d(Config.LOGTAG, "ignoring OMEMO message for a conversation without an attached account");
+            return null;
+        }
+        final AxolotlService service = account.getAxolotlService();
         final XmppAxolotlMessage xmppAxolotlMessage;
         try {
             xmppAxolotlMessage = XmppAxolotlMessage.fromElement(axolotlMessage, from.asBareJid());
         } catch (Exception e) {
-            Log.d(Config.LOGTAG, conversation.getAccount().getJid().asBareJid() + ": invalid omemo message received " + e.getMessage());
+            Log.d(Config.LOGTAG, account.getJid().asBareJid() + ": invalid omemo message received " + e.getMessage());
             return null;
         }
         if (xmppAxolotlMessage.hasPayload()) {
@@ -275,11 +283,11 @@ public class MessageParser extends AbstractParser implements OnMessagePacketRece
             if (plaintextMessage != null) {
                 Message finishedMessage = new Message(conversation, plaintextMessage.getPlaintext(), Message.ENCRYPTION_AXOLOTL, status);
                 finishedMessage.setFingerprint(plaintextMessage.getFingerprint());
-                Log.d(Config.LOGTAG, AxolotlService.getLogprefix(finishedMessage.getConversation().getAccount()) + " Received Message with session fingerprint: " + plaintextMessage.getFingerprint());
+                Log.d(Config.LOGTAG, AxolotlService.getLogprefix(account) + " Received Message with session fingerprint: " + plaintextMessage.getFingerprint());
                 return finishedMessage;
             }
         } else {
-            Log.d(Config.LOGTAG, conversation.getAccount().getJid().asBareJid() + ": received OMEMO key transport message");
+            Log.d(Config.LOGTAG, account.getJid().asBareJid() + ": received OMEMO key transport message");
             service.processReceivingKeyTransportMessage(xmppAxolotlMessage, postpone);
         }
         return null;
