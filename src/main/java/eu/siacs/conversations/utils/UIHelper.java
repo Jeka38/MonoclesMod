@@ -396,7 +396,12 @@ public class UIHelper {
             } else if (message.hasMeCommand()) {
                 final int meIndex = message.getMeCommandIndex();
                 final String raw = message.getBody();
-                return new Pair<>(raw.substring(0, meIndex) + UIHelper.getMessageDisplayName(message) + raw.substring(meIndex + Message.ME_COMMAND.length()), false);
+                // The index is computed on the raw body while getBody() strips fallbacks, so the
+                // command may fall outside; fall back to the plain body in that case.
+                if (meIndex >= 0 && meIndex + Message.ME_COMMAND.length() <= raw.length()) {
+                    return new Pair<>(raw.substring(0, meIndex) + UIHelper.getMessageDisplayName(message) + raw.substring(meIndex + Message.ME_COMMAND.length()), false);
+                }
+                return new Pair<>(raw, false);
             } else if (message.isGeoUri()) {
                 return new Pair<>(context.getString(R.string.location), true);
             } else if (message.isXmppUri()) {

@@ -60,7 +60,15 @@ public class MessageUtils {
             } else {
                 nick = UIHelper.getMessageDisplayName(message);
             }
-            body = nick + " " + message.getQuoteableBody().substring(message.getMeCommandIndex() + Message.ME_COMMAND.length());
+            final String quoteable = message.getQuoteableBody();
+            final int meIndex = message.getMeCommandIndex();
+            // The index is computed on the raw body, but getQuoteableBody() may have stripped
+            // fallbacks, so guard against the command falling outside the quoteable body.
+            if (meIndex >= 0 && meIndex + Message.ME_COMMAND.length() <= quoteable.length()) {
+                body = nick + " " + quoteable.substring(meIndex + Message.ME_COMMAND.length());
+            } else {
+                body = quoteable;
+            }
         } else {
             body = message.getQuoteableBody();
         }

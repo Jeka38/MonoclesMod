@@ -1008,7 +1008,9 @@ public class MessageAdapter extends ArrayAdapter<Message> {
             // Форматирование /me (в т.ч. когда команда идёт после цитаты). Заменяем команду и
             // вешаем стиль ДО обработки цитат, чтобы исходная позиция оставалась валидной;
             // span стиля отследит последующие правки цитатного блока, стиль не заденет цитату.
-            if (hasMeCommand) {
+            // Индекс считается по сырому телу, а body получен из getSpannableBody(), где могли
+            // быть вырезаны fallback-элементы, поэтому команда может выйти за пределы строки.
+            if (hasMeCommand && meCommandIndex + Message.ME_COMMAND.length() <= body.length()) {
                 body = body.replace(meCommandIndex, meCommandIndex + Message.ME_COMMAND.length(), "* " + nick);
                 if (!message.isPrivateMessage()) {
                     body.setSpan(new StyleSpan(Typeface.BOLD_ITALIC), meCommandIndex, body.length(), Spannable.SPAN_EXCLUSIVE_EXCLUSIVE);
