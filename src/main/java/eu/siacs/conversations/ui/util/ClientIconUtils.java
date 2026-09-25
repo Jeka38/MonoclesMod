@@ -75,7 +75,7 @@ public final class ClientIconUtils {
             }
         }
         Contact contact = user.getContact();
-        if (contact == null && user.getRealJid() != null) {
+        if (contact == null && user.getRealJid() != null && user.getAccount() != null) {
             contact = user.getAccount().getRoster().getContact(user.getRealJid());
         }
         final boolean applied = applyRosterClientIcon(imageView, contact);
@@ -107,7 +107,7 @@ public final class ClientIconUtils {
             return occupantIcon;
         }
         Contact contact = user.getContact();
-        if (contact == null && user.getRealJid() != null) {
+        if (contact == null && user.getRealJid() != null && user.getAccount() != null) {
             contact = user.getAccount().getRoster().getContact(user.getRealJid());
         }
         final Integer icon = getRosterClientIconRes(contact);

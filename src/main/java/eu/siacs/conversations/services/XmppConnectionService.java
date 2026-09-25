@@ -1234,7 +1234,7 @@ public class XmppConnectionService extends Service {
                 Log.d(Config.LOGTAG, "ping MUCs");
                 mLastMucPing = SystemClock.elapsedRealtime();
                 for (Conversation c : getConversations()) {
-                    if (c.getMode() == Conversation.MODE_MULTI && c.getMucOptions().online()) {
+                    if (c.getAccount() != null && c.getMode() == Conversation.MODE_MULTI && c.getMucOptions().online()) {
                         mucSelfPingAndRejoin(c);
                     }
                 }
@@ -2804,13 +2804,15 @@ public class XmppConnectionService extends Service {
     public void markReadUpTo(final Conversation conversation, final Message message) {
         final boolean isDismissNotification = isDismissNotification(message);
         final var uuid = message.getUuid();
-        Log.d(
-                Config.LOGTAG,
-                conversation.getAccount().getJid().asBareJid()
-                        + ": mark "
-                        + conversation.getJid().asBareJid()
-                        + " as read up to "
-                        + uuid);
+        if (conversation.getAccount() != null) {
+            Log.d(
+                    Config.LOGTAG,
+                    conversation.getAccount().getJid().asBareJid()
+                            + ": mark "
+                            + conversation.getJid().asBareJid()
+                            + " as read up to "
+                            + uuid);
+        }
         markRead(conversation, uuid, isDismissNotification);
     }
 
@@ -3167,7 +3169,7 @@ public class XmppConnectionService extends Service {
         }
         list.clear();
         for (Conversation conversation : getConversations()) {
-            if (conversation.getAccount().isEnabled()) {
+            if (conversation.getAccount() != null && conversation.getAccount().isEnabled()) {
                 list.add(conversation);
             }
         }
@@ -3218,6 +3220,7 @@ public class XmppConnectionService extends Service {
                 conversation.addAll(0, messages);
                 callback.onMoreMessagesLoaded(messages.size(), conversation);
             } else if (conversation.hasMessagesLeftOnServer()
+                    && account != null
                     && account.isOnlineAndConnected()
                     && conversation.getLastClearHistory().getTimestamp() == 0) {
                 final boolean mamAvailable;
@@ -3471,7 +3474,7 @@ public class XmppConnectionService extends Service {
                 }
                 if (account.getXmppConnection() != null
                         && !keepArchived
-                        && !c.getContact().isBlocked()
+                        && (c.getContact() == null || !c.getContact().isBlocked())
                         && account.getXmppConnection().getFeatures().mam()
                         && !muc) {
                     if (query == null) {
@@ -3576,7 +3579,7 @@ public class XmppConnectionService extends Service {
                     leaveMuc(conversation);
                 }
             } else if (conversation.getMode() == Conversation.MODE_SINGLE) {
-                if (conversation.getContact().getOption(Contact.Options.PENDING_SUBSCRIPTION_REQUEST)) {
+                if (conversation.getContact() != null && conversation.getContact().getOption(Contact.Options.PENDING_SUBSCRIPTION_REQUEST)) {
                     stopPresenceUpdatesTo(conversation.getContact());
                 }
             }
@@ -4169,6 +4172,14 @@ public class XmppConnectionService extends Service {
 
     public void mucSelfPingAndRejoin(final Conversation conversation) {
         final Account account = conversation.getAccount();
+        if (account == null) {
+            // conversation not yet attached to its account (DB restore window); cannot ping
+            return;
+        }
+        final MucOptions.User self = conversation.getMucOptions().getSelf();
+        if (self == null) {
+            return;
+        }
         synchronized (account.inProgressConferenceJoins) {
             if (account.inProgressConferenceJoins.contains(conversation)) {
                 Log.d(Config.LOGTAG, account.getJid().asBareJid() + ": canceling muc self ping because join is already under way");
@@ -4181,21 +4192,21 @@ public class XmppConnectionService extends Service {
                 return;
             }
         }
-        final Jid self = conversation.getMucOptions().getSelf().getFullJid();
+        final Jid selfJid = self.getFullJid();
         final IqPacket ping = new IqPacket(IqPacket.TYPE.GET);
-        ping.setTo(self);
+        ping.setTo(selfJid);
         ping.addChild("ping", Namespace.PING);
         sendIqPacket(conversation.getAccount(), ping, (a, response) -> {
             if (response.getType() == IqPacket.TYPE.ERROR) {
                 Element error = response.findChild("error");
                 if (error == null || error.hasChild("service-unavailable") || error.hasChild("feature-not-implemented") || error.hasChild("item-not-found")) {
-                    Log.d(Config.LOGTAG, a.getJid().asBareJid() + ": ping to " + self + " came back as ignorable error");
+                    Log.d(Config.LOGTAG, a.getJid().asBareJid() + ": ping to " + selfJid + " came back as ignorable error");
                 } else {
-                    Log.d(Config.LOGTAG, a.getJid().asBareJid() + ": ping to " + self + " failed. attempting rejoin");
+                    Log.d(Config.LOGTAG, a.getJid().asBareJid() + ": ping to " + selfJid + " failed. attempting rejoin");
                     joinMuc(conversation);
                 }
             } else if (response.getType() == IqPacket.TYPE.RESULT) {
-                Log.d(Config.LOGTAG, a.getJid().asBareJid() + ": ping to " + self + " came back fine");
+                Log.d(Config.LOGTAG, a.getJid().asBareJid() + ": ping to " + selfJid + " came back fine");
             }
             synchronized (account.inProgressConferencePings) {
                 account.inProgressConferencePings.remove(conversation);
@@ -4578,6 +4589,10 @@ public class XmppConnectionService extends Service {
             }
         }
         final Account account = conversation.getAccount();
+        if (account == null) {
+            // conversation not yet attached to its account (DB restore window); nothing to leave
+            return;
+        }
         synchronized (account.pendingConferenceJoins) {
             account.pendingConferenceJoins.remove(conversation);
         }
@@ -5826,7 +5841,7 @@ public class XmppConnectionService extends Service {
     public int unreadCount() {
         int count = 0;
         for (Conversation conversation : getConversations()) {
-            if (conversation.getAccount().isEnabled()) {
+            if (conversation.getAccount() != null && conversation.getAccount().isEnabled()) {
                 count += conversation.unreadCount();
             }
         }
@@ -5836,7 +5851,7 @@ public class XmppConnectionService extends Service {
     public Message getLatestUnreadMention() {
         Message latestMention = null;
         for (Conversation conversation : getConversations()) {
-            if (!conversation.getAccount().isEnabled() || conversation.unreadCount() == 0) {
+            if (conversation.getAccount() == null || !conversation.getAccount().isEnabled() || conversation.unreadCount() == 0) {
                 continue;
             }
             Message mention = conversation.getLatestUnreadMention(this);
@@ -6072,6 +6087,10 @@ public class XmppConnectionService extends Service {
             return;
         }
         final var account = conversation.getAccount();
+        if (account == null) {
+            // conversation not yet attached to its account (DB restore window); skip the marker
+            return;
+        }
         final var connection = account.getXmppConnection();
         updateConversationUi();
         final var last =
@@ -6111,7 +6130,7 @@ public class XmppConnectionService extends Service {
             if (sendDisplayedMarker) {
                 Log.d(
                         Config.LOGTAG,
-                        conversation.getAccount().getJid().asBareJid()
+                        account.getJid().asBareJid()
                                 + ": sending displayed marker to "
                                 + last.getCounterpart().toString());
                 final MessagePacket packet = mMessageGenerator.confirm(last);
@@ -6401,8 +6420,9 @@ public class XmppConnectionService extends Service {
 
     public Conversation findFirstMuc(Jid jid, String accountJid) {
         for (Conversation conversation : getConversations()) {
-            if ((conversation.getAccount().isEnabled() || accountJid != null)
-                    && (accountJid == null || accountJid.equals(conversation.getAccount().getJid().asBareJid().toString()))
+            final Account account = conversation.getAccount();
+            if ((account != null && account.isEnabled() || accountJid != null)
+                    && (accountJid == null || (account != null && accountJid.equals(account.getJid().asBareJid().toString())))
                     && conversation.getJid().asBareJid().equals(jid.asBareJid())
                     && conversation.getMode() == Conversation.MODE_MULTI
                     && !conversation.hasPermanentCounterpart()) {

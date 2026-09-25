@@ -93,7 +93,7 @@ public class HttpConnectionManager extends AbstractConnectionManager {
         synchronized (this.downloadConnections) {
             for (HttpDownloadConnection connection : this.downloadConnections) {
                 if (connection.getMessage() == message) {
-                    Log.d(Config.LOGTAG, message.getConversation().getAccount().getJid().asBareJid() + ": download already in progress");
+                    Log.d(Config.LOGTAG, jidForLog(message) + ": download already in progress");
                     return;
                 }
             }
@@ -107,7 +107,7 @@ public class HttpConnectionManager extends AbstractConnectionManager {
         synchronized (this.downloadConnections) {
             for (HttpDownloadConnection connection : this.downloadConnections) {
                 if (connection.getMessage() == message) {
-                    Log.d(Config.LOGTAG, message.getConversation().getAccount().getJid().asBareJid() + ": download already in progress");
+                    Log.d(Config.LOGTAG, jidForLog(message) + ": download already in progress");
                     return;
                 }
             }
@@ -122,7 +122,7 @@ public class HttpConnectionManager extends AbstractConnectionManager {
         synchronized (this.downloadConnections) {
             for (HttpDownloadConnection connection : this.downloadConnections) {
                 if (connection.getMessage() == message) {
-                    Log.d(Config.LOGTAG, message.getConversation().getAccount().getJid().asBareJid() + ": download already in progress");
+                    Log.d(Config.LOGTAG, jidForLog(message) + ": download already in progress");
                     return;
                 }
             }
@@ -137,9 +137,13 @@ public class HttpConnectionManager extends AbstractConnectionManager {
         synchronized (this.uploadConnections) {
             for (HttpUploadConnection connection : this.uploadConnections) {
                 if (connection.getMessage() == message) {
-                    Log.d(Config.LOGTAG, message.getConversation().getAccount().getJid().asBareJid() + ": upload already in progress");
+                    Log.d(Config.LOGTAG, jidForLog(message) + ": upload already in progress");
                     return;
                 }
+            }
+            if (message.getConversation().getAccount() == null) {
+                // conversation not yet attached to its account (DB restore window); cannot upload
+                return;
             }
             HttpUploadConnection connection = new HttpUploadConnection(message, Method.determine(message.getConversation().getAccount()), this);
             connection.init(delay);
@@ -157,6 +161,11 @@ public class HttpConnectionManager extends AbstractConnectionManager {
         synchronized (this.uploadConnections) {
             this.uploadConnections.remove(httpUploadConnection);
         }
+    }
+
+    private static String jidForLog(final Message message) {
+        final Account account = message.getConversation().getAccount();
+        return account == null ? "unattached" : account.getJid().asBareJid().toString();
     }
 
     public OkHttpClient buildHttpClient(final HttpUrl url, final Account account, boolean interactive) {

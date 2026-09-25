@@ -472,7 +472,10 @@ public class MucOptions {
         ArrayList<User> subset = new ArrayList<>();
         HashSet<Jid> jids = new HashSet<>();
         for (User user : users) {
-            jids.add(user.getAccount().getJid().asBareJid());
+            final Account account = user.getAccount();
+            if (account != null) {
+                jids.add(account.getJid().asBareJid());
+            }
             if (user.getRealJid() == null || (user.getRealJid().getLocal() != null && jids.add(user.getRealJid()))) {
                 subset.add(user);
             }
@@ -698,6 +701,10 @@ public class MucOptions {
 
     public Jid getTrueCounterpart(Jid jid) {
         if (jid.equals(getSelf().getFullJid())) {
+            if (account == null) {
+                // conversation not yet attached to its account (DB restore window)
+                return null;
+            }
             return account.getJid().asBareJid();
         }
         User user = findUserByFullJid(jid);
@@ -975,7 +982,7 @@ public class MucOptions {
         public long getPgpKeyId() {
             if (this.pgpKeyId != 0) {
                 return this.pgpKeyId;
-            } else if (realJid != null) {
+            } else if (realJid != null && getAccount() != null) {
                 return getAccount().getRoster().getContact(realJid).getPgpKeyId();
             } else {
                 return 0;
@@ -987,9 +994,9 @@ public class MucOptions {
         }
 
         public Contact getContact() {
-            if (fullJid != null) {
+            if (fullJid != null && getAccount() != null) {
                 return getAccount().getRoster().getContactFromContactList(realJid);
-            } else if (realJid != null) {
+            } else if (realJid != null && getAccount() != null) {
                 return getAccount().getRoster().getContact(realJid);
             } else {
                 return null;
@@ -1009,7 +1016,7 @@ public class MucOptions {
             if (avatar != null) {
                 return avatar.getFilename();
             }
-            Avatar avatar = realJid != null ? getAccount().getRoster().getContact(realJid).getAvatar() : null;
+            Avatar avatar = realJid != null && getAccount() != null ? getAccount().getRoster().getContact(realJid).getAvatar() : null;
             return avatar == null ? null : avatar.getFilename();
         }
 
@@ -1017,7 +1024,7 @@ public class MucOptions {
             if (avatar != null) {
                 return avatar.cid();
             }
-            Avatar avatar = realJid != null ? getAccount().getRoster().getContact(realJid).getAvatar() : null;
+            Avatar avatar = realJid != null && getAccount() != null ? getAccount().getRoster().getContact(realJid).getAvatar() : null;
             return avatar == null ? null : avatar.cid();
         }
 

@@ -24,6 +24,7 @@ import javax.net.ssl.SSLHandshakeException;
 import eu.siacs.conversations.utils.Consumer;
 import eu.siacs.conversations.Config;
 import eu.siacs.conversations.R;
+import eu.siacs.conversations.entities.Account;
 import eu.siacs.conversations.entities.DownloadableFile;
 import eu.siacs.conversations.entities.Message;
 import eu.siacs.conversations.entities.Transferable;
@@ -242,7 +243,10 @@ public class HttpDownloadConnection implements Transferable {
     private void finish() {
         boolean notify = acceptedAutomatically && !message.isRead() && cb == null;
         if (message.getEncryption() == Message.ENCRYPTION_PGP) {
-            notify = message.getConversation().getAccount().getPgpDecryptionService().decrypt(message, notify);
+            final Account account = message.getConversation().getAccount();
+            if (account != null) {
+                notify = account.getPgpDecryptionService().decrypt(message, notify);
+            }
         }
         DownloadableFile file;
         final DownloadableFile tmp = mXmppConnectionService.getFileBackend().getFile(message);
@@ -365,6 +369,13 @@ public class HttpDownloadConnection implements Transferable {
         }
 
         private void check() {
+            if (message.getConversation().getAccount() == null) {
+                // conversation not yet attached to its account (DB restore window);
+                // do not run the HTTP size check against a null account
+                changeStatus(STATUS_OFFER_CHECK_FILESIZE);
+                cancel();
+                return;
+            }
             long size;
             try {
                 size = retrieveFileSize();
@@ -471,6 +482,11 @@ public class HttpDownloadConnection implements Transferable {
         @Override
         public void run() {
             try {
+                if (message.getConversation().getAccount() == null) {
+                    // conversation not yet attached to its account (DB restore window);
+                    // do not download (needs the account for HTTP auth and PGP decrypt)
+                    throw new IllegalStateException("conversation not yet attached to its account");
+                }
                 changeStatus(STATUS_DOWNLOADING);
                 download();
                 decryptIfNeeded();
@@ -480,7 +496,8 @@ public class HttpDownloadConnection implements Transferable {
             } catch (final SSLHandshakeException e) {
                 changeStatus(STATUS_OFFER);
             } catch (final Exception e) {
-                Log.d(Config.LOGTAG, message.getConversation().getAccount().getJid().asBareJid() + ": unable to download file", e);
+                final Account account = message.getConversation().getAccount();
+                Log.d(Config.LOGTAG, (account == null ? "unattached" : account.getJid().asBareJid()) + ": unable to download file", e);
                 if (interactive) {
                     showToastForException(e);
                 } else {

@@ -1395,11 +1395,16 @@ public class Message extends AbstractEntity implements AvatarService.Avatarable 
     }
 
     public boolean fixCounterpart() {
-        final Presences presences = conversation.getContact().getPresences();
+        final Contact contact = this.getContact();
+        if (contact == null) {
+            // conversation not yet attached to its account (DB restore window)
+            return false;
+        }
+        final Presences presences = contact.getPresences();
         if (counterpart != null && presences.has(Strings.nullToEmpty(counterpart.getResource()))) {
             return true;
         } else if (presences.size() >= 1) {
-            counterpart = PresenceSelector.getNextCounterpart(getContact(),presences.toResourceArray()[0]);
+            counterpart = PresenceSelector.getNextCounterpart(contact,presences.toResourceArray()[0]);
             return true;
         } else {
             counterpart = null;
@@ -1923,7 +1928,12 @@ public class Message extends AbstractEntity implements AvatarService.Avatarable 
     }
 
     public boolean isTrusted() {
-        final AxolotlService axolotlService = conversation.getAccount().getAxolotlService();
+        final Account account = conversation.getAccount();
+        if (account == null) {
+            // conversation not yet attached to its account (DB restore window)
+            return false;
+        }
+        final AxolotlService axolotlService = account.getAxolotlService();
         final FingerprintStatus s = axolotlService != null ? axolotlService.getFingerprintTrust(axolotlFingerprint) : null;
         return s != null && s.isTrusted();
     }

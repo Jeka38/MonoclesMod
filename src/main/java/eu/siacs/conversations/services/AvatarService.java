@@ -319,7 +319,14 @@ public class AvatarService implements OnAdvancedStreamFeaturesLoaded {
 
     public Drawable get(Conversation conversation, int size, boolean cachedOnly) {
         if (conversation.getMode() == Conversation.MODE_SINGLE) {
-            return get(conversation.getContact(), size, cachedOnly);
+            final Contact contact = conversation.getContact();
+            if (contact != null) {
+                return get(contact, size, cachedOnly);
+            }
+            // The conversation may not be attached to its account yet (e.g. during the early
+            // connection restore window), so getContact() can be null; render a letter avatar
+            // instead of crashing in Contact.isSelf().
+            return get(conversation.getName().toString(), conversation.getJid().asBareJid().toString(), size, cachedOnly);
         } else if (conversation.hasPermanentCounterpart()) {
             final Jid counterpart = conversation.getNextCounterpart();
             final MucOptions mucOptions = getMucOptions(conversation);
@@ -336,7 +343,10 @@ public class AvatarService implements OnAdvancedStreamFeaturesLoaded {
 
     public void clear(Conversation conversation) {
         if (conversation.getMode() == Conversation.MODE_SINGLE) {
-            clear(conversation.getContact());
+            final Contact contact = conversation.getContact();
+            if (contact != null) {
+                clear(contact);
+            }
         } else if (conversation.hasPermanentCounterpart()) {
             final Jid counterpart = conversation.getNextCounterpart();
             final MucOptions.User user = conversation.getMucOptions().findUserByFullJid(counterpart);

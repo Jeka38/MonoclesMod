@@ -275,12 +275,17 @@ public class Conversation extends AbstractEntity implements Blockable, Comparabl
     }
 
     public static boolean suitableForOmemoByDefault(final Conversation conversation) {
-        if (conversation.getContact().isOwnServer()) {
+        final Contact contact = conversation.getContact();
+        if (contact == null || contact.isOwnServer()) {
             return false;
         }
-        final String contact = conversation.getJid().getDomain().toEscapedString();
+        if (conversation.getAccount() == null) {
+            // conversation not yet attached to its account (DB restore window)
+            return false;
+        }
+        final String contactDomain = conversation.getJid().getDomain().toEscapedString();
         final String account = conversation.getAccount().getServer();
-        if (Config.OMEMO_EXCEPTIONS.matchesContactDomain(contact) || Config.OMEMO_EXCEPTIONS.ACCOUNT_DOMAINS.contains(account)) {
+        if (Config.OMEMO_EXCEPTIONS.matchesContactDomain(contactDomain) || Config.OMEMO_EXCEPTIONS.ACCOUNT_DOMAINS.contains(account)) {
             return false;
         }
         return conversation.isSingleOrPrivateAndNonAnonymous() || conversation.getBooleanAttribute(ATTRIBUTE_FORMERLY_PRIVATE_NON_ANONYMOUS, false);
@@ -959,7 +964,7 @@ public class Conversation extends AbstractEntity implements Blockable, Comparabl
     public int compareTo(@NonNull Conversation another) {
         return ComparisonChain.start()
                 .compareFalseFirst(another.getBooleanAttribute(ATTRIBUTE_PINNED_ON_TOP, false), getBooleanAttribute(ATTRIBUTE_PINNED_ON_TOP,false))
-                .compareFalseFirst(another.getAccount().isEnabled(), getAccount().isEnabled())
+                .compareFalseFirst(another.getAccount() != null && another.getAccount().isEnabled(), getAccount() != null && getAccount().isEnabled())
                 .compare(another.getSortableTime(), getSortableTime())
                 .result();
     }

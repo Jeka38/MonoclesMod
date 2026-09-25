@@ -240,7 +240,8 @@ public class AxolotlService implements OnAdvancedStreamFeaturesLoaded {
     }
 
     private Set<XmppAxolotlSession> findSessionsForConversation(Conversation conversation) {
-        if (conversation.getContact().isSelf()) {
+        final Contact contact = conversation.getContact();
+        if (contact == null || contact.isSelf()) {
             //will be added in findOwnSessions()
             return Collections.emptySet();
         }
@@ -1156,7 +1157,7 @@ public class AxolotlService implements OnAdvancedStreamFeaturesLoaded {
     @Nullable
     private boolean buildHeader(XmppAxolotlMessage axolotlMessage, Conversation c) {
         Set<XmppAxolotlSession> remoteSessions = findSessionsForConversation(c);
-        final boolean acceptEmpty = (c.getMode() == Conversation.MODE_MULTI && c.getMucOptions().getUserCount() == 0) || c.getContact().isSelf();
+        final boolean acceptEmpty = (c.getMode() == Conversation.MODE_MULTI && c.getMucOptions().getUserCount() == 0) || (c.getContact() != null && c.getContact().isSelf());
         Collection<XmppAxolotlSession> ownSessions = findOwnSessions();
         if (remoteSessions.isEmpty() && !acceptEmpty) {
             return false;

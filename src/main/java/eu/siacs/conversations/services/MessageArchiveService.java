@@ -148,6 +148,10 @@ public class MessageArchiveService implements OnAdvancedStreamFeaturesLoaded {
     }
 
     public Query query(final Conversation conversation) {
+        if (conversation.getAccount() == null) {
+            // conversation not yet attached to its account (DB restore window)
+            return null;
+        }
         if (conversation.getLastMessageTransmitted().getTimestamp() < 0 && conversation.countMessages() == 0) {
             return query(conversation,
                     new MamReference(0),
@@ -163,6 +167,9 @@ public class MessageArchiveService implements OnAdvancedStreamFeaturesLoaded {
 
     public boolean isCatchingUp(Conversation conversation) {
         final Account account = conversation.getAccount();
+        if (account == null) {
+            return false;
+        }
         if (account.getXmppConnection().isWaitingForSmCatchup()) {
             return true;
         } else {
@@ -410,7 +417,9 @@ public class MessageArchiveService implements OnAdvancedStreamFeaturesLoaded {
                 final Query query = iterator.next();
                 if (query.getConversation() == conversation) {
                     iterator.remove();
-                    Log.d(Config.LOGTAG, conversation.getAccount().getJid().asBareJid() + ": killed pending MAM query for archived conversation");
+                    if (conversation.getAccount() != null) {
+                        Log.d(Config.LOGTAG, conversation.getAccount().getJid().asBareJid() + ": killed pending MAM query for archived conversation");
+                    }
                 }
             }
         }

@@ -700,7 +700,7 @@ public class UIHelper {
             case Message.ENCRYPTION_OTR:
                 return context.getString(R.string.send_otr_message);
             case Message.ENCRYPTION_AXOLOTL:
-                AxolotlService axolotlService = conversation.getAccount().getAxolotlService();
+                AxolotlService axolotlService = conversation.getAccount() == null ? null : conversation.getAccount().getAxolotlService();
                 if (axolotlService != null && axolotlService.trustedSessionVerified(conversation)) {
                     return context.getString(R.string.send_omemo_x509_message);
                 } else {

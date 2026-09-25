@@ -63,8 +63,12 @@ public class PresenceParser extends AbstractParser implements
 
     private boolean processConferencePresence(PresencePacket packet, Conversation conversation) {
         final Account account = conversation.getAccount();
+        if (account == null) {
+            // conversation not yet attached to its account (DB restore window); skip instead of crashing
+            return false;
+        }
         final MucOptions mucOptions = conversation.getMucOptions();
-        final         Jid jid = conversation.getAccount().getJid();
+        final Jid jid = account.getJid();
         final Jid from = packet.getFrom();
         boolean addedStatusMessage = false;
         boolean mujiChanged = false;
@@ -207,7 +211,7 @@ public class PresenceParser extends AbstractParser implements
                             conversation.add(statusMessage);
                             addedStatusMessage = true;
                         }
-                        final AxolotlService axolotlService = conversation.getAccount().getAxolotlService();
+                        final AxolotlService axolotlService = account.getAxolotlService();
                         Contact contact = user.getContact();
                         if (isNew
                                 && user.getRealJid() != null
@@ -243,7 +247,7 @@ public class PresenceParser extends AbstractParser implements
                                     mXmppConnectionService.getAvatarService().clear(user);
                                 }
                                 if (user.getRealJid() != null) {
-                                    final Contact c = conversation.getAccount().getRoster().getContact(user.getRealJid());
+                                    final Contact c = account.getRoster().getContact(user.getRealJid());
                                     c.setAvatar(avatar);
                                     mXmppConnectionService.syncRoster(conversation.getAccount());
                                     mXmppConnectionService.getAvatarService().clear(c);
@@ -334,7 +338,7 @@ public class PresenceParser extends AbstractParser implements
                     }
                     MucOptions.User user = mucOptions.deleteUser(from);
                     if (user != null && user.getRealJid() != null) {
-                        final Contact contact = conversation.getAccount().getRoster().getContact(user.getRealJid());
+                        final Contact contact = account.getRoster().getContact(user.getRealJid());
                         contact.removePresence(from.getResource());
                     }
                     final boolean isSelf = codes.contains(MucOptions.STATUS_CODE_SELF_PRESENCE) || fullJidMatchesOther;
@@ -408,7 +412,7 @@ public class PresenceParser extends AbstractParser implements
                     }
                     mucOptions.setError(MucOptions.Error.DESTROYED);
                     if (alternate != null) {
-                        Log.d(Config.LOGTAG, conversation.getAccount().getJid().asBareJid() + ": muc destroyed. alternate location " + alternate);
+                        Log.d(Config.LOGTAG, account.getJid().asBareJid() + ": muc destroyed. alternate location " + alternate);
                     }
                 } else {
                     final String text = error.findChildContent("text");

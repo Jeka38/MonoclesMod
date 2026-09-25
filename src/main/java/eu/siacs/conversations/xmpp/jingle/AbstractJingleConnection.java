@@ -388,6 +388,9 @@ public abstract class AbstractJingleConnection {
         }
 
         public Contact getContact() {
+            if (account == null || with == null) {
+                return null;
+            }
             return account.getRoster().getContact(with);
         }
 

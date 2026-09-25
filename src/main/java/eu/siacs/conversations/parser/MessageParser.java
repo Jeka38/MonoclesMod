@@ -96,6 +96,10 @@ public class MessageParser extends AbstractParser implements OnMessagePacketRece
             safeToExtract = conversation.getMucOptions().hasFeature(Namespace.STANZA_IDS);
         } else {
             Account account = conversation.getAccount();
+            if (account == null) {
+                // conversation not yet attached to its account (DB restore window)
+                return null;
+            }
             by = account.getJid().asBareJid();
             safeToExtract = account.getXmppConnection().getFeatures().stanzaIds();
         }
@@ -153,6 +157,10 @@ public class MessageParser extends AbstractParser implements OnMessagePacketRece
         ChatState state = ChatState.parse(packet);
         if (state != null && c != null) {
             final Account account = c.getAccount();
+            if (account == null) {
+                // conversation not yet attached to its account (DB restore window)
+                return false;
+            }
             final Jid from = packet.getFrom();
             if (from.asBareJid().equals(account.getJid().asBareJid())) {
                 c.setOutgoingChatState(state);
@@ -181,6 +189,10 @@ public class MessageParser extends AbstractParser implements OnMessagePacketRece
     }
 
     private Message parseOtrChat(String body, Jid from, String id, Conversation conversation) {
+        if (conversation.getAccount() == null) {
+            // conversation not yet attached to its account (DB restore window); skip instead of crashing
+            return null;
+        }
         String presence;
         if (from.isBareJid()) {
             presence = "";
@@ -869,6 +881,7 @@ public class MessageParser extends AbstractParser implements OnMessagePacketRece
                     if (address.getAttribute("type").equals("ofrom") && address.getAttribute("jid") != null) {
                         Jid ofrom = address.getAttributeAsJid("jid");
                         if (InvalidJid.isValid(ofrom) && ofrom.getDomain().equals(counterpart.getDomain()) &&
+                                conversation.getAccount() != null &&
                                 conversation.getAccount().getRoster().getContact(counterpart.getDomain()).getPresences().anySupport("http://jabber.org/protocol/address")) {
 
                             message.setTrueCounterpart(ofrom);
@@ -1013,7 +1026,7 @@ public class MessageParser extends AbstractParser implements OnMessagePacketRece
                                     && !isTypeGroupChat) {
                                 processMessageReceipts(account, packet, remoteMsgId, query);
                             }
-                            if (replacedMessage.getEncryption() == Message.ENCRYPTION_PGP) {
+                            if (replacedMessage.getEncryption() == Message.ENCRYPTION_PGP && conversation.getAccount() != null) {
                                 conversation.getAccount().getPgpDecryptionService().discard(replacedMessage);
                                 conversation.getAccount().getPgpDecryptionService().decrypt(replacedMessage, false);
                             }
@@ -1153,7 +1166,7 @@ public class MessageParser extends AbstractParser implements OnMessagePacketRece
                 }
             }
 
-            if (message.getEncryption() == Message.ENCRYPTION_PGP) {
+            if (message.getEncryption() == Message.ENCRYPTION_PGP && conversation.getAccount() != null) {
                 notify = conversation.getAccount().getPgpDecryptionService().decrypt(message, notify);
             } else if (message.getEncryption() == Message.ENCRYPTION_AXOLOTL_NOT_FOR_THIS_DEVICE || message.getEncryption() == Message.ENCRYPTION_AXOLOTL_FAILED) {
                 notify = false;

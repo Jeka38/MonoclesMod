@@ -35,6 +35,7 @@ import java.net.URI;
 import java.net.URISyntaxException;
 import java.util.regex.Pattern;
 
+import eu.siacs.conversations.entities.Contact;
 import eu.siacs.conversations.entities.Conversational;
 import eu.siacs.conversations.entities.Message;
 import eu.siacs.conversations.http.AesGcmURL;
@@ -55,7 +56,8 @@ public class MessageUtils {
                 if (message.getConversation().getMode() == Conversational.MODE_MULTI) {
                     nick = Strings.nullToEmpty(message.getCounterpart().getResource());
                 } else {
-                    nick = message.getContact().getPublicDisplayName();
+                    final Contact contact = message.getContact();
+                    nick = contact == null ? "" : Strings.nullToEmpty(contact.getPublicDisplayName());
                 }
             } else {
                 nick = UIHelper.getMessageDisplayName(message);

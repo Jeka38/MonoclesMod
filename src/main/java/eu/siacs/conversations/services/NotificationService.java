@@ -327,10 +327,12 @@ public class NotificationService {
     // create individual call notification channel for selected chats
     @RequiresApi(api = Build.VERSION_CODES.O)
     private void createCallNotificationChannels(final NotificationManager notificationManager, final int i) {
-        final String uuid = mXmppConnectionService.getConversations().get(i).getUuid();
-        final String jid = mXmppConnectionService.getConversations().get(i).getAccount().getJid().asBareJid().toString();
-        final String name = mXmppConnectionService.getConversations().get(i).getName().toString().toLowerCase();
-        final String time = String.valueOf(mXmppConnectionService.getIndividualNotificationPreference(mXmppConnectionService.getConversations().get(i)));
+        final Conversation conversation = mXmppConnectionService.getConversations().get(i);
+        final String uuid = conversation.getUuid();
+        final Account account = conversation.getAccount();
+        final String jid = account == null ? conversation.getName().toString() : account.getJid().asBareJid().toString();
+        final String name = conversation.getName().toString().toLowerCase();
+        final String time = String.valueOf(mXmppConnectionService.getIndividualNotificationPreference(conversation));
         final String channelID = INDIVIDUAL_NOTIFICATION_PREFIX + INCOMING_CALLS_CHANNEL_ID + "_" + uuid + "_" + time;
         try {
             final NotificationChannel incomingCallsChannel = new NotificationChannel(channelID,
@@ -357,10 +359,12 @@ public class NotificationService {
     // create individual message notification channels for selected chat
     @RequiresApi(api = Build.VERSION_CODES.O)
     private void createMessageNotificationChannels(final NotificationManager notificationManager, final int i) {
-        final String uuid = mXmppConnectionService.getConversations().get(i).getUuid();
-        final String jid = mXmppConnectionService.getConversations().get(i).getAccount().getJid().asBareJid().toString();
-        final String name = mXmppConnectionService.getConversations().get(i).getName().toString().toLowerCase();
-        final String time = String.valueOf(mXmppConnectionService.getIndividualNotificationPreference(mXmppConnectionService.getConversations().get(i)));
+        final Conversation conversation = mXmppConnectionService.getConversations().get(i);
+        final String uuid = conversation.getUuid();
+        final Account account = conversation.getAccount();
+        final String jid = account == null ? conversation.getName().toString() : account.getJid().asBareJid().toString();
+        final String name = conversation.getName().toString().toLowerCase();
+        final String time = String.valueOf(mXmppConnectionService.getIndividualNotificationPreference(conversation));
         final String channelID = INDIVIDUAL_NOTIFICATION_PREFIX + MESSAGES_CHANNEL_ID + "_" + uuid + "_" + time;
         try {
             final NotificationChannel messagesChannel = new NotificationChannel(channelID,
@@ -673,7 +677,7 @@ public class NotificationService {
     public void pushSubscriptionRequest(final Conversation conversation) {
         final Account account = conversation.getAccount();
         final Contact contact = conversation.getContact();
-        final Jid jid = contact.getJid();
+        final Jid jid = contact == null ? conversation.getJid().asBareJid() : contact.getJid();
         final String title = mXmppConnectionService.getString(R.string.contact_asks_for_presence_subscription);
         final String channelId = MESSAGES_CHANNEL_ID + "_" + DEFAULT;
         final Builder builder = new Builder(mXmppConnectionService, channelId);
@@ -715,6 +719,10 @@ public class NotificationService {
 
     public void pushFailedDelivery(final Message message) {
         final Conversation conversation = (Conversation) message.getConversation();
+        if (conversation.getAccount() == null) {
+            // conversation not yet attached to its account (DB restore window); skip instead of crashing
+            return;
+        }
         final boolean isScreenLocked = !mXmppConnectionService.isScreenLocked();
         if (this.mIsInForeground && isScreenLocked && this.mOpenConversation == message.getConversation()) {
             Log.d(Config.LOGTAG, message.getConversation().getAccount().getJid().asBareJid() + ": suppressing failed delivery notification because conversation is open");
@@ -802,7 +810,7 @@ public class NotificationService {
     }
 
     public synchronized void startRinging(final AbstractJingleConnection.Id id, final Set<Media> media) {
-        if (isQuietHours(id.getContact().getAccount())) return;
+        if (id.getContact() == null || isQuietHours(id.getContact().getAccount())) return;
 
         if (tryRingingWithDialerUI(id, media)) {
             return;
@@ -1150,7 +1158,9 @@ public class NotificationService {
                 if (conversational.getUuid().equals(message.getConversation().getUuid())) {
                     if (missedCallsInfo.removeMissedCall()) {
                         cancel(conversational.getUuid(), MISSED_CALL_NOTIFICATION_ID);
-                        Log.d(Config.LOGTAG, conversational.getAccount().getJid().asBareJid() + ": dismissed missed call because call was picked up on other device");
+                        if (conversational.getAccount() != null) {
+                            Log.d(Config.LOGTAG, conversational.getAccount().getJid().asBareJid() + ": dismissed missed call because call was picked up on other device");
+                        }
                         iterator.remove();
                     }
                 }
@@ -1360,7 +1370,8 @@ public class NotificationService {
         for (final Map.Entry<Conversational, MissedCallsInfo> entry : mMissedCalls.entrySet()) {
             final Conversational conversation = entry.getKey();
             final MissedCallsInfo missedCallsInfo = entry.getValue();
-            names.add(conversation.getContact().getDisplayName());
+            final Contact contact = conversation.getContact();
+            names.add(contact == null ? conversation.getJid().asBareJid().toString() : contact.getDisplayName());
             totalCalls += missedCallsInfo.getNumberOfCalls();
             lastTime = Math.max(lastTime, missedCallsInfo.getLastTime());
         }
@@ -1444,7 +1455,8 @@ public class NotificationService {
             modifyMissedCall(builder, conversation.getAccount());
             return builder;
         } else {
-            final String name = conversation.getContact().getDisplayName();
+            final Contact contact = conversation.getContact();
+            final String name = contact == null ? conversation.getJid().asBareJid().toString() : contact.getDisplayName();
             if (publicVersion) {
                 builder.setTicker(title);
             } else {
@@ -1813,10 +1825,13 @@ public class NotificationService {
         if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.P) {
             final Jid jid = contact == null ? message.getCounterpart() : contact.getJid();
             builder.setKey(jid.toString());
-            for (Conversation c : mXmppConnectionService.getConversations()) {
-                if (c.getAccount().equals(message.getConversation().getAccount()) && c.getJid().asBareJid().equals(jid)) {
-                    builder.setImportant(c.getBooleanAttribute(Conversation.ATTRIBUTE_PINNED_ON_TOP, false));
-                    break;
+            final Account messageAccount = message.getConversation().getAccount();
+            if (messageAccount != null) {
+                for (Conversation c : mXmppConnectionService.getConversations()) {
+                    if (messageAccount.equals(c.getAccount()) && c.getJid().asBareJid().equals(jid)) {
+                        builder.setImportant(c.getBooleanAttribute(Conversation.ATTRIBUTE_PINNED_ON_TOP, false));
+                        break;
+                    }
                 }
             }
             builder.setIcon(

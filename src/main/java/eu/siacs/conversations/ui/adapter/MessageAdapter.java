@@ -448,7 +448,7 @@ public class MessageAdapter extends ArrayAdapter<Message> {
             viewHolder.indicator.setVisibility(GONE);
         } else {
             boolean verified = false;
-            if (message.getEncryption() == Message.ENCRYPTION_AXOLOTL) {
+            if (message.getEncryption() == Message.ENCRYPTION_AXOLOTL && message.getConversation().getAccount() != null) {
                 final FingerprintStatus status = message.getConversation().getAccount().getAxolotlService().getFingerprintTrust(message.getFingerprint());
                 if (status != null && status.isVerified()) {
                     verified = true;

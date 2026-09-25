@@ -28,6 +28,7 @@ import java.security.spec.InvalidKeySpecException;
 
 import eu.siacs.conversations.Config;
 import eu.siacs.conversations.entities.Account;
+import eu.siacs.conversations.entities.Contact;
 import eu.siacs.conversations.entities.Conversation;
 import eu.siacs.conversations.generator.MessageGenerator;
 import eu.siacs.conversations.services.XmppConnectionService;
@@ -293,7 +294,10 @@ public class OtrService extends OtrCryptoEngineImpl implements OtrEngineHost {
             Conversation conversation = this.mXmppConnectionService.find(this.account, jid);
             if (conversation != null) {
                 if (approved) {
-                    conversation.getContact().addOtrFingerprint(fingerprint);
+                    final Contact contact = conversation.getContact();
+                    if (contact != null) {
+                        contact.addOtrFingerprint(fingerprint);
+                    }
                 }
                 conversation.smp().hint = null;
                 conversation.smp().status = Conversation.Smp.STATUS_VERIFIED;

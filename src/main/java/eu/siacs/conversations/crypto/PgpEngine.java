@@ -55,9 +55,14 @@ public class PgpEngine {
     }
 
     public void encrypt(final Message message, final UiCallback<Message> callback) {
+        final Conversation conversation = (Conversation) message.getConversation();
+        if (conversation.getAccount() == null) {
+            // conversation not yet attached to its account (DB restore window); cannot PGP-encrypt
+            callback.error(R.string.openpgp_error, message);
+            return;
+        }
         Intent params = new Intent();
         params.setAction(OpenPgpApi.ACTION_ENCRYPT);
-        final Conversation conversation = (Conversation) message.getConversation();
         if (conversation.getMode() == Conversation.MODE_SINGLE) {
             long[] keys = {
                     conversation.getContact().getPgpKeyId(),

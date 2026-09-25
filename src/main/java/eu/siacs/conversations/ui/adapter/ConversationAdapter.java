@@ -34,6 +34,7 @@ import java.util.Set;
 import de.monocles.mod.Util;
 import eu.siacs.conversations.R;
 import eu.siacs.conversations.databinding.ConversationListRowBinding;
+import eu.siacs.conversations.entities.Account;
 import eu.siacs.conversations.entities.Contact;
 import eu.siacs.conversations.entities.Conversation;
 import eu.siacs.conversations.entities.Conversational;
@@ -161,15 +162,16 @@ public class ConversationAdapter
             viewHolder.binding.conversationName.setText(name);
         }
 
-        if (activity.xmppConnectionService.multipleAccounts() && activity.xmppConnectionService.showOwnAccounts()) {
+        final Account account = conversation.getAccount();
+        if (account != null && activity.xmppConnectionService.multipleAccounts() && activity.xmppConnectionService.showOwnAccounts()) {
             viewHolder.binding.account.setVisibility(View.VISIBLE);
-            viewHolder.binding.account.setText(conversation.getAccount().getJid().asBareJid());
+            viewHolder.binding.account.setText(account.getJid().asBareJid());
         } else {
             viewHolder.binding.account.setVisibility(View.GONE);
         }
 
-        if (activity.xmppConnectionService != null && activity.xmppConnectionService.multipleActiveAccounts()) {
-            viewHolder.binding.frame.setBackgroundColor(conversation.getAccount().getColor(activity.isDarkTheme()));
+        if (account != null && activity.xmppConnectionService != null && activity.xmppConnectionService.multipleActiveAccounts()) {
+            viewHolder.binding.frame.setBackgroundColor(account.getColor(activity.isDarkTheme()));
         } else {
             viewHolder.binding.frame.setBackgroundColor(StyledAttributes.getColor(this.activity, R.attr.color_background_secondary));
         }
@@ -422,7 +424,7 @@ public class ConversationAdapter
         } else {
             timestamp = message.getTimeSent();
         }
-        final boolean isAccountDisabled = !conversation.getAccount().isEnabled();
+        final boolean isAccountDisabled = conversation.getAccount() == null || !conversation.getAccount().isEnabled();
         final boolean isPinned = conversation.getBooleanAttribute(Conversation.ATTRIBUTE_PINNED_ON_TOP,false);
         if (isPinned) {
             viewHolder.binding.chat.setBackgroundColor(StyledAttributes.getColor(this.activity, R.attr.colorAccentLight));
@@ -447,7 +449,7 @@ public class ConversationAdapter
                 conversation,
                 viewHolder.binding.conversationImage,
                 R.dimen.avatar_on_conversation_overview);
-        if (conversation.getMode() == Conversational.MODE_SINGLE && conversation.getContact().isActive()) {
+        if (conversation.getMode() == Conversational.MODE_SINGLE && conversation.getContact() != null && conversation.getContact().isActive()) {
             viewHolder.binding.userActiveIndicator.setVisibility(View.VISIBLE);
         } else {
             viewHolder.binding.userActiveIndicator.setVisibility(View.GONE);
@@ -455,7 +457,7 @@ public class ConversationAdapter
         viewHolder.itemView.setOnClickListener(v -> listener.onConversationClick(v, conversation));
 
         if (conversation.getMode() == Conversation.MODE_SINGLE && ShowPresenceColoredNames()) {
-            if (hasInternetConnection) {
+            if (hasInternetConnection && conversation.getContact() != null) {
                 switch (conversation.getContact().getPresences().getShownStatus()) {
                     case CHAT:
                     case ONLINE:

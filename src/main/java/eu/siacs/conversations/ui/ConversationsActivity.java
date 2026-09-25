@@ -1168,7 +1168,7 @@ public class ConversationsActivity extends XmppActivity implements OnConversatio
                             absubtitle.setTypeface(null, Typeface.BOLD_ITALIC);
                             absubtitle.setSelected(true);
                         } else {
-                            if (showLastSeen && !conversation.hasPermanentCounterpart() && conversation.getContact().getLastseen() > 0 && conversation.getContact().getPresences().allOrNonSupport(Namespace.IDLE)) {
+                            if (showLastSeen && !conversation.hasPermanentCounterpart() && conversation.getContact() != null && conversation.getContact().getLastseen() > 0 && conversation.getContact().getPresences().allOrNonSupport(Namespace.IDLE)) {
                                 absubtitle.setText(UIHelper.lastseen(getApplicationContext(), conversation.getContact().isActive(), conversation.getContact().getLastseen()));
                                 absubtitle.setVisibility(View.VISIBLE);
                             } else {
