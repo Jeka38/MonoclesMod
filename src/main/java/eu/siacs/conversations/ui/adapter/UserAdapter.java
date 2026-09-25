@@ -168,6 +168,14 @@ public class UserAdapter extends ListAdapter<MucOptions.User, UserAdapter.ViewHo
             tv.setBackgroundResource(R.drawable.rounded_tag);
             viewHolder.binding.tags.addView(tv);
         }
+        // Domain-only entries (e.g. a banned server in the "Blocked" list) get a tag of their
+        // own so they are not mistaken for regular users.
+        if (user.isDomain()) {
+            TextView tv = (TextView) LayoutInflater.from(viewHolder.binding.getRoot().getContext()).inflate(R.layout.list_item_tag, viewHolder.binding.tags, false);
+            tv.setText(viewHolder.binding.getRoot().getContext().getString(R.string.muc_server));
+            tv.setBackgroundResource(R.drawable.rounded_tag);
+            viewHolder.binding.tags.addView(tv);
+        }
 
         if (viewHolder.binding.tags.getChildCount() < 1) {
             viewHolder.binding.contactJid.setVisibility(View.VISIBLE);

@@ -975,6 +975,7 @@
     <string name="ban_from_channel">Ban from room</string>
     <string name="manage_lists_users">Manage lists (users)</string>
     <string name="manage_lists_hint">Choose a list to view or change its members</string>
+    <string name="muc_server">Server</string>
     <string name="manage_permission">Manage privileges</string>
     <string name="change_role_affiliation">Change role/affiliation</string>
     <string name="destroy_channel">Destroy room</string>

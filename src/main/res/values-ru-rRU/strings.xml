@@ -1704,6 +1704,7 @@
     <string name="choose_webxdc">Выберите WebXDC</string>
     <string name="manage_lists_users">Управление списками (пользователи)</string>
     <string name="manage_lists_hint">Выберите список, чтобы просмотреть или изменить его состав</string>
+    <string name="muc_server">Сервер</string>
     <string name="change_role_affiliation">Изменить роль/аффилиацию</string>
     <string name="remove_from_all_lists">Удалить из списка</string>
     <string name="status_online">Подключен</string>

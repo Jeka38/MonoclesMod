@@ -411,7 +411,11 @@ public class MucOptions {
             ArrayList<User> userList = new ArrayList<>();
             User selfUser = getSelf();
             for (User user : this.users) {
-                if (!user.isDomain() &&
+                // Domain-only affiliation items (XEP-0045 JIDs without a local part) stand for whole
+                // servers. They stay out of the occupant/affiliation lists, except for OUTCAST
+                // entries which are shown in the "Blocked" list as blocked servers.
+                final boolean blockedServer = user.isDomain() && user.getAffiliation() == Affiliation.OUTCAST;
+                if ((!user.isDomain() || (includeOutcast && blockedServer)) &&
                         (includeOffline ? (includeOutcast || user.getAffiliation().ranks(Affiliation.NONE))
                                 : user.getRole().ranks(Role.PARTICIPANT))) {
                     userList.add(user);
