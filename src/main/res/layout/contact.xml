@@ -34,7 +34,7 @@
             android:src="@drawable/active_indicator" />
 
         <LinearLayout
-            android:layout_width="wrap_content"
+            android:layout_width="match_parent"
             android:layout_height="wrap_content"
             android:layout_centerVertical="true"
             android:layout_toEndOf="@+id/contact_photo"
@@ -51,10 +51,23 @@
                 android:textAppearance="@style/TextAppearance.Conversations.Subhead" />
 
             <LinearLayout
-                android:layout_width="wrap_content"
+                android:layout_width="match_parent"
                 android:layout_height="wrap_content"
                 android:gravity="center_vertical"
                 android:orientation="horizontal">
+
+                <TextView
+                    android:id="@+id/contact_jid"
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:singleLine="true"
+                    android:textAppearance="@style/TextAppearance.Conversations.Body1.Secondary" />
+
+                <!-- Невидимый заполнитель: прижимает иконку клиента к правому краю строки. -->
+                <View
+                    android:layout_width="0dp"
+                    android:layout_height="1dp"
+                    android:layout_weight="1" />
 
                 <LinearLayout
                     android:id="@+id/client_info"
@@ -79,13 +92,6 @@
                         android:layout_marginStart="4dp"
                         android:textAppearance="@style/TextAppearance.Conversations.Body1.Secondary" />
                 </LinearLayout>
-
-                <TextView
-                    android:id="@+id/contact_jid"
-                    android:layout_width="wrap_content"
-                    android:layout_height="wrap_content"
-                    android:singleLine="true"
-                    android:textAppearance="@style/TextAppearance.Conversations.Body1.Secondary" />
             </LinearLayout>
 
             <com.wefika.flowlayout.FlowLayout

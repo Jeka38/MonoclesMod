@@ -40,10 +40,8 @@ import eu.siacs.conversations.entities.Conversational;
 import eu.siacs.conversations.entities.Message;
 import eu.siacs.conversations.entities.MucOptions;
 import eu.siacs.conversations.services.AttachFileToConversationRunnable;
-import eu.siacs.conversations.ui.SettingsActivity;
 import eu.siacs.conversations.ui.XmppActivity;
 import eu.siacs.conversations.ui.util.AvatarWorkerTask;
-import eu.siacs.conversations.ui.util.ClientIconUtils;
 import eu.siacs.conversations.ui.util.StyledAttributes;
 import eu.siacs.conversations.utils.IrregularUnicodeDetector;
 import eu.siacs.conversations.utils.MimeUtils;
@@ -78,7 +76,6 @@ public class ConversationAdapter
     private OnConversationClickListener listener;
     private boolean hasInternetConnection = false;
     private String readmarkervalue;
-    private boolean showClientIcons = false;
 
     public ConversationAdapter(XmppActivity activity, List<Conversation> conversations) {
         this.activity = activity;
@@ -86,7 +83,6 @@ public class ConversationAdapter
         SharedPreferences sharedPref = PreferenceManager.getDefaultSharedPreferences(activity);
         this.readmarkervalue = sharedPref.getString("readmarker_style", "blue_readmarkers");
         this.collapsedGroups.addAll(sharedPref.getStringSet("collapsed_groups", new HashSet<>()));
-        this.showClientIcons = sharedPref.getBoolean(SettingsActivity.SHOW_CLIENT_ICONS, activity.getResources().getBoolean(R.bool.show_client_icons));
         this.groupOrder = parseGroupOrder(sharedPref.getString(PREF_GROUP_ORDER, DEFAULT_GROUP_ORDER));
         updateItems();
     }
@@ -503,22 +499,7 @@ public class ConversationAdapter
                     viewHolder.binding.indicatorReceived.setVisibility(View.GONE);
             }
         }
-        bindClientIcon(viewHolder, conversation);
-    }
-
-    private void bindClientIcon(ConversationViewHolder viewHolder, Conversation conversation) {
-        if (!showClientIcons || conversation.getMode() != Conversation.MODE_SINGLE) {
-            viewHolder.binding.clientInfo.setVisibility(View.GONE);
-            return;
-        }
-        final Contact contact = conversation.getContact();
-        final boolean applied = ClientIconUtils.applyRosterClientIcon(viewHolder.binding.clientIcon, contact);
-        if (!applied) {
-            viewHolder.binding.clientInfo.setVisibility(View.GONE);
-        } else {
-            viewHolder.binding.clientInfo.setVisibility(View.VISIBLE);
-            viewHolder.binding.clientVersion.setVisibility(View.GONE);
-        }
+        // Иконки клиента в списке чатов не показываем — только в списке контактов и участников.
     }
 
 
