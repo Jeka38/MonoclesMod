@@ -3,7 +3,6 @@ package eu.siacs.conversations.ui.adapter;
 import android.content.SharedPreferences;
 import android.graphics.drawable.Drawable;
 import android.preference.PreferenceManager;
-import android.text.TextUtils;
 import android.view.LayoutInflater;
 import android.view.View;
 import android.view.ViewGroup;
@@ -199,19 +198,11 @@ public class ListItemAdapter extends ArrayAdapter<ListItem> {
         if (contact.getSoftwareVersion() == null && activity.xmppConnectionService != null) {
             activity.xmppConnectionService.fetchVersion(contact.getAccount(), contact.getJid());
         }
+        // Client icon only; the software version string is deliberately not shown in the
+        // contacts list (same as the participants list).
+        viewHolder.clientVersion.setVisibility(View.GONE);
         final boolean applied = ClientIconUtils.applyRosterClientIcon(viewHolder.clientIcon, contact);
-        final String version = ClientIconUtils.getSoftwareVersion(contact);
-        if (!applied) {
-            viewHolder.clientInfo.setVisibility(View.GONE);
-        } else {
-            viewHolder.clientInfo.setVisibility(View.VISIBLE);
-            if (!TextUtils.isEmpty(version)) {
-                viewHolder.clientVersion.setText(version);
-                viewHolder.clientVersion.setVisibility(View.VISIBLE);
-            } else {
-                viewHolder.clientVersion.setVisibility(View.GONE);
-            }
-        }
+        viewHolder.clientInfo.setVisibility(applied ? View.VISIBLE : View.GONE);
     }
 
     public void setOnTagClickedListener(OnTagClickedListener listener) {
