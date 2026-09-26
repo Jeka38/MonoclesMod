@@ -154,6 +154,11 @@ public class MucOptions {
     }
 
     public String getAvatar() {
+        final Account account = getAccount();
+        if (account == null) {
+            // conversation not yet attached to its account (DB restore window)
+            return null;
+        }
         return account.getRoster().getContact(conversation.getJid()).getAvatarFilename();
     }
 

@@ -3427,9 +3427,12 @@ public class XmppConnectionService extends Service {
                 if (counterpart == null && conversation.getNextCounterpart() != null) {
                     conversation.setNextCounterpart(null);
                 }
+                // Attach the account even while the conversation is deliberately kept archived: its
+                // MAM messages are still parsed and can reach the notification renderer, which
+                // assumes a non-null account.
+                conversation.setAccount(account);
                 if (!keepArchived) {
                     conversation.setStatus(Conversation.STATUS_AVAILABLE);
-                    conversation.setAccount(account);
                     if (muc) {
                         conversation.setMode(Conversation.MODE_MULTI);
                         conversation.setContactJid(jid);

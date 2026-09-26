@@ -499,6 +499,11 @@ public class AvatarService implements OnAdvancedStreamFeaturesLoaded {
     }
 
     public Drawable get(Account account, int size, boolean cachedOnly) {
+        if (account == null) {
+            // conversations restored from the database can reach the renderers before they are
+            // attached to an account; there is no account avatar to render in that case
+            return null;
+        }
         final String KEY = key(account, size);
         Drawable avatar = mXmppConnectionService.getDrawableCache().get(KEY);
         if (avatar != null || cachedOnly) {

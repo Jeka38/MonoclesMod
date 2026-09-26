@@ -588,6 +588,13 @@ public class NotificationService {
     }
 
     public void pushFromBacklog(final Message message) {
+        final Conversational conversation = message.getConversation();
+        if (conversation == null || conversation.getAccount() == null) {
+            // conversation not yet attached to its account (DB restore window / archived MAM query);
+            // the notification subsystem assumes a non-null account, so skip it instead of crashing
+            Log.d(Config.LOGTAG, "skipping backlog notification for not yet attached conversation");
+            return;
+        }
         if (notifyMessage(message)) {
             synchronized (notifications) {
                 getBacklogMessageCounter((Conversation) message.getConversation()).incrementAndGet();
@@ -1878,13 +1885,14 @@ public class NotificationService {
         if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.N) {
             final Conversation conversation = (Conversation) messages.get(0).getConversation();
             final Person.Builder meBuilder = new Person.Builder().setName(mXmppConnectionService.getString(R.string.me));
-            if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.P) {
+            final Account meAccount = conversation.getAccount();
+            if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.P && meAccount != null) {
                 meBuilder.setIcon(
                         IconCompat.createWithBitmap(FileBackend.drawDrawable(
                                 mXmppConnectionService
                                         .getAvatarService()
                                         .get(
-                                                conversation.getAccount(),
+                                                meAccount,
                                                 AvatarService.getSystemUiAvatarSize(
                                                         mXmppConnectionService)))));
             }
