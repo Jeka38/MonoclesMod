@@ -61,6 +61,7 @@ import eu.siacs.conversations.http.HttpConnectionManager;
 import eu.siacs.conversations.services.MessageArchiveService;
 import eu.siacs.conversations.services.XmppConnectionService;
 import eu.siacs.conversations.utils.CryptoHelper;
+import eu.siacs.conversations.utils.UIHelper;
 import eu.siacs.conversations.xml.Namespace;
 import eu.siacs.conversations.xml.Element;
 import eu.siacs.conversations.xml.LocalizedContent;
@@ -86,6 +87,30 @@ public class MessageParser extends AbstractParser implements OnMessagePacketRece
 
     public MessageParser(XmppConnectionService service) {
         super(service);
+    }
+
+    /**
+     * Posts a notification when somebody reacts to one of our own messages (XEP-0444). Only
+     * reactions to locally-sent messages trigger it; reactions to other people's messages do not.
+     */
+    private void notifyReactionIfOwnMessage(final Conversation conversation, final Message carrier, final Jid counterpart) {
+        if (conversation == null) return;
+        // our own reaction (echoed back / carbon) must not notify
+        if (carrier.getStatus() > Message.STATUS_RECEIVED) return;
+        final String targetId = carrier.getReactionTargetId();
+        if (targetId == null) return;
+        final Set<String> emojis = carrier.getReactionEmojis();
+        if (emojis.isEmpty()) return;
+        final Message target = conversation.findMessageWithRemoteIdAndCounterpart(targetId, null);
+        if (target == null || target.getStatus() <= Message.STATUS_RECEIVED) return;
+        final String reactorName;
+        if (conversation.getMode() == Conversation.MODE_MULTI) {
+            reactorName = counterpart == null ? null : UIHelper.getDisplayedMucCounterpart(counterpart);
+        } else {
+            reactorName = conversation.getName().toString();
+        }
+        // pass the local UUID so tapping the notification can scroll to that exact message
+        mXmppConnectionService.getNotificationService().pushReaction(conversation, reactorName, String.join("", emojis), target.getUuid());
     }
 
     private static String extractStanzaId(Element packet, boolean isTypeGroupChat, Conversation conversation) {
@@ -686,25 +711,18 @@ public class MessageParser extends AbstractParser implements OnMessagePacketRece
             }
         }
 
-        final Element reactions = packet.findChild("reactions", "urn:xmpp:reactions:0");
-        if (body == null && html == null) {
-            if (reactions != null && reactions.getAttribute("id") != null) {
-                final Conversation conversation = mXmppConnectionService.find(account, counterpart.asBareJid());
-                if (conversation != null) {
-                    final Message reactionTo = conversation.findMessageWithRemoteIdAndCounterpart(reactions.getAttribute("id"), null);
-                    if (reactionTo != null) {
-                        String bodyS = reactionTo.reply().getBody();
-                        for (Element el : reactions.getChildren()) {
-                            if (el.getName().equals("reaction") && el.getNamespace().equals("urn:xmpp:reactions:0")) {
-                                bodyS += el.getContent();
-                            }
-                        }
-                        body = new LocalizedContent(bodyS, "en", 1);
-                        final Message previousReaction = conversation.findMessageReactingTo(reactions.getAttribute("id"), counterpart);
-                        if (previousReaction != null) replacementId = previousReaction.replyId();
-                    }
+        final Element reactions = packet.findChild("reactions", Namespace.REACTIONS);
+        final boolean isReactionCarrier = reactions != null && reactions.getAttribute("id") != null;
+        if (body == null && isReactionCarrier) {
+            // XEP-0444 carriers may omit a body entirely. Give them a minimal fallback so the
+            // message enters the normal storage path (the payload is what we actually read).
+            final StringBuilder emojis = new StringBuilder();
+            for (Element el : reactions.getChildren()) {
+                if (el.getName().equals("reaction") && Namespace.REACTIONS.equals(el.getNamespace())) {
+                    emojis.append(el.getContent());
                 }
             }
+            body = new LocalizedContent(emojis.toString(), "en", 1);
         }
 
         final Contact messageSender = account.getRoster().getContact(counterpart);
@@ -903,7 +921,10 @@ public class MessageParser extends AbstractParser implements OnMessagePacketRece
                 }
             }
             message.markable = packet.hasChild("markable", "urn:xmpp:chat-markers:0");
-            if (reactions != null) message.addPayload(reactions);
+            if (reactions != null) {
+                message.addPayload(reactions);
+                if (isReactionCarrier) message.setType(Message.TYPE_REACTION);
+            }
             for (Element el : packet.getChildren()) {
                 if ((el.getName().equals("query") && el.getNamespace().equals("http://jabber.org/protocol/disco#items") && el.getAttribute("node").equals("http://jabber.org/protocol/commands")) ||
                         (el.getName().equals("fallback") && el.getNamespace().equals("urn:xmpp:fallback:0"))) {
@@ -1155,7 +1176,10 @@ public class MessageParser extends AbstractParser implements OnMessagePacketRece
             }
 
             if (query == null || query.isCatchup()) { //either no mam or catchup
-                if (status == Message.STATUS_SEND || status == Message.STATUS_SEND_RECEIVED) {
+                if (message.isReaction()) {
+                    // a hidden XEP-0444 carrier must not surface as unread or notification
+                    message.markRead();
+                } else if (status == Message.STATUS_SEND || status == Message.STATUS_SEND_RECEIVED) {
                     mXmppConnectionService.markRead(conversation);
                     if (query == null) {
                         activateGracePeriod(account);
@@ -1205,6 +1229,11 @@ public class MessageParser extends AbstractParser implements OnMessagePacketRece
                 }
             }
             mXmppConnectionService.databaseBackend.createMessage(message);
+
+            if (message.isReaction() && query == null) {
+                // only live reactions notify; MAM/catchup replays would re-notify on every sync
+                notifyReactionIfOwnMessage(conversation, message, counterpart);
+            }
 
             final HttpConnectionManager manager = this.mXmppConnectionService.getHttpConnectionManager();
 

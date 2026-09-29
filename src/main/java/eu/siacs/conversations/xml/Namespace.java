@@ -18,6 +18,9 @@ public final class Namespace {
     public static final String HTTP_UPLOAD = "urn:xmpp:http:upload:0";
     public static final String HTTP_UPLOAD_LEGACY = "urn:xmpp:http:upload";
     public static final String STANZA_IDS = "urn:xmpp:sid:0";
+    // XEP-0444: Message Reactions
+    public static final String REACTIONS = "urn:xmpp:reactions:0";
+    public static final String REACTION = "urn:xmpp:reaction:0";
     public static final String IDLE = "urn:xmpp:idle:1";
     public static final String DATA = "jabber:x:data";
     public static final String CAPTCHA = "urn:xmpp:captcha";

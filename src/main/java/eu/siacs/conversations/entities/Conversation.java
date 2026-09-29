@@ -134,6 +134,7 @@ import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
 import java.util.ListIterator;
+import java.util.Map;
 import java.util.concurrent.atomic.AtomicBoolean;
 
 import eu.siacs.conversations.Config;
@@ -185,6 +186,8 @@ public class Conversation extends AbstractEntity implements Blockable, Comparabl
     private static final String ATTRIBUTE_CRYPTO_TARGETS = "crypto_targets";
     private static final String ATTRIBUTE_NEXT_ENCRYPTION = "next_encryption";
     private static final String ATTRIBUTE_CORRECTING_MESSAGE = "correcting_message";
+    // timestamp of the newest reaction-to-our-message the user has already been shown
+    private static final String ATTRIBUTE_LAST_SEEN_REACTION = "last_seen_reaction";
     protected final ArrayList<Message> messages = new ArrayList<>();
     public AtomicBoolean messagesLoaded = new AtomicBoolean(true);
     protected Account account = null;
@@ -311,6 +314,7 @@ public class Conversation extends AbstractEntity implements Blockable, Comparabl
         synchronized (this.messages) {
             for (int i = messages.size() - 1; i >= 0; --i) {
                 final Message message = messages.get(i);
+                if (message.isReaction()) continue;
                 if (message.getSubject() != null && !message.isOOb() && (message.getRawBody() == null || message.getRawBody().isEmpty())) continue;
                 if (message.isRead()) {
                     return first;
@@ -793,6 +797,144 @@ public class Conversation extends AbstractEntity implements Blockable, Comparabl
         return reactionEmoji;
     }
 
+    /**
+     * A "reaction carrier" is a hidden message whose only purpose is to transport one reactor's
+     * current set of XEP-0444 reactions for a target message. Only the latest carrier per reactor
+     * is relevant; older ones are kept (like MAM history) but ignored when aggregating.
+     */
+    private boolean isReactionCarrierFor(final Message message, final String targetReplyId) {
+        if (targetReplyId == null) return false;
+        final Element reactions = message.getReactions();
+        return reactions != null && targetReplyId.equals(reactions.getAttribute("id"));
+    }
+
+    private String reactionReactorKey(final Message carrier) {
+        if (carrier.getStatus() > Message.STATUS_RECEIVED) {
+            return "self";
+        }
+        final Jid counterpart = carrier.getCounterpart();
+        if (counterpart == null) return carrier.getUuid();
+        // group resources of the same account together; XEP-0444 counts reactors by bare JID
+        return counterpart.asBareJid().toString();
+    }
+
+    /**
+     * Aggregated emoji -> count over all reactors that reacted to the given message, taking the
+     * latest carrier per reactor.
+     */
+    public Map<String, Integer> getReactionCounts(final Message target) {
+        final String id = target.reactionId();
+        final Map<String, Message> latestByReactor = new HashMap<>();
+        if (id != null) {
+            synchronized (this.messages) {
+                for (final Message message : this.messages) {
+                    if (!isReactionCarrierFor(message, id)) continue;
+                    final String key = reactionReactorKey(message);
+                    final Message previous = latestByReactor.get(key);
+                    if (previous == null || message.getTimeSent() >= previous.getTimeSent()) {
+                        latestByReactor.put(key, message);
+                    }
+                }
+            }
+        }
+        final Map<String, Integer> counts = new HashMap<>();
+        for (final Message carrier : latestByReactor.values()) {
+            for (final String emoji : carrier.getReactionEmojis()) {
+                final Integer current = counts.get(emoji);
+                counts.put(emoji, current == null ? 1 : current + 1);
+            }
+        }
+        return counts;
+    }
+
+    /** The emojis this account reacted with on the given message (empty if none). */
+    public Set<String> getOwnReactionEmojis(final Message target) {
+        final Set<String> emojis = new HashSet<>();
+        final Message latest = findOwnReactionCarrier(target);
+        if (latest != null) {
+            emojis.addAll(latest.getReactionEmojis());
+        }
+        return emojis;
+    }
+
+    /** The latest outgoing reaction carrier this account sent for the given target, or null. */
+    public Message findOwnReactionCarrier(final Message target) {
+        final String id = target.replyId();
+        if (id == null) return null;
+        Message latest = null;
+        synchronized (this.messages) {
+            for (final Message message : this.messages) {
+                if (!isReactionCarrierFor(message, id)) continue;
+                if (message.getStatus() <= Message.STATUS_RECEIVED) continue;
+                if (latest == null || message.getTimeSent() >= latest.getTimeSent()) {
+                    latest = message;
+                }
+            }
+        }
+        return latest;
+    }
+
+    /**
+     * The newest incoming reaction to one of our own messages that the user has not acknowledged
+     * yet, or null. Drives the floating "heart" jump-to-reaction button in the chat.
+     */
+    public Message getUnseenReactionToOwnMessage() {
+        final long lastSeen = getLongAttribute(ATTRIBUTE_LAST_SEEN_REACTION, 0);
+        Message newest = null;
+        synchronized (this.messages) {
+            for (final Message carrier : this.messages) {
+                if (!carrier.isReaction()) continue;
+                if (carrier.getStatus() > Message.STATUS_RECEIVED) continue; // only reactions from others
+                if (carrier.getReactionEmojis().isEmpty()) continue;
+                if (carrier.getTimeSent() <= lastSeen) continue;
+                final String targetId = carrier.getReactionTargetId();
+                if (targetId == null) continue;
+                final Message target = findMessageWithRemoteIdAndCounterpart(targetId, null);
+                if (target == null || target.getStatus() <= Message.STATUS_RECEIVED) continue;
+                if (newest == null || carrier.getTimeSent() >= newest.getTimeSent()) {
+                    newest = carrier;
+                }
+            }
+        }
+        return newest;
+    }
+
+    /** The message that the newest unseen reaction points at, or null. */
+    public Message getUnseenReactionTarget() {
+        final Message carrier = getUnseenReactionToOwnMessage();
+        if (carrier == null) return null;
+        final String targetId = carrier.getReactionTargetId();
+        return targetId == null ? null : findMessageWithRemoteIdAndCounterpart(targetId, null);
+    }
+
+    /**
+     * Marks reactions to our own messages received so far as seen (called after jumping to the
+     * reacted message). Reactions to other people's messages are ignored, so they cannot hide a
+     * pending reaction to one of ours.
+     */
+    public boolean markReactionsSeen() {
+        long newest = 0;
+        synchronized (this.messages) {
+            for (final Message carrier : this.messages) {
+                if (!carrier.isReaction() || carrier.getStatus() > Message.STATUS_RECEIVED) continue;
+                if (carrier.getReactionEmojis().isEmpty()) continue;
+                final String targetId = carrier.getReactionTargetId();
+                if (targetId == null) continue;
+                final Message target = findMessageWithRemoteIdAndCounterpart(targetId, null);
+                if (target == null || target.getStatus() <= Message.STATUS_RECEIVED) continue;
+                if (carrier.getTimeSent() > newest) {
+                    newest = carrier.getTimeSent();
+                }
+            }
+        }
+        final long lastSeen = getLongAttribute(ATTRIBUTE_LAST_SEEN_REACTION, 0);
+        if (newest <= lastSeen) {
+            return false;
+        }
+        setAttribute(ATTRIBUTE_LAST_SEEN_REACTION, newest);
+        return true;
+    }
+
 
     public Set<Message> findReplies(String id) {
         Set<Message> replies = new HashSet<>();
@@ -845,7 +987,8 @@ public class Conversation extends AbstractEntity implements Blockable, Comparabl
                     thread.first = m;
                 }
             }
-            boolean remove = m.wasMergedIntoPrevious(xmppConnectionService)
+            boolean remove = m.isReaction()
+                    || m.wasMergedIntoPrevious(xmppConnectionService)
                     || (m.getSubject() != null && !m.isOOb() && (m.getRawBody() == null || m.getRawBody().isEmpty()))
                     || (getLockThread() && !extraIds.contains(m.replyId()) && (mthread == null || !mthread.getContent().equals(getThread() == null ? "" : getThread().getContent())));
             if (nextCounterpart != null) {
@@ -985,7 +1128,7 @@ public class Conversation extends AbstractEntity implements Blockable, Comparabl
 
     public long getSortableTime() {
         Draft draft = getDraft();
-        long messageTime = getLatestMessage().getTimeReceived();
+        long messageTime = getLatestDisplayableMessageTime();
         long time = Math.max(messageTime, mujiCallTimestamp);
         if (draft == null) {
             return time;
@@ -1005,16 +1148,24 @@ public class Conversation extends AbstractEntity implements Blockable, Comparabl
         }
     }
 
-    private long getLatestMessageTimeExcludingStatusMessages() {
+    /**
+     * Time of the latest non-hidden message. Hidden XEP-0444 reaction carriers must not bump a
+     * conversation to the top of the chat list or become its preview.
+     */
+    private long getLatestDisplayableMessageTime() {
         synchronized (this.messages) {
             for (int i = this.messages.size() - 1; i >= 0; --i) {
                 final Message message = this.messages.get(i);
-                if (message.getType() != Message.TYPE_STATUS) {
+                if (!message.isReaction() && message.getType() != Message.TYPE_STATUS) {
                     return message.getTimeReceived();
                 }
             }
         }
         return Math.max(getCreated(), getLastClearHistory().getTimestamp());
+    }
+
+    private long getLatestMessageTimeExcludingStatusMessages() {
+        return getLatestDisplayableMessageTime();
     }
 
     public String getDraftMessage() {
@@ -1049,6 +1200,9 @@ public class Conversation extends AbstractEntity implements Blockable, Comparabl
         synchronized (this.messages) {
             for (int i = this.messages.size() - 1; i >= 0; --i) {
                 final Message message = messages.get(i);
+                if (message.isReaction()) {
+                    continue;
+                }
                 if (message.getType() == Message.TYPE_STATUS && message.isRead()) {
                     continue;
                 }
@@ -1399,13 +1553,26 @@ public class Conversation extends AbstractEntity implements Blockable, Comparabl
     public @Nullable
     Draft getDraft() {
         final long timestamp = getLongAttribute(ATTRIBUTE_NEXT_MESSAGE_TIMESTAMP, 0);
-        if (timestamp > getLatestMessage().getTimeSent()) {
+        if (timestamp > getLatestMessageTime()) {
             String message = getAttribute(ATTRIBUTE_NEXT_MESSAGE);
             if (!TextUtils.isEmpty(message) && timestamp != 0) {
                 return new Draft(message, timestamp);
             }
         }
         return null;
+    }
+
+    /** Sent time of the latest non-hidden message, falling back to creation/clear time. */
+    private long getLatestMessageTime() {
+        synchronized (this.messages) {
+            for (int i = this.messages.size() - 1; i >= 0; --i) {
+                final Message message = this.messages.get(i);
+                if (!message.isReaction()) {
+                    return message.getTimeSent();
+                }
+            }
+        }
+        return Math.max(getCreated(), getLastClearHistory().getTimestamp());
     }
 
     public boolean setNextMessage(final String input) {
@@ -1746,7 +1913,7 @@ public class Conversation extends AbstractEntity implements Blockable, Comparabl
             int count = 0;
             for (int i = this.messages.size() - 1; i >= 0; --i) {
                 final Message message = messages.get(i);
-                if (message.getType() == Message.TYPE_STATUS) {
+                if (message.isReaction() || message.getType() == Message.TYPE_STATUS) {
                     continue;
                 }
                 if (message.getSubject() != null && !message.isOOb() && (message.getRawBody() == null || message.getRawBody().isEmpty())) {
@@ -1795,7 +1962,7 @@ public class Conversation extends AbstractEntity implements Blockable, Comparabl
         int count = 0;
         synchronized (this.messages) {
             for (Message message : messages) {
-                if (message.getType() == Message.TYPE_STATUS) {
+                if (message.isReaction() || message.getType() == Message.TYPE_STATUS) {
                     continue;
                 }
                 if (message.getSubject() != null && !message.isOOb() && (message.getRawBody() == null || message.getRawBody().isEmpty())) continue;

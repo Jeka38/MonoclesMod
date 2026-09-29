@@ -173,6 +173,20 @@
                         android:gravity="center_vertical"
                         android:padding="1dp"
                         android:src="@drawable/ic_check_black_18dp" />
+
+                    <ImageButton
+                        android:id="@+id/reaction_button"
+                        android:layout_width="24dp"
+                        android:layout_height="24dp"
+                        android:layout_gravity="center_vertical"
+                        android:layout_marginStart="4dp"
+                        android:alpha="?attr/icon_alpha"
+                        android:background="?attr/selectableItemBackgroundBorderless"
+                        android:contentDescription="@string/message_reaction"
+                        android:padding="3dp"
+                        android:scaleType="fitCenter"
+                        android:src="@drawable/ic_emoji_button"
+                        app:tint="?attr/text_Color_Main" />
                 </com.wefika.flowlayout.FlowLayout>
             </LinearLayout>
         </LinearLayout>

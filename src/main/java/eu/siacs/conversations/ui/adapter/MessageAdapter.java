@@ -69,6 +69,8 @@ import android.widget.RelativeLayout;
 import android.widget.TextView;
 import android.widget.Toast;
 
+import com.wefika.flowlayout.FlowLayout;
+
 import androidx.annotation.Nullable;
 import androidx.appcompat.widget.PopupMenu;
 import androidx.core.app.ActivityCompat;
@@ -291,6 +293,82 @@ public class MessageAdapter extends ArrayAdapter<Message> {
     @Override
     public int getItemViewType(int position) {
         return this.getItemViewType(getItem(position));
+    }
+
+    /**
+     * Renders the aggregated XEP-0444 reactions as small chips under a message and wires the
+     * quick-reaction button. Reactions are only shown for messages the server/client can address
+     * (have a stable id).
+     */
+    private void bindReactions(final ViewHolder viewHolder, final Message message, final int type) {
+        if (viewHolder.reactions == null) {
+            return;
+        }
+        final boolean available = message.getConversation() instanceof Conversation
+                && !message.isReaction()
+                && message.getType() != Message.TYPE_STATUS
+                && message.getType() != Message.TYPE_RTP_SESSION
+                && message.reactionId() != null;
+        if (viewHolder.reaction_button != null) {
+            viewHolder.reaction_button.setVisibility(available ? View.VISIBLE : View.GONE);
+            if (available) {
+                viewHolder.reaction_button.setOnClickListener(v -> openReactionPicker(message));
+            } else {
+                viewHolder.reaction_button.setOnClickListener(null);
+            }
+        }
+        if (!available) {
+            viewHolder.reactions.setVisibility(View.GONE);
+            return;
+        }
+        final Conversation conversation = (Conversation) message.getConversation();
+        final Map<String, Integer> counts = conversation.getReactionCounts(message);
+        final Set<String> own = conversation.getOwnReactionEmojis(message);
+        viewHolder.reactions.removeAllViews();
+        if (counts.isEmpty()) {
+            viewHolder.reactions.setVisibility(View.GONE);
+            return;
+        }
+        viewHolder.reactions.setVisibility(View.VISIBLE);
+        final float density = metrics.density;
+        for (final Map.Entry<String, Integer> entry : counts.entrySet()) {
+            final boolean isOwn = own.contains(entry.getKey());
+            final TextView chip = new TextView(activity);
+            final String label = entry.getValue() > 1 ? entry.getKey() + " " + entry.getValue() : entry.getKey();
+            chip.setText(label);
+            chip.setTextSize(13);
+            chip.setPadding((int) (8 * density), (int) (3 * density), (int) (8 * density), (int) (3 * density));
+            final android.graphics.drawable.GradientDrawable background = new android.graphics.drawable.GradientDrawable();
+            background.setShape(android.graphics.drawable.GradientDrawable.RECTANGLE);
+            background.setCornerRadius(14 * density);
+            background.setColor(StyledAttributes.getColor(activity, R.attr.color_background_secondary));
+            if (isOwn) {
+                background.setStroke((int) Math.max(1, density), StyledAttributes.getColor(activity, R.attr.colorAccent));
+            }
+            chip.setBackground(background);
+            chip.setTextColor(StyledAttributes.getColor(activity, isOwn ? R.attr.colorAccent : R.attr.text_Color_Main));
+            final FlowLayout.LayoutParams params = new FlowLayout.LayoutParams(
+                    FlowLayout.LayoutParams.WRAP_CONTENT, FlowLayout.LayoutParams.WRAP_CONTENT);
+            params.setMargins(0, 0, (int) (4 * density), (int) (4 * density));
+            chip.setLayoutParams(params);
+            chip.setClickable(true);
+            chip.setFocusable(true);
+            final String emoji = entry.getKey();
+            chip.setOnClickListener(v -> toggleReaction(message, emoji));
+            viewHolder.reactions.addView(chip);
+        }
+    }
+
+    private void toggleReaction(final Message message, final String emoji) {
+        if (mConversationFragment != null) {
+            mConversationFragment.toggleReaction(message, emoji);
+        }
+    }
+
+    private void openReactionPicker(final Message message) {
+        if (mConversationFragment != null) {
+            mConversationFragment.openReactionPicker(message);
+        }
     }
 
     private void displayStatus(ViewHolder viewHolder, final Message message, int type, boolean darkBackground) {
@@ -1742,6 +1820,8 @@ public class MessageAdapter extends ArrayAdapter<Message> {
                     viewHolder.transfer = view.findViewById(R.id.transfer);
                     viewHolder.progressBar = view.findViewById(R.id.progressBar);
                     viewHolder.cancel_transfer = view.findViewById(R.id.cancel_transfer);
+                    viewHolder.reactions = view.findViewById(R.id.reactions);
+                    viewHolder.reaction_button = view.findViewById(R.id.reaction_button);
                     break;
                 case RECEIVED:
                     view = activity.getLayoutInflater().inflate(R.layout.message_received, parent, false);
@@ -1777,6 +1857,8 @@ public class MessageAdapter extends ArrayAdapter<Message> {
                     viewHolder.progressBar = view.findViewById(R.id.progressBar);
                     viewHolder.cancel_transfer = view.findViewById(R.id.cancel_transfer);
                     viewHolder.commands_list = view.findViewById(R.id.commands_list);
+                    viewHolder.reactions = view.findViewById(R.id.reactions);
+                    viewHolder.reaction_button = view.findViewById(R.id.reaction_button);
                     break;
                 case STATUS:
                     view = activity.getLayoutInflater().inflate(R.layout.message_status, parent, false);
@@ -2226,6 +2308,7 @@ public class MessageAdapter extends ArrayAdapter<Message> {
             setBubbleBackgroundColor(viewHolder.message_box, type, message.isPrivateMessage(), isInValidSession);
         }
         displayStatus(viewHolder, message, type, darkBackground);
+        bindReactions(viewHolder, message, type);
         return view;
     }
 
@@ -2414,6 +2497,8 @@ public class MessageAdapter extends ArrayAdapter<Message> {
         protected RelativeLayout transfer;
         protected ProgressBar progressBar;
         protected ImageButton cancel_transfer;
+        protected FlowLayout reactions;
+        protected ImageButton reaction_button;
     }
 
     public void setBubbleBackgroundColor(final View viewHolder, final int type,

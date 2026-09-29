@@ -101,6 +101,8 @@ public class Message extends AbstractEntity implements AvatarService.Avatarable 
     public static final int TYPE_PRIVATE = 4;
     public static final int TYPE_PRIVATE_FILE = 5;
     public static final int TYPE_RTP_SESSION = 6;
+    // hidden XEP-0444 reaction carrier; never rendered as its own chat row
+    public static final int TYPE_REACTION = 7;
 
     public static final String CONVERSATION = "conversationUuid";
     public static final String COUNTERPART = "counterpart";
@@ -438,6 +440,16 @@ public class Message extends AbstractEntity implements AvatarService.Avatarable 
         return remote;
     }
 
+    /**
+     * Stable id used to address this message in XEP-0444 reactions / XEP-0461 replies. Falls back
+     * to the local UUID when no wire id is available (e.g. a MUC message without stanza-ids), so
+     * reactions always have a non-null target id.
+     */
+    public String reactionId() {
+        final String replyId = replyId();
+        return replyId != null ? replyId : getUuid();
+    }
+
     public Message reply() {
         Message m;
         String name = getAvatarName();
@@ -487,28 +499,12 @@ public class Message extends AbstractEntity implements AvatarService.Avatarable 
     }
 
     public Message react(String emoji) {
-        Message m;
-
-        String name = getAvatarName();
-        String quotedText = MessageUtils.prepareQuote(this);
-
-        String fullMessage;
-        if (name != null && !name.isEmpty()) {
-            fullMessage = name + "\n" + QuoteHelper.quote(quotedText) + "\n\n" + emoji;
-        } else {
-            fullMessage = QuoteHelper.quote(quotedText) + "\n\n" + emoji;
+        final Set<String> emojis = new HashSet<>();
+        if (conversation instanceof Conversation) {
+            emojis.addAll(((Conversation) conversation).getOwnReactionEmojis(this));
         }
-
-        m = new Message(conversation, fullMessage, ENCRYPTION_NONE);
-
-        m.addPayload(
-                new Element("reaction", "urn:xmpp:reaction:0")
-                        .setAttribute("to", getCounterpart())
-                        .setAttribute("emoji", emoji)
-                        .setAttribute("id", replyId())
-        );
-
-        return m;
+        emojis.add(emoji);
+        return reactWith(emojis);
     }
 
 
@@ -517,16 +513,66 @@ public class Message extends AbstractEntity implements AvatarService.Avatarable 
         if (conversation instanceof Conversation) emojis = ((Conversation) conversation).findReactionsTo(reactTo.replyId(), null);
         emojis.remove(getBody(true));
         emojis.add(emoji);
+        updateReaction(reactTo, emojis);
+    }
 
-        updateReplyTo(reactTo, new SpannableStringBuilder(emoji));
-        final Element fallback = new Element("fallback", "urn:xmpp:fallback:0").setAttribute("for", "urn:xmpp:reactions:0");
+    public void updateReaction(final Message reactTo, final Set<String> emojis) {
+        final String targetId = reactTo.reactionId();
+        setBodyPreserveXHTML(String.join("", emojis));
+        final Element fallback = new Element("fallback", "urn:xmpp:fallback:0").setAttribute("for", Namespace.REACTIONS);
         fallback.addChild("body", "urn:xmpp:fallback:0");
         addPayload(fallback);
-        final Element reactions = new Element("reactions", "urn:xmpp:reactions:0").setAttribute("id", reactTo.replyId());
+        final Element reactions = new Element("reactions", Namespace.REACTIONS).setAttribute("id", targetId);
         for (String oneEmoji : emojis) {
-            reactions.addChild("reaction", "urn:xmpp:reactions:0").setContent(oneEmoji);
+            reactions.addChild("reaction", Namespace.REACTIONS).setContent(oneEmoji);
         }
         addPayload(reactions);
+        // keep XEP-0454 (reactions:1) style plain-text fallback out of the way; the carrier is hidden
+        addPayload(new Element("store", "urn:xmpp:hints"));
+    }
+
+    /**
+     * Build a brand new reaction carrier message targeting this message. The carrier is what is
+     * actually sent over the wire; the UI hides it and renders {@link #getReactionEmojis()} as
+     * tiles under the target instead.
+     */
+    public Message reactWith(final Set<String> emojis) {
+        final Message m = new Message(conversation, "", ENCRYPTION_NONE);
+        m.setType(TYPE_REACTION);
+        m.updateReaction(this, emojis);
+        return m;
+    }
+
+    /**
+     * A reaction carrier is a message that only exists to transport a XEP-0444
+     * {@code <reactions id="…"/>} element. It must not be rendered as a chat row. The parser
+     * tags all such messages with {@link #TYPE_REACTION}; the payload check keeps legacy rows
+     * (stored before that type existed) hidden as well.
+     */
+    public boolean isReaction() {
+        if (type == TYPE_REACTION) return true;
+        final Element reactions = getReactions();
+        return reactions != null && reactions.getAttribute("id") != null;
+    }
+
+    public Set<String> getReactionEmojis() {
+        final Set<String> emojis = new HashSet<>();
+        final Element reactions = getReactions();
+        if (reactions == null) {
+            return emojis;
+        }
+        for (final Element el : reactions.getChildren()) {
+            if (el.getName().equals("reaction") && Namespace.REACTIONS.equals(el.getNamespace())) {
+                emojis.add(el.getContent());
+            }
+        }
+        return emojis;
+    }
+
+    /** Id of the message this carrier reacts to, or null if this is not a carrier. */
+    public String getReactionTargetId() {
+        final Element reactions = getReactions();
+        return reactions == null ? null : reactions.getAttribute("id");
     }
 
     public void setReactions(Element reactions) {

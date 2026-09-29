@@ -748,6 +748,7 @@ public class ConversationFragment extends XmppFragment
     private final OnClickListener memojiButtonListener = new OnClickListener() {
         @Override
         public void onClick(View v) {
+            pendingReactionMessage = null;
             if (binding.emojiButton.getVisibility() == VISIBLE) {
                 if (binding.mediaPickerLayout.getHeight() < 100) {
                     LinearLayout emojipickerview = binding.mediaPickerLayout;
@@ -792,6 +793,7 @@ public class ConversationFragment extends XmppFragment
     private final OnClickListener msmilesButtonListener = new OnClickListener() {
         @Override
         public void onClick(View v) {
+            pendingReactionMessage = null;
             binding.emojiPicker.setVisibility(GONE);
             binding.smilesview.setVisibility(VISIBLE);
             binding.gifsview.setVisibility(GONE);
@@ -805,6 +807,7 @@ public class ConversationFragment extends XmppFragment
     private final OnClickListener memojisButtonListener = new OnClickListener() {
         @Override
         public void onClick(View v) {
+            pendingReactionMessage = null;
             binding.emojiPicker.setVisibility(VISIBLE);
             binding.smilesview.setVisibility(GONE);
             binding.gifsview.setVisibility(GONE);
@@ -835,6 +838,7 @@ public class ConversationFragment extends XmppFragment
     private final OnClickListener mgifsButtonListener = new OnClickListener() {
         @Override
         public void onClick(View v) {
+            pendingReactionMessage = null;
             binding.emojiPicker.setVisibility(GONE);
             binding.smilesview.setVisibility(GONE);
             binding.gifsview.setVisibility(VISIBLE);
@@ -867,6 +871,7 @@ public class ConversationFragment extends XmppFragment
     private final OnClickListener mkeyboardButtonListener = new OnClickListener() {
         @Override
         public void onClick(View v) {
+            pendingReactionMessage = null;
             if (binding.keyboardButton.getVisibility() == VISIBLE) {
                 binding.keyboardButton.setVisibility(GONE);
                 binding.emojiButton.setVisibility(VISIBLE);
@@ -986,6 +991,7 @@ public class ConversationFragment extends XmppFragment
     private final OnBackPressedCallback backPressedLeaveEmojiPicker = new OnBackPressedCallback(false) {
         @Override
         public void handleOnBackPressed() {
+            pendingReactionMessage = null;
             if (binding.mediaPickerLayout.getHeight() > 100) {
                 LinearLayout emojipickerview = binding.mediaPickerLayout;
                 ViewGroup.LayoutParams params = emojipickerview.getLayoutParams();
@@ -2035,6 +2041,7 @@ public class ConversationFragment extends XmppFragment
         });
         binding.textSendButton.setOnLongClickListener(this.mSendButtonLongListener);
         binding.scrollToBottomButton.setOnClickListener(this.mScrollButtonListener);
+        binding.reactionJumpButton.setOnClickListener(v -> jumpToLatestReaction());
         binding.recordVoiceButton.setOnClickListener(this.mRecordVoiceButtonListener);
         binding.emojiButton.setOnClickListener(this.memojiButtonListener);
         binding.emojisButton.setOnClickListener(this.memojisButtonListener);
@@ -2651,25 +2658,8 @@ public class ConversationFragment extends XmppFragment
                         while (message.mergeable(message.next())) {
                             message = message.next();
                         }
-                        Element reactions = message.getReactions();
-                        if (reactions != null) {
-                            final Message previousReaction = conversation.findMessageReactingTo(reactions.getAttribute("id"), null);
-                            if (previousReaction != null)
-                                reactions = previousReaction.getReactions();
-                            for (Element el : reactions.getChildren()) {
-                                if (message.getRawBody().endsWith(el.getContent())) {
-                                    reactions.removeChild(el);
-                                }
-                            }
-                            message.setReactions(reactions);
-                            if (previousReaction != null) {
-                                previousReaction.setReactions(reactions);
-                                activity.xmppConnectionService.updateMessage(previousReaction);
-                            }
-                        } else {
-                            message.setInReplyTo(null);
-                            message.clearPayloads();
-                        }
+                        message.setInReplyTo(null);
+                        message.clearPayloads();
                         message.setBody(" ");
                         message.setSubject(null);
                         message.putEdited(message.getUuid(), message.getServerMsgId(), message.getBody(), message.getTimeSent());
@@ -2762,15 +2752,100 @@ public class ConversationFragment extends XmppFragment
             refresh();
             return true;
         } else if (itemId == R.id.message_reaction) {
-            if (conversation.getMode() == Conversation.MODE_MULTI) {
-                quoteMessage(selectedMessage, user);
-            } else {
-                quoteMessage(selectedMessage, null);
-            }
-            chooseReaction(selectedMessage);
+            openReactionPicker(selectedMessage);
             return true;
         }
         return onOptionsItemSelected(item);
+    }
+
+    /**
+     * The message a currently-open emoji picker is reacting to, or null when the picker is in its
+     * normal (insert-into-input) mode. Set by {@link #openReactionPicker(Message)}.
+     */
+    private Message pendingReactionMessage = null;
+
+    /**
+     * Opens the standard {@code androidx.emoji2} emoji picker (the same one used for the message
+     * input) in "reaction" mode: the next picked emoji is toggled as a XEP-0444 reaction on the
+     * given message instead of being inserted into the text field.
+     */
+    public void openReactionPicker(final Message message) {
+        if (activity == null || binding == null || message == null) return;
+        if (message.getConversation() instanceof Conversation) {
+            conversation = (Conversation) message.getConversation();
+        }
+        pendingReactionMessage = message;
+
+        // expand the picker area and hide the soft keyboard, mirroring the normal emoji button
+        if (binding.mediaPickerLayout.getHeight() < 100) {
+            final LinearLayout picker = binding.mediaPickerLayout;
+            final ViewGroup.LayoutParams params = picker.getLayoutParams();
+            params.height = 800;
+            picker.setLayoutParams(params);
+        }
+        binding.emojiButton.setVisibility(GONE);
+        binding.keyboardButton.setVisibility(VISIBLE);
+        hideSoftKeyboard(activity);
+        backPressedLeaveEmojiPicker.setEnabled(true);
+
+        // force the standard emoji picker (never the custom "smiles" grid)
+        binding.emojiPicker.setVisibility(VISIBLE);
+        binding.emojisButton.setVisibility(VISIBLE);
+        binding.smilesview.setVisibility(GONE);
+        binding.smilesButton.setVisibility(GONE);
+        binding.smilesButtonSpacing.setVisibility(GONE);
+        binding.gifsview.setVisibility(GONE);
+
+        binding.emojiPicker.setOnEmojiPickedListener(emojiViewItem -> {
+            final Message target = pendingReactionMessage;
+            if (target != null) {
+                toggleReaction(target, emojiViewItem.getEmoji());
+                closeReactionPicker();
+            }
+        });
+        updateMediaPickerTabs();
+    }
+
+    /** Collapses the emoji picker after a reaction was picked and restores input mode. */
+    private void closeReactionPicker() {
+        pendingReactionMessage = null;
+        if (binding == null) return;
+        final LinearLayout picker = binding.mediaPickerLayout;
+        final ViewGroup.LayoutParams params = picker.getLayoutParams();
+        params.height = 0;
+        picker.setLayoutParams(params);
+        binding.keyboardButton.setVisibility(GONE);
+        binding.emojiButton.setVisibility(VISIBLE);
+        backPressedLeaveEmojiPicker.setEnabled(false);
+    }
+
+    /**
+     * Adds or removes this account's reaction with the given emoji on {@code message} and sends a
+     * fresh XEP-0444 carrier (an empty carrier removes the reaction, per the XEP).
+     */
+    public void toggleReaction(final Message message, final String emoji) {
+        if (activity == null || activity.xmppConnectionService == null || message == null) return;
+        final Conversational conversational = message.getConversation();
+        if (!(conversational instanceof Conversation)) return;
+        final Conversation target = (Conversation) conversational;
+        final Set<String> emojis = new HashSet<>(target.getOwnReactionEmojis(message));
+        if (!emojis.remove(emoji)) {
+            emojis.add(emoji);
+        }
+        final Message carrier = message.reactWith(emojis);
+        if (message.getConversation().getMode() == Conversation.MODE_MULTI
+                && message.isPrivateMessage()) {
+            Message.configurePrivateMessage(carrier, message.getCounterpart());
+        }
+        final int nextEncryption = target.getNextEncryption();
+        carrier.setEncryption(nextEncryption);
+        if (nextEncryption == Message.ENCRYPTION_OTR) {
+            sendOtrMessage(carrier);
+        } else if (nextEncryption == Message.ENCRYPTION_PGP) {
+            sendPgpMessage(carrier);
+        } else {
+            sendMessage(carrier);
+        }
     }
 
     private void showTextSelectionDialog(final Message message) {
@@ -4524,54 +4599,6 @@ public class ConversationFragment extends XmppFragment
         }
     }
 
-    private void chooseReaction(Message message) {
-        while (message.mergeable(message.next())) {
-            message = message.next();
-        }
-        conversation.setUserSelectedThread(true);
-        //Open emoji picker
-        if (binding.emojiButton.getVisibility() == VISIBLE && binding.mediaPickerLayout.getHeight() > 100) {
-            binding.emojiButton.setVisibility(GONE);
-            binding.keyboardButton.setVisibility(VISIBLE);
-            hideSoftKeyboard(activity);
-            EmojiPickerView emojiPickerView = binding.emojiPicker;
-            backPressedLeaveEmojiPicker.setEnabled(true);
-            binding.textinput.requestFocus();
-            emojiPickerView.setOnEmojiPickedListener(emojiViewItem -> {
-                binding.textinput.append(emojiViewItem.getEmoji());
-            });
-        } else if (binding.emojiButton.getVisibility() == VISIBLE && binding.mediaPickerLayout.getHeight() < 100) {
-            LinearLayout emojipickerview = binding.mediaPickerLayout;
-            ViewGroup.LayoutParams params = emojipickerview.getLayoutParams();
-            params.height = 800;
-            emojipickerview.setLayoutParams(params);
-            binding.emojiButton.setVisibility(GONE);
-            binding.keyboardButton.setVisibility(VISIBLE);
-            hideSoftKeyboard(activity);
-            EmojiPickerView emojiPickerView = binding.emojiPicker;
-            backPressedLeaveEmojiPicker.setEnabled(true);
-            binding.textinput.requestFocus();
-            emojiPickerView.setOnEmojiPickedListener(emojiViewItem -> {
-                binding.textinput.append(emojiViewItem.getEmoji());
-            });
-        }
-        if (binding.emojiPicker.getVisibility() == VISIBLE) {
-            binding.emojisButton.setBackground(ContextCompat.getDrawable(activity, R.drawable.selector_bubble));
-            binding.emojisButton.setTypeface(null, Typeface.BOLD);
-        } else {
-            binding.emojisButton.setBackgroundColor(0);
-            binding.emojisButton.setTypeface(null, Typeface.NORMAL);
-        }
-        if (binding.gifsview.getVisibility() == VISIBLE) {
-            binding.gifsButton.setBackground(ContextCompat.getDrawable(activity, R.drawable.selector_bubble));
-            binding.gifsButton.setTypeface(null, Typeface.BOLD);
-        } else {
-            binding.gifsButton.setBackgroundColor(0);
-            binding.gifsButton.setTypeface(null, Typeface.NORMAL);
-        }
-        // TODO: Directly choose emojis from popup menu
-    }
-
     private void highlightInConference(String nick) {
         final Editable editable = this.binding.textinput.getText();
         String oldString = editable.toString().trim();
@@ -4722,6 +4749,7 @@ public class ConversationFragment extends XmppFragment
         QuickLoader.set(conversation.getUuid());
         final boolean changedConversation = this.conversation != conversation;
         if (changedConversation) {
+            pendingReactionMessage = null;
             this.saveMessageDraftStopAudioPlayer();
         }
         this.clearPending();
@@ -5308,6 +5336,7 @@ public class ConversationFragment extends XmppFragment
                 updateStatusMessages();
                 updateMucTopicStrip();
                 updateMujiCallBar();
+                updateReactionJumpButton();
                 final int unreadCount = lastMessageUuid != null ? conversation.getReceivedMessagesCountSinceUuid(lastMessageUuid) : conversation.unreadCount();
                 if (unreadCount > 0) {
                     binding.unreadCountCustomView.setVisibility(View.VISIBLE);
@@ -5327,6 +5356,33 @@ public class ConversationFragment extends XmppFragment
                 conversation.refreshSessions();
             }
         }
+    }
+
+    /**
+     * Shows the floating heart button (bottom-right, above the scroll-to-bottom button) while
+     * there is an unseen reaction to one of our own messages. Tapping it scrolls to that message.
+     */
+    private void updateReactionJumpButton() {
+        if (binding == null || binding.reactionJumpButton == null || conversation == null) {
+            return;
+        }
+        final boolean hasUnseen = conversation.getUnseenReactionToOwnMessage() != null;
+        binding.reactionJumpButton.setVisibility(hasUnseen ? View.VISIBLE : View.GONE);
+    }
+
+    /** Scrolls to the message that received the newest unseen reaction and marks it seen. */
+    private void jumpToLatestReaction() {
+        if (binding == null || conversation == null) {
+            return;
+        }
+        final Message target = conversation.getUnseenReactionTarget();
+        if (target != null) {
+            jumpToMessageUuid(target.getUuid(), 0);
+        }
+        if (conversation.markReactionsSeen()) {
+            activity.xmppConnectionService.updateConversation(conversation);
+        }
+        binding.reactionJumpButton.setVisibility(View.GONE);
     }
 
     private void updateMujiCallBar() {

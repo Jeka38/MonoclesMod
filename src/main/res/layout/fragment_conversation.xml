@@ -143,6 +143,24 @@
             app:useCompatPadding="true"
             android:animateLayoutChanges="true" />
 
+        <com.google.android.material.floatingactionbutton.FloatingActionButton
+            android:id="@+id/reaction_jump_button"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:layout_alignBottom="@+id/messages_view"
+            android:layout_alignParentEnd="true"
+            android:layout_alignParentRight="true"
+            android:layout_marginBottom="68dp"
+            android:alpha="0.95"
+            android:contentDescription="@string/show_message"
+            android:src="@drawable/ic_heart_white_24dp"
+            android:visibility="gone"
+            app:backgroundTint="?attr/colorAccent"
+            app:fabCustomSize="40dp"
+            app:tint="@color/realwhite"
+            app:useCompatPadding="true"
+            android:animateLayoutChanges="true" />
+
         <eu.siacs.conversations.ui.widget.UnreadCountCustomView
             android:id="@+id/unread_count_custom_view"
             android:layout_width="?attr/IconSize"

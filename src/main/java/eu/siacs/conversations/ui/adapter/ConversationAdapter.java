@@ -757,6 +757,9 @@ public class ConversationAdapter
     }
 
     private boolean isVisible(Message message) {
+        if (message.isReaction()) {
+            return false;
+        }
         if (message.getType() != Message.TYPE_STATUS) {
             return true;
         }
