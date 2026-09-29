@@ -1552,8 +1552,15 @@
     <string name="pref_use_blue_readmarkers_summary">Используйте синие маркеры чтения вместо белых или черных</string>
     <string name="chat_background">Фон чатов</string>
     <string name="message_reaction">Отправить реакцию</string>
+    <string name="show_reactions">Кто отреагировал</string>
     <string name="reaction_notification_text">%1$s поставил(а) реакцию %2$s на ваше сообщение</string>
     <string name="show_message">Показать сообщение</string>
+    <plurals name="reaction_count">
+        <item quantity="one">%d реакция</item>
+        <item quantity="few">%d реакции</item>
+        <item quantity="many">%d реакций</item>
+        <item quantity="other">%d реакций</item>
+    </plurals>
     <string name="custom_background">Пользовательский фон</string>
     <string name="pref_chat_background_summary">Выберите собственный файл изображения в качестве фона для чата.</string>
     <string name="pref_set_round_avatars_summary">Придайте аватарам пользователей круглую форму</string>

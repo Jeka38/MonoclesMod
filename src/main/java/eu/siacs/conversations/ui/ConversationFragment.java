@@ -216,6 +216,7 @@ import eu.siacs.conversations.ui.util.MucDetailsContextMenuHelper;
 import eu.siacs.conversations.ui.util.PendingItem;
 import eu.siacs.conversations.ui.util.PresenceSelector;
 import eu.siacs.conversations.ui.util.QuoteHelper;
+import eu.siacs.conversations.ui.util.ReactionDetailsDialog;
 import eu.siacs.conversations.ui.util.ScrollState;
 import eu.siacs.conversations.ui.util.SendButtonAction;
 import eu.siacs.conversations.ui.util.SendButtonTool;
@@ -1464,6 +1465,7 @@ public class ConversationFragment extends XmppFragment
     }
 
     private void sendMessage(Long sendAt) {
+        reactionSendInProgress = false;
         if (sendAt != null && sendAt < System.currentTimeMillis()) sendAt = null; // No sending in past plz
 
         Editable body = this.binding.textinput.getText();
@@ -2503,6 +2505,7 @@ public class ConversationFragment extends XmppFragment
             MenuItem onlyThisThread = menu.findItem(R.id.only_this_thread);
             MenuItem deleteMessage = menu.findItem(R.id.delete_message);
             MenuItem messageReaction = menu.findItem(R.id.message_reaction);  //add the most used emoticons
+            MenuItem showReactions = menu.findItem(R.id.show_reactions);
             MenuItem shareWith = menu.findItem(R.id.share_with);
             MenuItem sendAgain = menu.findItem(R.id.send_again);
             MenuItem copyUrl = menu.findItem(R.id.copy_url);
@@ -2531,6 +2534,11 @@ public class ConversationFragment extends XmppFragment
             }
             final boolean messageDeleted = m.isMessageDeleted();
             deleteMessage.setVisible(true);
+            if (showReactions != null) {
+                final boolean hasReactions = m.getConversation() instanceof Conversation
+                        && ((Conversation) m.getConversation()).hasReactions(m);
+                showReactions.setVisible(hasReactions);
+            }
             if (!encrypted && !m.getBody().equals("")) {
                 copyMessage.setVisible(true);
                 selectText.setVisible(true);
@@ -2754,6 +2762,9 @@ public class ConversationFragment extends XmppFragment
         } else if (itemId == R.id.message_reaction) {
             openReactionPicker(selectedMessage);
             return true;
+        } else if (itemId == R.id.show_reactions) {
+            showReactionDetails(selectedMessage);
+            return true;
         }
         return onOptionsItemSelected(item);
     }
@@ -2763,6 +2774,12 @@ public class ConversationFragment extends XmppFragment
      * normal (insert-into-input) mode. Set by {@link #openReactionPicker(Message)}.
      */
     private Message pendingReactionMessage = null;
+
+    /**
+     * Set while a reaction is being sent. {@link #messageSent()} must then skip clearing the
+     * composer and scrolling the list, since sending a reaction is not sending a chat message.
+     */
+    private boolean reactionSendInProgress = false;
 
     /**
      * Opens the standard {@code androidx.emoji2} emoji picker (the same one used for the message
@@ -2819,6 +2836,12 @@ public class ConversationFragment extends XmppFragment
         backPressedLeaveEmojiPicker.setEnabled(false);
     }
 
+    /** "Show reactions" context menu action: list everybody who reacted and with which emoji. */
+    public void showReactionDetails(final Message message) {
+        if (message == null) return;
+        ReactionDetailsDialog.show(activity, message);
+    }
+
     /**
      * Adds or removes this account's reaction with the given emoji on {@code message} and sends a
      * fresh XEP-0444 carrier (an empty carrier removes the reaction, per the XEP).
@@ -2839,6 +2862,7 @@ public class ConversationFragment extends XmppFragment
         }
         final int nextEncryption = target.getNextEncryption();
         carrier.setEncryption(nextEncryption);
+        reactionSendInProgress = true;
         if (nextEncryption == Message.ENCRYPTION_OTR) {
             sendOtrMessage(carrier);
         } else if (nextEncryption == Message.ENCRYPTION_PGP) {
@@ -5455,6 +5479,12 @@ public class ConversationFragment extends XmppFragment
     }
 
     protected void messageSent() {
+        if (reactionSendInProgress) {
+            // Sending a reaction is not sending a chat message: do not clear the composer and do
+            // not scroll the list (that was making the chat jump to the bottom).
+            reactionSendInProgress = false;
+            return;
+        }
         binding.textinputSubject.setText("");
         binding.textinputSubject.setVisibility(View.GONE);
         conversation.setUserSelectedThread(false);

@@ -52,6 +52,10 @@
         android:title="@string/message_reaction"
         android:visible="true" />
     <item
+        android:id="@+id/show_reactions"
+        android:title="@string/show_reactions"
+        android:visible="false" />
+    <item
         android:id="@+id/moderate_message"
         android:title="@string/moderate_message"
         android:visible="false" />

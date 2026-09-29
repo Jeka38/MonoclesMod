@@ -1452,8 +1452,13 @@
     <string name="pref_use_blue_readmarkers_summary">Use blue readmarkers instead of white or black</string>
     <string name="chat_background">Chats background</string>
     <string name="message_reaction">Send reaction</string>
+    <string name="show_reactions">Show reactions</string>
     <string name="reaction_notification_text">%1$s reacted %2$s to your message</string>
     <string name="show_message">Show message</string>
+    <plurals name="reaction_count">
+        <item quantity="one">%d reaction</item>
+        <item quantity="other">%d reactions</item>
+    </plurals>
     <string name="custom_background">Custom background</string>
     <string name="pref_chat_background_summary">Choose an own image file as chat background.</string>
     <string name="pref_custom_theme_color_options_summary">Set your own theme colours</string>

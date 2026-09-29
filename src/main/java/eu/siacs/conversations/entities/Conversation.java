@@ -814,21 +814,27 @@ public class Conversation extends AbstractEntity implements Blockable, Comparabl
         }
         final Jid counterpart = carrier.getCounterpart();
         if (counterpart == null) return carrier.getUuid();
-        // group resources of the same account together; XEP-0444 counts reactors by bare JID
+        if (mode == MODE_MULTI && nextCounterpart == null && counterpart.isFullJid()) {
+            // In a MUC every occupant is its own reactor: the bare JID is the room, so we must
+            // keep the full occupant JID to tell participants apart.
+            return counterpart.toString();
+        }
+        // 1:1 (and MUC PM): resources of the same account are one reactor; XEP-0444 uses bare JIDs
         return counterpart.asBareJid().toString();
     }
 
     /**
-     * Aggregated emoji -> count over all reactors that reacted to the given message, taking the
-     * latest carrier per reactor.
+     * The latest reaction carrier per reactor for the given message, newest first. One entry per
+     * distinct reactor, carrying that reactor's current emojis.
      */
-    public Map<String, Integer> getReactionCounts(final Message target) {
+    public List<Message> getReactionCarriers(final Message target) {
         final String id = target.reactionId();
         final Map<String, Message> latestByReactor = new HashMap<>();
         if (id != null) {
             synchronized (this.messages) {
                 for (final Message message : this.messages) {
                     if (!isReactionCarrierFor(message, id)) continue;
+                    if (message.getReactionEmojis().isEmpty()) continue;
                     final String key = reactionReactorKey(message);
                     final Message previous = latestByReactor.get(key);
                     if (previous == null || message.getTimeSent() >= previous.getTimeSent()) {
@@ -837,14 +843,29 @@ public class Conversation extends AbstractEntity implements Blockable, Comparabl
                 }
             }
         }
+        final List<Message> result = new ArrayList<>(latestByReactor.values());
+        result.sort((a, b) -> Long.compare(b.getTimeSent(), a.getTimeSent()));
+        return result;
+    }
+
+    /**
+     * Aggregated emoji -> count over all reactors that reacted to the given message, taking the
+     * latest carrier per reactor.
+     */
+    public Map<String, Integer> getReactionCounts(final Message target) {
         final Map<String, Integer> counts = new HashMap<>();
-        for (final Message carrier : latestByReactor.values()) {
+        for (final Message carrier : getReactionCarriers(target)) {
             for (final String emoji : carrier.getReactionEmojis()) {
                 final Integer current = counts.get(emoji);
                 counts.put(emoji, current == null ? 1 : current + 1);
             }
         }
         return counts;
+    }
+
+    /** True when at least one reactor (other than us) left a reaction on the message. */
+    public boolean hasReactions(final Message target) {
+        return !getReactionCarriers(target).isEmpty();
     }
 
     /** The emojis this account reacted with on the given message (empty if none). */
