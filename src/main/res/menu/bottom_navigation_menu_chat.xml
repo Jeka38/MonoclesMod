@@ -12,6 +12,10 @@
         android:id="@+id/manageaccounts"
         android:icon="?attr/icon_account"
         android:title="@string/accounts"/>
+    <item
+        android:id="@+id/notes"
+        android:icon="?attr/icon_notes"
+        android:title="@string/notes"/>
 
     <!-- TODO: Later -->
     <item

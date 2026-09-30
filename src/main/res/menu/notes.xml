@@ -1,0 +1,23 @@
+<?xml version="1.0" encoding="utf-8"?>
+<menu xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:app="http://schemas.android.com/apk/res-auto">
+
+    <item
+        android:id="@+id/action_all_tags"
+        android:icon="?attr/icon_tag"
+        android:title="@string/all_tags"
+        app:showAsAction="always" />
+
+    <item
+        android:id="@+id/action_sync_notes"
+        android:icon="?attr/icon_refresh"
+        android:title="@string/sync_notes"
+        app:showAsAction="always" />
+
+    <item
+        android:id="@+id/action_select_account"
+        android:icon="?attr/icon_account"
+        android:title="@string/choose_account"
+        app:showAsAction="never" />
+
+</menu>

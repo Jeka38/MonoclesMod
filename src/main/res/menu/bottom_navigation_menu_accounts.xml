@@ -13,6 +13,11 @@
         android:icon="?attr/icon_accounts_selected"
         android:title="@string/accounts"/>
 
+    <item
+        android:id="@+id/notes"
+        android:icon="?attr/icon_notes"
+        android:title="@string/notes"/>
+
     <!-- TODO: Later -->
     <item
         android:id="@+id/stories"

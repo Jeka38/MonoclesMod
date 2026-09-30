@@ -77,6 +77,9 @@
     <attr name="icon_cancel_comment" format="reference" />
     <attr name="icon_chat" format="reference" />
     <attr name="icon_chat_unselected" format="reference" />
+    <attr name="icon_notes" format="reference" />
+    <attr name="icon_tag" format="reference" />
+    <attr name="icon_notes_selected" format="reference" />
     <attr name="icon_chat_selected" format="reference" />
     <attr name="icon_account" format="reference" />
     <attr name="icon_webxdcs" format="reference" />

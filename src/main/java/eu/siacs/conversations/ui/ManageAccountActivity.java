@@ -176,6 +176,13 @@ public class ManageAccountActivity extends XmppActivity implements XmppConnectio
                 case R.id.manageaccounts -> {
                     return true;
                 }
+                case R.id.notes -> {
+                    Intent i = new Intent(getApplicationContext(), NotesActivity.class);
+                    i.putExtra("show_nav_bar", true);
+                    startActivity(i);
+                    overridePendingTransition(R.animator.fade_in, R.animator.fade_out);
+                    return true;
+                }
                 default ->
                         throw new IllegalStateException("Unexpected value: " + item.getItemId());
             }

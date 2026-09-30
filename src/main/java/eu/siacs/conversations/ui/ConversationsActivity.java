@@ -743,6 +743,13 @@ public class ConversationsActivity extends XmppActivity implements OnConversatio
                     overridePendingTransition(R.animator.fade_in, R.animator.fade_out);
                     return true;
                 }
+                case R.id.notes -> {
+                    Intent i = new Intent(getApplicationContext(), NotesActivity.class);
+                    i.putExtra("show_nav_bar", true);
+                    startActivity(i);
+                    overridePendingTransition(R.animator.fade_in, R.animator.fade_out);
+                    return true;
+                }
                 default ->
                         throw new IllegalStateException("Unexpected value: " + item.getItemId());
             }

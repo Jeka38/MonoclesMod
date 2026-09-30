@@ -596,5 +596,34 @@
             android:label="@string/muji_conference"
             android:launchMode="singleTask"
             android:exported="false" />
+
+        <activity
+            android:name=".ui.NotesActivity"
+            android:configChanges="orientation|screenSize"
+            android:label="@string/notes"
+            android:launchMode="singleTop"
+            android:exported="false" />
+
+        <activity
+            android:name=".ui.NoteEditActivity"
+            android:configChanges="orientation|screenSize"
+            android:label="@string/notes"
+            android:parentActivityName=".ui.NotesActivity"
+            android:exported="false">
+            <meta-data
+                android:name="android.support.PARENT_ACTIVITY"
+                android:value=".ui.NotesActivity" />
+        </activity>
+
+        <activity
+            android:name=".ui.TagsActivity"
+            android:configChanges="orientation|screenSize"
+            android:label="@string/all_tags"
+            android:parentActivityName=".ui.NotesActivity"
+            android:exported="false">
+            <meta-data
+                android:name="android.support.PARENT_ACTIVITY"
+                android:value=".ui.NotesActivity" />
+        </activity>
     </application>
 </manifest>

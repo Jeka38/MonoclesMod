@@ -29,6 +29,7 @@ import java.util.ArrayList;
 import java.util.Collection;
 import java.util.HashMap;
 import java.util.HashSet;
+import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
@@ -124,7 +125,9 @@ public class Account extends AbstractEntity implements AvatarService.Avatarable 
     private long mEndGracePeriod = 0L;
     private String otrFingerprint;
     private final Map<Jid, Bookmark> bookmarks = new HashMap<>();
+    private final Map<String, Note> notes = new LinkedHashMap<>();
     private boolean bookmarksLoaded = false;
+    private boolean notesLoaded = false;
 
     private Presence.Status presenceStatus;
     private String presenceStatusMessage;
@@ -791,6 +794,32 @@ public class Account extends AbstractEntity implements AvatarService.Avatarable 
     public Bookmark getBookmark(final Jid jid) {
         synchronized (this.bookmarks) {
             return this.bookmarks.get(jid.asBareJid());
+        }
+    }
+
+    public boolean areNotesLoaded() {
+        return notesLoaded;
+    }
+
+    public Collection<Note> getNotes() {
+        synchronized (this.notes) {
+            return ImmutableList.copyOf(this.notes.values());
+        }
+    }
+
+    public void setNotes(final Collection<Note> notes) {
+        synchronized (this.notes) {
+            this.notes.clear();
+            for (final Note note : notes) {
+                this.notes.put(note.getKey(), note);
+            }
+            this.notesLoaded = true;
+        }
+    }
+
+    public Note getNote(final String key) {
+        synchronized (this.notes) {
+            return this.notes.get(key);
         }
     }
 

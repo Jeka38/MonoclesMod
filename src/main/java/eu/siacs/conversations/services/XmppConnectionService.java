@@ -65,6 +65,7 @@ import android.net.Network;
 import android.net.NetworkCapabilities;
 import android.net.NetworkInfo;
 import android.net.Uri;
+import android.widget.Toast;
 import java.security.SecureRandom;
 import android.os.Binder;
 import android.os.Build;
@@ -172,6 +173,7 @@ import eu.siacs.conversations.crypto.axolotl.XmppAxolotlMessage;
 import eu.siacs.conversations.entities.Account;
 import eu.siacs.conversations.entities.Blockable;
 import eu.siacs.conversations.entities.Bookmark;
+import eu.siacs.conversations.entities.Note;
 import eu.siacs.conversations.entities.Contact;
 import eu.siacs.conversations.entities.Conversation;
 import eu.siacs.conversations.entities.Conversational;
@@ -452,6 +454,7 @@ public class XmppConnectionService extends Service {
     private final Set<OnCaptchaRequested> mOnCaptchaRequested = Collections.newSetFromMap(new WeakHashMap<OnCaptchaRequested, Boolean>());
     private final Set<OnMucCaptchaRequested> mOnMucCaptchaRequested = Collections.newSetFromMap(new WeakHashMap<OnMucCaptchaRequested, Boolean>());
     private final Set<OnRosterExchangeRequested> mOnRosterExchangeRequested = Collections.newSetFromMap(new WeakHashMap<OnRosterExchangeRequested, Boolean>());
+    private final Set<OnNotesUpdated> mOnNotesUpdated = Collections.newSetFromMap(new WeakHashMap<OnNotesUpdated, Boolean>());
     private final Set<OnRosterUpdate> mOnRosterUpdates = Collections.newSetFromMap(new WeakHashMap<OnRosterUpdate, Boolean>());
     private final Set<OnUpdateBlocklist> mOnUpdateBlocklist = Collections.newSetFromMap(new WeakHashMap<OnUpdateBlocklist, Boolean>());
     private final Set<OnMucRosterUpdate> mOnMucRosterUpdate = Collections.newSetFromMap(new WeakHashMap<OnMucRosterUpdate, Boolean>());
@@ -462,6 +465,8 @@ public class XmppConnectionService extends Service {
 
     private final Object LISTENER_LOCK = new Object();
     public final Set<String> FILENAMES_TO_IGNORE_DELETION = new HashSet<>();
+    // IQ id used by Psi+'s Storage Notes plugin / Miranda for XEP-0049 private XML notes.
+    private static final String NOTES_ID = "strnotes_1";
     private final OnBindListener mOnBindListener = new OnBindListener() {
 
         @Override
@@ -503,6 +508,7 @@ public class XmppConnectionService extends Service {
             } else if (!account.getXmppConnection().getFeatures().bookmarksConversion()) {
                 fetchBookmarks(account);
             }
+            fetchNotes(account);
 
             if (connection != null && connection.getFeatures().mds()) {
                 fetchMessageDisplayedSynchronization(account);
@@ -2751,6 +2757,22 @@ public class XmppConnectionService extends Service {
         });
     }
 
+    public void fetchNotes(final Account account) {
+        final IqPacket request = new IqPacket(IqPacket.TYPE.GET);
+        request.setAttribute("id", NOTES_ID);
+        final Element query = request.addChild("query", Namespace.PRIVATE_XML);
+        query.addChild("storage", Namespace.NOTES_STORAGE);
+        sendIqPacket(account, request, (a, response) -> {
+            if (response.getType() == IqPacket.TYPE.RESULT) {
+                processNotesInitial(a, Note.parseFromStorage(response.findChild("query", Namespace.PRIVATE_XML)));
+            } else if (response.getType() == IqPacket.TYPE.ERROR) {
+                // No storage stored yet (item-not-found) is normal for a fresh account.
+                Log.d(Config.LOGTAG, a.getJid().asBareJid() + ": could not fetch notes: " + response.getErrorCondition());
+                processNotesInitial(a, Collections.emptyList());
+            }
+        });
+    }
+
     private void fetchMessageDisplayedSynchronization(final Account account) {
         Log.d(Config.LOGTAG, account.getJid() + ": retrieve mds");
         final var retrieve = mIqGenerator.retrieveMds();
@@ -2882,6 +2904,67 @@ public class XmppConnectionService extends Service {
     public void processModifiedBookmark(Bookmark bookmark) {
         final boolean synchronizeWithBookmarks = synchronizeWithBookmarks();
         processModifiedBookmark(bookmark, true, synchronizeWithBookmarks);
+    }
+
+    public void processNotesInitial(final Account account, final Collection<Note> notes) {
+        account.setNotes(notes);
+        updateNotesUi();
+    }
+
+    /**
+     * Replaces the account's note set and pushes the whole collection to private XML storage
+     * (XEP-0049), matching Psi+/Miranda so notes synchronise between clients. The previous note
+     * identified by {@code replacedKey} is dropped first.
+     */
+    public void saveNote(final Account account, final Note note, @Nullable final String replacedKey) {
+        final Note copy = note.copy();
+        final List<Note> notes = new ArrayList<>(account.getNotes());
+        if (replacedKey != null) {
+            notes.removeIf(n -> replacedKey.equals(n.getKey()));
+        }
+        notes.add(copy);
+        account.setNotes(notes);
+        updateNotesUi();
+        pushNotes(account);
+    }
+
+    public void deleteNote(final Account account, final String key) {
+        deleteNotes(account, Collections.singletonList(key));
+    }
+
+    public void deleteNotes(final Account account, final Collection<String> keys) {
+        if (keys == null || keys.isEmpty()) {
+            return;
+        }
+        final List<Note> notes = new ArrayList<>(account.getNotes());
+        notes.removeIf(n -> keys.contains(n.getKey()));
+        account.setNotes(notes);
+        updateNotesUi();
+        pushNotes(account);
+    }
+
+    private void pushNotes(final Account account) {
+        final IqPacket request = new IqPacket(IqPacket.TYPE.SET);
+        request.setAttribute("id", NOTES_ID);
+        final Element query = request.addChild("query", Namespace.PRIVATE_XML);
+        query.addChild(Note.toStorageElement(new ArrayList<>(account.getNotes())));
+        final XmppConnection connection = account.getXmppConnection();
+        if (connection == null || account.getStatus() != Account.State.ONLINE) {
+            Toast.makeText(this, R.string.notes_not_connected, Toast.LENGTH_LONG).show();
+            return;
+        }
+        sendIqPacket(account, request, (a, response) -> {
+            if (response.getType() == IqPacket.TYPE.ERROR) {
+                Log.d(Config.LOGTAG, a.getJid().asBareJid() + ": unable to save notes: " + response.getErrorCondition());
+                Toast.makeText(this, R.string.notes_save_failed, Toast.LENGTH_LONG).show();
+            }
+        });
+    }
+
+    public void updateNotesUi() {
+        for (final OnNotesUpdated listener : threadSafeList(this.mOnNotesUpdated)) {
+            listener.onNotesUpdated();
+        }
     }
 
     public void createBookmark(final Account account, final Bookmark bookmark) {
@@ -3956,6 +4039,30 @@ public class XmppConnectionService extends Service {
 
     public RosterExchangeManager getRosterExchangeManager() {
         return this.mRosterExchangeManager;
+    }
+
+    public void setOnNotesUpdatedListener(OnNotesUpdated listener) {
+        final boolean remainingListeners;
+        synchronized (LISTENER_LOCK) {
+            remainingListeners = checkListeners();
+            if (!this.mOnNotesUpdated.add(listener)) {
+                Log.w(Config.LOGTAG, listener.getClass().getName() + " is already registered as OnNotesUpdatedListener");
+            }
+        }
+        if (remainingListeners) {
+            switchToForeground();
+        }
+    }
+
+    public void removeOnNotesUpdatedListener(OnNotesUpdated listener) {
+        final boolean remainingListeners;
+        synchronized (LISTENER_LOCK) {
+            this.mOnNotesUpdated.remove(listener);
+            remainingListeners = checkListeners();
+        }
+        if (remainingListeners) {
+            switchToBackground();
+        }
     }
 
     /**
@@ -7088,6 +7195,10 @@ public class XmppConnectionService extends Service {
 
     public interface OnRosterExchangeRequested {
         void onRosterExchangeRequested(Account account, Jid from, RosterExchange exchange);
+    }
+
+    public interface OnNotesUpdated {
+        void onNotesUpdated();
     }
 
     public static class PendingRosterExchange {

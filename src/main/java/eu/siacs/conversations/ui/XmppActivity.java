@@ -376,6 +376,9 @@ public abstract class XmppActivity extends ActionBarActivity {
         if (this instanceof XmppConnectionService.OnRosterExchangeRequested) {
             this.xmppConnectionService.setOnRosterExchangeRequestedListener((XmppConnectionService.OnRosterExchangeRequested) this);
         }
+        if (this instanceof XmppConnectionService.OnNotesUpdated) {
+            this.xmppConnectionService.setOnNotesUpdatedListener((XmppConnectionService.OnNotesUpdated) this);
+        }
         if (this instanceof XmppConnectionService.OnRosterUpdate) {
             this.xmppConnectionService.setOnRosterUpdateListener((XmppConnectionService.OnRosterUpdate) this);
         }
@@ -411,6 +414,9 @@ public abstract class XmppActivity extends ActionBarActivity {
         }
         if (this instanceof XmppConnectionService.OnRosterExchangeRequested) {
             this.xmppConnectionService.removeOnRosterExchangeRequestedListener((XmppConnectionService.OnRosterExchangeRequested) this);
+        }
+        if (this instanceof XmppConnectionService.OnNotesUpdated) {
+            this.xmppConnectionService.removeOnNotesUpdatedListener((XmppConnectionService.OnNotesUpdated) this);
         }
         if (this instanceof XmppConnectionService.OnRosterUpdate) {
             this.xmppConnectionService.removeOnRosterUpdateListener((XmppConnectionService.OnRosterUpdate) this);

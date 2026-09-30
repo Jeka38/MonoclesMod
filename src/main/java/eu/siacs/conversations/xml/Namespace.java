@@ -18,6 +18,9 @@ public final class Namespace {
     public static final String HTTP_UPLOAD = "urn:xmpp:http:upload:0";
     public static final String HTTP_UPLOAD_LEGACY = "urn:xmpp:http:upload";
     public static final String STANZA_IDS = "urn:xmpp:sid:0";
+    // Notes (private storage, Psi+/Miranda compatible)
+    public static final String PRIVATE_XML = "jabber:iq:private";
+    public static final String NOTES_STORAGE = "http://miranda-im.org/storage#notes";
     // XEP-0444: Message Reactions
     public static final String REACTIONS = "urn:xmpp:reactions:0";
     public static final String REACTION = "urn:xmpp:reaction:0";
