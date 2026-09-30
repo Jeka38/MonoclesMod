@@ -1553,7 +1553,6 @@
     <string name="chat_background">Фон чатов</string>
     <string name="message_reaction">Отправить реакцию</string>
     <string name="show_reactions">Кто отреагировал</string>
-    <string name="reaction_notification_text">%1$s поставил(а) реакцию %2$s на ваше сообщение</string>
     <string name="show_message">Показать сообщение</string>
     <plurals name="reaction_count">
         <item quantity="one">%d реакция</item>

@@ -140,7 +140,6 @@ public class NotificationService {
     public static final int SUBSCRIPTION_REQUEST_NOTIFICATION_ID = NOTIFICATION_ID_MULTIPLIER * 22;
     public static final int MUJI_NOTIFICATION_ID = NOTIFICATION_ID_MULTIPLIER * 24;
     public static final int ROSTER_EXCHANGE_NOTIFICATION_ID = NOTIFICATION_ID_MULTIPLIER * 26;
-    public static final int REACTION_NOTIFICATION_ID = NOTIFICATION_ID_MULTIPLIER * 28;
     public static final String MUJI_CHANNEL_ID = "muji";
     private final XmppConnectionService mXmppConnectionService;
     private final LinkedHashMap<String, ArrayList<Message>> notifications = new LinkedHashMap<>();
@@ -2426,71 +2425,6 @@ public class NotificationService {
         builder.setPriority(NotificationCompat.PRIORITY_DEFAULT);
         builder.setContentIntent(createOpenConversationsIntent());
         notify(ROSTER_EXCHANGE_NOTIFICATION_ID, builder.build());
-    }
-
-    /**
-     * Notifies that somebody reacted to one of our own messages with XEP-0444. Uses the message
-     * notification channel of the conversation so per-chat settings (silent, etc.) are honoured.
-     * Carries a heart action button that opens the conversation scrolled to the reacted message.
-     */
-    public void pushReaction(final Conversation conversation, final String reactorName, final String emojis, final String targetMessageUuid) {
-        if (conversation == null) return;
-        final Account account = conversation.getAccount();
-        if (account == null) {
-            // conversation not yet attached to its account (DB restore window)
-            return;
-        }
-        if (conversation.isMuted()) {
-            return;
-        }
-        if (this.mIsInForeground && this.mOpenConversation == conversation && !mXmppConnectionService.isScreenLocked()) {
-            return;
-        }
-        final String channelId = hasIndividualNotification(conversation)
-                ? INDIVIDUAL_NOTIFICATION_PREFIX + MESSAGES_CHANNEL_ID + "_" + conversation.getUuid() + "_" + mXmppConnectionService.getIndividualNotificationPreference(conversation)
-                : MESSAGES_CHANNEL_ID + "_" + DEFAULT;
-        final String name = reactorName == null || reactorName.isEmpty()
-                ? conversation.getName().toString()
-                : reactorName;
-        final PendingIntent openMessageIntent = createMessageContentIntent(conversation, targetMessageUuid);
-        final Builder builder = new Builder(mXmppConnectionService, channelId);
-        builder.setContentTitle(conversation.getName());
-        builder.setContentText(mXmppConnectionService.getString(R.string.reaction_notification_text, name, emojis));
-        builder.setSmallIcon(R.drawable.ic_notification);
-        builder.setAutoCancel(true);
-        builder.setCategory(NotificationCompat.CATEGORY_MESSAGE);
-        builder.setPriority(NotificationCompat.PRIORITY_DEFAULT);
-        builder.setContentIntent(openMessageIntent);
-        final NotificationCompat.Action heartAction = new NotificationCompat.Action.Builder(
-                R.drawable.ic_heart_white_24dp,
-                mXmppConnectionService.getString(R.string.show_message),
-                openMessageIntent)
-                .setShowsUserInterface(true)
-                .build();
-        builder.addAction(heartAction);
-        setNotificationColor(builder, account);
-        notify(conversation.getUuid(), REACTION_NOTIFICATION_ID, builder.build());
-    }
-
-    private boolean hasIndividualNotification(final Conversation conversation) {
-        try {
-            return mXmppConnectionService.hasIndividualNotification(conversation);
-        } catch (Exception e) {
-            return false;
-        }
-    }
-
-    private PendingIntent createMessageContentIntent(final Conversation conversation, final String messageUuid) {
-        final Intent intent = new Intent(mXmppConnectionService, ConversationsActivity.class);
-        intent.setAction(ConversationsActivity.ACTION_VIEW_CONVERSATION);
-        intent.putExtra(ConversationsActivity.EXTRA_CONVERSATION, conversation.getUuid());
-        if (messageUuid != null) {
-            intent.putExtra(ConversationsActivity.EXTRA_MESSAGE_UUID, messageUuid);
-        }
-        final int requestCode = generateRequestCode(conversation, messageUuid == null ? 24 : 26);
-        return PendingIntent.getActivity(mXmppConnectionService, requestCode, intent, s()
-                ? PendingIntent.FLAG_IMMUTABLE | PendingIntent.FLAG_UPDATE_CURRENT
-                : PendingIntent.FLAG_UPDATE_CURRENT);
     }
 
     public void notifyMujiJoinFailed(final int textRes) {

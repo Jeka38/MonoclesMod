@@ -1453,7 +1453,6 @@
     <string name="chat_background">Chats background</string>
     <string name="message_reaction">Send reaction</string>
     <string name="show_reactions">Show reactions</string>
-    <string name="reaction_notification_text">%1$s reacted %2$s to your message</string>
     <string name="show_message">Show message</string>
     <plurals name="reaction_count">
         <item quantity="one">%d reaction</item>
