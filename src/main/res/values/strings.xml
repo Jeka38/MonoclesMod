@@ -1548,6 +1548,9 @@
     <string name="notes_save_failed">Failed to save notes</string>
     <string name="note_deleted">Note deleted</string>
     <string name="note_saved">Note saved</string>
+    <string name="add_to_notes">Add to notes</string>
+    <string name="note_added">Added to notes</string>
+    <string name="add_to_notes_title">Add message to notes</string>
     <string name="note_empty">Enter a title, a tag or some text</string>
     <string name="delete_note_confirm">Delete this note permanently?</string>
     <string name="unified">Unified</string>

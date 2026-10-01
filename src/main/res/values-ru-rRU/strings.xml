@@ -1662,6 +1662,9 @@
     <string name="notes_save_failed">Не удалось сохранить заметки</string>
     <string name="note_deleted">Заметка удалена</string>
     <string name="note_saved">Заметка сохранена</string>
+    <string name="add_to_notes">Добавить в заметки</string>
+    <string name="note_added">Добавлено в заметки</string>
+    <string name="add_to_notes_title">Добавить сообщение в заметки</string>
     <string name="note_empty">Введите заголовок, тег или текст</string>
     <string name="delete_note_confirm">Удалить заметку безвозвратно?</string>
     <string name="unified">Контакты</string>

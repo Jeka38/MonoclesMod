@@ -23,6 +23,10 @@
         android:title="@string/select_text"
         android:visible="false" />
     <item
+        android:id="@+id/action_add_to_notes"
+        android:title="@string/add_to_notes"
+        android:visible="false" />
+    <item
         android:id="@+id/only_this_thread"
         android:title="@string/only_this_thread"
         android:visible="false" />

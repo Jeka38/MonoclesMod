@@ -823,6 +823,15 @@ public class Account extends AbstractEntity implements AvatarService.Avatarable 
         }
     }
 
+    /**
+     * Marks the note collection as available without replacing it. Used when a fetch failed in a
+     * way that does not tell us anything about the stored notes, so that a stale/empty in-memory
+     * set is never pushed back to the server.
+     */
+    public void markNotesLoaded() {
+        this.notesLoaded = true;
+    }
+
     public boolean setAvatar(final String filename) {
         if (this.avatar != null && this.avatar.equals(filename)) {
             return false;

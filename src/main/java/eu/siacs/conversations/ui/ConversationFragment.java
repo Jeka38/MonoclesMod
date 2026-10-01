@@ -178,6 +178,7 @@ import eu.siacs.conversations.Config;
 import eu.siacs.conversations.R;
 import eu.siacs.conversations.crypto.axolotl.AxolotlService;
 import eu.siacs.conversations.crypto.axolotl.FingerprintStatus;
+import eu.siacs.conversations.databinding.DialogAddToNotesBinding;
 import eu.siacs.conversations.databinding.FragmentConversationBinding;
 import eu.siacs.conversations.entities.Account;
 import eu.siacs.conversations.entities.Blockable;
@@ -189,6 +190,7 @@ import eu.siacs.conversations.entities.Edit;
 import eu.siacs.conversations.entities.Message;
 import eu.siacs.conversations.entities.MucOptions;
 import eu.siacs.conversations.entities.MucOptions.User;
+import eu.siacs.conversations.entities.Note;
 import eu.siacs.conversations.entities.Presence;
 import eu.siacs.conversations.entities.ReadByMarker;
 import eu.siacs.conversations.entities.Transferable;
@@ -2497,6 +2499,7 @@ public class ConversationFragment extends XmppFragment
             final MenuItem reportAndBlock = menu.findItem(R.id.action_report_and_block);
             MenuItem openWith = menu.findItem(R.id.open_with);
             MenuItem copyMessage = menu.findItem(R.id.copy_message);
+            MenuItem addToNotes = menu.findItem(R.id.action_add_to_notes);
             MenuItem quoteMessage = menu.findItem(R.id.quote_message);
             MenuItem retryDecryption = menu.findItem(R.id.retry_decryption);
             MenuItem correctMessage = menu.findItem(R.id.correct_message);
@@ -2542,6 +2545,7 @@ public class ConversationFragment extends XmppFragment
             if (!encrypted && !m.getBody().equals("")) {
                 copyMessage.setVisible(true);
                 selectText.setVisible(true);
+                addToNotes.setVisible(true);
                 quoteMessage.setVisible(!showError && MessageUtils.prepareQuote(m).length() > 0);
             }
             quoteMessage.setVisible(!encrypted && !showError);
@@ -2685,6 +2689,9 @@ public class ConversationFragment extends XmppFragment
             return true;
         } else if (itemId == R.id.copy_message) {
             ShareUtil.copyToClipboard(activity, selectedMessage);
+            return true;
+        } else if (itemId == R.id.action_add_to_notes) {
+            showAddToNotesDialog(selectedMessage);
             return true;
         } else if (itemId == R.id.quote_message) {
             if (conversation.getMode() == Conversation.MODE_MULTI) {
@@ -2870,6 +2877,96 @@ public class ConversationFragment extends XmppFragment
         } else {
             sendMessage(carrier);
         }
+    }
+
+    /**
+     * Offers to file the given message as a private note (XEP-0049, so it syncs with Psi+/Miranda).
+     * Title, tags and text are pre-filled with suggestions but stay editable — the user decides how
+     * the note is filed. Available for 1:1 and MUC messages alike.
+     */
+    private void showAddToNotesDialog(final Message message) {
+        final Account account = conversation.getAccount();
+        if (account == null) {
+            Toast.makeText(activity, R.string.notes_not_connected, Toast.LENGTH_LONG).show();
+            return;
+        }
+        final String body = message.getBody().trim();
+        final DialogAddToNotesBinding binding =
+                DialogAddToNotesBinding.inflate(LayoutInflater.from(activity));
+        binding.noteTitle.setText(suggestedNoteTitle(body));
+        binding.noteTags.setText(suggestedNoteTag(message));
+        binding.noteText.setText(body);
+
+        final AlertDialog dialog = new AlertDialog.Builder(activity)
+                .setTitle(R.string.add_to_notes_title)
+                .setView(binding.getRoot())
+                .setPositiveButton(R.string.ok, null)
+                .setNegativeButton(R.string.cancel, null)
+                .create();
+        // keep the dialog open when the note would be empty, so the user can fix the input
+        dialog.setOnShowListener(d -> dialog.getButton(AlertDialog.BUTTON_POSITIVE)
+                .setOnClickListener(v -> {
+                    final Note note = new Note(textOf(binding.noteTitle), textOf(binding.noteText),
+                            splitNoteTags(textOf(binding.noteTags)));
+                    if (note.isEmpty()) {
+                        Toast.makeText(activity, R.string.note_empty, Toast.LENGTH_SHORT).show();
+                        return;
+                    }
+                    activity.xmppConnectionService.saveNote(account, note, null);
+                    Toast.makeText(activity, R.string.note_added, Toast.LENGTH_SHORT).show();
+                    dialog.dismiss();
+                }));
+        dialog.show();
+    }
+
+    private String suggestedNoteTitle(final String body) {
+        int lineEnd = body.indexOf('\n');
+        if (lineEnd == -1) {
+            lineEnd = body.length();
+        }
+        final String firstLine = body.substring(0, lineEnd).trim();
+        if (firstLine.isEmpty()) {
+            return conversation.getName().toString();
+        }
+        return firstLine.length() > 50 ? firstLine.substring(0, 50).trim() + '…' : firstLine;
+    }
+
+    private String suggestedNoteTag(final Message message) {
+        if (conversation.getMode() == Conversation.MODE_MULTI) {
+            return singleNoteTag(conversation.getName().toString());
+        }
+        final Contact contact = message.getContact();
+        final String name = contact != null ? contact.getDisplayName() : null;
+        return singleNoteTag(name != null && !name.trim().isEmpty() ? name
+                : conversation.getName().toString());
+    }
+
+    /**
+     * Tags are space separated in storage, so a multi-word suggestion has to be squashed into one
+     * tag instead of silently becoming several.
+     */
+    private static String singleNoteTag(final String value) {
+        if (value == null) {
+            return null;
+        }
+        final String squashed = value.trim().replaceAll("\\s+", "_");
+        return squashed.isEmpty() ? null : squashed;
+    }
+
+    private static List<String> splitNoteTags(final String raw) {
+        final List<String> tags = new ArrayList<>();
+        if (raw != null && !raw.trim().isEmpty()) {
+            for (final String part : raw.trim().split("\\s+")) {
+                if (!part.isEmpty()) {
+                    tags.add(part);
+                }
+            }
+        }
+        return tags;
+    }
+
+    private static String textOf(final EditText editText) {
+        return editText.getText() == null ? null : editText.getText().toString();
     }
 
     private void showTextSelectionDialog(final Message message) {

@@ -462,6 +462,9 @@ public class XmppConnectionService extends Service {
     private final Set<OnJingleRtpConnectionUpdate> onJingleRtpConnectionUpdate = Collections.newSetFromMap(new WeakHashMap<OnJingleRtpConnectionUpdate, Boolean>());
     private final Map<String, PendingMucCaptchaRequest> pendingMucCaptchaRequests = new ConcurrentHashMap<>();
     private final List<PendingRosterExchange> mPendingRosterExchanges = new CopyOnWriteArrayList<>();
+    // note changes that arrived before the collection had been fetched; see mutateNotes()
+    private final Map<String, List<NoteMutation>> mPendingNoteMutations = new HashMap<>();
+    private final Set<String> mNotesFetchInFlight = new HashSet<>();
 
     private final Object LISTENER_LOCK = new Object();
     public final Set<String> FILENAMES_TO_IGNORE_DELETION = new HashSet<>();
@@ -2758,16 +2761,33 @@ public class XmppConnectionService extends Service {
     }
 
     public void fetchNotes(final Account account) {
+        final String uuid = account.getUuid();
+        synchronized (mNotesFetchInFlight) {
+            if (!mNotesFetchInFlight.add(uuid)) {
+                // A fetch is already running; queued note mutations ride along with its response.
+                Log.d(Config.LOGTAG, account.getJid().asBareJid() + ": notes fetch already in progress");
+                return;
+            }
+        }
         final IqPacket request = new IqPacket(IqPacket.TYPE.GET);
         request.setAttribute("id", NOTES_ID);
         final Element query = request.addChild("query", Namespace.PRIVATE_XML);
         query.addChild("storage", Namespace.NOTES_STORAGE);
         sendIqPacket(account, request, (a, response) -> {
+            synchronized (mNotesFetchInFlight) {
+                mNotesFetchInFlight.remove(uuid);
+            }
             if (response.getType() == IqPacket.TYPE.RESULT) {
                 processNotesInitial(a, Note.parseFromStorage(response.findChild("query", Namespace.PRIVATE_XML)));
             } else if (response.getType() == IqPacket.TYPE.ERROR) {
-                // No storage stored yet (item-not-found) is normal for a fresh account.
-                Log.d(Config.LOGTAG, a.getJid().asBareJid() + ": could not fetch notes: " + response.getErrorCondition());
+                final String condition = response.getErrorCondition();
+                if (condition != null && !"item-not-found".equals(condition)) {
+                    Log.d(Config.LOGTAG, a.getJid().asBareJid() + ": could not fetch notes: " + condition);
+                    a.markNotesLoaded();
+                    updateNotesUi();
+                    return;
+                }
+                Log.d(Config.LOGTAG, a.getJid().asBareJid() + ": no notes stored yet");
                 processNotesInitial(a, Collections.emptyList());
             }
         });
@@ -2908,7 +2928,21 @@ public class XmppConnectionService extends Service {
 
     public void processNotesInitial(final Account account, final Collection<Note> notes) {
         account.setNotes(notes);
+        final List<NoteMutation> pending;
+        synchronized (mPendingNoteMutations) {
+            pending = mPendingNoteMutations.remove(account.getUuid());
+        }
+        if (pending != null && !pending.isEmpty()) {
+            final List<Note> merged = new ArrayList<>(account.getNotes());
+            for (final NoteMutation mutation : pending) {
+                mutation.applyTo(merged);
+            }
+            account.setNotes(merged);
+        }
         updateNotesUi();
+        if (pending != null && !pending.isEmpty()) {
+            pushNotes(account);
+        }
     }
 
     /**
@@ -2918,14 +2952,12 @@ public class XmppConnectionService extends Service {
      */
     public void saveNote(final Account account, final Note note, @Nullable final String replacedKey) {
         final Note copy = note.copy();
-        final List<Note> notes = new ArrayList<>(account.getNotes());
-        if (replacedKey != null) {
-            notes.removeIf(n -> replacedKey.equals(n.getKey()));
-        }
-        notes.add(copy);
-        account.setNotes(notes);
-        updateNotesUi();
-        pushNotes(account);
+        mutateNotes(account, notes -> {
+            if (replacedKey != null) {
+                notes.removeIf(n -> replacedKey.equals(n.getKey()));
+            }
+            notes.add(copy);
+        });
     }
 
     public void deleteNote(final Account account, final String key) {
@@ -2936,11 +2968,36 @@ public class XmppConnectionService extends Service {
         if (keys == null || keys.isEmpty()) {
             return;
         }
+        final Collection<String> removeKeys = new ArrayList<>(keys);
+        mutateNotes(account, notes -> notes.removeIf(n -> removeKeys.contains(n.getKey())));
+    }
+
+    /**
+     * Applies a change to the note collection and pushes it to private XML storage. The storage is
+     * a single blob, so pushing before the collection has been fetched would overwrite whatever the
+     * server holds; in that case the change is queued until the fetch comes back.
+     */
+    private void mutateNotes(final Account account, final NoteMutation mutation) {
+        if (!account.areNotesLoaded()) {
+            synchronized (mPendingNoteMutations) {
+                mPendingNoteMutations
+                        .computeIfAbsent(account.getUuid(), uuid -> new ArrayList<>())
+                        .add(mutation);
+            }
+            Log.d(Config.LOGTAG, account.getJid().asBareJid() + ": queuing note change until notes are fetched");
+            fetchNotes(account);
+            return;
+        }
         final List<Note> notes = new ArrayList<>(account.getNotes());
-        notes.removeIf(n -> keys.contains(n.getKey()));
+        mutation.applyTo(notes);
         account.setNotes(notes);
         updateNotesUi();
         pushNotes(account);
+    }
+
+    /** A pending change to the note collection, applied once the collection has been fetched. */
+    private interface NoteMutation {
+        void applyTo(List<Note> notes);
     }
 
     private void pushNotes(final Account account) {
