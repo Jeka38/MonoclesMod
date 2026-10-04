@@ -273,6 +273,9 @@ public class ManageAccountActivity extends XmppActivity implements XmppConnectio
     @Override
     public boolean onContextItemSelected(MenuItem item) {
         switch (item.getItemId()) {
+            case R.id.mgmt_account_profile:
+                switchToOwnVCard(selectedAccount);
+                return true;
             case R.id.mgmt_account_publish_avatar:
                 publishAvatar(selectedAccount);
                 return true;

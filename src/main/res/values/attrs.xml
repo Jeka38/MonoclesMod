@@ -97,6 +97,7 @@
     <attr name="icon_done" format="reference" />
     <attr name="icon_group" format="reference" />
     <attr name="icon_contact" format="reference" />
+    <attr name="icon_birthday" format="reference" />
     <attr name="icon_group_unselected" format="reference" />
     <attr name="icon_group_selected" format="reference" />
     <attr name="icon_new" format="reference" />

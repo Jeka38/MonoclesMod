@@ -174,6 +174,7 @@ import eu.siacs.conversations.entities.Account;
 import eu.siacs.conversations.entities.Blockable;
 import eu.siacs.conversations.entities.Bookmark;
 import eu.siacs.conversations.entities.Note;
+import eu.siacs.conversations.entities.VCard;
 import eu.siacs.conversations.entities.Contact;
 import eu.siacs.conversations.entities.Conversation;
 import eu.siacs.conversations.entities.Conversational;
@@ -5656,6 +5657,125 @@ public class XmppConnectionService extends Service {
                 }
             }
         }
+    }
+
+    /**
+     * Fetches a profile card for {@code jid}. Reads the vCard 4 PEP node first (as Psi does) and
+     * falls back to {@code vcard-temp}, which is also where MUC room cards live. A missing card is
+     * not an error: the callback receives an empty {@link VCard}.
+     */
+    public void fetchVCard(
+            final Account account,
+            final Jid jid,
+            final boolean mucRoom,
+            @Nullable final VCardCallback callback) {
+        if (mucRoom) {
+            fetchVCardTemp(account, jid, callback);
+            return;
+        }
+        final IqPacket packet = mIqGenerator.retrieveVcard4(jid);
+        sendIqPacket(account, packet, (a, response) -> {
+            if (response.getType() == IqPacket.TYPE.RESULT) {
+                final Element item = mIqParser.getItem(response);
+                final Element vcard4 = item == null ? null : item.findChild("vcard", Namespace.VCARD4);
+                if (vcard4 != null) {
+                    if (callback != null) {
+                        callback.onVCardReceived(VCard.parse(vcard4));
+                    }
+                    return;
+                }
+            }
+            fetchVCardTemp(a, jid, callback);
+        });
+    }
+
+    /**
+     * Fetches a card that only exists as {@code vcard-temp}: MUC rooms and MUC occupants (whose
+     * card lives on the full room JID).
+     */
+    /**
+     * Fetches the profile card of a MUC occupant. The card lives on the participant's real JID, but
+     * when the room hides it (anonymous rooms) {@code nick@room} is still the address the server
+     * accepts and answers for, exactly like MUC avatars work. The card content is never used to
+     * learn the real JID: the caller only ever displays what the server chose to hand out.
+     */
+    public void fetchMucUserVCard(
+            final Account account,
+            final Jid nicJid,
+            @Nullable final Jid realJid,
+            @Nullable final VCardCallback callback) {
+        if (realJid != null) {
+            fetchVCardTemp(account, realJid.asBareJid(), callback);
+            return;
+        }
+        // The occupant address (room/nick) is answered by the MUC service with that participant's
+        // card - see the conversations with servers that hide the real JID. Never the bare room:
+        // that would return the room card instead.
+        fetchVCardTemp(account, nicJid, callback);
+    }
+
+    public void fetchVCardTemp(
+            final Account account, final Jid jid, @Nullable final VCardCallback callback) {
+        final IqPacket request = mIqGenerator.retrieveVcardAvatar(jid);
+        sendIqPacket(account, request, (a, response) -> {
+            Element vcard = null;
+            if (response.getType() == IqPacket.TYPE.RESULT) {
+                vcard = response.findChild("vCard", Namespace.VCARD_TEMP);
+            } else {
+                final String condition = response.getErrorCondition();
+                if (condition == null || !"item-not-found".equals(condition)) {
+                    Log.d(Config.LOGTAG, a.getJid().asBareJid() + ": could not fetch vcard: " + condition);
+                }
+            }
+            if (callback != null) {
+                callback.onVCardReceived(VCard.parse(vcard));
+            }
+        });
+    }
+
+    /**
+     * Publishes the account's own profile card. It is written as {@code vcard-temp} (read by every
+     * mobile client, and the same store used by MUC rooms) and, when the server supports PEP, also
+     * to the vCard 4 node. An empty card deletes the vCard 4 node so stale data cannot shadow the
+     * cleared vCard 3 card.
+     */
+    public void publishVCard(final Account account, final VCard vcard) {
+        final XmppConnection connection = account.getXmppConnection();
+        if (connection != null && connection.getFeatures().pepPublishOptions()) {
+            final IqPacket packet = vcard.isEmpty()
+                    ? mIqGenerator.deleteItem(Namespace.VCARD4, "current")
+                    : mIqGenerator.publishElement(
+                            Namespace.VCARD4, vcard.toVCard4Element(), "current", null);
+            sendIqPacket(account, packet, (a, response) -> {
+                if (response.getType() != IqPacket.TYPE.RESULT) {
+                    Log.d(Config.LOGTAG, a.getJid().asBareJid()
+                            + ": could not publish vcard4: " + response.getErrorCondition());
+                }
+            });
+        }
+        publishVCardTemp(account, account.getJid().asBareJid(), vcard);
+    }
+
+    /** Publishes a room card, which only exists as {@code vcard-temp} (XEP-0054). */
+    public void publishVCard(final Account account, final Jid room, final VCard vcard) {
+        publishVCardTemp(account, room.asBareJid(), vcard);
+    }
+
+    private void publishVCardTemp(final Account account, final Jid target, final VCard vcard) {
+        final IqPacket publication = new IqPacket(IqPacket.TYPE.SET);
+        publication.setTo(target);
+        publication.addChild(vcard.toElement());
+        sendIqPacket(account, publication, (a, response) -> {
+            if (response.getType() != IqPacket.TYPE.RESULT) {
+                Log.d(Config.LOGTAG, a.getJid().asBareJid()
+                        + ": could not publish vcard: " + response.getErrorCondition());
+            }
+        });
+    }
+
+    /** Receiver for {@link #fetchVCard(Account, Jid, boolean, VCardCallback)}. */
+    public interface VCardCallback {
+        void onVCardReceived(VCard vcard);
     }
 
     public void fetchVcard4(Account account, final Contact contact, final Consumer<Element> callback) {

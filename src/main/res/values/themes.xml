@@ -154,6 +154,7 @@
         <item name="icon_done" type="reference">@drawable/ic_done_black_24dp</item>
         <item name="icon_group" type="reference">@drawable/outline_group_black_24dp</item>
         <item name="icon_contact" type="reference">@drawable/ic_contact_black_24dp</item>
+        <item name="icon_birthday" type="reference">@drawable/ic_cake_black_24dp</item>
         <item name="icon_group_unselected" type="reference">@drawable/outline_group_black_24dp</item>
         <item name="icon_group_selected" type="reference">@drawable/ic_group_selected_black_24</item>
         <item name="icon_new" type="reference">@drawable/ic_contacts_black_24dp</item>
@@ -384,6 +385,7 @@
         <item name="icon_done" type="reference">@drawable/ic_done_black_24dp</item>
         <item name="icon_group" type="reference">@drawable/outline_group_white_24</item>
         <item name="icon_contact" type="reference">@drawable/ic_contact_white_24dp</item>
+        <item name="icon_birthday" type="reference">@drawable/ic_cake_white_24dp</item>
         <item name="icon_group_unselected" type="reference">@drawable/outline_group_white_24</item>
         <item name="icon_group_selected" type="reference">@drawable/ic_group_selected_white_24</item>
         <item name="icon_new" type="reference">@drawable/ic_contacts_white_24dp</item>

@@ -89,6 +89,10 @@ public final class Namespace {
     public static final String JINGLE_TRANSPORT_ICE_OPTION = "http://gultsch.de/xmpp/drafts/jingle/transports/ice-udp/option";
     public static final String UNIFIED_PUSH = "http://gultsch.de/xmpp/drafts/unified-push";
     public static final String VCARD4 = "urn:ietf:params:xml:ns:vcard-4.0";
+    /** vcard-temp (XEP-0054) — the format used for profiles and MUC rooms. */
+    public static final String VCARD_TEMP = "vcard-temp";
+    /** Presence update element carrying the vCard photo hash (XEP-0153). */
+    public static final String VCARD_UPDATE = "vcard-temp:x:update";
     public static final String SDP_OFFER_ANSWER = "urn:ietf:rfc:3264";
     public static final String HASHES = "urn:xmpp:hashes:2";
     public static final String REPORTING = "urn:xmpp:reporting:1";

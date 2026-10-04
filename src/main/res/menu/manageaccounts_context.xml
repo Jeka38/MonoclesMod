@@ -3,6 +3,9 @@
     xmlns:app="http://schemas.android.com/apk/res-auto">
 
     <item
+        android:id="@+id/mgmt_account_profile"
+        android:title="@string/vcard_profile" />
+    <item
         android:id="@+id/mgmt_account_publish_avatar"
         android:title="@string/mgmt_account_publish_avatar" />
     <item

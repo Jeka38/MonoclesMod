@@ -616,6 +616,12 @@
         </activity>
 
         <activity
+            android:name=".ui.VCardActivity"
+            android:configChanges="orientation|screenSize"
+            android:label="@string/vcard_profile"
+            android:exported="false" />
+
+        <activity
             android:name=".ui.TagsActivity"
             android:configChanges="orientation|screenSize"
             android:label="@string/all_tags"

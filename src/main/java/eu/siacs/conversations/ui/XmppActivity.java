@@ -721,6 +721,27 @@ public abstract class XmppActivity extends ActionBarActivity {
         switchToContactDetails(contact, null);
     }
 
+    /** Opens a room's profile card (vCard) for viewing. */
+    public void switchToVCard(Account account, Jid jid, boolean mucRoom, String displayName) {
+        final Intent intent = new Intent(this, VCardActivity.class);
+        intent.putExtra(VCardActivity.EXTRA_ACCOUNT, account.getJid().asBareJid().toEscapedString());
+        intent.putExtra(VCardActivity.EXTRA_JID, jid.toEscapedString());
+        intent.putExtra(VCardActivity.EXTRA_ROOM, mucRoom);
+        intent.putExtra(VCardActivity.EXTRA_NAME, displayName);
+        startActivity(intent);
+        overridePendingTransition(R.animator.fade_in, R.animator.fade_out);
+    }
+
+    /** Opens the account's own profile card, ready to edit. */
+    public void switchToOwnVCard(Account account) {
+        final Intent intent = new Intent(this, VCardActivity.class);
+        intent.setAction(VCardActivity.ACTION_EDIT_OWN);
+        intent.putExtra(VCardActivity.EXTRA_ACCOUNT, account.getJid().asBareJid().toEscapedString());
+        intent.putExtra(VCardActivity.EXTRA_JID, account.getJid().asBareJid().toEscapedString());
+        startActivity(intent);
+        overridePendingTransition(R.animator.fade_in, R.animator.fade_out);
+    }
+
     public void switchToContactDetails(Contact contact, String messageFingerprint) {
         switchToContactDetails(contact, messageFingerprint, null);
     }

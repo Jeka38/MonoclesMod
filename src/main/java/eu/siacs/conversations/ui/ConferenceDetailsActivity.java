@@ -436,6 +436,10 @@ public class ConferenceDetailsActivity extends XmppActivity implements OnConvers
             case android.R.id.home:
                 finish();
                 break;
+            case R.id.action_view_muc_vcard:
+                switchToVCard(mConversation.getAccount(), mConversation.getJid().asBareJid(), true,
+                        mConversation.getName().toString());
+                break;
             case R.id.action_edit_muc:
                 onMucEditButtonClicked(null);
                 break;

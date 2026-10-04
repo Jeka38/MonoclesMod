@@ -18,6 +18,7 @@ import eu.siacs.conversations.entities.MucOptions;
 import eu.siacs.conversations.services.XmppConnectionService;
 import eu.siacs.conversations.ui.util.AvatarWorkerTask;
 import eu.siacs.conversations.ui.util.ClientIconUtils;
+import eu.siacs.conversations.ui.util.VCardViewBinder;
 import eu.siacs.conversations.utils.IrregularUnicodeDetector;
 import eu.siacs.conversations.xmpp.Jid;
 
@@ -25,6 +26,7 @@ public class ConferenceContactDetailsActivity extends XmppActivity implements Xm
     public static final String ACTION_VIEW_CONTACT = "view_contact";
 
     private Conversation mConversation;
+    private Account account;
     ActivityMucContactDetailsBinding binding;
     private Jid accountJid;
     private Jid contactJid;
@@ -78,6 +80,50 @@ public class ConferenceContactDetailsActivity extends XmppActivity implements Xm
         }
     }
 
+    private String vcardRequestedFor = null;
+
+    private void loadVCard() {
+        if (account == null || user == null) {
+            return;
+        }
+        if (user.getFullJid() != null && user.getFullJid().toEscapedString().equals(vcardRequestedFor)) {
+            return;
+        }
+        vcardRequestedFor = user.getFullJid() == null ? null : user.getFullJid().toEscapedString();
+        // The card lives on the participant's real JID. Rooms that hide it (anonymous /
+        // non-anonymous without whois) leave us with only nick@room, which has no card: in that
+        // case the section stays hidden instead of showing an empty/duplicate entry.
+        final Jid nicJid = user.getFullJid() != null ? user.getFullJid() : contactJid;
+        final Jid realJid = user.getRealJid() != null ? user.getRealJid() : user.getRealFullJid();
+        if (nicJid == null) {
+            return;
+        }
+        xmppConnectionService.fetchMucUserVCard(account, nicJid, realJid, vcard -> {
+            if (vcard == null || vcard.isEmpty()) {
+                return;
+            }
+            runOnUiThread(() -> {
+                binding.profile.setVisibility(View.VISIBLE);
+                VCardViewBinder.bind(this, binding.vcardFields, vcard, this::openVCardValue);
+            });
+        });
+    }
+
+    private void openVCardValue(final android.net.Uri uri) {
+        if ("xmpp".equals(uri.getScheme())) {
+            switchToConversation(xmppConnectionService.findOrCreateConversation(
+                    account, Jid.of(uri.getSchemeSpecificPart()), false, true));
+            return;
+        }
+        try {
+            startActivity(new android.content.Intent(android.content.Intent.ACTION_VIEW, uri));
+        } catch (final android.content.ActivityNotFoundException e) {
+            android.widget.Toast.makeText(
+                            this, R.string.no_application_found_to_open_link, android.widget.Toast.LENGTH_SHORT)
+                    .show();
+        }
+    }
+
     private void populateView() {
         if (getSupportActionBar() != null) {
             final ActionBar ab = getSupportActionBar();
@@ -128,11 +174,12 @@ public class ConferenceContactDetailsActivity extends XmppActivity implements Xm
         } else {
             binding.detailsAccount.setVisibility(View.GONE);
         }
+        loadVCard();
     }
 
     public void onBackendConnected() {
         if (accountJid != null && contactJid != null) {
-            Account account = xmppConnectionService.findAccountByJid(accountJid);
+            this.account = xmppConnectionService.findAccountByJid(accountJid);
             if (account == null) {
                 return;
             }

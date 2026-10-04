@@ -10,6 +10,12 @@
         app:showAsAction="always" />
 
     <item
+        android:id="@+id/action_view_muc_vcard"
+        android:orderInCategory="7"
+        android:title="@string/vcard_view_profile"
+        app:showAsAction="never" />
+
+    <item
         android:id="@+id/action_save_bookmark"
         android:icon="?attr/icon_star_outline"
         android:orderInCategory="6"
