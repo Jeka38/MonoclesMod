@@ -8,8 +8,16 @@ import android.os.Build;
 import android.text.Html;
 import android.text.SpannableStringBuilder;
 import android.text.Spanned;
+import android.graphics.Typeface;
+
+import androidx.annotation.NonNull;
+import androidx.annotation.Nullable;
+
 import android.text.style.ImageSpan;
 import android.text.style.ClickableSpan;
+import android.text.style.StrikethroughSpan;
+import android.text.style.StyleSpan;
+import android.text.style.TypefaceSpan;
 import android.util.Log;
 import android.util.Base64;
 import android.util.Pair;
@@ -20,7 +28,9 @@ import eu.siacs.conversations.ui.util.MyLinkify;
 import de.monocles.mod.BobTransfer;
 import de.monocles.mod.GetThumbnailForCid;
 import de.monocles.mod.InlineImageSpan;
+import de.monocles.mod.SpannedToMarkup;
 import de.monocles.mod.SpannedToXHTML;
+import eu.siacs.conversations.xmpp.markup.MessageMarkup;
 
 import java.io.IOException;
 import java.util.stream.Collectors;
@@ -646,6 +656,29 @@ public class Message extends AbstractEntity implements AvatarService.Avatarable 
             body.clearChildren();
             SpannedToXHTML.append(body, span);
         }
+        setMarkup(span);
+    }
+
+    /** Replaces the XEP-0394 {@code <markup/>} payload from the styled body (null clears it). */
+    private synchronized void setMarkup(@Nullable final Spanned span) {
+        final Element old = getMarkup(true);
+        if (old != null) {
+            this.payloads.remove(old);
+        }
+        if (span == null || SpannedToMarkup.isEmpty(span)) {
+            return;
+        }
+        final MessageMarkup.Model model = SpannedToMarkup.fromSpanned(span);
+        if (model.isEmpty()) {
+            return;
+        }
+        addPayload(MessageMarkup.toElement(model));
+    }
+
+    /** The root {@code <markup/>} payload, or null. */
+    @Nullable
+    public Element getMarkup() {
+        return getMarkup(false);
     }
 
 
@@ -1313,6 +1346,8 @@ public class Message extends AbstractEntity implements AvatarService.Avatarable 
             spannableBody = (SpannableStringBuilder) spannable.subSequence(0, i+1);
         }
 
+        applyMarkupRendering(spannableBody);
+
         if (getInReplyTo() != null && getModerated() == null) {
             final var quote = getInReplyTo().getSpannableBody(thumbnailer, fallbackImg);
             if ((getInReplyTo().isFileOrImage() || getInReplyTo().isOOb()) && getInReplyTo().getFileParams() != null) {
@@ -1330,6 +1365,122 @@ public class Message extends AbstractEntity implements AvatarService.Avatarable 
         }
 
         return spannableBody;
+    }
+
+    @Nullable
+    private Element getMarkup(final boolean ignoredRoot) {
+        if (this.payloads == null) {
+            return null;
+        }
+        for (final Element el : this.payloads) {
+            if ("markup".equals(el.getName()) && Namespace.MARKUP.equals(el.getNamespace())) {
+                return el;
+            }
+        }
+        return null;
+    }
+
+    /**
+     * Renders the XEP-0394 markup over the plain body. Offsets in the markup are Unicode code
+     * points while the spannable addresses UTF-16 units, so every range is converted first; a range
+     * that no longer fits the body is dropped rather than applied blindly.
+     */
+    private void applyMarkupRendering(@NonNull final SpannableStringBuilder body) {
+        final MessageMarkup.Model model = MessageMarkup.parse(getMarkup());
+        if (model == null) {
+            return;
+        }
+        final int length = body.length();
+        for (final MessageMarkup.Span span : model.spans) {
+            final int start = codePointToCharIndex(body, span.range.start);
+            final int end = codePointToCharIndex(body, span.range.end);
+            if (start < 0 || end <= start || end > length) {
+                continue;
+            }
+            for (final MessageMarkup.Kind kind : span.kinds) {
+                body.setSpan(
+                        kindSpan(kind),
+                        start,
+                        end,
+                        Spanned.SPAN_EXCLUSIVE_EXCLUSIVE | MarkupSpan.MARKUP_FLAG);
+            }
+        }
+        for (final MessageMarkup.CodeBlock block : model.codeBlocks) {
+            final int start = codePointToCharIndex(body, block.range.start);
+            final int end = codePointToCharIndex(body, block.range.end);
+            if (start < 0 || end <= start || end > length) {
+                continue;
+            }
+            body.setSpan(
+                    new MarkupCodeBlockSpan(),
+                    start,
+                    end,
+                    Spanned.SPAN_EXCLUSIVE_EXCLUSIVE | MarkupSpan.MARKUP_FLAG);
+        }
+        for (final MessageMarkup.ListBlock list : model.lists) {
+            for (int i = 0; i < list.itemStarts.length; i++) {
+                final int itemStart = codePointToCharIndex(body, list.itemStarts[i]);
+                final int itemEnd = i + 1 < list.itemStarts.length
+                        ? codePointToCharIndex(body, list.itemStarts[i + 1])
+                        : codePointToCharIndex(body, list.range.end);
+                if (itemStart < 0 || itemEnd <= itemStart || itemEnd > length) {
+                    continue;
+                }
+                body.setSpan(
+                        new MarkupListItemSpan(list.ordered, i),
+                        itemStart,
+                        itemEnd,
+                        Spanned.SPAN_EXCLUSIVE_EXCLUSIVE | MarkupSpan.MARKUP_FLAG);
+            }
+        }
+        for (final MessageMarkup.Range quote : model.quotes) {
+            final int start = codePointToCharIndex(body, quote.start);
+            final int end = codePointToCharIndex(body, quote.end);
+            if (start < 0 || end <= start || end > length) {
+                continue;
+            }
+            body.setSpan(
+                    new MarkupQuoteSpan(),
+                    start,
+                    end,
+                    Spanned.SPAN_EXCLUSIVE_EXCLUSIVE | MarkupSpan.MARKUP_FLAG);
+        }
+    }
+
+    /** Converts an offset in Unicode code points into an index into the UTF-16 spannable. */
+    private static int codePointToCharIndex(@NonNull final CharSequence text, final int codePointIndex) {
+        if (codePointIndex < 0) {
+            return -1;
+        }
+        int codePoints = 0;
+        for (int i = 0; i < text.length(); i++) {
+            if (codePoints == codePointIndex) {
+                return i;
+            }
+            codePoints++;
+            if (Character.isHighSurrogate(text.charAt(i))
+                    && i + 1 < text.length()
+                    && Character.isLowSurrogate(text.charAt(i + 1))) {
+                i++;
+            }
+        }
+        return codePoints == codePointIndex ? text.length() : -1;
+    }
+
+    @NonNull
+    private static Object kindSpan(final MessageMarkup.Kind kind) {
+        switch (kind) {
+            case EMPHASIS:
+                return new StyleSpan(Typeface.ITALIC);
+            case STRONG:
+                return new StyleSpan(Typeface.BOLD);
+            case CODE:
+                return new TypefaceSpan("monospace");
+            case DELETED:
+                return new StrikethroughSpan();
+            default:
+                throw new AssertionError("unknown markup kind");
+        }
     }
 
     public Element getHtml() {
