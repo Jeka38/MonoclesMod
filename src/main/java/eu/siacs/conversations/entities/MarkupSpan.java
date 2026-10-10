@@ -39,8 +39,6 @@ public final class MarkupSpan {
         switch (mark.type) {
             case EMPHASIS:
                 return new StyleSpan(Typeface.ITALIC);
-            case STRONG:
-                return new StyleSpan(Typeface.BOLD);
             case CODE:
                 return new TypefaceSpan("monospace");
             case DELETED:

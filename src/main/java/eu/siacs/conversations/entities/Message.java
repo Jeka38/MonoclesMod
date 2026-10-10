@@ -645,48 +645,93 @@ public class Message extends AbstractEntity implements AvatarService.Avatarable 
     }
 
     /**
-     * Stores the text the user typed as the body and derives the XEP-0394 {@code <markup/>} from the
-     * XEP-0393 styling found in it.
+     * Stores the outgoing body and the XEP-0394 {@code <markup/>} describing its styling.
      *
-     * <p>The body is kept <em>verbatim</em>: the styling directives must survive sending, otherwise
-     * recipients — including this client on the other side — would have nothing to render. Markup is
-     * attached as an extra hint, so clients that understand it get the same styling even if they do
-     * not parse the directives.
+     * <p>The styling directives ({@code _}, {@code *}, {@code ~}, {@code `} and the {@code ```} fences)
+     * are <em>stripped from the body</em> — the recipient should read clean text — and the ranges they
+     * covered are written into the markup, so a client that renders markup still shows the emphasis.
+     * Quotation markers ({@code >}) are kept: they are meaningful context, not decoration.
      */
     private synchronized void applySource(@Nullable final String source) {
-        setBodyPreserveXHTML(source);
-        setMarkup(source == null ? null : markupFromStyling(source));
-    }
+        if (source == null) {
+            setBodyPreserveXHTML(null);
+            setMarkup(null);
+            return;
+        }
+        final List<Object> parsed = MessageStyling.parse(source);
 
-    /**
-     * Turns the XEP-0393 directives of {@code source} into XEP-0394 marks. Inline directives are
-     * converted without their marker characters, code blocks become {@code bcode}, quotations
-     * {@code bquote}.
-     */
-    @NonNull
-    private static List<MessageMarkup.Mark> markupFromStyling(@NonNull final String source) {
-        final List<MessageMarkup.Mark> marks = new java.util.ArrayList<>();
-        for (final Object item : MessageStyling.parse(source)) {
+        // every character a styling directive occupies is dropped from the body
+        final boolean[] dropped = new boolean[source.length()];
+        for (final Object item : parsed) {
+            if (item instanceof MessageStyling.Span) {
+                final MessageStyling.Span span = (MessageStyling.Span) item;
+                drop(dropped, span.start);
+                drop(dropped, span.end - 1);
+            } else if (item instanceof MessageStyling.Block) {
+                final MessageStyling.Block block = (MessageStyling.Block) item;
+                if (block.preformatted) {
+                    // both ``` fence lines go, newlines included, so no blank lines are left behind
+                    for (int i = block.start; i < block.contentStart; i++) {
+                        drop(dropped, i);
+                    }
+                    for (int i = block.contentEnd; i < block.end; i++) {
+                        drop(dropped, i);
+                    }
+                }
+            }
+        }
+
+        // build the clean body and a source -> clean index map for the markup offsets
+        final int[] map = new int[source.length() + 1];
+        final StringBuilder clean = new StringBuilder(source.length());
+        for (int i = 0; i < source.length(); i++) {
+            map[i] = clean.length();
+            if (!dropped[i]) {
+                clean.append(source.charAt(i));
+            }
+        }
+        map[source.length()] = clean.length();
+        setBodyPreserveXHTML(clean.toString());
+
+        final List<MessageMarkup.Mark> marks = new ArrayList<>();
+        for (final Object item : parsed) {
             if (item instanceof MessageStyling.Span) {
                 final MessageStyling.Span span = (MessageStyling.Span) item;
                 final MessageMarkup.Type type = markupType(span.style);
                 if (type != null) {
-                    marks.add(new MessageMarkup.Mark(type, span.start + 1, span.end - 1, null));
+                    addMark(marks, type, map, span.start + 1, span.end - 1, null);
                 }
             } else if (item instanceof MessageStyling.Block) {
                 final MessageStyling.Block block = (MessageStyling.Block) item;
                 if (block.preformatted) {
-                    // the bcode range must be the code itself, without the ``` fence lines
-                    marks.add(new MessageMarkup.Mark(
-                            MessageMarkup.Type.CODE_BLOCK, block.contentStart, block.contentEnd,
-                            block.language));
+                    addMark(marks, MessageMarkup.Type.CODE_BLOCK, map,
+                            block.contentStart, block.contentEnd, block.language);
                 } else {
-                    marks.add(new MessageMarkup.Mark(
-                            MessageMarkup.Type.QUOTE, block.start, block.end, null));
+                    addMark(marks, MessageMarkup.Type.QUOTE, map, block.start, block.end, null);
                 }
             }
         }
-        return marks;
+        setMarkup(marks);
+    }
+
+    private static void drop(@NonNull final boolean[] dropped, final int index) {
+        if (index >= 0 && index < dropped.length) {
+            dropped[index] = true;
+        }
+    }
+
+    private static void addMark(
+            @NonNull final List<MessageMarkup.Mark> marks,
+            @NonNull final MessageMarkup.Type type,
+            @NonNull final int[] map,
+            final int start,
+            final int end,
+            @Nullable final String argument) {
+        final int from = map[Math.max(0, Math.min(start, map.length - 1))];
+        final int to = map[Math.max(0, Math.min(end, map.length - 1))];
+        if (to > from) {
+            marks.add(new MessageMarkup.Mark(type, from, to, argument));
+        }
     }
 
     @Nullable
@@ -694,8 +739,6 @@ public class Message extends AbstractEntity implements AvatarService.Avatarable 
         switch (style) {
             case EMPHASIS:
                 return MessageMarkup.Type.EMPHASIS;
-            case STRONG:
-                return MessageMarkup.Type.STRONG;
             case STRIKE:
                 return MessageMarkup.Type.DELETED;
             case MONO:

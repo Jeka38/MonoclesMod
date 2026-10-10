@@ -10,7 +10,7 @@ import java.util.List;
  * XEP-0393 (Message Styling).
  *
  * <p>Unlike message markup, styling is <em>in-band</em>: the directives live in the body itself
- * ({@code _emphasis_}, {@code *strong*}, {@code ~strike~}, {@code `mono`}) plus two block kinds — a
+ * ({@code _emphasis_}, {@code ~strike~}, {@code `mono`}) plus two block kinds — a
  * preformatted block fenced by {@code ```} and quotations introduced by {@code >}. The XEP
  * recommends rendering the directives in the same style as the text they apply to (so {@code _x_}
  * shows both underscores italic), which is what this parser assumes: it never edits the body, it
@@ -26,7 +26,6 @@ public final class MessageStyling {
 
     public enum Style {
         EMPHASIS,
-        STRONG,
         STRIKE,
         MONO
     }
@@ -269,8 +268,6 @@ public final class MessageStyling {
         switch (c) {
             case '_':
                 return Style.EMPHASIS;
-            case '*':
-                return Style.STRONG;
             case '~':
                 return Style.STRIKE;
             case '`':

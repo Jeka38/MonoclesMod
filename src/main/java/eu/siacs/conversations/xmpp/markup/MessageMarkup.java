@@ -25,7 +25,6 @@ public final class MessageMarkup {
 
     public enum Type {
         EMPHASIS,
-        STRONG,
         CODE,
         DELETED,
         CODE_BLOCK,
@@ -141,8 +140,6 @@ public final class MessageMarkup {
         switch (name) {
             case "emphasis":
                 return Type.EMPHASIS;
-            case "strong":
-                return Type.STRONG;
             case "code":
                 return Type.CODE;
             case "deleted":
@@ -234,8 +231,6 @@ public final class MessageMarkup {
         switch (type) {
             case EMPHASIS:
                 return "emphasis";
-            case STRONG:
-                return "strong";
             case CODE:
                 return "code";
             case DELETED:

@@ -38,8 +38,6 @@ public final class StylingSpan {
         switch (style) {
             case EMPHASIS:
                 return new StyleSpan(Typeface.ITALIC);
-            case STRONG:
-                return new StyleSpan(Typeface.BOLD);
             case STRIKE:
                 return new StrikethroughSpan();
             case MONO:

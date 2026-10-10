@@ -104,8 +104,9 @@ ProGuard + shrinking (`-dontobfuscate`) are enabled on **both** debug and releas
 
 ## Message Styling (XEP-0393)
 
-The in-band counterpart to XEP-0394: the directives live **in the body** (`_emphasis_`, `*strong*`,
-`~strike~`, `` `mono` ``), plus ````` preformatted blocks and `> ` quotations. Both XEPs
+The in-band counterpart to XEP-0394: the directives live **in the body** (`_emphasis_`,
+`~strike~`, `` `mono` ``), plus ````` preformatted blocks and `> ` quotations. **Bold is
+deliberately not supported** — `*` is ordinary text. Both XEPs
 coexist — 0393 styles the body itself, 0394 adds markup for a separate payload; use whichever the
 message carries.
 
@@ -114,7 +115,7 @@ message carries.
   quote `depth` and an optional code `language`). Rules follow the XEP literally: a directive opens
   at the start of the block or after whitespace/another directive and must not be followed by
   whitespace; the close is matched **lazily**, must not be preceded by whitespace, and both
-  directives must contain text (`**`, `***`, `****` style nothing). Preformatted blocks are literal —
+  directives must contain text (empty directives are ignored). Preformatted blocks are literal —
   no child spans — and quotations may nest, so a quote's content is re-parsed past the `>` markers.
 - **Send:** the body is kept **verbatim** — the directives must reach the recipient or the styling
   is lost. `Message.applySource` additionally derives an XEP-0394 `<markup/>` from the XEP-0393 parse
@@ -141,7 +142,7 @@ from scratch (the earlier attempt was reverted); inline elements are render-only
 authored.
 
 - **Model — `xmpp/markup/MessageMarkup`.** `parse(Element)` reads `span`
-  (`emphasis`/`strong`/`code`/`deleted`), `bcode` (+`language`), `list` (+`ordered`, `li start`) and
+  (`emphasis`/`code`/`deleted`), `bcode` (+`language`), `list` (+`ordered`, `li start`) and
   `bquote` into one flat `List<Mark>`; a list item becomes one mark per `li`, so no tree is needed.
   Offsets are **Unicode code points**; unknown elements are ignored and a range with `end < start` is
   dropped. `build(List<Mark>)` writes the element back.
@@ -165,7 +166,8 @@ authored.
   the reply fallback all show the plain body. `MessageParser` still parses and keeps the `<html/>`
   element as a payload, and `markMessage` still stores it, but nothing displays it. Do not reintroduce
   a renderer for the stored payload without a reason.
-- **Deliberately not implemented:** inline authoring (emphasis/strong/code/deleted), ordered lists and
+- **Deliberately not implemented:** **bold** (rejected on request — `*` stays literal in both XEPs),
+  inline authoring (emphasis/code/deleted), ordered lists and
   nested quotes are shown but not composed in this client.
 
 ## Profile cards (vCard)
