@@ -954,8 +954,6 @@ public class MessageAdapter extends ArrayAdapter<Message> {
                                 // Avoid empty lines because span over empty line can be hidden
                                 body.insert(i++, " ");
                             }
-                        } else {
-                            body.setSpan(new RelativeSizeSpan(i - (lineTextStart - lineStart) == lineStart ? 1 : 0), lineStart, lineTextStart, Spannable.SPAN_EXCLUSIVE_EXCLUSIVE | StylingHelper.XHTML_REMOVE << Spanned.SPAN_USER_SHIFT);
                         }
                         lineStart = -1;
                         lineTextStart = -1;
@@ -1095,14 +1093,7 @@ public class MessageAdapter extends ArrayAdapter<Message> {
                 }
             }
 
-            // Обработка цитат
-            final boolean startsWithQuote = handleTextQuotes(viewHolder.messageBody, body, darkBackground, true);
-            for (final android.text.style.QuoteSpan quote : body.getSpans(0, body.length(), android.text.style.QuoteSpan.class)) {
-                int start = body.getSpanStart(quote);
-                int end = body.getSpanEnd(quote);
-                body.removeSpan(quote);
-                applyQuoteSpan(viewHolder.messageBody, body, start, end, darkBackground, true);
-            }
+            // messages are plain text: quotes are shown as the raw "> " lines, without a quote bar
 
             if (message.getConversation().getMode() == Conversation.MODE_MULTI && message.getStatus() == Message.STATUS_RECEIVED) {
                 if (message.getConversation() instanceof Conversation) {

@@ -8,6 +8,9 @@ import android.os.Build;
 import android.text.Html;
 import android.text.SpannableStringBuilder;
 import android.text.Spanned;
+import androidx.annotation.NonNull;
+import androidx.annotation.Nullable;
+
 import android.text.style.ImageSpan;
 import android.text.style.ClickableSpan;
 import android.util.Log;
@@ -20,7 +23,6 @@ import eu.siacs.conversations.ui.util.MyLinkify;
 import de.monocles.mod.BobTransfer;
 import de.monocles.mod.GetThumbnailForCid;
 import de.monocles.mod.InlineImageSpan;
-import de.monocles.mod.SpannedToXHTML;
 
 import java.io.IOException;
 import java.util.stream.Collectors;
@@ -66,6 +68,8 @@ import eu.siacs.conversations.utils.StringUtils;
 import eu.siacs.conversations.utils.Patterns;
 import eu.siacs.conversations.utils.UIHelper;
 import eu.siacs.conversations.utils.XmppUri;
+import eu.siacs.conversations.xmpp.markup.MessageMarkup;
+import eu.siacs.conversations.xmpp.styling.MessageStyling;
 import eu.siacs.conversations.xml.Namespace;
 import eu.siacs.conversations.services.NotificationService;
 import eu.siacs.conversations.services.XmppConnectionService;
@@ -611,14 +615,13 @@ public class Message extends AbstractEntity implements AvatarService.Avatarable 
         this.payloads.removeAll(getFallbacks(includeFor));
     }
 
+    /**
+     * XHTML-IM is not used any more — messages are plain text — so this only reports the payload that
+     * may have arrived from another client and never builds a new one.
+     */
+    @Nullable
     public synchronized Element getOrMakeHtml() {
-        Element html = getHtml();
-        if (html != null) return html;
-        html = new Element("html", "http://jabber.org/protocol/xhtml-im");
-        Element body = html.addChild("body", "http://www.w3.org/1999/xhtml");
-        SpannedToXHTML.append(body, new SpannableStringBuilder(getBody(true)));
-        addPayload(html);
-        return body;
+        return getHtml();
     }
 
     public static String toPlainText(Spanned span) {
@@ -637,15 +640,37 @@ public class Message extends AbstractEntity implements AvatarService.Avatarable 
     }
 
     public synchronized void setBody(Spanned span) {
-        // Don't bother removing, we'll edit below
-        setBodyPreserveXHTML(span == null ? null : toPlainText(span));
-        if (span == null || SpannedToXHTML.isPlainText(span)) {
-            this.payloads.remove(getHtml(true));
-        } else {
-            final Element body = getOrMakeHtml();
-            body.clearChildren();
-            SpannedToXHTML.append(body, span);
+        final String source = span == null ? null : toPlainText(span);
+        applySource(source);
+    }
+
+    /**
+     * Stores {@code source} as the plain body, extracting the XEP-0394 code blocks and stripping the
+     * inline Markdown markers the editor may contain. The body stays marker free, so a client that
+     * renders the markup never sees the source syntax.
+     */
+    private synchronized void applySource(@Nullable final String source) {
+        if (source == null) {
+            setBodyPreserveXHTML(null);
+            setMarkup(null);
+            return;
         }
+        final MessageMarkup.ParsedBody parsed = MessageMarkup.parseSource(source);
+        setBodyPreserveXHTML(parsed.body);
+        setMarkup(parsed.marks);
+    }
+
+    /** Replaces the {@code <markup/>} payload; an empty list clears it. */
+    private synchronized void setMarkup(
+            @NonNull final List<MessageMarkup.Mark> marks) {
+        final Element old = getMarkup();
+        if (old != null) {
+            this.payloads.remove(old);
+        }
+        if (marks.isEmpty()) {
+            return;
+        }
+        addPayload(MessageMarkup.build(marks));
     }
 
 
@@ -676,11 +701,9 @@ public class Message extends AbstractEntity implements AvatarService.Avatarable 
     }
 
     public synchronized void appendBody(Spanned append) {
-        if (!SpannedToXHTML.isPlainText(append) || getHtml() != null) {
-            final Element body = getOrMakeHtml();
-            SpannedToXHTML.append(body, append);
-        }
-        appendBody(append.toString());
+        final String existing = this.body;
+        final String combined = (existing == null ? "" : existing) + append.toString();
+        applySource(combined);
     }
 
     public String getQuoteableBody() {
@@ -1260,75 +1283,149 @@ public class Message extends AbstractEntity implements AvatarService.Avatarable 
     public static class MergeSeparator {
     }
 
-    public SpannableStringBuilder getSpannableBody(GetThumbnailForCid thumbnailer, Drawable fallbackImg) {
-        SpannableStringBuilder spannableBody;
-        final Element html = getHtml();
-        if (html == null || Build.VERSION.SDK_INT < 24) {
-            spannableBody = new SpannableStringBuilder(MessageUtils.filterLtrRtl(getBody(getInReplyTo() != null)).trim());
-            spannableBody.setSpan(PLAIN_TEXT_SPAN, 0, spannableBody.length(), 0); // Let adapter know it can do more formatting
-        } else {
-            SpannableStringBuilder spannable = new SpannableStringBuilder(Html.fromHtml(
-                    MessageUtils.filterLtrRtl(html.toString()).trim(),
-                    Html.FROM_HTML_MODE_COMPACT,
-                    (source) -> {
-                        try {
-                            if (thumbnailer == null || source == null) {
-                                return fallbackImg;
-                            }
-                            Cid cid = BobTransfer.cid(new URI(source));
-                            if (cid == null) {
-                                return fallbackImg;
-                            }
-                            Drawable thumbnail = thumbnailer.getThumbnail(cid);
-                            if (thumbnail == null) {
-                                return fallbackImg;
-                            }
-                            return thumbnail;
-                        } catch (final URISyntaxException e) {
-                            return fallbackImg;
-                        }
-                    },
-                    (opening, tag, output, xmlReader) -> {}
-            ));
-
-            // Make images clickable and long-clickable with BetterLinkMovementMethod
-            ImageSpan[] imageSpans = spannable.getSpans(0, spannable.length(), ImageSpan.class);
-            for (ImageSpan span : imageSpans) {
-                final int start = spannable.getSpanStart(span);
-                final int end = spannable.getSpanEnd(span);
-
-                ClickableSpan click_span = new ClickableSpan() {
-                    @Override
-                    public void onClick(View widget) { }
-                };
-
-                spannable.removeSpan(span);
-                spannable.setSpan(new InlineImageSpan(span.getDrawable(), span.getSource()), start, end, Spanned.SPAN_EXCLUSIVE_EXCLUSIVE);
-                spannable.setSpan(click_span, start, end, Spanned.SPAN_EXCLUSIVE_EXCLUSIVE);
-            }
-
-            // https://stackoverflow.com/a/10187511/8611
-            int i = spannable.length();
-            while(--i >= 0 && Character.isWhitespace(spannable.charAt(i))) { }
-            spannableBody = (SpannableStringBuilder) spannable.subSequence(0, i+1);
+    /**
+     * The body as a plain, unformatted string. Messages are shown as bare text: neither XHTML-IM
+     * formatting nor inline images from other clients are rendered any more.
+     */
+    /**
+     * True when the sender asked for message styling (XEP-0393) not to be applied, by attaching an
+     * empty {@code <unstyled xmlns='urn:xmpp:styling:0'/>} to the message.
+     */
+    public boolean isUnstyled() {
+        if (this.payloads == null) {
+            return false;
         }
+        for (final Element el : this.payloads) {
+            if ("unstyled".equals(el.getName()) && MessageStyling.NAMESPACE.equals(el.getNamespace())) {
+                return true;
+            }
+        }
+        return false;
+    }
 
-        if (getInReplyTo() != null && getModerated() == null) {
-            final var quote = getInReplyTo().getSpannableBody(thumbnailer, fallbackImg);
-            if ((getInReplyTo().isFileOrImage() || getInReplyTo().isOOb()) && getInReplyTo().getFileParams() != null) {
-                quote.insert(0, "🖼️");
-                final var cid = getInReplyTo().getFileParams().getCids().isEmpty() ? null : getInReplyTo().getFileParams().getCids().get(0);
-                Drawable thumbnail = thumbnailer == null || cid == null ? null : thumbnailer.getThumbnail(cid);
-                if (thumbnail == null) thumbnail = fallbackImg;
-                if (thumbnail != null) {
-                    quote.setSpan(new InlineImageSpan(thumbnail, cid == null ? null : cid.toString()), 0, 2, Spanned.SPAN_EXCLUSIVE_EXCLUSIVE);
+    /**
+     * Renders XEP-0393 message styling over the plain body: the inline directives ({@code _x_},
+     * {@code *x*}, {@code ~x~}, {@code `x`}) stay in the text and are styled like the text they apply
+     * to, preformatted blocks get a monospace panel and quotations a bar. The {@code /me} and
+     * {@code /my} commands are expanded first, so their styling is part of the same pass. Honours the
+     * sender's {@code <unstyled/>} opt-out.
+     */
+    private void renderStyling(@NonNull final SpannableStringBuilder body) {
+        for (final Object span : body.getSpans(0, body.length(), Object.class)) {
+            if ((body.getSpanFlags(span) & StylingSpan.STYLING_FLAG) != 0) {
+                body.removeSpan(span);
+            }
+        }
+        if (isUnstyled()) {
+            return;
+        }
+        for (final Object item : MessageStyling.parse(body)) {
+            if (item instanceof MessageStyling.Span) {
+                final MessageStyling.Span span = (MessageStyling.Span) item;
+                body.setSpan(
+                        StylingSpan.forDirective(span.style),
+                        span.start,
+                        span.end,
+                        Spanned.SPAN_EXCLUSIVE_EXCLUSIVE | StylingSpan.STYLING_FLAG);
+            } else if (item instanceof MessageStyling.Block) {
+                final MessageStyling.Block block = (MessageStyling.Block) item;
+                final int end = Math.max(block.start, block.end);
+                if (block.preformatted) {
+                    body.setSpan(
+                            new StylingSpan.CodeBlock(block.language),
+                            block.start,
+                            end,
+                            Spanned.SPAN_EXCLUSIVE_EXCLUSIVE | StylingSpan.STYLING_FLAG);
+                } else {
+                    body.setSpan(
+                            new StylingSpan.Quote(block.depth),
+                            block.start,
+                            end,
+                            Spanned.SPAN_EXCLUSIVE_EXCLUSIVE | StylingSpan.STYLING_FLAG);
                 }
             }
+        }
+    }
+
+    /** The {@code <markup/>} payload (XEP-0394), if the sender provided one. */
+    @Nullable
+    public Element getMarkup() {
+        if (this.payloads == null) {
+            return null;
+        }
+        for (final Element el : this.payloads) {
+            if ("markup".equals(el.getName()) && Namespace.MARKUP.equals(el.getNamespace())) {
+                return el;
+            }
+        }
+        return null;
+    }
+
+    /**
+     * Draws the XEP-0394 markup of this message over its plain body. Ranges arrive in Unicode code
+     * points and are converted to the spannable's UTF-16 indices; anything that no longer fits the
+     * body is skipped instead of being applied to the wrong characters.
+     */
+    private void renderMarkup(@NonNull final SpannableStringBuilder body) {
+        final java.util.List<eu.siacs.conversations.xmpp.markup.MessageMarkup.Mark> marks =
+                eu.siacs.conversations.xmpp.markup.MessageMarkup.parse(getMarkup());
+        if (marks.isEmpty()) {
+            return;
+        }
+        // drop a previous render (message edits redraw the same view)
+        for (final Object span : body.getSpans(0, body.length(), Object.class)) {
+            if ((body.getSpanFlags(span) & MarkupSpan.MARKUP_FLAG) != 0) {
+                body.removeSpan(span);
+            }
+        }
+        for (final eu.siacs.conversations.xmpp.markup.MessageMarkup.Mark mark : marks) {
+            final Object span = MarkupSpan.forMark(mark);
+            if (span == null) {
+                continue;
+            }
+            final int start = codePointToCharIndex(body, mark.start);
+            final int end = codePointToCharIndex(body, mark.end);
+            if (start < 0 || end <= start || end > body.length()) {
+                continue;
+            }
+            body.setSpan(span, start, end, Spanned.SPAN_EXCLUSIVE_EXCLUSIVE | MarkupSpan.MARKUP_FLAG);
+        }
+    }
+
+    /** Offset of a code point index inside a UTF-16 string, or -1 when it is past the end. */
+    private static int codePointToCharIndex(@NonNull final CharSequence text, final int codePointIndex) {
+        if (codePointIndex < 0) {
+            return -1;
+        }
+        int codePoints = 0;
+        for (int i = 0; i < text.length(); i++) {
+            if (codePoints == codePointIndex) {
+                return i;
+            }
+            codePoints++;
+            if (Character.isHighSurrogate(text.charAt(i))
+                    && i + 1 < text.length()
+                    && Character.isLowSurrogate(text.charAt(i + 1))) {
+                i++;
+            }
+        }
+        return codePoints == codePointIndex ? text.length() : -1;
+    }
+
+    public SpannableStringBuilder getSpannableBody(GetThumbnailForCid thumbnailer, Drawable fallbackImg) {
+        final String plain = MessageUtils.filterLtrRtl(getBody(getInReplyTo() != null)).trim();
+        final SpannableStringBuilder spannableBody = new SpannableStringBuilder(plain);
+        spannableBody.setSpan(PLAIN_TEXT_SPAN, 0, spannableBody.length(), 0);
+        renderMarkup(spannableBody);
+        renderStyling(spannableBody);
+
+        if (getInReplyTo() != null && getModerated() == null) {
+            final SpannableStringBuilder quote =
+                    new SpannableStringBuilder(getInReplyTo().getSpannableBody(null, null));
             quote.setSpan(new android.text.style.QuoteSpan(), 0, quote.length(), Spanned.SPAN_EXCLUSIVE_EXCLUSIVE);
             spannableBody.insert(0, "\n");
             spannableBody.insert(0, quote);
         }
-
         return spannableBody;
     }
 
@@ -1341,7 +1438,7 @@ public class Message extends AbstractEntity implements AvatarService.Avatarable 
 
         for (Element el : this.payloads) {
             if (el.getName().equals("html") && el.getNamespace().equals("http://jabber.org/protocol/xhtml-im")) {
-                return root ? el : el.getChildren().get(0);
+                return null;
             }
         }
 

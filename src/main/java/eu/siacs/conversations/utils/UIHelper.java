@@ -410,51 +410,12 @@ public class UIHelper {
                 return new Pair<>(context.getString(R.string.x_file_offered_for_download,
                         getFileDescriptionString(context, message)), true);
             } else {
-                Drawable fallbackImg = ResourcesCompat.getDrawable(context.getResources(), R.drawable.ic_attach_photo, null);
-                fallbackImg.setBounds(0, 0, fallbackImg.getIntrinsicWidth(), fallbackImg.getIntrinsicHeight());
-                SpannableStringBuilder styledBody = message.getSpannableBody(null, fallbackImg);  //TODO: ADD message.getSpannableBody(null, fallbackImg); somehow (commit: Actually display images we already have inline in XHTML-IM)
-                final var processMarkup = styledBody.getSpans(0, body.length(), Message.PlainTextSpan.class).length > 0;
-                if (textColor != 0 && processMarkup) {
-                    StylingHelper.format(styledBody, 0, styledBody.length() - 1, textColor, false);
-                }
-                MyLinkify.addLinks(styledBody, message.getConversation().getAccount(), message.getConversation().getJid());
-
-                for (final android.text.style.QuoteSpan quote : Lists.reverse(Lists.newArrayList(styledBody.getSpans(0, styledBody.length(), android.text.style.QuoteSpan.class)))) {
-                    int start = styledBody.getSpanStart(quote);
-                    int end = styledBody.getSpanEnd(quote);
-                    if (start < 0 || end < 0 || (start == 0 && end == styledBody.length())) continue;
-                    styledBody.delete(start, end);
-                    styledBody.removeSpan(quote);
-                }
-                if (!processMarkup) return new Pair<>(styledBody, false);
-
-                SpannableStringBuilder builder = new SpannableStringBuilder();
-                for (CharSequence l : CharSequenceUtils.split(styledBody, '\n')) {
-                    if (l.length() > 0) {
-                        if (l.toString().equals("```")) {
-                            continue;
-                        }
-                        char first = l.charAt(0);
-                        if ((!QuoteHelper.isPositionQuoteStart(l, 0))) {
-                            CharSequence line = CharSequenceUtils.trim(l);
-                            if (line.length() == 0) {
-                                continue;
-                            }
-                            char last = line.charAt(line.length() - 1);
-                            if (builder.length() != 0) {
-                                builder.append(' ');
-                            }
-                            builder.append(line);
-                            if (!PUNCTIONATION.contains(last)) {
-                                break;
-                            }
-                        }
-                    }
-                }
-                if (builder.length() == 0) {
-                    builder.append(body.trim());
-                }
-                return new Pair<>(builder, false);
+                // messages are plain text: no marker stripping, no quote handling, no formatting
+                final SpannableStringBuilder styledBody =
+                        new SpannableStringBuilder(message.getBody());
+                MyLinkify.addLinks(styledBody, message.getConversation().getAccount(),
+                        message.getConversation().getJid());
+                return new Pair<>(styledBody, false);
             }
         }
     }

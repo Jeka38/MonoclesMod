@@ -327,7 +327,6 @@ public class ConversationAdapter
                     viewHolder.binding.conversationLastmsg.setText(UIHelper.shorten(activity.getString(R.string.message_deleted)));
                 } else {
                     SpannableStringBuilder body = new SpannableStringBuilder(replaceYoutube(activity.getApplicationContext(), preview.first.toString()));
-                    StylingHelper.format(body, viewHolder.binding.conversationLastmsg.getCurrentTextColor(), true);
                     viewHolder.binding.conversationLastmsg.setText(UIHelper.shorten(body));
                 }
             } else {

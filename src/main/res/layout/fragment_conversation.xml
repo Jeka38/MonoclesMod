@@ -621,32 +621,8 @@
                         android:visibility="visible" />
 
 
-                    <ImageButton
-                        android:id="@+id/italic"
-                        android:layout_width="42dp"
-                        android:layout_height="42dp"
-                        android:background="?attr/selectableItemBackgroundBorderless"
-                        android:contentDescription="@string/italic"
-                        android:src="?attr/ic_italic"
-                        android:visibility="visible" />
 
-                    <ImageButton
-                        android:id="@+id/monospace"
-                        android:layout_width="42dp"
-                        android:layout_height="42dp"
-                        android:background="?attr/selectableItemBackgroundBorderless"
-                        android:contentDescription="@string/monospace"
-                        android:src="?attr/ic_monospace"
-                        android:visibility="visible" />
 
-                    <ImageButton
-                        android:id="@+id/strikethrough"
-                        android:layout_width="42dp"
-                        android:layout_height="42dp"
-                        android:background="?attr/selectableItemBackgroundBorderless"
-                        android:contentDescription="@string/strikethrough"
-                        android:src="?attr/ic_strikethrough"
-                        android:visibility="visible" />
 
                     <ImageButton
                         android:id="@+id/close"

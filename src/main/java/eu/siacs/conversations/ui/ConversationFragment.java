@@ -413,9 +413,6 @@ public class ConversationFragment extends XmppFragment
 
     private final OnClickListener meCommand = v -> Objects.requireNonNull(binding.textinput.getText()).insert(0, Message.ME_COMMAND + " ");
     private final OnClickListener quote = v -> insertQuote();
-    private final OnClickListener italicText = v -> insertFormatting("italic");
-    private final OnClickListener monospaceText = v -> insertFormatting("monospace");
-    private final OnClickListener strikethroughText = v -> insertFormatting("strikethrough");
     private final OnClickListener close = v -> closeFormatting();
 
     private void closeFormatting() {
@@ -431,50 +428,6 @@ public class ConversationFragment extends XmppFragment
                 });
         builder.setNegativeButton(getString(R.string.cancel), null);
         builder.create().show();
-    }
-
-    private void insertFormatting(String format) {
-        final String ITALIC = "_";
-        final String MONOSPACE = "`";
-        final String STRIKETHROUGH = "~";
-
-        int selStart = this.binding.textinput.getSelectionStart();
-        int selEnd = this.binding.textinput.getSelectionEnd();
-        int min = 0;
-        int max = this.binding.textinput.getText().length();
-        if (this.binding.textinput.isFocused()) {
-            selStart = this.binding.textinput.getSelectionStart();
-            selEnd = this.binding.textinput.getSelectionEnd();
-            min = Math.max(0, Math.min(selStart, selEnd));
-            max = Math.max(0, Math.max(selStart, selEnd));
-        }
-        final CharSequence selectedText = this.binding.textinput.getText().subSequence(min, max);
-
-        if (format.equals("italic")) {
-            if (selectedText.length() != 0) {
-                this.binding.textinput.getText().replace(Math.min(selStart, selEnd), Math.max(selStart, selEnd),
-                        ITALIC + selectedText + ITALIC, 0, selectedText.length() + 2);
-            } else {
-                this.binding.textinput.getText().insert(this.binding.textinput.getSelectionStart(), (ITALIC));
-            }
-            return;
-        } else if (format.equals("monospace")) {
-            if (selectedText.length() != 0) {
-                this.binding.textinput.getText().replace(Math.min(selStart, selEnd), Math.max(selStart, selEnd),
-                        MONOSPACE + selectedText + MONOSPACE, 0, selectedText.length() + 2);
-            } else {
-                this.binding.textinput.getText().insert(this.binding.textinput.getSelectionStart(), (MONOSPACE));
-            }
-            return;
-        } else if (format.equals("strikethrough")) {
-            if (selectedText.length() != 0) {
-                this.binding.textinput.getText().replace(Math.min(selStart, selEnd), Math.max(selStart, selEnd),
-                        STRIKETHROUGH + selectedText + STRIKETHROUGH, 0, selectedText.length() + 2);
-            } else {
-                this.binding.textinput.getText().insert(this.binding.textinput.getSelectionStart(), (STRIKETHROUGH));
-            }
-            return;
-        }
     }
 
     private void insertQuote() {
@@ -2064,9 +2017,6 @@ public class ConversationFragment extends XmppFragment
         messageListAdapter.setOnInlineImageLongClicked(this);
         messageListAdapter.setConversationFragment(this);
         binding.messagesView.setAdapter(messageListAdapter);
-
-        binding.textinput.addTextChangedListener(
-                new StylingHelper.MessageEditorStyler(binding.textinput, messageListAdapter));
 
         registerForContextMenu(binding.textSendButton);
 
@@ -6455,17 +6405,10 @@ public class ConversationFragment extends XmppFragment
         this.binding.me.setEnabled(me);
         this.binding.me.setOnClickListener(meCommand);
         this.binding.quote.setOnClickListener(quote);
-        this.binding.italic.setOnClickListener(italicText);
-        this.binding.monospace.setOnClickListener(monospaceText);
-        this.binding.strikethrough.setOnClickListener(strikethroughText);
         this.binding.close.setOnClickListener(close);
         if (Compatibility.runsTwentyEight()) {
             this.binding.me.setTooltipText(activity.getString(R.string.me));
             this.binding.quote.setTooltipText(activity.getString(R.string.quote));
-            this.binding.italic.setTooltipText(activity.getString(R.string.italic));
-            this.binding.monospace.setTooltipText(activity.getString(R.string.monospace));
-            this.binding.monospace.setTooltipText(activity.getString(R.string.monospace));
-            this.binding.strikethrough.setTooltipText(activity.getString(R.string.strikethrough));
             this.binding.close.setTooltipText(activity.getString(R.string.close));
         }
     }

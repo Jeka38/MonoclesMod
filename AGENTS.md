@@ -102,6 +102,67 @@ ProGuard + shrinking (`-dontobfuscate`) are enabled on **both** debug and releas
 - **Animated avatar blink fix** (`AvatarWorkerTask`): when `play_gif_inside` is enabled and the avatar cache misses, the original code fell back to an async worker that briefly showed a blank placeholder before the avatar loaded — a visible "blink" on every presence update. The fix tries a synchronous `get(cachedOnly=false)` first so the avatar appears immediately; the async worker is now only used for truly absent avatars (e.g. newly joined occupants without cached vCards).
 - **XEP-0144 Roster Item Exchange** (`xmpp/rosterx/`): `RosterItem` (single `<item action jid name><group/>`), `RosterExchange` (parses either the modern `http://jabber.org/protocol/rosterx` **or** the legacy XEP-0093 `jabber:x:roster` namespace — `Namespace.ROSTERX` / `Namespace.ROSTER_LEGACY`), and `RosterExchangeManager` (send + apply). **Send:** "Переслать контакт" in the contact context menu (`contact_context.xml` → `StartConversationActivity.sendContactTo()`) and in `contact_details.xml` (`ContactDetailsActivity`, `action_send_contact`); both open `ChooseContactActivity.createForRosterExchange(...)` (multi-select + enter-JID) and send `<message><x xmlns=rosterx>…` to each chosen recipient. The JID list comes from `ChooseContactActivity.extractJabberIds(result)` (now null-safe). **Receive:** `MessageParser` calls `RosterExchangeManager.onStanzaReceived` right after the counterpart is resolved, but only for live 1:1 traffic (`!fromAccount && !isTypeGroupChat && mucUserElement == null && query == null` — do **not** drop those guards, otherwise MAM-replayed payloads re-prompt on every sync and MUC PMs spuriously prompt); it returns `true` to swallow the stanza so the payload does not become a chat message. The service dispatches to a foreground `OnRosterExchangeRequested` listener (`XmppActivity` auto-registers activities implementing it: `ConversationsActivity`, `ContactDetailsActivity`) which shows `RosterExchangeDialog`; with no listener the exchange is queued in `XmppConnectionService.mPendingRosterExchanges` and surfaced via `NotificationService.notifyRosterExchange` (`ROSTER_EXCHANGE_NOTIFICATION_ID`). `ConversationsActivity.onBackendConnected` drains the queue. **Only `add`/`modify` suggestions are offered** (the dialog drops `delete`-only payloads); applying uses `createContact(contact, true)` after merging groups/name, per XEP-0144's user-confirmation requirement. `Namespace.ROSTERX` is advertised in `AbstractGenerator.STATIC_FEATURES` (so it is in the caps hash); `Contact.getGroupNames()` was added as the public group accessor.
 
+## Message Styling (XEP-0393)
+
+The in-band counterpart to XEP-0394: the directives live **in the body** (`_emphasis_`, `*strong*`,
+`~strike~`, `` `mono` ``), plus ````` preformatted blocks and `> ` quotations. Both XEPs
+coexist — 0393 styles the body itself, 0394 adds markup for a separate payload; use whichever the
+message carries.
+
+- **Parser — `xmpp/styling/MessageStyling`.** `parse(CharSequence)` returns a mixed list of `Span`
+  (inline, `start`..`end` **including** both directives) and `Block` (preformatted or quote, with a
+  quote `depth` and an optional code `language`). Rules follow the XEP literally: a directive opens
+  at the start of the block or after whitespace/another directive and must not be followed by
+  whitespace; the close is matched **lazily**, must not be preceded by whitespace, and both
+  directives must contain text (`**`, `***`, `****` style nothing). Preformatted blocks are literal —
+  no child spans — and quotations may nest, so a quote's content is re-parsed past the `>` markers.
+- **Receive — `Message.renderStyling`** runs in `getSpannableBody` after `renderMarkup`. Inline
+  directives become `StyleSpan`/`TypefaceSpan`/`StrikethroughSpan` (applied over the markers too, as
+  the XEP recommends); blocks become `entities/StylingSpan.CodeBlock` (monospaced panel) and
+  `.Quote` (indent + bar). Every span carries `StylingSpan.STYLING_FLAG` (bit 27) so a re-render
+  clears the previous pass. A sender can opt out with an empty
+  `<unstyled xmlns='urn:xmpp:styling:0'/>` — `Message.isUnstyled()` makes the renderer skip.
+- **The `/me` command is the adapter's job** (`MessageAdapter` → `getMeCommandIndex`, rendered bold
+  italic with the nickname). Do not expand it in `renderStyling` too, or it is applied twice.
+- **Caps:** `urn:xmpp:styling:0` is advertised in `AbstractGenerator.STATIC_FEATURES`.
+- **Not done:** we advertise support and render everything, but the editor has no insertion buttons
+  for the directives — a user types them by hand (or pastes them). Ordered lists/nesting limits are
+  whatever the XEP allows; there is no per-span "remove styling" UI (the XEP does not define one).
+
+## Message Markup (XEP-0394)
+
+Messages carry semantic markup next to the plain body, in a `urn:xmpp:markup:0` element. Written
+from scratch (the earlier attempt was reverted); inline elements are render-only, code blocks can be
+authored.
+
+- **Model — `xmpp/markup/MessageMarkup`.** `parse(Element)` reads `span`
+  (`emphasis`/`strong`/`code`/`deleted`), `bcode` (+`language`), `list` (+`ordered`, `li start`) and
+  `bquote` into one flat `List<Mark>`; a list item becomes one mark per `li`, so no tree is needed.
+  Offsets are **Unicode code points**; unknown elements are ignored and a range with `end < start` is
+  dropped. `build(List<Mark>)` writes the element back.
+- **Receive — `Message.renderMarkup`** runs in `getSpannableBody` on the plain body. Inline kinds
+  become `StyleSpan`/`TypefaceSpan`/`StrikethroughSpan`; blocks become `entities/MarkupSpan`:
+  `CodeBlockSpan` (monospaced, block background, **language printed above the first line** —
+  `LineHeightSpan` reserves the label row, `LineBackgroundSpan` draws the panel and the label),
+  `ListItemSpan` (hanging indent + bullet/ordinal) and `QuoteBarSpan` (quote bar). All carry
+  `MarkupSpan.MARKUP_FLAG` (bit 28) so a re-render clears the previous spans first.
+- **Send — only code blocks are authored.** `Message.setBody(Spanned)`/`appendBody(Spanned)` run the
+  text through `MessageMarkup.parseSource`, which is Telegram-style: lines fenced with ``` open a code
+  block, an optional language on the fence line (` ```python `) is stored, the fence lines stay out of
+  the body and the block keeps its literal characters. Outside a fence the inline Markdown markers
+  `_x_`, `~x~` and `` `x` `` are **stripped** (content kept) so the plain body a receiving client gets
+  is clean. The body is marker-free and the `<markup/>` payload is attached alongside it.
+- **`entities/MarkupSpan` is drawn, not parsed** — do not put marker parsing back into the render path;
+  the single source of the text is the body.
+- **XHTML-IM is not rendered or written.** There is no XHTML export any more
+  (`de.monocles.mod.SpannedToXHTML` is deleted) and `Message.getHtml()` returns `null` by design, so
+  an incoming XHTML-IM payload is stripped at the view layer — the bubble, the chat-list preview and
+  the reply fallback all show the plain body. `MessageParser` still parses and keeps the `<html/>`
+  element as a payload, and `markMessage` still stores it, but nothing displays it. Do not reintroduce
+  a renderer for the stored payload without a reason.
+- **Deliberately not implemented:** inline authoring (emphasis/strong/code/deleted), ordered lists and
+  nested quotes are shown but not composed in this client.
+
 ## Profile cards (vCard)
 
 Full profile cards, modelled on Psi's info dialog (`infodlg.cpp` / `info.ui`): general, work, address, about and photo.

@@ -144,11 +144,6 @@
                 android:key="show_record_voice_btn"
                 android:summary="@string/pref_show_record_voice_btn_summary"
                 android:title="@string/pref_show_record_voice_btn" />
-            <SwitchPreference
-                android:defaultValue="@bool/showtextformatting"
-                android:key="showtextformatting"
-                android:summary="@string/pref_showtextformatting_sum"
-                android:title="@string/pref_showtextformatting" />
         </PreferenceCategory>
         <PreferenceCategory android:title="@string/pref_expert_options_other">
         <SwitchPreference

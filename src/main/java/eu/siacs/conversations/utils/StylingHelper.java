@@ -33,19 +33,17 @@ import android.content.Context;
 import android.graphics.Color;
 import android.graphics.Typeface;
 import android.text.Editable;
-import android.text.ParcelableSpan;
 import android.text.Spannable;
 import android.text.SpannableString;
 import android.text.Spanned;
-import android.text.TextWatcher;
+import android.text.style.ForegroundColorSpan;
+import android.text.ParcelableSpan;
 import android.text.style.BackgroundColorSpan;
 import android.text.style.ForegroundColorSpan;
-import android.text.style.RelativeSizeSpan;
-import android.text.style.StrikethroughSpan;
-import android.text.style.ImageSpan;
 import android.text.style.StyleSpan;
+import android.text.style.StrikethroughSpan;
 import android.text.style.TypefaceSpan;
-import android.widget.EditText;
+import eu.siacs.conversations.R;
 import android.widget.TextView;
 
 import androidx.annotation.ColorInt;
@@ -55,7 +53,6 @@ import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
 
-import eu.siacs.conversations.R;
 import eu.siacs.conversations.entities.Message;
 import eu.siacs.conversations.ui.XmppActivity;
 import eu.siacs.conversations.ui.adapter.MessageAdapter;
@@ -63,51 +60,12 @@ import eu.siacs.conversations.ui.text.QuoteSpan;
 
 public class StylingHelper {
 
-    public static final int XHTML_IGNORE = 1;
-    public static final int XHTML_REMOVE = 2;
-    public static final int XHTML_EMPHASIS = 3;
-
     private static final List<? extends Class<? extends ParcelableSpan>> SPAN_CLASSES = Arrays.asList(
             StyleSpan.class,
             StrikethroughSpan.class,
             TypefaceSpan.class,
             ForegroundColorSpan.class
     );
-
-    public static void clear(final Editable editable) {
-        final int end = editable.length() - 1;
-        for (Class<? extends ParcelableSpan> clazz : SPAN_CLASSES) {
-            for (ParcelableSpan span : editable.getSpans(0, end, clazz)) {
-                editable.removeSpan(span);
-            }
-        }
-        for (ImageSpan span : editable.getSpans(0, end, ImageSpan.class)) {
-            editable.removeSpan(span);
-        }
-    }
-
-    public static void format(final Editable editable, int start, int end, @ColorInt int textColor, final boolean composing) {
-        for (ImStyleParser.Style style : ImStyleParser.parse(editable, start, end)) {
-            final int keywordLength = style.getKeyword().length();
-            editable.setSpan(createSpanForStyle(style), style.getStart() + keywordLength, style.getEnd() - keywordLength + 1, Spanned.SPAN_EXCLUSIVE_EXCLUSIVE | ("_".equals(style.getKeyword()) ? XHTML_EMPHASIS << Spanned.SPAN_USER_SHIFT : 0));
-            makeKeywordOpaque(editable, style.getStart(), style.getStart() + keywordLength + ("```".equals(style.getKeyword()) ? 1 : 0), textColor, composing);
-            makeKeywordOpaque(editable, style.getEnd() - keywordLength + 1, style.getEnd() + 1, textColor, composing);
-        }
-    }
-
-    public static void format(final Editable editable, @ColorInt int textColor) {
-        format(editable, textColor, false);
-    }
-
-    public static void format(final Editable editable, @ColorInt int textColor, final boolean composing) {
-        int end = 0;
-        Message.MergeSeparator[] spans = editable.getSpans(0, editable.length() - 1, Message.MergeSeparator.class);
-        for (Message.MergeSeparator span : spans) {
-            format(editable, end, editable.getSpanStart(span), textColor, composing);
-            end = editable.getSpanEnd(span);
-        }
-        format(editable, end, editable.length() - 1, textColor, composing);
-    }
 
     public static void highlight(final Context context, final Editable editable, List<String> needles, boolean dark) {
         for (String needle : needles) {
@@ -195,33 +153,6 @@ public class StylingHelper {
         return Color.red(argb) + Color.green(argb) + Color.blue(argb) == 0;
     }
 
-    private static ParcelableSpan createSpanForStyle(ImStyleParser.Style style) {
-        switch (style.getKeyword()) {
-            case "_":
-                return new StyleSpan(Typeface.ITALIC);
-            case "~":
-                return new StrikethroughSpan();
-            case "`":
-            case "```":
-                return new TypefaceSpan("monospace");
-            default:
-                throw new AssertionError("Unknown Style");
-        }
-    }
-
-    private static void makeKeywordOpaque(final Editable editable, int start, int end, @ColorInt int fallbackTextColor, final boolean composing) {
-        QuoteSpan[] quoteSpans = editable.getSpans(start, end, QuoteSpan.class);
-        @ColorInt int textColor = quoteSpans.length > 0 ? quoteSpans[0].getColor() : fallbackTextColor;
-        @ColorInt int keywordColor = transformColor(textColor);
-        editable.setSpan(new ForegroundColorSpan(keywordColor), start, end, Spanned.SPAN_EXCLUSIVE_EXCLUSIVE | (composing ? XHTML_REMOVE << Spanned.SPAN_USER_SHIFT : 0));
-    }
-
-    private static
-    @ColorInt
-    int transformColor(@ColorInt int c) {
-        return Color.argb(Math.round(Color.alpha(c) * 0.45f), Color.red(c), Color.green(c), Color.blue(c));
-    }
-
     private static int indexOfIgnoreCase(final String haystack, final String needle, final int start) {
         if (haystack == null || needle == null) {
             return -1;
@@ -241,41 +172,4 @@ public class StylingHelper {
         return -1;
     }
 
-    public static class MessageEditorStyler implements TextWatcher {
-
-        private final EditText mEditText;
-        private final MessageAdapter mAdapter;
-
-        public MessageEditorStyler(EditText editText, MessageAdapter adapter) {
-            this.mEditText = editText;
-            this.mAdapter = adapter;
-        }
-
-        @Override
-        public void beforeTextChanged(CharSequence charSequence, int i, int i1, int i2) {
-
-        }
-
-        @Override
-        public void onTextChanged(CharSequence charSequence, int i, int i1, int i2) {
-
-        }
-
-        @Override
-        public void afterTextChanged(Editable editable) {
-            clear(editable);
-            for (final var span : editable.getSpans(0, editable.length() - 1, QuoteSpan.class)) {
-                editable.removeSpan(span);
-            }
-            for (final var span : editable.getSpans(0, editable.length() - 1, RelativeSizeSpan.class)) {
-                editable.removeSpan(span);
-            }
-            format(editable, mEditText.getCurrentTextColor(), true);
-            XmppActivity activity = (XmppActivity) mAdapter.getActivity();
-            if (activity.xmppConnectionService != null && activity.xmppConnectionService.getBooleanPreference("enable_smiles", R.bool.enable_smiles)) {
-                UIHelper.replaceEmojisWithSmiles(activity, editable, activity.xmppConnectionService.emojiSearch());
-            }
-            mAdapter.handleTextQuotes(mEditText, editable, false);
-        }
-    }
 }

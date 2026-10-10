@@ -41,7 +41,8 @@ public abstract class AbstractGenerator {
             "urn:xmpp:ping",
             "jabber:iq:version",
             "http://jabber.org/protocol/chatstates",
-            Namespace.ROSTERX
+            Namespace.ROSTERX,
+            "urn:xmpp:styling:0"
     };
     private final String[] MESSAGE_CONFIRMATION_FEATURES = {
             "urn:xmpp:chat-markers:0",

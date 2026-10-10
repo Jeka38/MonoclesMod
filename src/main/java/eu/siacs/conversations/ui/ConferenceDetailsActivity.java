@@ -377,7 +377,6 @@ public class ConferenceDetailsActivity extends XmppActivity implements OnConvers
 
         this.binding.mucEditTitle.addTextChangedListener(this);
         this.binding.mucEditSubject.addTextChangedListener(this);
-        // this.binding.mucEditSubject.addTextChangedListener(new StylingHelper.MessageEditorStyler(this.binding.mucEditSubject));
         this.binding.editTags.addTextChangedListener(this);
         this.mMediaAdapter = new MediaAdapter(this, R.dimen.media_size);
         this.binding.media.setAdapter(mMediaAdapter);
@@ -805,7 +804,6 @@ public class ConferenceDetailsActivity extends XmppActivity implements OnConvers
         }
         if (printableValue(subject)) {
             SpannableStringBuilder spannable = new SpannableStringBuilder(subject);
-            StylingHelper.format(spannable, this.binding.mucSubject.getCurrentTextColor(), true);
             MyLinkify.addLinks(spannable, false);
             this.binding.mucSubject.setText(spannable);
             this.binding.mucSubject.setTextAppearance(this, (hasTitle ? 128 : 196));
