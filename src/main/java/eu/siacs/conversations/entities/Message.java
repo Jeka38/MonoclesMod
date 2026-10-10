@@ -665,8 +665,13 @@ public class Message extends AbstractEntity implements AvatarService.Avatarable 
         for (final Object item : parsed) {
             if (item instanceof MessageStyling.Span) {
                 final MessageStyling.Span span = (MessageStyling.Span) item;
-                drop(dropped, span.start);
-                drop(dropped, span.end - 1);
+                // drop the whole marker run on both sides (a run may be several characters)
+                for (int i = span.start; i < span.contentStart; i++) {
+                    drop(dropped, i);
+                }
+                for (int i = span.contentEnd; i < span.end; i++) {
+                    drop(dropped, i);
+                }
             } else if (item instanceof MessageStyling.Block) {
                 final MessageStyling.Block block = (MessageStyling.Block) item;
                 if (block.preformatted) {
@@ -699,7 +704,7 @@ public class Message extends AbstractEntity implements AvatarService.Avatarable 
                 final MessageStyling.Span span = (MessageStyling.Span) item;
                 final MessageMarkup.Type type = markupType(span.style);
                 if (type != null) {
-                    addMark(marks, type, map, span.start + 1, span.end - 1, null);
+                    addMark(marks, type, map, span.contentStart, span.contentEnd, null);
                 }
             } else if (item instanceof MessageStyling.Block) {
                 final MessageStyling.Block block = (MessageStyling.Block) item;

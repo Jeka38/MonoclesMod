@@ -30,16 +30,23 @@ public final class MessageStyling {
         MONO
     }
 
-    /** An inline directive pair; {@code start}..{@code end} includes both marker characters. */
+    /** An inline directive pair; {@code start}..{@code end} includes both markers. */
     public static final class Span {
         public final Style style;
+        /** The whole directive, marker characters included. */
         public final int start;
         public final int end;
+        /** The styled text, without the marker characters. */
+        public final int contentStart;
+        public final int contentEnd;
 
-        public Span(final Style style, final int start, final int end) {
+        public Span(final Style style, final int start, final int end,
+                    final int contentStart, final int contentEnd) {
             this.style = style;
             this.start = start;
             this.end = end;
+            this.contentStart = contentStart;
+            this.contentEnd = contentEnd;
         }
     }
 
@@ -97,12 +104,18 @@ public final class MessageStyling {
             final String fenceLanguage = inPre ? null : fenceLanguage(line);
             if (inPre) {
                 if (isClosingFence(line)) {
-                    result.add(new Block(true, preStart, lineEnd, preContentStart,
-                            contentEndBefore(body, lineStart), 0, language));
+                    // an empty block (fence and nothing between) is not a block: keep the text
+                    final int contentEnd = contentEndBefore(body, lineStart);
+                    if (contentEnd > preContentStart) {
+                        result.add(new Block(true, preStart, lineEnd, preContentStart, contentEnd,
+                                0, language));
+                    }
                     inPre = false;
                 } else if (lineEnd >= length) {
-                    result.add(new Block(true, preStart, lineEnd, preContentStart, lineEnd,
-                            0, language));
+                    if (lineEnd > preContentStart) {
+                        result.add(new Block(true, preStart, lineEnd, preContentStart, lineEnd,
+                                0, language));
+                    }
                     inPre = false;
                 }
             } else if (fenceLanguage != null) {
@@ -135,7 +148,7 @@ public final class MessageStyling {
             lineStart = lineEnd + 1;
         }
 
-        if (inPre) {
+        if (inPre && length > preContentStart) {
             result.add(new Block(true, preStart, length, preContentStart, length, 0, language));
         }
         flushQuote(result, quoteStart, length, quoteDepth);
@@ -175,7 +188,16 @@ public final class MessageStyling {
         if (!trimmed.startsWith("```")) {
             return null;
         }
-        return trimmed.substring(3).trim();
+        final String rest = trimmed.substring(3);
+        // a fence is ``` alone or ``` followed by a plain language token; ````test``` ` (inline triple
+        // backticks) is not a fence, otherwise it would swallow the whole message into an empty block
+        for (int i = 0; i < rest.length(); i++) {
+            final char c = rest.charAt(i);
+            if (!Character.isLetterOrDigit(c) && c != '+' && c != '#' && c != '-' && c != '.') {
+                return null;
+            }
+        }
+        return rest;
     }
 
     private static boolean isClosingFence(@NonNull final String line) {
@@ -248,19 +270,33 @@ public final class MessageStyling {
                 i++;
                 continue;
             }
-            final int close = findClosingDirective(body, i, end, body.charAt(i));
+            final char marker = body.charAt(i);
+            final int openRun = runLength(body, i, end, marker);
+            final int contentStart = i + openRun;
+            final int close = findClosingDirective(body, contentStart, end, marker);
             // both directives must contain some text between them, otherwise neither is valid
-            if (close <= i + 1) {
+            if (close < 0 || close <= contentStart) {
                 i++;
                 continue;
             }
-            out.add(new Span(style, i, close + 1));
+            final int closeRun = runLength(body, close, end, marker);
+            out.add(new Span(style, i, close + closeRun, contentStart, close));
             if (style != Style.MONO) {
                 // a preformatted span holds a single plain span, everything else may nest
-                parseRange(body, i + 1, close, blockStart, out);
+                parseRange(body, contentStart, close, blockStart, out);
             }
-            i = close + 1;
+            i = close + closeRun;
         }
+    }
+
+    /** Length of the run of {@code marker} characters starting at {@code from}. */
+    private static int runLength(
+            @NonNull final CharSequence body, final int from, final int end, final char marker) {
+        int i = from;
+        while (i < end && body.charAt(i) == marker) {
+            i++;
+        }
+        return i - from;
     }
 
     @Nullable
@@ -283,7 +319,9 @@ public final class MessageStyling {
      */
     private static boolean isOpening(
             @NonNull final CharSequence body, final int index, final int blockStart, final int end) {
-        if (index + 1 >= end || isWhitespace(body.charAt(index + 1))) {
+        final char marker = body.charAt(index);
+        final int content = index + runLength(body, index, end, marker);
+        if (content >= end || isWhitespace(body.charAt(content))) {
             return false;
         }
         if (index == blockStart) {
@@ -293,10 +331,10 @@ public final class MessageStyling {
         return isWhitespace(previous) || styleOf(previous) != null;
     }
 
-    /** Lazily finds the next directive that closes the one at {@code open}. */
+    /** Lazily finds the next run of {@code directive} that closes the one at {@code open}. */
     private static int findClosingDirective(
             @NonNull final CharSequence body, final int open, final int end, final char directive) {
-        for (int i = open + 1; i < end; i++) {
+        for (int i = open; i < end; i++) {
             if (body.charAt(i) == directive && !isWhitespace(body.charAt(i - 1))) {
                 return i;
             }

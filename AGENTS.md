@@ -117,11 +117,18 @@ message carries.
   whitespace; the close is matched **lazily**, must not be preceded by whitespace, and both
   directives must contain text (empty directives are ignored). Preformatted blocks are literal —
   no child spans — and quotations may nest, so a quote's content is re-parsed past the `>` markers.
-- **Send:** the body is kept **verbatim** — the directives must reach the recipient or the styling
-  is lost. `Message.applySource` additionally derives an XEP-0394 `<markup/>` from the XEP-0393 parse
-  (inline markers stripped from the range, `bcode` covering the code without its ``` fences,
-  quotations as `bquote`), so a client that understands markup gets the styling even without parsing
-  directives. Do not "clean" the body of directives on the way out.
+  A fence line may only be ``` alone or ``` plus a plain language token: ` ```test``` ` on one line is
+  **not** a fence (it would otherwise swallow the whole message into an empty block, which is how the
+  outgoing text once disappeared). An empty block (fence with no content) yields no block either.
+  `Span` carries its content range separately from the marker range, so marker runs of any length
+  (`` `` ``) are stripped correctly.
+- **Send:** `Message.applySource` **strips the styling characters** from the outgoing body (`_ ~ `
+  and the ``` fence lines, newlines included) so the recipient reads clean text, and derives an
+  XEP-0394 `<markup/>` from the parse: inline marks use the span's content range (markers excluded),
+  `bcode` covers the code without its fences, `>` lines become `bquote`. Offsets are remapped from
+  the source indices to the cleaned indices via a `source -> clean` table, so the markup stays
+  correct after the characters are dropped. `*` is *not* a directive (bold was removed) and passes
+  through literally.
 - **Receive — `Message.renderStyling`** runs in `getSpannableBody` after `renderMarkup`. Inline
   directives become `StyleSpan`/`TypefaceSpan`/`StrikethroughSpan` (applied over the markers too, as
   the XEP recommends); blocks become `entities/StylingSpan.CodeBlock` (monospaced panel) and
