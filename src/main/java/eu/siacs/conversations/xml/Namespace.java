@@ -99,6 +99,4 @@ public final class Namespace {
     public static final String REPORTING_REASON_SPAM = "urn:xmpp:reporting:spam";
     public static final String MDS_DISPLAYED = "urn:xmpp:mds:displayed:0";
     public static final String MDS_SERVER_ASSIST = "urn:xmpp:mds:server-assist:0";
-    /** XEP-0394: Message Markup — semantic markup carried next to the plain body. */
-    public static final String MARKUP = "urn:xmpp:markup:0";
 }

@@ -102,32 +102,6 @@ ProGuard + shrinking (`-dontobfuscate`) are enabled on **both** debug and releas
 - **Animated avatar blink fix** (`AvatarWorkerTask`): when `play_gif_inside` is enabled and the avatar cache misses, the original code fell back to an async worker that briefly showed a blank placeholder before the avatar loaded — a visible "blink" on every presence update. The fix tries a synchronous `get(cachedOnly=false)` first so the avatar appears immediately; the async worker is now only used for truly absent avatars (e.g. newly joined occupants without cached vCards).
 - **XEP-0144 Roster Item Exchange** (`xmpp/rosterx/`): `RosterItem` (single `<item action jid name><group/>`), `RosterExchange` (parses either the modern `http://jabber.org/protocol/rosterx` **or** the legacy XEP-0093 `jabber:x:roster` namespace — `Namespace.ROSTERX` / `Namespace.ROSTER_LEGACY`), and `RosterExchangeManager` (send + apply). **Send:** "Переслать контакт" in the contact context menu (`contact_context.xml` → `StartConversationActivity.sendContactTo()`) and in `contact_details.xml` (`ContactDetailsActivity`, `action_send_contact`); both open `ChooseContactActivity.createForRosterExchange(...)` (multi-select + enter-JID) and send `<message><x xmlns=rosterx>…` to each chosen recipient. The JID list comes from `ChooseContactActivity.extractJabberIds(result)` (now null-safe). **Receive:** `MessageParser` calls `RosterExchangeManager.onStanzaReceived` right after the counterpart is resolved, but only for live 1:1 traffic (`!fromAccount && !isTypeGroupChat && mucUserElement == null && query == null` — do **not** drop those guards, otherwise MAM-replayed payloads re-prompt on every sync and MUC PMs spuriously prompt); it returns `true` to swallow the stanza so the payload does not become a chat message. The service dispatches to a foreground `OnRosterExchangeRequested` listener (`XmppActivity` auto-registers activities implementing it: `ConversationsActivity`, `ContactDetailsActivity`) which shows `RosterExchangeDialog`; with no listener the exchange is queued in `XmppConnectionService.mPendingRosterExchanges` and surfaced via `NotificationService.notifyRosterExchange` (`ROSTER_EXCHANGE_NOTIFICATION_ID`). `ConversationsActivity.onBackendConnected` drains the queue. **Only `add`/`modify` suggestions are offered** (the dialog drops `delete`-only payloads); applying uses `createContact(contact, true)` after merging groups/name, per XEP-0144's user-confirmation requirement. `Namespace.ROSTERX` is advertised in `AbstractGenerator.STATIC_FEATURES` (so it is in the caps hash); `Contact.getGroupNames()` was added as the public group accessor.
 
-## Message Markup (XEP-0394)
-
-Semantic message formatting carried next to the plain body, as an alternative to XHTML-IM. Both are
-supported at once: XHTML-IM is still emitted for older clients, and incoming markup wins over it.
-
-- **Model:** `xmpp/markup/MessageMarkup` parses/serialises `urn:xmpp:markup:0` (`Namespace.MARKUP`).
-  Offsets are **Unicode code points**, not Java `char`s, so `Message.codePointToCharIndex` converts
-  every range before a span is applied (emoji/non-BMP safety). Elements: `span` (`emphasis`,
-  `strong`, `code`, `deleted`), `bcode` (+`language`), `list` (+`ordered`, `li start`), `bquote`.
-  Unknown children are ignored on parse, per the XEP; a range with `end < start` or one that no
-  longer fits the body is dropped rather than applied blindly.
-- **Receive:** `MessageParser` keeps `<markup/>` as a payload (`Message.getMarkup()`);
-  `Message.getSpannableBody` calls `applyMarkupRendering` on the plain body. Inline kinds become
-  `StyleSpan`/`TypefaceSpan`/`StrikethroughSpan`; blocks become the `entities/MarkupSpan` spans
-  (`MarkupCodeBlockSpan`, `MarkupListItemSpan`, `MarkupQuoteSpan`) which draw a background/leading
-  marker/quote bar. All of them carry `MarkupSpan.MARKUP_FLAG` (bit 29) in the span flags.
-- **Send:** `de.monocles.mod.SpannedToMarkup` builds the model from the editor's styled text —
-  the editor's existing `_emphasis_` / `~deleted~` / ```` ```code``` ```` / bold map to the `span`
-  children, `QuoteSpan` to `bquote`, `BulletSpan` to a `list`. `Message.setBody(Spanned)` writes the
-  `<markup/>` payload alongside the XHTML one.
-- **Do not let markup leak into XHTML-IM:** `SpannedToXHTML.cleanSpans` strips every span carrying
-  `MARKUP_FLAG` before exporting, otherwise the rendered markup would be re-encoded as XHTML.
-- **Deliberately NOT done:** `start`/`end` are emitted from the current `Spanned` offsets, which is
-  what the XEP asks for, but the editor does not yet offer dedicated block-level authoring UI beyond
-  what the existing text styles (`QuoteSpan`/`BulletSpan`) provide.
-
 ## Profile cards (vCard)
 
 Full profile cards, modelled on Psi's info dialog (`infodlg.cpp` / `info.ui`): general, work, address, about and photo.

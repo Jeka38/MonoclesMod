@@ -31,20 +31,8 @@ import eu.siacs.conversations.xml.Element;
 import eu.siacs.conversations.xml.TextNode;
 
 public class SpannedToXHTML {
-
-    /** Mirrors the flag {@code MarkupSpan} tags rendered XEP-0394 spans with. */
-    private static final int MARKUP_FLAG = 1 << 29;
-
     private static SpannableStringBuilder cleanSpans(Spanned text) {
         SpannableStringBuilder newText = new SpannableStringBuilder(text);
-        // XEP-0394 markup spans are rendered on top of the plain body; they must not leak into the
-        // XHTML-IM payload as well
-        CharacterStyle[] rendered = newText.getSpans(0, newText.length(), CharacterStyle.class);
-        for (final CharacterStyle span : rendered) {
-            if ((newText.getSpanFlags(span) & MARKUP_FLAG) != 0) {
-                newText.removeSpan(span);
-            }
-        }
         ParcelableSpan[] spans = newText.getSpans(0, newText.length(), ParcelableSpan.class);
         for (final var span : spans) {
             final var userFlags = (text.getSpanFlags(span) & Spanned.SPAN_USER) >> Spanned.SPAN_USER_SHIFT;

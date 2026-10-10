@@ -631,8 +631,6 @@ public class MessageParser extends AbstractParser implements OnMessagePacketRece
         if (html != null && html.findChild("body", "http://www.w3.org/1999/xhtml") == null) {
             html = null;
         }
-        // XEP-0394 message markup, carried next to the plain body
-        final Element markup = packet.findChild("markup", Namespace.MARKUP);
         if (from == null || !InvalidJid.isValid(from) || !InvalidJid.isValid(to)) {
             Log.e(Config.LOGTAG, "encountered invalid message from='" + from + "' to='" + to + "'");
             return;
@@ -885,7 +883,6 @@ public class MessageParser extends AbstractParser implements OnMessagePacketRece
                 }
             }
             if (html != null) message.addPayload(html);
-            if (markup != null) message.addPayload(markup);
             message.setSubject(packet.findChildContent("subject"));
             message.setCounterpart(counterpart);
             message.setRemoteMsgId(remoteMsgId);
