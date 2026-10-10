@@ -47,19 +47,25 @@ public final class MessageStyling {
     /** A preformatted block or a run of quoted lines, as offsets into the body. */
     public static final class Block {
         public final boolean preformatted;
+        /** The whole block, fence lines included. */
         public final int start;
         public final int end;
+        /** For a preformatted block, the code itself, without the {@code ```} fence lines. */
+        public final int contentStart;
+        public final int contentEnd;
         /** Quote nesting depth (1 for a single {@code >}), 0 for a preformatted block. */
         public final int depth;
         /** Text after the opening fence of a preformatted block, if any. */
         @Nullable
         public final String language;
 
-        Block(final boolean preformatted, final int start, final int end, final int depth,
-              @Nullable final String language) {
+        Block(final boolean preformatted, final int start, final int end, final int contentStart,
+              final int contentEnd, final int depth, @Nullable final String language) {
             this.preformatted = preformatted;
             this.start = start;
             this.end = end;
+            this.contentStart = contentStart;
+            this.contentEnd = contentEnd;
             this.depth = depth;
             this.language = language;
         }
@@ -80,6 +86,7 @@ public final class MessageStyling {
         int lineStart = 0;
         boolean inPre = false;
         int preStart = 0;
+        int preContentStart = 0;
         String language = null;
         int quoteStart = -1;
         int quoteDepth = 0;
@@ -91,10 +98,12 @@ public final class MessageStyling {
             final String fenceLanguage = inPre ? null : fenceLanguage(line);
             if (inPre) {
                 if (isClosingFence(line)) {
-                    result.add(new Block(true, preStart, lineEnd, 0, language));
+                    result.add(new Block(true, preStart, lineEnd, preContentStart,
+                            contentEndBefore(body, lineStart), 0, language));
                     inPre = false;
                 } else if (lineEnd >= length) {
-                    result.add(new Block(true, preStart, lineEnd, 0, language));
+                    result.add(new Block(true, preStart, lineEnd, preContentStart, lineEnd,
+                            0, language));
                     inPre = false;
                 }
             } else if (fenceLanguage != null) {
@@ -103,6 +112,7 @@ public final class MessageStyling {
                 quoteDepth = 0;
                 inPre = true;
                 preStart = lineStart;
+                preContentStart = lineEnd < length ? lineEnd + 1 : length;
                 language = fenceLanguage.isEmpty() ? null : fenceLanguage;
             } else {
                 final int depth = quoteDepth(line);
@@ -127,16 +137,25 @@ public final class MessageStyling {
         }
 
         if (inPre) {
-            result.add(new Block(true, preStart, length, 0, language));
+            result.add(new Block(true, preStart, length, preContentStart, length, 0, language));
         }
         flushQuote(result, quoteStart, length, quoteDepth);
         return result;
+
+    }
+
+    /** End of a preformatted block's content: just before the newline that starts the closing fence. */
+    private static int contentEndBefore(@NonNull final CharSequence body, final int fenceStart) {
+        if (fenceStart > 0 && body.charAt(fenceStart - 1) == '\n') {
+            return fenceStart - 1;
+        }
+        return fenceStart;
     }
 
     private static void flushQuote(
             final List<Object> out, final int start, final int end, final int depth) {
         if (start >= 0 && depth > 0) {
-            out.add(new Block(false, start, end, depth, null));
+            out.add(new Block(false, start, end, start, end, depth, null));
         }
     }
 

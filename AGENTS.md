@@ -116,6 +116,11 @@ message carries.
   whitespace; the close is matched **lazily**, must not be preceded by whitespace, and both
   directives must contain text (`**`, `***`, `****` style nothing). Preformatted blocks are literal —
   no child spans — and quotations may nest, so a quote's content is re-parsed past the `>` markers.
+- **Send:** the body is kept **verbatim** — the directives must reach the recipient or the styling
+  is lost. `Message.applySource` additionally derives an XEP-0394 `<markup/>` from the XEP-0393 parse
+  (inline markers stripped from the range, `bcode` covering the code without its ``` fences,
+  quotations as `bquote`), so a client that understands markup gets the styling even without parsing
+  directives. Do not "clean" the body of directives on the way out.
 - **Receive — `Message.renderStyling`** runs in `getSpannableBody` after `renderMarkup`. Inline
   directives become `StyleSpan`/`TypefaceSpan`/`StrikethroughSpan` (applied over the markers too, as
   the XEP recommends); blocks become `entities/StylingSpan.CodeBlock` (monospaced panel) and

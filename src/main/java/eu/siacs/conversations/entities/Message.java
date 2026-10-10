@@ -645,29 +645,73 @@ public class Message extends AbstractEntity implements AvatarService.Avatarable 
     }
 
     /**
-     * Stores {@code source} as the plain body, extracting the XEP-0394 code blocks and stripping the
-     * inline Markdown markers the editor may contain. The body stays marker free, so a client that
-     * renders the markup never sees the source syntax.
+     * Stores the text the user typed as the body and derives the XEP-0394 {@code <markup/>} from the
+     * XEP-0393 styling found in it.
+     *
+     * <p>The body is kept <em>verbatim</em>: the styling directives must survive sending, otherwise
+     * recipients — including this client on the other side — would have nothing to render. Markup is
+     * attached as an extra hint, so clients that understand it get the same styling even if they do
+     * not parse the directives.
      */
     private synchronized void applySource(@Nullable final String source) {
-        if (source == null) {
-            setBodyPreserveXHTML(null);
-            setMarkup(null);
-            return;
-        }
-        final MessageMarkup.ParsedBody parsed = MessageMarkup.parseSource(source);
-        setBodyPreserveXHTML(parsed.body);
-        setMarkup(parsed.marks);
+        setBodyPreserveXHTML(source);
+        setMarkup(source == null ? null : markupFromStyling(source));
     }
 
-    /** Replaces the {@code <markup/>} payload; an empty list clears it. */
-    private synchronized void setMarkup(
-            @NonNull final List<MessageMarkup.Mark> marks) {
+    /**
+     * Turns the XEP-0393 directives of {@code source} into XEP-0394 marks. Inline directives are
+     * converted without their marker characters, code blocks become {@code bcode}, quotations
+     * {@code bquote}.
+     */
+    @NonNull
+    private static List<MessageMarkup.Mark> markupFromStyling(@NonNull final String source) {
+        final List<MessageMarkup.Mark> marks = new java.util.ArrayList<>();
+        for (final Object item : MessageStyling.parse(source)) {
+            if (item instanceof MessageStyling.Span) {
+                final MessageStyling.Span span = (MessageStyling.Span) item;
+                final MessageMarkup.Type type = markupType(span.style);
+                if (type != null) {
+                    marks.add(new MessageMarkup.Mark(type, span.start + 1, span.end - 1, null));
+                }
+            } else if (item instanceof MessageStyling.Block) {
+                final MessageStyling.Block block = (MessageStyling.Block) item;
+                if (block.preformatted) {
+                    // the bcode range must be the code itself, without the ``` fence lines
+                    marks.add(new MessageMarkup.Mark(
+                            MessageMarkup.Type.CODE_BLOCK, block.contentStart, block.contentEnd,
+                            block.language));
+                } else {
+                    marks.add(new MessageMarkup.Mark(
+                            MessageMarkup.Type.QUOTE, block.start, block.end, null));
+                }
+            }
+        }
+        return marks;
+    }
+
+    @Nullable
+    private static MessageMarkup.Type markupType(@NonNull final MessageStyling.Style style) {
+        switch (style) {
+            case EMPHASIS:
+                return MessageMarkup.Type.EMPHASIS;
+            case STRONG:
+                return MessageMarkup.Type.STRONG;
+            case STRIKE:
+                return MessageMarkup.Type.DELETED;
+            case MONO:
+                return MessageMarkup.Type.CODE;
+            default:
+                return null;
+        }
+    }
+
+    /** Replaces the {@code <markup/>} payload; a null or empty list clears it. */
+    private synchronized void setMarkup(@Nullable final List<MessageMarkup.Mark> marks) {
         final Element old = getMarkup();
         if (old != null) {
             this.payloads.remove(old);
         }
-        if (marks.isEmpty()) {
+        if (marks == null || marks.isEmpty()) {
             return;
         }
         addPayload(MessageMarkup.build(marks));
@@ -1333,8 +1377,8 @@ public class Message extends AbstractEntity implements AvatarService.Avatarable 
                 if (block.preformatted) {
                     body.setSpan(
                             new StylingSpan.CodeBlock(block.language),
-                            block.start,
-                            end,
+                            block.contentStart,
+                            Math.max(block.contentStart, block.contentEnd),
                             Spanned.SPAN_EXCLUSIVE_EXCLUSIVE | StylingSpan.STYLING_FLAG);
                 } else {
                     body.setSpan(
