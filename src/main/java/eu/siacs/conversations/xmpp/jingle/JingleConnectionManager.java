@@ -40,6 +40,7 @@ import eu.siacs.conversations.xmpp.jingle.stanzas.Reason;
 import eu.siacs.conversations.xmpp.jingle.stanzas.RtpDescription;
 import eu.siacs.conversations.xmpp.jingle.transports.InbandBytestreamsTransport;
 import eu.siacs.conversations.xmpp.jingle.transports.Transport;
+import eu.siacs.conversations.xmpp.whiteboard.WhiteboardManager;
 import eu.siacs.conversations.xmpp.stanzas.IqPacket;
 import eu.siacs.conversations.xmpp.stanzas.MessagePacket;
 
@@ -87,6 +88,17 @@ public class JingleConnectionManager extends AbstractConnectionManager {
         }
         if (action == null) {
             respondWithJingleError(account, packet, null, "bad-request", "cancel");
+            return;
+        }
+        // Collaborative SVG whiteboard (Jingle app + XEP-0284 SXE) is managed outside the
+        // AbstractJingleConnection registry; handle its session-initiate/accept/terminate here.
+        final WhiteboardManager whiteboardManager = mXmppConnectionService.getWhiteboardManager();
+        if (whiteboardManager.isWhiteboardJingle(packet)
+                || whiteboardManager.getSession(sessionId) != null) {
+            whiteboardManager.dispatchJingle(account, packet);
+            // Acknowledge the IQ so the peer's session-initiate/accept does not time out.
+            mXmppConnectionService.sendIqPacket(
+                    account, packet.generateResponse(IqPacket.TYPE.RESULT), null);
             return;
         }
         final AbstractJingleConnection.Id id = AbstractJingleConnection.Id.of(account, packet);

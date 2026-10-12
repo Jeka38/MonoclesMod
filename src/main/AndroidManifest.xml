@@ -598,6 +598,13 @@
             android:exported="false" />
 
         <activity
+            android:name=".ui.WhiteboardActivity"
+            android:configChanges="orientation|screenSize"
+            android:label="@string/whiteboard_title"
+            android:launchMode="singleTop"
+            android:exported="false" />
+
+        <activity
             android:name=".ui.NotesActivity"
             android:configChanges="orientation|screenSize"
             android:label="@string/notes"

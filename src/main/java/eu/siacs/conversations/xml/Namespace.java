@@ -66,6 +66,11 @@ public final class Namespace {
     // XEP-0272: Multiparty Jingle (Muji)
     public static final String JINGLE_MUJI = "urn:xmpp:jingle:muji:0";
 
+    // XEP-0284: Shared XML Editing + the collaborative SVG whiteboard
+    public static final String SXE = "urn:xmpp:sxe:0";
+    public static final String SXE_TRANSPORT = "urn:xmpp:jingle:transports:sxe";
+    public static final String JINGLE_APPS_SVG_WHITEBOARD = "urn:xmpp:jingle:apps:svg-whiteboard:0";
+
     public static final String JINGLE_APPS_FILE_TRANSFER = "urn:xmpp:jingle:apps:file-transfer:5";
     public static final String JINGLE_APPS_DTLS = "urn:xmpp:jingle:apps:dtls:0";
     public static final String JINGLE_APPS_GROUPING = "urn:xmpp:jingle:apps:grouping:0";

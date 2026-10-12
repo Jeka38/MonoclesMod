@@ -11,6 +11,9 @@
         android:id="@+id/context_send_contact"
         android:title="@string/roster_exchange_send" />
     <item
+        android:id="@+id/context_whiteboard"
+        android:title="@string/whiteboard_draw" />
+    <item
         android:id="@+id/context_contact_block_unblock"
         android:title="@string/block_contact" />
     <item

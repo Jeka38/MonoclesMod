@@ -228,6 +228,22 @@
             </RelativeLayout>
 
             <com.google.android.material.floatingactionbutton.FloatingActionButton
+                android:id="@+id/in_call_action_far_left"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:layout_centerVertical="true"
+                android:layout_margin="@dimen/in_call_fab_margin"
+                android:layout_toStartOf="@+id/in_call_action_left"
+                android:layout_toLeftOf="@+id/in_call_action_left"
+                android:contentDescription="@string/whiteboard_draw"
+                android:src="@drawable/ic_whiteboard_call"
+                android:visibility="gone"
+                app:backgroundTint="?attr/color_background_tertiary"
+                app:elevation="4dp"
+                app:fabSize="mini"
+                app:tint="?attr/icon_tint" />
+
+            <com.google.android.material.floatingactionbutton.FloatingActionButton
                 android:id="@+id/in_call_action_left"
                 android:layout_width="wrap_content"
                 android:layout_height="wrap_content"

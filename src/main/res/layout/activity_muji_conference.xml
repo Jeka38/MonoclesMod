@@ -24,12 +24,18 @@
         android:layout_height="0dp"
         android:layout_weight="1" />
 
-    <LinearLayout
+    <HorizontalScrollView
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
-        android:gravity="center"
-        android:orientation="horizontal"
-        android:paddingVertical="10dp">
+        android:scrollbars="none">
+
+        <LinearLayout
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:gravity="center"
+            android:orientation="horizontal"
+            android:paddingHorizontal="8dp"
+            android:paddingVertical="10dp">
 
         <com.google.android.material.button.MaterialButton
             android:id="@+id/muji_mic"
@@ -64,11 +70,20 @@
             app:iconTint="@android:color/white" />
 
         <com.google.android.material.button.MaterialButton
+            android:id="@+id/muji_whiteboard"
+            style="@style/MujiCircleButton"
+            android:contentDescription="@string/whiteboard_draw"
+            app:backgroundTint="#525252"
+            app:icon="@drawable/ic_whiteboard_call"
+            app:iconTint="@android:color/white" />
+
+        <com.google.android.material.button.MaterialButton
             android:id="@+id/muji_leave"
             style="@style/MujiCircleButton"
             android:contentDescription="@string/muji_leave"
             app:backgroundTint="#D32F2F"
             app:icon="@drawable/ic_call_end_white_48dp"
             app:iconTint="@android:color/white" />
-    </LinearLayout>
+        </LinearLayout>
+    </HorizontalScrollView>
 </LinearLayout>

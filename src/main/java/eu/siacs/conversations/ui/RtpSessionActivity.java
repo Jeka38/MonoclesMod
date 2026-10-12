@@ -207,6 +207,18 @@ public class RtpSessionActivity extends XmppActivity
         return super.onCreateOptionsMenu(menu);
     }
 
+    private void openWhiteboard() {
+        final Contact contact = getWith();
+        final Account account = contact == null ? null : contact.getAccount();
+        if (account == null) {
+            return;
+        }
+        startActivity(WhiteboardActivity.create(
+                this,
+                account.getJid().asBareJid().toEscapedString(),
+                contact.getJid().asBareJid().toEscapedString()));
+    }
+
     @Override
     public boolean onKeyDown(final int keyCode, final KeyEvent event) {
         if (keyCode == KeyEvent.KEYCODE_VOLUME_DOWN) {
@@ -1096,6 +1108,22 @@ public class RtpSessionActivity extends XmppActivity
             this.binding.inCallActionLeft.setVisibility(View.GONE);
             this.binding.inCallActionRight.setVisibility(View.GONE);
             this.binding.inCallActionFarRight.setVisibility(View.GONE);
+            this.binding.inCallActionFarLeft.setVisibility(View.GONE);
+        }
+        updateWhiteboardButton(state);
+    }
+
+    /** The board button is always on screen while the call is connected. */
+    private void updateWhiteboardButton(final RtpEndUserState state) {
+        final boolean show =
+                JingleRtpConnection.STATES_SHOWING_ONGOING_CALL.contains(state)
+                        && !isPictureInPicture();
+        this.binding.inCallActionFarLeft.setVisibility(show ? View.VISIBLE : View.GONE);
+        if (show) {
+            this.binding.inCallActionFarLeft.setImageResource(R.drawable.ic_whiteboard_call);
+            this.binding.inCallActionFarLeft.setOnClickListener(v -> openWhiteboard());
+        } else {
+            this.binding.inCallActionFarLeft.setOnClickListener(null);
         }
     }
 

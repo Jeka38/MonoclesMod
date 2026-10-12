@@ -166,6 +166,13 @@
         app:showAsAction="never" />
 
     <item
+        android:id="@+id/action_whiteboard"
+        android:orderInCategory="42"
+        android:title="@string/whiteboard_draw"
+        android:visible="false"
+        app:showAsAction="never" />
+
+    <item
         android:id="@+id/action_contact_details"
         android:icon="?attr/icon_contact"
         android:orderInCategory="100"

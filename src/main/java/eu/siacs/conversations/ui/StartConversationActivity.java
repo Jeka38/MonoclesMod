@@ -582,6 +582,18 @@ public class StartConversationActivity extends XmppActivity implements XmppConne
         startActivityForResult(ChooseContactActivity.createForRosterExchange(this), REQUEST_SEND_CONTACT);
     }
 
+    protected void openWhiteboardForContact() {
+        final Contact contact = (Contact) contacts.get(contact_context_id);
+        final Account account = contact.getAccount();
+        if (account == null) {
+            return;
+        }
+        startActivity(WhiteboardActivity.create(
+                this,
+                account.getJid().asBareJid().toEscapedString(),
+                contact.getJid().asBareJid().toEscapedString()));
+    }
+
     protected void toggleContactBlock() {
         final int position = contact_context_id;
         BlockContactDialog.show(this, (Contact) contacts.get(position));
@@ -1714,6 +1726,9 @@ public class StartConversationActivity extends XmppActivity implements XmppConne
                     break;
                 case R.id.context_send_contact:
                     activity.sendContactTo();
+                    break;
+                case R.id.context_whiteboard:
+                    activity.openWhiteboardForContact();
                     break;
                 case R.id.context_contact_block_unblock:
                     activity.toggleContactBlock();

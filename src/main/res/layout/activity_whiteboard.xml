@@ -1,0 +1,199 @@
+<?xml version="1.0" encoding="utf-8"?>
+<LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:app="http://schemas.android.com/apk/res-auto"
+    android:layout_width="match_parent"
+    android:layout_height="match_parent"
+    android:background="?attr/color_background_secondary"
+    android:orientation="vertical">
+
+    <com.google.android.material.appbar.MaterialToolbar
+        android:id="@+id/toolbar"
+        android:layout_width="match_parent"
+        android:layout_height="?attr/actionBarSize"
+        app:title="@string/whiteboard_title" />
+
+    <FrameLayout
+        android:id="@+id/wb_stage"
+        android:layout_width="match_parent"
+        android:layout_height="0dp"
+        android:layout_weight="1">
+
+        <!-- The board fills the whole stage. -->
+        <eu.siacs.conversations.xmpp.whiteboard.WhiteboardView
+            android:id="@+id/wb_canvas"
+            android:layout_width="match_parent"
+            android:layout_height="match_parent" />
+
+        <!-- Floating tool rail, pinned to the bottom-left corner; collapsed by default. -->
+        <com.google.android.material.card.MaterialCardView
+            android:id="@+id/wb_rail"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:layout_gravity="start|bottom"
+            android:layout_margin="10dp"
+            app:cardBackgroundColor="#F7FFFFFF"
+            app:cardCornerRadius="18dp"
+            app:cardElevation="6dp">
+
+            <LinearLayout
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:gravity="center_horizontal"
+                android:orientation="vertical"
+                android:padding="4dp">
+
+                <LinearLayout
+                    android:id="@+id/wb_tools"
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:gravity="center_horizontal"
+                    android:orientation="vertical"
+                    android:visibility="gone">
+
+                    <ImageButton
+                        android:id="@+id/wb_tool_pencil"
+                        style="@style/WhiteboardRailButton"
+                        android:contentDescription="@string/whiteboard_tool_pencil"
+                        android:src="@drawable/ic_whiteboard_pencil" />
+
+                    <ImageButton
+                        android:id="@+id/wb_tool_line"
+                        style="@style/WhiteboardRailButton"
+                        android:contentDescription="@string/whiteboard_tool_line"
+                        android:src="@drawable/ic_whiteboard_line" />
+
+                    <ImageButton
+                        android:id="@+id/wb_tool_rect"
+                        style="@style/WhiteboardRailButton"
+                        android:contentDescription="@string/whiteboard_tool_rect"
+                        android:src="@drawable/ic_whiteboard_rect" />
+
+                    <ImageButton
+                        android:id="@+id/wb_tool_ellipse"
+                        style="@style/WhiteboardRailButton"
+                        android:contentDescription="@string/whiteboard_tool_ellipse"
+                        android:src="@drawable/ic_whiteboard_ellipse" />
+
+                    <ImageButton
+                        android:id="@+id/wb_tool_pan"
+                        style="@style/WhiteboardRailButton"
+                        android:contentDescription="@string/whiteboard_tool_pan"
+                        android:src="@drawable/ic_whiteboard_pan" />
+
+                    <ImageButton
+                        android:id="@+id/wb_reset_view"
+                        style="@style/WhiteboardRailButton"
+                        android:contentDescription="@string/whiteboard_reset_view"
+                        android:src="@drawable/ic_whiteboard_reset_view" />
+
+                    <View style="@style/WhiteboardRailDivider" />
+
+                    <ImageButton
+                        android:id="@+id/wb_width"
+                        style="@style/WhiteboardRailButton"
+                        android:contentDescription="@string/whiteboard_line_width"
+                        android:src="@drawable/ic_whiteboard_width" />
+
+                    <FrameLayout
+                        android:layout_width="46dp"
+                        android:layout_height="46dp">
+
+                        <ImageButton
+                            android:id="@+id/wb_stroke"
+                            style="@style/WhiteboardRailButton"
+                            android:contentDescription="@string/whiteboard_line_color"
+                            android:src="@drawable/ic_whiteboard_stroke_color" />
+
+                        <View
+                            android:id="@+id/wb_stroke_swatch"
+                            android:layout_width="12dp"
+                            android:layout_height="12dp"
+                            android:layout_gravity="end|bottom"
+                            android:layout_margin="8dp"
+                            android:background="@drawable/whiteboard_swatch" />
+                    </FrameLayout>
+
+                    <FrameLayout
+                        android:layout_width="46dp"
+                        android:layout_height="46dp">
+
+                        <ImageButton
+                            android:id="@+id/wb_fill"
+                            style="@style/WhiteboardRailButton"
+                            android:contentDescription="@string/whiteboard_fill_color"
+                            android:src="@drawable/ic_whiteboard_fill" />
+
+                        <View
+                            android:id="@+id/wb_fill_swatch"
+                            android:layout_width="12dp"
+                            android:layout_height="12dp"
+                            android:layout_gravity="end|bottom"
+                            android:layout_margin="8dp"
+                            android:background="@drawable/whiteboard_swatch" />
+                    </FrameLayout>
+
+                    <View style="@style/WhiteboardRailDivider" />
+
+                    <ImageButton
+                        android:id="@+id/wb_undo"
+                        style="@style/WhiteboardRailButton"
+                        android:contentDescription="@string/whiteboard_undo"
+                        android:src="@drawable/ic_whiteboard_undo" />
+
+                    <ImageButton
+                        android:id="@+id/wb_clear"
+                        style="@style/WhiteboardRailButton"
+                        android:contentDescription="@string/whiteboard_clear"
+                        android:src="@drawable/ic_whiteboard_clear" />
+
+                    <ImageButton
+                        android:id="@+id/wb_done"
+                        style="@style/WhiteboardRailButton"
+                        android:contentDescription="@string/whiteboard_finish"
+                        android:src="@drawable/ic_whiteboard_done" />
+
+                    <View style="@style/WhiteboardRailDivider" />
+
+                    <ImageButton
+                        android:id="@+id/wb_share"
+                        style="@style/WhiteboardRailButton"
+                        android:contentDescription="@string/whiteboard_share"
+                        android:src="@drawable/ic_whiteboard_share" />
+                </LinearLayout>
+
+                <!-- The toggle sits below the tools: the rail grows upwards from the bottom. -->
+                <ImageButton
+                    android:id="@+id/wb_rail_toggle"
+                    style="@style/WhiteboardRailButton"
+                    android:contentDescription="@string/whiteboard_tools_toggle"
+                    android:src="@drawable/ic_whiteboard_chevron_right" />
+            </LinearLayout>
+        </com.google.android.material.card.MaterialCardView>
+
+        <TextView
+            android:id="@+id/wb_empty"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:layout_gravity="center"
+            android:padding="16dp"
+            android:text="@string/whiteboard_hint"
+            android:textColor="#9E9E9E"
+            android:textSize="15sp" />
+
+        <TextView
+            android:id="@+id/wb_sync_status"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:layout_gravity="top|end"
+            android:layout_margin="8dp"
+            android:background="#B3000000"
+            android:paddingStart="10dp"
+            android:paddingEnd="10dp"
+            android:paddingTop="4dp"
+            android:paddingBottom="4dp"
+            android:text="@string/whiteboard_not_shared"
+            android:textColor="@android:color/white"
+            android:textSize="12sp" />
+    </FrameLayout>
+
+</LinearLayout>

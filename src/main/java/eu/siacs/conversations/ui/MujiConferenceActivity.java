@@ -152,6 +152,8 @@ public class MujiConferenceActivity extends XmppActivity {
         setTitle(R.string.muji_conference);
         this.status = findViewById(R.id.muji_status);
         this.container = findViewById(R.id.muji_participants);
+        final MaterialButton whiteboard = findViewById(R.id.muji_whiteboard);
+        whiteboard.setOnClickListener(v -> openWhiteboard());
         final MaterialButton leave = findViewById(R.id.muji_leave);
         leave.setOnClickListener(v -> leaveConference());
         this.micButton = findViewById(R.id.muji_mic);
@@ -191,6 +193,17 @@ public class MujiConferenceActivity extends XmppActivity {
             xmppConnectionService.getMujiConferenceManager().leave(account, room);
         }
         finish();
+    }
+
+    /** Opens the shared whiteboard for this room (the room JID is the SXE host). */
+    private void openWhiteboard() {
+        if (account == null || room == null) {
+            return;
+        }
+        startActivity(WhiteboardActivity.create(
+                this,
+                account.getJid().asBareJid().toEscapedString(),
+                room.asBareJid().toEscapedString()));
     }
 
     private void refresh() {

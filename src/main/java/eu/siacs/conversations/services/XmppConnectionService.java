@@ -246,6 +246,7 @@ import eu.siacs.conversations.xmpp.jingle.JingleConnectionManager;
 import eu.siacs.conversations.xmpp.jingle.JingleRtpConnection;
 import eu.siacs.conversations.xmpp.jingle.Media;
 import eu.siacs.conversations.xmpp.jingle.MujiConferenceManager;
+import eu.siacs.conversations.xmpp.whiteboard.WhiteboardManager;
 import eu.siacs.conversations.xmpp.rosterx.RosterExchange;
 import eu.siacs.conversations.xmpp.rosterx.RosterExchangeManager;
 import eu.siacs.conversations.xmpp.jingle.RtpEndUserState;
@@ -392,6 +393,8 @@ public class XmppConnectionService extends Service {
     private List<Account> accounts;
     private final JingleConnectionManager mJingleConnectionManager = new JingleConnectionManager(this);
     private final MujiConferenceManager mMujiConferenceManager = new MujiConferenceManager(this);
+    // Collaborative SVG whiteboard (Jingle app + XEP-0284 SXE)
+    private final WhiteboardManager mWhiteboardManager = new WhiteboardManager(this);
     public final HttpConnectionManager mHttpConnectionManager = new HttpConnectionManager(this);
     private final AvatarService mAvatarService = new AvatarService(this);
     private final MessageArchiveService mMessageArchiveService = new MessageArchiveService(this);
@@ -6661,6 +6664,10 @@ public class XmppConnectionService extends Service {
 
     public MujiConferenceManager getMujiConferenceManager() {
         return this.mMujiConferenceManager;
+    }
+
+    public WhiteboardManager getWhiteboardManager() {
+        return this.mWhiteboardManager;
     }
 
     public void joinMujiConference(final Conversation conversation, final Set<Media> media) {
