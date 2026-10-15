@@ -13,8 +13,25 @@ public class MessagePacket extends AbstractAcknowledgeableStanza {
     public static final int TYPE_ERROR = 4;
     public static final int TYPE_HEADLINE = 5;
 
+    /**
+     * Whether the connection should ask the server for a stream-management acknowledgement
+     * ({@code <r/>}) right after sending this stanza. Defaults to true (upstream behaviour). High
+     * frequency, non-critical payloads such as whiteboard edits clear it so a burst of strokes does
+     * not produce a burst of {@code <r/>}/{@code <a/>} pairs; they are still covered by the periodic
+     * keep-alive ack.
+     */
+    private boolean requestAck = true;
+
     public MessagePacket() {
         super("message");
+    }
+
+    public void setRequestAck(final boolean requestAck) {
+        this.requestAck = requestAck;
+    }
+
+    public boolean isRequestAck() {
+        return requestAck;
     }
 
     public LocalizedContent getBody() {

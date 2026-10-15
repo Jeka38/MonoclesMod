@@ -1,5 +1,8 @@
 ### Changelog
 
+#### Version 1.9.1.35
+* whiteboard: stop flooding stream management — every board edit is a `MessagePacket`, and upstream asks for a stream-management ack (`<r/>`) after *every* outgoing message with an id, so drawing produced a constant `<r/>`/`<a/>` barrage. Board `<state>` edits now send with `MessagePacket.setRequestAck(false)`; they stay reliable via the periodic keep-alive ack and the stanza queue
+
 #### Version 1.9.1.34
 * whiteboard: group (MUC) boards — starting a board in a room now posts the same "Open board" notice into the room (with the starter's nick and a themed bubble), so every member sees the button; the same notice is posted when another participant starts one, and a member joining after the board started sees it too (discovered from the occupant's presence)
 * whiteboard: fix room board synchronization — every participant is a plain participant (no "host" fighting), snapshots are **merged** instead of replacing the drawing (shared document root), and room payloads carry an invisible fallback body so MUC servers do not drop them

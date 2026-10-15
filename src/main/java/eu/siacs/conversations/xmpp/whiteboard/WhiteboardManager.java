@@ -781,6 +781,21 @@ public final class WhiteboardManager {
     }
 
     private void send(final Account account, final Session session, final Element sxe, @Nullable final String to) {
+        send(account, session, sxe, to, true);
+    }
+
+    /**
+     * @param requestAck whether the connection should ask for a stream-management ack right after
+     *     this stanza. Board <em>edits</em> pass false: a stroke is sent continuously, and an ack
+     *     request per stroke produced a constant {@code <r/>}/{@code <a/>} flood while drawing. They
+     *     stay reliable through the periodic keep-alive ack (and the stanza queue).
+     */
+    private void send(
+            final Account account,
+            final Session session,
+            final Element sxe,
+            @Nullable final String to,
+            final boolean requestAck) {
         if (account == null) {
             return;
         }
@@ -796,6 +811,7 @@ public final class WhiteboardManager {
         }
         packet.setId(SxeDocument.newRid());
         packet.addChild(sxe);
+        packet.setRequestAck(requestAck);
         if (session.muc) {
             // MUC services drop bodyless groupchat; carry an invisible fallback body.
             packet.setBody(SXE_FALLBACK_BODY);
@@ -835,7 +851,7 @@ public final class WhiteboardManager {
         appendAll(state, news);
         appendAll(state, sets);
         appendAll(state, removes);
-        send(session.account, session, el, null);
+        send(session.account, session, el, null, false);
     }
 
     private static void appendAll(final Element state, @Nullable final List<Element> items) {

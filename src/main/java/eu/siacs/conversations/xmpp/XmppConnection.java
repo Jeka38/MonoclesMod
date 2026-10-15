@@ -2665,7 +2665,8 @@ public class XmppConnection implements Runnable {
                     Log.d(Config.LOGTAG, account.getJid().asBareJid()+": counting outbound "+packet.getName()+" as #" + stanzasSent);
                 }
                 this.mStanzaQueue.append(stanzasSent, stanza);
-                if (stanza instanceof MessagePacket && stanza.getId() != null && inSmacksSession) {
+                if (stanza instanceof MessagePacket && stanza.getId() != null && inSmacksSession
+                        && ((MessagePacket) stanza).isRequestAck()) {
                     if (Config.EXTENDED_SM_LOGGING) {
                         Log.d(
                                 Config.LOGTAG,
