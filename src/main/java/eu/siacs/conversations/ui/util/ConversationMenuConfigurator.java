@@ -76,6 +76,11 @@ public class ConversationMenuConfigurator {
         menu.findItem(R.id.attach_location).setVisible(locationAvailable);
         menu.findItem(R.id.attach_live_location).setVisible(locationAvailable);
         menu.findItem(R.id.attach_subject).setVisible(attachSubject);
+        final MenuItem whiteboard = menu.findItem(R.id.attach_whiteboard);
+        if (whiteboard != null) {
+            // Only present in the conversation overflow submenu, not the quick-share popup.
+            whiteboard.setVisible(true);
+        }
     }
 
     public static void configureAttachmentMenu(@NonNull Conversation conversation, Menu menu, Boolean Quick_share_attachment_choice, boolean hasAttachments) {
@@ -109,6 +114,11 @@ public class ConversationMenuConfigurator {
         menu.findItem(R.id.attach_location).setVisible(locationAvailable);
         menu.findItem(R.id.attach_live_location).setVisible(locationAvailable);
         menu.findItem(R.id.attach_subject).setVisible(attachSubject);
+        final MenuItem whiteboard = menu.findItem(R.id.attach_whiteboard);
+        if (whiteboard != null) {
+            // Only present in the conversation overflow submenu, not the quick-share popup.
+            whiteboard.setVisible(true);
+        }
     }
 
     public static void configureEncryptionMenu(@NonNull Conversation conversation, Menu menu, final XmppActivity activity) {

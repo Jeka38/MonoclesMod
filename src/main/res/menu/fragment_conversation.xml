@@ -103,6 +103,12 @@
                 android:id="@+id/attach_subject"
                 android:icon="?attr/add_subject"
                 android:title="@string/add_subject" />
+
+            <item
+                android:id="@+id/attach_whiteboard"
+                android:icon="@drawable/ic_whiteboard_call"
+                android:title="@string/whiteboard_draw"
+                android:visible="false" />
         </menu>
     </item>
     <item
@@ -165,16 +171,9 @@
         android:visible="false"
         app:showAsAction="never" />
 
-    <item
-        android:id="@+id/action_whiteboard"
-        android:orderInCategory="42"
-        android:title="@string/whiteboard_draw"
-        android:visible="false"
-        app:showAsAction="never" />
 
     <item
-        android:id="@+id/action_contact_details"
-        android:icon="?attr/icon_contact"
+        android:id="@+id/action_contact_details"        android:icon="?attr/icon_contact"
         android:orderInCategory="100"
         android:title="@string/action_contact_details"
         app:showAsAction="always" />

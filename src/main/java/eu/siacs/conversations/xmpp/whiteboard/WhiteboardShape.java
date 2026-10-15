@@ -22,7 +22,7 @@ public final class WhiteboardShape {
     public String id;
     /** The SXE record id once the shape has been added to a shared session (may be empty). */
     public String rid = "";
-    /** pencil | line | rect | ellipse | remote */
+    /** pencil | line | arrow | rect | ellipse | remote | text */
     public String kind = "pencil";
     public float[] points = new float[0]; // x0,y0,x1,y1,… for pencil/line
     public float[] rect = new float[4];   // x,y,w,h
@@ -31,6 +31,8 @@ public final class WhiteboardShape {
     public String stroke = DEFAULT_STROKE;
     public float strokeWidth = 2f;
     public String fill = "";
+    /** The SVG {@code transform} attribute (e.g. {@code matrix(a b c d e f)}), or "" if identity. */
+    public String transform = "";
 
     public static WhiteboardShape create(final String kind) {
         final WhiteboardShape shape = new WhiteboardShape();
@@ -48,10 +50,13 @@ public final class WhiteboardShape {
     public String pathData() {
         switch (kind) {
             case "remote":
+            case "text":
                 return d == null ? "" : d;
             case "pencil":
             case "line":
                 return polyline(points, false);
+            case "arrow":
+                return arrowPath(points, strokeWidth);
             case "rect":
                 return rectPath(rect);
             case "ellipse":
@@ -65,8 +70,9 @@ public final class WhiteboardShape {
         if (fill == null || fill.isEmpty() || "none".equals(fill)) {
             return false;
         }
-        // Remote shapes carry their fill verbatim, so a non-empty fill means "filled".
-        return "rect".equals(kind) || "ellipse".equals(kind) || isRemote();
+        // Remote shapes carry their fill verbatim, so a non-empty fill means "filled". Text is
+        // glyph outlines and is always filled.
+        return "rect".equals(kind) || "ellipse".equals(kind) || "text".equals(kind) || isRemote();
     }
 
     private static String polyline(final float[] points, final boolean close) {
@@ -84,8 +90,27 @@ public final class WhiteboardShape {
         return sb.toString();
     }
 
-    private static String rectPath(final float[] r) {
-        final float x = r[0], y = r[1], w = r[2], h = r[3];
+    /**
+     * An arrow: a line from p0 to p1 plus a two-stroke arrowhead at p1. The head size scales with the
+     * stroke width so the arrow looks consistent at any thickness.
+     */
+    private static String arrowPath(final float[] points, final float strokeWidth) {
+        if (points == null || points.length < 4) {
+            return "";
+        }
+        final float x0 = points[0], y0 = points[1], x1 = points[2], y1 = points[3];
+        final double angle = Math.atan2(y1 - y0, x1 - x0);
+        final float head = Math.max(10f, strokeWidth * 4f);
+        final double spread = Math.toRadians(28);
+        final float hx1 = (float) (x1 - head * Math.cos(angle - spread));
+        final float hy1 = (float) (y1 - head * Math.sin(angle - spread));
+        final float hx2 = (float) (x1 - head * Math.cos(angle + spread));
+        final float hy2 = (float) (y1 - head * Math.sin(angle + spread));
+        return fmt("M %s %s L %s %s M %s %s L %s %s M %s %s L %s %s",
+                x0, y0, x1, y1, hx1, hy1, x1, y1, hx2, hy2, x1, y1);
+    }
+
+    private static String rectPath(final float[] r) {        final float x = r[0], y = r[1], w = r[2], h = r[3];
         return fmt("M %s %s L %s %s L %s %s L %s %s Z", x, y, x + w, y, x + w, y + h, x, y + h);
     }
 
@@ -104,7 +129,8 @@ public final class WhiteboardShape {
     @Nullable
     public static WhiteboardShape fromRemote(
             final String rid, final String id, final String d,
-            final String stroke, final String strokeWidth, final String fill) {
+            final String stroke, final String strokeWidth, final String fill,
+            final String transform) {
         final WhiteboardShape shape = new WhiteboardShape();
         shape.kind = "remote";
         shape.rid = rid == null ? "" : rid;
@@ -117,6 +143,7 @@ public final class WhiteboardShape {
             shape.strokeWidth = 2f;
         }
         shape.fill = fill == null || "none".equals(fill) ? "" : fill;
+        shape.transform = transform == null ? "" : transform;
         return shape;
     }
 
@@ -128,6 +155,8 @@ public final class WhiteboardShape {
         out.add(new String[]{"stroke", stroke});
         out.add(new String[]{"stroke-width", trimFloat(strokeWidth)});
         out.add(new String[]{"fill", isFilled() ? fill : "none"});
+        // A transform (move/rotate/scale from another client) must round-trip; empty = identity.
+        out.add(new String[]{"transform", transform == null ? "" : transform});
         return out;
     }
 

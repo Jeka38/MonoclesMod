@@ -132,6 +132,7 @@ import eu.siacs.conversations.services.NotificationService;
 import eu.siacs.conversations.ui.ConversationFragment;
 import eu.siacs.conversations.ui.ConversationsActivity;
 import eu.siacs.conversations.ui.XmppActivity;
+import eu.siacs.conversations.ui.WhiteboardActivity;
 import eu.siacs.conversations.ui.text.DividerSpan;
 import eu.siacs.conversations.ui.text.QuoteSpan;
 import eu.siacs.conversations.ui.util.AvatarWorkerTask;
@@ -169,6 +170,7 @@ public class MessageAdapter extends ArrayAdapter<Message> {
     private static final int STATUS = 2;
     private static final int DATE_SEPARATOR = 3;
     private static final int RTP_SESSION = 4;
+    private static final int WHITEBOARD = 5;
     boolean isResendable = false;
 
     private final XmppActivity activity;
@@ -271,7 +273,7 @@ public class MessageAdapter extends ArrayAdapter<Message> {
 
     @Override
     public int getViewTypeCount() {
-        return 5;
+        return 6;
     }
 
     private int getItemViewType(Message message) {
@@ -283,6 +285,8 @@ public class MessageAdapter extends ArrayAdapter<Message> {
             }
         } else if (message.getType() == Message.TYPE_RTP_SESSION) {
             return RTP_SESSION;
+        } else if (message.getType() == Message.TYPE_WHITEBOARD) {
+            return WHITEBOARD;
         } else if (message.getStatus() <= Message.STATUS_RECEIVED) {
             return RECEIVED;
         } else {
@@ -1779,6 +1783,14 @@ public class MessageAdapter extends ArrayAdapter<Message> {
                     viewHolder.message_box = view.findViewById(R.id.message_box);
                     viewHolder.indicatorReceived = view.findViewById(R.id.indicator_received);
                     break;
+                case WHITEBOARD:
+                    view = activity.getLayoutInflater().inflate(R.layout.message_whiteboard, parent, false);
+                    viewHolder.contact_picture = view.findViewById(R.id.message_photo);
+                    viewHolder.message_box = view.findViewById(R.id.message_box);
+                    viewHolder.status_message = view.findViewById(R.id.whiteboard_message);
+                    viewHolder.time = view.findViewById(R.id.message_time);
+                    viewHolder.whiteboard_open = view.findViewById(R.id.whiteboard_open);
+                    break;
                 case SENT:
                     view = activity.getLayoutInflater().inflate(R.layout.message_sent, parent, false);
                     viewHolder.message_box = view.findViewById(R.id.message_box);
@@ -1959,6 +1971,35 @@ public class MessageAdapter extends ArrayAdapter<Message> {
             viewHolder.message_box.setBackgroundResource(darkBackground ? R.drawable.date_bubble_dark : R.drawable.date_bubble);
             int date_bubble_color = ColorUtils.setAlphaComponent(StyledAttributes.getColor(activity, R.attr.text_Color_Main), 50); //set alpha to date bubble
             activity.setBubbleColor(viewHolder.message_box, (date_bubble_color), -1); //themed color
+            return view;
+        } else if (type == WHITEBOARD) {
+            final boolean received = message.getStatus() <= Message.STATUS_RECEIVED;
+            // Theme the bubble exactly like a normal received/sent message so it matches the app theme.
+            viewHolder.message_box.setBackgroundResource(received
+                    ? R.drawable.message_bubble_received_light
+                    : R.drawable.message_bubble_sent);
+            activity.setBubbleColor(viewHolder.message_box,
+                    StyledAttributes.getColor(activity,
+                            received ? R.attr.color_bubble_light : R.attr.color_bubble_dark), -1);
+            viewHolder.status_message.setText(activity.getString(
+                    received ? R.string.whiteboard_chat_notice : R.string.whiteboard_chat_notice_self));
+            viewHolder.time.setText(UIHelper.readableTimeDifferenceFull(activity, message.getMergedTimeSent()));
+            viewHolder.contact_picture.setVisibility(received ? View.VISIBLE : View.GONE);
+            if (received) {
+                AvatarWorkerTask.loadAvatar(message, viewHolder.contact_picture, R.dimen.avatar);
+            }
+            final Jid peer = message.getCounterpart() != null
+                    ? message.getCounterpart()
+                    : conversation.getJid();
+            viewHolder.whiteboard_open.setOnClickListener(v -> {
+                if (account == null || peer == null) {
+                    return;
+                }
+                activity.startActivity(WhiteboardActivity.create(
+                        activity,
+                        account.getJid().asBareJid().toEscapedString(),
+                        peer.asBareJid().toEscapedString()));
+            });
             return view;
         } else if (type == STATUS) {
             final String bodyText = message.getBody();
@@ -2465,6 +2506,7 @@ public class MessageAdapter extends ArrayAdapter<Message> {
         protected LinearLayout message_box;
         protected Button download_button;
         protected Button resend_button;
+        protected Button whiteboard_open;
         protected ImageButton answer_button;
         protected ImageView image;
         protected ImageView play_button;

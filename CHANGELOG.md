@@ -1,5 +1,69 @@
 ### Changelog
 
+#### Version 1.9.1.33
+* whiteboard: added an arrow tool (a line with an arrowhead; the head scales with the stroke width) next to the line tool — it syncs as a normal `<path>` so it renders/moves on the peer too
+
+#### Version 1.9.1.32
+* whiteboard: the "Open board" chat notice now notifies like a normal 1:1 text message (unread badge + system notification) and its bubble follows the app theme (`color_bubble_light`/`color_bubble_dark`) instead of a fixed light style
+
+#### Version 1.9.1.31
+* whiteboard: the text tool now uses the conventional capital-"T" icon (as in graphics editors) instead of horizontal lines
+
+#### Version 1.9.1.30
+* whiteboard: fix duplicated text — a placed text was published twice (once by `addText` → `onShapeAdded`, once by `promptForText`), so moving it left a stale copy behind on the peer
+
+#### Version 1.9.1.29
+* whiteboard: all whiteboard icons (`ic_whiteboard_*`) now tint from the theme (`@color/whiteboard_icon` → `?attr/text_Color_Main`) instead of hardcoded white, so they stay visible as menu icons on a light theme
+
+#### Version 1.9.1.28
+* whiteboard: added "Draw with contact" to the composer's paperclip (quick-attach) popup — it was only in the overflow attach submenu before, so it did not appear where expected
+
+#### Version 1.9.1.27
+* whiteboard: the "Open board" chat message is now removed when the board is cancelled/closed (both when you cancel and when the peer ends the session)
+* whiteboard: the tool rail follows the app theme — icons/labels use `text_Color_Main`, the selected tool uses a themed `whiteboard_selected_background`, and the rail card uses `whiteboard_rail_background`
+* whiteboard: the cancel-board button moved from the tool rail into the toolbar (right-aligned)
+
+#### Version 1.9.1.26
+* whiteboard: moved "Draw with contact" from the conversation overflow (three-dot) menu into the **attach file** button's submenu (`attach_whiteboard`), next to the other attachment actions
+
+#### Version 1.9.1.25
+* whiteboard: fix the 1:1 invite being rejected — a `session-initiate` addressed to the peer's bare JID is refused by the server (`service-unavailable`), so no board message ever arrived; the invite now targets the peer's full JID (`jingleTarget`: a whiteboard-capable resource, else the most available one)
+* whiteboard: a 1:1 board is now invited by **both** sides (previously only the deterministic host sent the invite, so opening the board from the other side silently did nothing); a duplicate invite for a session we already have is accepted without creating a second board or a second chat notice
+
+#### Version 1.9.1.24
+* whiteboard: fix 1:1 invites never arriving — `WhiteboardManager.isWhiteboardJingle` looked for `<content>` as a direct child of the IQ, but it lives inside `<jingle>`, so the whiteboard branch was dead and the invite was rejected as `unsupported-info` (no session, no chat notice)
+
+#### Version 1.9.1.23
+* whiteboard: fix the 1:1 whiteboard chat notice not appearing — `MessageAdapter.getViewTypeCount()` was 5 but the new `WHITEBOARD` view type is 5, so the row was out of range; the count is now 6
+
+#### Version 1.9.1.22
+* whiteboard: a 1:1 contact starting a board now posts a **normal chat message** ("Started a shared whiteboard.") with an "Open board" button instead of a push notification; no push is sent
+
+#### Version 1.9.1.21
+* whiteboard: a contact starting a 1:1 whiteboard no longer force-opens the board on your device — it posts a notification instead (title "Whiteboard · <contact>", tap to open); the session is still joined so the drawing is live when you tap
+
+#### Version 1.9.1.20
+* whiteboard: the sync state ("shared / local") moved from a floating overlay into the "Whiteboard" toolbar as its subtitle; the overlay badge is gone
+
+#### Version 1.9.1.19
+* whiteboard: the tool list now re-clamps to the available height on every layout change, so it can be scrolled all the way through in landscape as well (the activity keeps its view tree across rotation)
+
+#### Version 1.9.1.18
+* whiteboard: "Cancel board" button — clears the drawing (broadcast, so the peer's board clears too), ends the shared session and closes the screen
+
+#### Version 1.9.1.17
+* whiteboard: removed the separate "select object" button (the move tool now selects too); each tool in the bottom-left rail shows its name under the icon; the tool list scrolls
+
+#### Version 1.9.1.16
+* whiteboard: fix moved/scaled objects not reaching the other side — a shape's first `transform` (and any other attribute that did not exist yet) was sent as a `<set>`, but the peer had never seen that record id so it silently dropped it; new attributes are now announced with `<new parent="…"/>` (existing ones still use `<set>`)
+
+#### Version 1.9.1.15
+* whiteboard: select / move / scale tools for objects (tap to select, drag to move, drag the bottom-right handle to scale) — edits are broadcast as the shape's SVG `transform`, so they sync to other clients; text tool (multiline input placed as filled glyph-outline vector paths, so it renders and syncs like any other shape)
+* whiteboard: fix object moving — a reload (remote edit / snapshot) now clears the stale selection, and move/scale drag the current selection from anywhere with a nearest-shape fallback, so dragging actually works on a phone
+
+#### Version 1.9.1.14
+* whiteboard: apply the SVG `transform` attribute (move / rotate / scale) of shapes received from other clients — a shape edited remotely (e.g. moved in Stanza) now moves on this end too; previously only create/delete were handled, so remote transforms were recorded but never rendered
+
 #### Version 1.9.1.13
 * fix "return to ongoing call": returning to a 1:1 call from the chat/details screen used a wrong `instanceof` so the call screen opened without a connection — the hang-up button did nothing and the call could not be ended
 

@@ -314,7 +314,7 @@
         <item name="android:background">@drawable/whiteboard_tool_background</item>
         <item name="android:padding">11dp</item>
         <item name="android:scaleType">fitCenter</item>
-        <item name="tint">@color/whiteboard_rail_icon</item>
+        <item name="tint">?attr/text_Color_Main</item>
     </style>
 
     <style name="WhiteboardRailDivider">
@@ -323,5 +323,24 @@
         <item name="android:layout_marginTop">4dp</item>
         <item name="android:layout_marginBottom">4dp</item>
         <item name="android:background">#1F000000</item>
+    </style>
+
+    <!-- One tool: icon button with its name underneath. -->
+    <style name="WhiteboardRailItem">
+        <item name="android:layout_width">wrap_content</item>
+        <item name="android:layout_height">wrap_content</item>
+        <item name="android:orientation">vertical</item>
+        <item name="android:gravity">center_horizontal</item>
+        <item name="android:layout_marginBottom">2dp</item>
+    </style>
+
+    <style name="WhiteboardRailLabel">
+        <item name="android:layout_width">56dp</item>
+        <item name="android:layout_height">wrap_content</item>
+        <item name="android:gravity">center_horizontal</item>
+        <item name="android:maxLines">1</item>
+        <item name="android:ellipsize">end</item>
+        <item name="android:textSize">9sp</item>
+        <item name="android:textColor">?attr/text_Color_Main</item>
     </style>
 </resources>

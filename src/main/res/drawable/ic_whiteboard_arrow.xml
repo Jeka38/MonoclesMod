@@ -1,0 +1,6 @@
+<vector android:tint="@color/whiteboard_icon" android:height="24dp" android:viewportHeight="24" android:viewportWidth="24"
+    android:width="24dp" xmlns:android="http://schemas.android.com/apk/res/android">
+    <!-- A diagonal arrow (line + head), the conventional "arrow" drawing tool glyph. -->
+    <path android:fillColor="@android:color/white"
+        android:pathData="M4,20 L17.2,6.8 L14.5,6.8 L14.5,4.8 L20.6,4.8 L20.6,10.9 L18.6,10.9 L18.6,8.2 L5.4,21.4 Z"/>
+</vector>

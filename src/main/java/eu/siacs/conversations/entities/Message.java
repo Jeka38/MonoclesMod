@@ -107,6 +107,8 @@ public class Message extends AbstractEntity implements AvatarService.Avatarable 
     public static final int TYPE_RTP_SESSION = 6;
     // hidden XEP-0444 reaction carrier; never rendered as its own chat row
     public static final int TYPE_REACTION = 7;
+    // a whiteboard share notice from a 1:1 contact; renders as a normal bubble with an "Open board" button
+    public static final int TYPE_WHITEBOARD = 8;
 
     public static final String CONVERSATION = "conversationUuid";
     public static final String COUNTERPART = "counterpart";
@@ -375,6 +377,19 @@ public class Message extends AbstractEntity implements AvatarService.Avatarable 
         final Message message = new Message(conversation);
         message.setType(Message.TYPE_STATUS);
         message.body = "LOAD_MORE";
+        return message;
+    }
+
+    /**
+     * A local notice that a 1:1 contact started a shared whiteboard. It is a normal chat bubble
+     * (not a push) with an "Open board" button; the body is the contact-facing text.
+     */
+    public static Message createWhiteboardNotice(
+            final Conversation conversation, final Jid counterpart) {
+        final Message message =
+                new Message(conversation, Message.STATUS_RECEIVED, Message.TYPE_WHITEBOARD, null);
+        message.setCounterpart(counterpart);
+        message.setTime(System.currentTimeMillis());
         return message;
     }
     public ContentValues getmonoclesContentValues() {

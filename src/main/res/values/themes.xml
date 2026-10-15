@@ -51,6 +51,8 @@
         <item name="button_text_color_disabled">@color/grey500</item>
         <item name="chat_bg">@drawable/bg_light_blue</item>
         <item name="icon_tint">@color/black54</item>
+        <item name="whiteboard_selected_background">#262196F3</item>
+        <item name="whiteboard_rail_background">#F7FFFFFF</item>
         <item name="color_background_primary">@color/grey50</item>
         <item name="color_background_secondary">#FFFFFF</item>
         <item name="color_background_tertiary">@color/grey300</item>
@@ -255,6 +257,8 @@
         <item name="button_text_color_disabled">@color/grey500</item>
         <item name="chat_bg">@drawable/bg_dark_blue</item>
         <item name="icon_tint">@color/realwhite</item>
+        <item name="whiteboard_selected_background">#33FFFFFF</item>
+        <item name="whiteboard_rail_background">#F72B2B2B</item>
         <item name="color_background_primary">@color/grey700</item>
         <item name="color_background_secondary">@color/grey800</item>
         <item name="color_background_tertiary">@color/grey900</item>

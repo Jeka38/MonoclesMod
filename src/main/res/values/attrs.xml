@@ -184,6 +184,9 @@
         <attr name="icon_email" format="reference" />
         <attr name="icon_link" format="reference" />
         <attr name="icon_org" format="reference" />
+        <!-- Whiteboard tool rail -->
+        <attr name="whiteboard_selected_background" format="reference|color" />
+        <attr name="whiteboard_rail_background" format="reference|color" />
 
 
     <declare-styleable name="ReadMoreTextView">

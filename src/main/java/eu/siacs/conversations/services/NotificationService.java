@@ -2453,12 +2453,17 @@ public class NotificationService {
         if (account == null || peer == null) {
             return;
         }
+        final Contact contact = account.getRoster().getContact(peer);
+        final String name = contact == null || contact.getDisplayName() == null
+                ? peer.asBareJid().toEscapedString()
+                : contact.getDisplayName();
         final String channelId = MESSAGES_CHANNEL_ID + "_" + DEFAULT;
         final String text = mXmppConnectionService.getString(
-                R.string.whiteboard_invite_text, peer.asBareJid().toEscapedString());
+                R.string.whiteboard_invite_text, name);
         final NotificationCompat.Builder builder =
                 new NotificationCompat.Builder(mXmppConnectionService, channelId);
-        builder.setContentTitle(mXmppConnectionService.getString(R.string.whiteboard_invite_title));
+        builder.setContentTitle(mXmppConnectionService.getString(
+                R.string.whiteboard_invite_title, name));
         builder.setContentText(text);
         builder.setStyle(new NotificationCompat.BigTextStyle().bigText(text));
         builder.setSmallIcon(R.drawable.ic_whiteboard_share);

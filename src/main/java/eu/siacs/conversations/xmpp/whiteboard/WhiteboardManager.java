@@ -12,13 +12,16 @@ import java.util.concurrent.ConcurrentHashMap;
 
 import eu.siacs.conversations.Config;
 import eu.siacs.conversations.entities.Account;
+import eu.siacs.conversations.entities.Contact;
 import eu.siacs.conversations.entities.Conversation;
+import eu.siacs.conversations.entities.Message;
 import eu.siacs.conversations.entities.MucOptions;
 import eu.siacs.conversations.entities.Presence;
 import eu.siacs.conversations.services.XmppConnectionService;
 import eu.siacs.conversations.xml.Element;
 import eu.siacs.conversations.xml.Namespace;
 import eu.siacs.conversations.xmpp.Jid;
+import eu.siacs.conversations.xmpp.jingle.MujiLog;
 import eu.siacs.conversations.xmpp.jingle.stanzas.JinglePacket;
 import eu.siacs.conversations.xmpp.jingle.stanzas.Reason;
 import eu.siacs.conversations.xmpp.sxe.SxeDocument;
@@ -64,6 +67,8 @@ public final class WhiteboardManager {
         public boolean offered = false;
         public boolean accepted = false;
         public boolean joined = false;
+        /** The uuid of the in-chat "Open board" notice posted for this session (1:1), or null. */
+        public String noticeUuid = null;
 
         Session(final String sid, final Jid peer, final boolean muc, final boolean host, final Account account) {
             this.sid = sid;
@@ -173,7 +178,9 @@ public final class WhiteboardManager {
     }
 
     public boolean isWhiteboardJingle(final JinglePacket packet) {
-        final Element content = packet.findChild("content", Namespace.JINGLE);
+        // <content> is a child of <jingle>, not of the IQ — a plain findChild on the packet never
+        // matches, which would make the whiteboard branch dead and the invite get rejected.
+        final Element content = packet.getJingleChild("content");
         if (content == null) {
             return false;
         }
@@ -205,9 +212,11 @@ public final class WhiteboardManager {
             session.ready = true;
             send(account, session, sxe(session, "connect"), null);
             notifyUpdate(sid);
-        } else if (host) {
-            // Only the deterministic host initiates; the other end waits for the invite so the two
-            // sides cannot both act as host and overwrite each other's document.
+        } else {
+            // Always invite: whoever opens the board must let the peer know (otherwise a board
+            // opened by the non-deterministic-host side would silently do nothing). If both sides
+            // invite the same deterministic sid, the receiver already has it and ignores the second
+            // invite, so there is no double document. `host` is still used for snapshot duty.
             sendJingle(account, session, "session-initiate");
         }
         return sid;
@@ -238,6 +247,8 @@ public final class WhiteboardManager {
                 Log.d(Config.LOGTAG, "whiteboard: could not terminate session", e);
             }
         }
+        // The board is gone: drop the in-chat "Open board" notice so it does not linger.
+        removeWhiteboardNotice(session);
         notifyUpdate(session.sid);
     }
 
@@ -274,7 +285,10 @@ public final class WhiteboardManager {
         }
         final Map<String, String> attrs = new LinkedHashMap<>();
         for (final String[] pair : shape.attrs()) {
-            attrs.put(pair[0], pair[1]);
+            // Skip empty attributes (e.g. an identity transform), like the reference implementation.
+            if (pair[1] != null && !pair[1].isEmpty()) {
+                attrs.put(pair[0], pair[1]);
+            }
         }
         final String rid = session.doc.addElement(session.doc.getRootRid(), "path", "", attrs);
         sendEdits(session, session.doc.newElementsFor(rid), null, null);
@@ -286,12 +300,22 @@ public final class WhiteboardManager {
         if (session == null || rid == null || rid.isEmpty() || session.doc.getRecord(rid) == null) {
             return;
         }
+        final List<Element> news = new ArrayList<>();
         final List<Element> sets = new ArrayList<>();
         for (final String[] pair : shape.attrs()) {
+            // An attribute that does not exist yet (e.g. the first `transform` of a moved shape) is a
+            // NEW record: it must be announced with <new parent="…"/>, not <set>. Sending a <set> for
+            // a record id the peer has never seen is silently dropped (applySet finds no target), so
+            // the peer would never learn about the attribute — that is why a first move did not sync.
+            final boolean existed = session.doc.findAttr(rid, pair[0]) != null;
             final String attrRid = session.doc.setAttr(rid, pair[0], pair[1]);
-            sets.add(setElement(session.doc, attrRid));
+            if (existed) {
+                sets.add(setElement(session.doc, attrRid));
+            } else {
+                news.addAll(session.doc.newElementsFor(attrRid));
+            }
         }
-        sendEdits(session, null, sets, null);
+        sendEdits(session, news, sets, null);
     }
 
     public void removeShape(final String sid, final String rid) {
@@ -329,7 +353,8 @@ public final class WhiteboardManager {
             }
             out.add(WhiteboardShape.fromRemote(
                     child, attrs.get("id"), attrs.get("d"),
-                    attrs.get("stroke"), attrs.get("stroke-width"), attrs.get("fill")));
+                    attrs.get("stroke"), attrs.get("stroke-width"), attrs.get("fill"),
+                    attrs.get("transform")));
         }
         return out;
     }
@@ -345,6 +370,7 @@ public final class WhiteboardManager {
         final String sid = packet.getSessionId();
         final String action = packet.getAction() == null ? null : packet.getAction().toString();
         final Jid from = packet.getFrom();
+        MujiLog.log(service.getFilesDir(), "WB dispatch action=" + action + " sid=" + sid + " from=" + from);
         if (sid == null || action == null || from == null) {
             return;
         }
@@ -354,7 +380,15 @@ public final class WhiteboardManager {
         switch (action) {
             case "session-initiate": {
                 if (sessions.containsKey(sid)) {
-                    return;
+                    // A duplicate invite for a session we already have (e.g. both sides opened the
+                    // board and the same deterministic sid was computed). Just accept it again so the
+                    // peer's `session-accept` expectation is met, but do not create a second session
+                    // or post another chat notice.
+                    final Session existing = sessions.get(sid);
+                    if (existing != null && !existing.joined) {
+                        joinSession(existing);
+                    }
+                    break;
                 }
                 // Same deterministic id as the initiator computed; adopt it so both ends share
                 // one session and the live edits land in the session the UI is attached to.
@@ -363,15 +397,12 @@ public final class WhiteboardManager {
                 seedDocument(session.doc);
                 sessions.put(sid, session);
                 byPeer.put(key(account, peer), sid);
-                // Synchronize by default: accept the invite right away and open the board on
-                // this end too, so both sides show the same document without a manual "Share".
+                // Synchronize by default: accept the invite so the shared document is live on this
+                // end too. Do NOT auto-open the screen or post a push — surface it as a normal
+                // in-chat message with an "Open board" button instead.
                 joinSession(session);
                 notifyUpdate(sid);
-                if (service.checkListeners()) {
-                    launchWhiteboard(account, peer);
-                } else {
-                    service.getNotificationService().notifyWhiteboardInvite(account, peer);
-                }
+                postWhiteboardNotice(account, session);
                 break;
             }
             case "session-accept": {
@@ -382,8 +413,11 @@ public final class WhiteboardManager {
                 break;
             }
             case "session-terminate": {
-                if (sessions.remove(sid) != null) {
+                final Session terminated = sessions.remove(sid);
+                if (terminated != null) {
                     byPeer.remove(key(account, peer));
+                    // The peer ended the board: drop our "Open board" notice too.
+                    removeWhiteboardNotice(terminated);
                     notifyUpdate(sid);
                 }
                 break;
@@ -393,12 +427,89 @@ public final class WhiteboardManager {
         }
     }
 
+    /**
+     * Posts an in-chat notice that a contact started a whiteboard (normal bubble + "Open board"
+     * button). Not a push notification. The uuid is remembered on the session so the message can be
+     * removed when the board is cancelled/closed.
+     */
+    private void postWhiteboardNotice(final Account account, final Session session) {
+        final Jid peer = session.peer;
+        final Conversation conversation =
+                service.findOrCreateConversation(account, peer.asBareJid(), false, false);
+        MujiLog.log(service.getFilesDir(), "WB notice peer=" + peer + " conv=" + (conversation == null ? "null" : conversation.getUuid()));
+        if (conversation == null) {
+            return;
+        }
+        final Message message = Message.createWhiteboardNotice(conversation, peer);
+        // A body keeps the chat-list preview and any plain-text fallback meaningful.
+        message.setBody(service.getString(eu.siacs.conversations.R.string.whiteboard_chat_notice));
+        conversation.add(message);
+        service.databaseBackend.createMessage(message);
+        session.noticeUuid = message.getUuid();
+        service.updateConversationUi();
+        // Notify like a normal received 1:1 text message (unread badge + system notification).
+        message.markUnread();
+        service.getNotificationService().push(message);
+    }
+
+    /**
+     * Removes the in-chat "Open board" notice of a session (when the board is cancelled or closed),
+     * so the button does not linger for a board that no longer exists.
+     */
+    private void removeWhiteboardNotice(final Session session) {
+        if (session == null || session.noticeUuid == null) {
+            return;
+        }
+        final Conversation conversation =
+                service.find(session.account, session.peer.asBareJid());
+        final String uuid = session.noticeUuid;
+        session.noticeUuid = null;
+        if (conversation == null) {
+            return;
+        }
+        final Message message = conversation.findMessageWithUuid(uuid);
+        if (message != null) {
+            conversation.deleteMessage(message);
+            service.databaseBackend.deleteMessageInConversation(message);
+            service.updateConversationUi();
+        }
+    }
+
+    /**
+     * The 1:1 Jingle target: the peer's **full JID** (a resource that advertises the whiteboard,
+     * else the most available one). A Jingle IQ to a bare JID is rejected by the server with
+     * `service-unavailable` ("No module is handling this query"), so the invite would never arrive.
+     */
+    private Jid jingleTarget(final Account account, final Session session) {
+        if (session.muc) {
+            return session.peer;
+        }
+        if (!session.fullPeer.isEmpty()) {
+            return Jid.of(session.fullPeer);
+        }
+        final Contact contact = account.getRoster().getContact(session.peer);
+        if (contact != null) {
+            final Jid resource = contact.resourceWhichSupport(NS_WHITEBOARD);
+            if (resource != null && resource.isFullJid()) {
+                return resource;
+            }
+            final String mostAvailable = contact.getMostAvailableResource();
+            if (mostAvailable != null && !mostAvailable.isEmpty()) {
+                return contact.getJid().asBareJid().withResource(mostAvailable);
+            }
+        }
+        return session.peer;
+    }
+
     private void sendJingle(final Account account, final Session session, final String action) {
         if (account == null) {
             return;
         }
         final JinglePacket packet = new JinglePacket(JinglePacket.Action.of(action), session.sid);
-        packet.setTo(session.fullPeer.isEmpty() ? session.peer : Jid.of(session.fullPeer));
+        final Jid target = jingleTarget(account, session);
+        packet.setTo(target);
+        MujiLog.log(service.getFilesDir(), "WB tx jingle " + action + " sid=" + session.sid + " to=" + target
+                + " (full=" + (target != null && target.isFullJid()) + ")");
         if ("session-initiate".equals(action)) {
             packet.setInitiator(account.getJid());
         }
@@ -434,6 +545,8 @@ public final class WhiteboardManager {
         }
         final String sid = sxe.getAttribute("session");
         final Jid from = packet.getFrom();
+        MujiLog.log(service.getFilesDir(), "WB sxe sid=" + sid + " from=" + from
+                + " child=" + (firstChild(sxe) == null ? "null" : firstChild(sxe).getName()));
         if (sid == null || from == null) {
             return true;
         }

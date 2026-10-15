@@ -1081,7 +1081,7 @@ public class ConversationFragment extends XmppFragment
         ConversationMenuConfigurator.configureQuickShareAttachmentMenu(conversation, menu, hideVoiceAndTakePicture);
         popup.setOnMenuItemClickListener(attachmentItem -> {
             int itemId = attachmentItem.getItemId();
-            if (itemId == R.id.attach_choose_picture || itemId == R.id.attach_choose_video || itemId == R.id.attach_take_picture || itemId == R.id.attach_record_video || itemId == R.id.attach_choose_file || itemId == R.id.attach_record_voice || itemId == R.id.attach_subject || itemId == R.id.attach_webxdc || itemId == R.id.attach_location || itemId == R.id.attach_live_location) {
+            if (itemId == R.id.attach_choose_picture || itemId == R.id.attach_choose_video || itemId == R.id.attach_take_picture || itemId == R.id.attach_record_video || itemId == R.id.attach_choose_file || itemId == R.id.attach_record_voice || itemId == R.id.attach_subject || itemId == R.id.attach_webxdc || itemId == R.id.attach_location || itemId == R.id.attach_live_location || itemId == R.id.attach_whiteboard) {
                 handleAttachmentSelection(attachmentItem);
             }
             return false;
@@ -1870,7 +1870,6 @@ public class ConversationFragment extends XmppFragment
             final MenuItem menuContactDetails = menu.findItem(R.id.action_contact_details);
             final MenuItem menuMucParticipants = menu.findItem(R.id.action_muc_participants);
             final MenuItem menuMuji = menu.findItem(R.id.action_muji_conference);
-            final MenuItem menuWhiteboard = menu.findItem(R.id.action_whiteboard);
             final MenuItem menuCall = menu.findItem(R.id.action_call);
             final MenuItem menuOngoingCall = menu.findItem(R.id.action_ongoing_call);
             final MenuItem menuVideoCall = menu.findItem(R.id.action_video_call);
@@ -1891,7 +1890,6 @@ public class ConversationFragment extends XmppFragment
                     menuInviteToChat.setVisible(false);
                     menuMuji.setTitle(R.string.muji_join);
                     menuMuji.setVisible(conversation.getMode() == Conversation.MODE_MULTI);
-                    menuWhiteboard.setVisible(conversation.getMode() == Conversation.MODE_MULTI);
                 } else {
                     menuMucParticipants.setVisible(false);
                     final XmppConnectionService service = activity == null ? null : activity.xmppConnectionService;
@@ -1902,7 +1900,6 @@ public class ConversationFragment extends XmppFragment
                     menuMuji.setVisible(mujiAvailable);
                     menuMuji.setTitle(
                             mujiActive ? R.string.muji_conference : R.string.muji_join);
-                    menuWhiteboard.setVisible(conversation.getMode() == Conversation.MODE_SINGLE);
                     final Optional<OngoingRtpSession> ongoingRtpSession = service == null ? Optional.absent() : service.getJingleConnectionManager().getOngoingRtpConnection(conversation.getContact());
                     if (ongoingRtpSession.isPresent()) {
                         menuOngoingCall.setVisible(true);
@@ -1952,7 +1949,6 @@ public class ConversationFragment extends XmppFragment
                 menuInviteContact.setVisible(false);
                 menuGroupDetails.setVisible(false);
                 menuContactDetails.setVisible(false);
-                menuWhiteboard.setVisible(false);
             }
             deleteCustomBg.setVisible(conversation != null && ChatBackgroundHelper.getBgFile(activity, conversation.getUuid()).exists());
             super.onCreateOptionsMenu(menu, menuInflater);
@@ -3045,8 +3041,6 @@ public class ConversationFragment extends XmppFragment
             }
         } else if (itemId == R.id.action_muji_conference) {
             toggleMujiConference();
-        } else if (itemId == R.id.action_whiteboard) {
-            openWhiteboard();
         } else if (itemId == R.id.action_toggle_pinned) {
             togglePinned();
         } else if (itemId == R.id.action_add_shortcut) {
@@ -3433,6 +3427,8 @@ public class ConversationFragment extends XmppFragment
             startLiveLocation();
         } else if (itemId == R.id.attach_subject) {
             binding.textinputSubject.setVisibility(binding.textinputSubject.getVisibility() == GONE ? VISIBLE : GONE);
+        } else if (itemId == R.id.attach_whiteboard) {
+            openWhiteboard();
         }
     }
 

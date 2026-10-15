@@ -1,0 +1,6 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- Resolves to the theme's main text colour so whiteboard icons are visible on light and dark
+     themes alike (white-on-white would otherwise disappear in the attach/context menus). -->
+<selector xmlns:android="http://schemas.android.com/apk/res/android">
+    <item android:color="?attr/text_Color_Main" />
+</selector>

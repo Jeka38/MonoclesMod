@@ -3,6 +3,8 @@ package eu.siacs.conversations.ui;
 import android.content.Intent;
 import android.graphics.Color;
 import android.os.Bundle;
+import android.view.Menu;
+import android.view.MenuItem;
 import android.view.View;
 import android.widget.ImageButton;
 import android.widget.TextView;
@@ -38,10 +40,13 @@ public class WhiteboardActivity extends XmppActivity implements WhiteboardManage
 
     private static final float[] WIDTHS = {1f, 2f, 4f, 8f};
     private static final String DEFAULT_STROKE_COLOR = "#1a1a1a";
+    /** Font size (document units) used when placing text on the board. */
+    private static final float TEXT_FONT_SIZE = 48f;
     private static final String DEFAULT_FILL_COLOR = "#e53935";
 
     private WhiteboardView canvas;
-    private TextView syncStatus;
+    /** The toolbar doubles as the status line: its title is the board name, its subtitle the sync state. */
+    private Toolbar syncStatus;
     private TextView emptyHint;
     private ImageButton widthButton;
     private ImageButton strokeButton;
@@ -52,6 +57,7 @@ public class WhiteboardActivity extends XmppActivity implements WhiteboardManage
     private View toolsContainer;
     private ImageButton railToggle;
     private boolean railCollapsed = true;
+    private int railReservePx = 0;
 
     private Account account;
     private Jid peer;
@@ -70,7 +76,7 @@ public class WhiteboardActivity extends XmppActivity implements WhiteboardManage
         configureActionBar(getSupportActionBar(), true);
 
         this.canvas = findViewById(R.id.wb_canvas);
-        this.syncStatus = findViewById(R.id.wb_sync_status);
+        this.syncStatus = findViewById(R.id.toolbar);
         this.emptyHint = findViewById(R.id.wb_empty);
         this.shareButton = findViewById(R.id.wb_share);
         this.widthButton = findViewById(R.id.wb_width);
@@ -89,9 +95,22 @@ public class WhiteboardActivity extends XmppActivity implements WhiteboardManage
 
         wireTool(R.id.wb_tool_pencil, "pencil");
         wireTool(R.id.wb_tool_line, "line");
+        wireTool(R.id.wb_tool_arrow, "arrow");
         wireTool(R.id.wb_tool_rect, "rect");
         wireTool(R.id.wb_tool_ellipse, "ellipse");
         wireTool(R.id.wb_tool_pan, "pan");
+        wireTool(R.id.wb_tool_move, "move");
+        wireTool(R.id.wb_tool_scale, "scale");
+        wireTool(R.id.wb_tool_text, "text");
+        canvas.setTextRequestedListener((x, y) -> promptForText(x, y));
+        // Keep the scrollable tool list sized to the available space so it can always be scrolled to
+        // the bottom in both orientations. The activity declares configChanges="orientation|screenSize"
+        // (no re-inflate on rotation), so recompute on every layout change instead of once.
+        this.railReservePx = (int) (getResources().getDisplayMetrics().density * 74f);
+        final View stage = findViewById(R.id.wb_stage);
+        stage.addOnLayoutChangeListener(
+                (v, l, t, r, b, ol, ot, or, ob) -> clampToolsHeight(stage));
+        clampToolsHeight(stage);
 
         findViewById(R.id.wb_done).setOnClickListener(v -> canvas.finishDrawing());
         findViewById(R.id.wb_undo).setOnClickListener(v -> canvas.undo());
@@ -111,10 +130,11 @@ public class WhiteboardActivity extends XmppActivity implements WhiteboardManage
     /** A long press on any rail button shows its name (some icons are not self-explanatory). */
     private void wireTooltips() {
         final int[] ids = {
-                R.id.wb_tool_pencil, R.id.wb_tool_line, R.id.wb_tool_rect,
-                R.id.wb_tool_ellipse, R.id.wb_tool_pan, R.id.wb_reset_view,
-                R.id.wb_width, R.id.wb_stroke, R.id.wb_fill, R.id.wb_undo,
-                R.id.wb_clear, R.id.wb_done, R.id.wb_share,
+                R.id.wb_tool_pencil, R.id.wb_tool_line, R.id.wb_tool_arrow, R.id.wb_tool_rect,
+                R.id.wb_tool_ellipse, R.id.wb_tool_pan, R.id.wb_tool_move,
+                R.id.wb_tool_scale, R.id.wb_tool_text,
+                R.id.wb_reset_view, R.id.wb_width, R.id.wb_stroke, R.id.wb_fill,
+                R.id.wb_undo, R.id.wb_clear, R.id.wb_done, R.id.wb_share,
         };
         for (final int id : ids) {
             final View view = findViewById(id);
@@ -157,12 +177,31 @@ public class WhiteboardActivity extends XmppActivity implements WhiteboardManage
         fillSwatch.getBackground().mutate().setTint(parse(canvas.getFillColor(), Color.RED));
     }
 
-    /** Collapses the tool rail down to just the toggle button. */
     private void toggleRail() {
         railCollapsed = !railCollapsed;
         toolsContainer.setVisibility(railCollapsed ? View.GONE : View.VISIBLE);
         railToggle.setImageResource(
                 railCollapsed ? R.drawable.ic_whiteboard_chevron : R.drawable.ic_whiteboard_chevron_right);
+    }
+
+    /**
+     * Sizes the scrollable tool list to the stage so every tool can be reached by scrolling — in
+     * portrait and in landscape alike. Called from a layout listener because the activity keeps the
+     * same view tree across rotation (configChanges), so the list must be re-clamped on every resize.
+     */
+    private void clampToolsHeight(final View stage) {
+        if (stage == null || toolsContainer == null) {
+            return;
+        }
+        final int available = stage.getHeight() - railReservePx;
+        if (available <= 0) {
+            return;
+        }
+        final android.view.ViewGroup.LayoutParams params = toolsContainer.getLayoutParams();
+        if (params.height != available) {
+            params.height = available;
+            toolsContainer.setLayoutParams(params);
+        }
     }
 
     private void wireTool(final int id, final String tool) {
@@ -173,9 +212,13 @@ public class WhiteboardActivity extends XmppActivity implements WhiteboardManage
         canvas.setTool(tool);
         highlightTool(R.id.wb_tool_pencil, "pencil".equals(tool));
         highlightTool(R.id.wb_tool_line, "line".equals(tool));
+        highlightTool(R.id.wb_tool_arrow, "arrow".equals(tool));
         highlightTool(R.id.wb_tool_rect, "rect".equals(tool));
         highlightTool(R.id.wb_tool_ellipse, "ellipse".equals(tool));
         highlightTool(R.id.wb_tool_pan, "pan".equals(tool));
+        highlightTool(R.id.wb_tool_move, "move".equals(tool));
+        highlightTool(R.id.wb_tool_scale, "scale".equals(tool));
+        highlightTool(R.id.wb_tool_text, "text".equals(tool));
     }
 
     private void highlightTool(final int id, final boolean active) {
@@ -230,6 +273,21 @@ public class WhiteboardActivity extends XmppActivity implements WhiteboardManage
     @Override
     protected void refreshUiReal() {
         // nothing periodic
+    }
+
+    @Override
+    public boolean onCreateOptionsMenu(final Menu menu) {
+        getMenuInflater().inflate(R.menu.whiteboard, menu);
+        return super.onCreateOptionsMenu(menu);
+    }
+
+    @Override
+    public boolean onOptionsItemSelected(final MenuItem item) {
+        if (item.getItemId() == R.id.action_whiteboard_cancel) {
+            confirmCancelBoard();
+            return true;
+        }
+        return super.onOptionsItemSelected(item);
     }
 
     // ── Sharing ───────────────────────────────────────────────────────────
@@ -321,7 +379,8 @@ public class WhiteboardActivity extends XmppActivity implements WhiteboardManage
         final boolean shared = sessionId != null;
         shareButton.setSelected(shared);
         shareButton.setImageResource(R.drawable.ic_whiteboard_share);
-        syncStatus.setText(shared ? R.string.whiteboard_shared : R.string.whiteboard_not_shared);
+        // The board name stays the title; the sync state goes into the toolbar subtitle.
+        syncStatus.setSubtitle(shared ? R.string.whiteboard_shared : R.string.whiteboard_not_shared);
     }
 
     private void updateEmptyHint() {
@@ -402,17 +461,73 @@ public class WhiteboardActivity extends XmppActivity implements WhiteboardManage
                 .show();
     }
 
+    /**
+     * Cancels the whole board: clears the drawing (broadcast so the peer sees it cleared too), ends
+     * the shared session and closes the screen.
+     */
+    private void confirmCancelBoard() {
+        new AlertDialog.Builder(this)
+                .setTitle(R.string.whiteboard_cancel)
+                .setMessage(R.string.whiteboard_cancel_confirm)
+                .setPositiveButton(R.string.ok, (dialog, which) -> cancelBoard())
+                .setNegativeButton(R.string.cancel, null)
+                .show();
+    }
+
+    private void cancelBoard() {
+        // clearBoard() removes each shape locally and calls onShapeRemoved, which broadcasts the
+        // removal to the peer while the session is still attached.
+        canvas.clearBoard();
+        if (sessionId != null) {
+            final WhiteboardManager.Session session =
+                    xmppConnectionService.getWhiteboardManager().getSession(sessionId);
+            if (session != null) {
+                xmppConnectionService.getWhiteboardManager().endSession(session);
+            }
+            detachSession();
+        }
+        finish();
+    }
+
+    /** Asks for multiline text and places it on the board at the tapped point. */
+    private void promptForText(final float worldX, final float worldY) {
+        final android.widget.EditText input = new android.widget.EditText(this);
+        input.setInputType(android.text.InputType.TYPE_CLASS_TEXT
+                | android.text.InputType.TYPE_TEXT_FLAG_MULTI_LINE);
+        input.setMinLines(2);
+        input.setGravity(android.view.Gravity.TOP | android.view.Gravity.START);
+        final int pad = (int) (getResources().getDisplayMetrics().density * 16);
+        final android.widget.FrameLayout container = new android.widget.FrameLayout(this);
+        container.setPadding(pad, pad / 2, pad, 0);
+        container.addView(input);
+        new AlertDialog.Builder(this)
+                .setTitle(R.string.whiteboard_tool_text)
+                .setView(container)
+                .setPositiveButton(R.string.ok, (dialog, which) -> {
+                    // addText() already notifies the OnShapeListener (which publishes it); calling
+                    // shareShape() here too would create a SECOND record and duplicate the text.
+                    canvas.addText(worldX, worldY, input.getText().toString(), TEXT_FONT_SIZE);
+                })
+                .setNegativeButton(R.string.cancel, null)
+                .show();
+    }
+
+    /** Publishes a locally created shape to the shared document. */
+    private void shareShape(final WhiteboardShape shape) {
+        if (sessionId == null) {
+            return;
+        }
+        canvas.setShapeRid(shape,
+                xmppConnectionService.getWhiteboardManager().addShape(sessionId, shape));
+    }
+
     // ── Canvas callbacks ──────────────────────────────────────────────────
 
     private final class CanvasListener implements WhiteboardView.OnShapeListener {
         @Override
         public void onShapeAdded(final WhiteboardShape shape) {
             updateEmptyHint();
-            if (sessionId == null) {
-                return;
-            }
-            final String rid = xmppConnectionService.getWhiteboardManager().addShape(sessionId, shape);
-            canvas.setShapeRid(shape, rid);
+            shareShape(shape);
         }
 
         @Override
