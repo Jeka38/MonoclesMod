@@ -141,7 +141,6 @@ public class NotificationService {
     public static final int SUBSCRIPTION_REQUEST_NOTIFICATION_ID = NOTIFICATION_ID_MULTIPLIER * 22;
     public static final int MUJI_NOTIFICATION_ID = NOTIFICATION_ID_MULTIPLIER * 24;
     public static final int ROSTER_EXCHANGE_NOTIFICATION_ID = NOTIFICATION_ID_MULTIPLIER * 26;
-    public static final int WHITEBOARD_INVITE_NOTIFICATION_ID = NOTIFICATION_ID_MULTIPLIER * 28;
     public static final String MUJI_CHANNEL_ID = "muji";
     private final XmppConnectionService mXmppConnectionService;
     private final LinkedHashMap<String, ArrayList<Message>> notifications = new LinkedHashMap<>();
@@ -2446,38 +2445,6 @@ public class NotificationService {
                 ? PendingIntent.FLAG_IMMUTABLE | PendingIntent.FLAG_UPDATE_CURRENT
                 : PendingIntent.FLAG_UPDATE_CURRENT));
         notify(MUJI_NOTIFICATION_ID, builder.build());
-    }
-
-    /** Posts a heads-up inviting the user to join a collaborative whiteboard session. */
-    public void notifyWhiteboardInvite(final Account account, final Jid peer) {
-        if (account == null || peer == null) {
-            return;
-        }
-        final Contact contact = account.getRoster().getContact(peer);
-        final String name = contact == null || contact.getDisplayName() == null
-                ? peer.asBareJid().toEscapedString()
-                : contact.getDisplayName();
-        final String channelId = MESSAGES_CHANNEL_ID + "_" + DEFAULT;
-        final String text = mXmppConnectionService.getString(
-                R.string.whiteboard_invite_text, name);
-        final NotificationCompat.Builder builder =
-                new NotificationCompat.Builder(mXmppConnectionService, channelId);
-        builder.setContentTitle(mXmppConnectionService.getString(
-                R.string.whiteboard_invite_title, name));
-        builder.setContentText(text);
-        builder.setStyle(new NotificationCompat.BigTextStyle().bigText(text));
-        builder.setSmallIcon(R.drawable.ic_whiteboard_share);
-        builder.setAutoCancel(true);
-        builder.setLocalOnly(true);
-        builder.setPriority(NotificationCompat.PRIORITY_HIGH);
-        final Intent intent = WhiteboardActivity.create(
-                mXmppConnectionService,
-                account.getJid().asBareJid().toEscapedString(),
-                peer.asBareJid().toEscapedString());
-        builder.setContentIntent(PendingIntent.getActivity(mXmppConnectionService, 172, intent, s()
-                ? PendingIntent.FLAG_IMMUTABLE | PendingIntent.FLAG_UPDATE_CURRENT
-                : PendingIntent.FLAG_UPDATE_CURRENT));
-        notify(WHITEBOARD_INVITE_NOTIFICATION_ID, builder.build());
     }
 
     private void notify(final String tag, final int id, final Notification notification) {

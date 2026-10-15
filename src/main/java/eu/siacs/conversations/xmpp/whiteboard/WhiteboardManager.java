@@ -47,6 +47,13 @@ public final class WhiteboardManager {
     public static final String NS_SXE = Namespace.SXE;
     public static final String NS_SXE_TRANSPORT = Namespace.SXE_TRANSPORT;
 
+    /**
+     * MUC services usually drop {@code groupchat} messages that carry no body, so a room edit would
+     * never reach the other occupants. Every room payload therefore gets an invisible fallback body
+     * (U+2063) that {@link #handleSxeMessage} swallows; a message with a real body is never consumed.
+     */
+    private static final String SXE_FALLBACK_BODY = "\u2063";
+
     private static final int VIEW_W = (int) WhiteboardView.VIEW_W;
     private static final int VIEW_H = (int) WhiteboardView.VIEW_H;
 
@@ -67,8 +74,12 @@ public final class WhiteboardManager {
         public boolean offered = false;
         public boolean accepted = false;
         public boolean joined = false;
-        /** The uuid of the in-chat "Open board" notice posted for this session (1:1), or null. */
+        /** The uuid of the in-chat "Open board" notice posted for this session, or null. */
         public String noticeUuid = null;
+        /** True only when this device itself called {@link #startSession} (wording of the notice). */
+        public boolean locallyStarted = false;
+        /** For a MUC notice, the occupant (full JID) that started the board, to show their nick. */
+        public Jid noticeCounterpart = null;
 
         Session(final String sid, final Jid peer, final boolean muc, final boolean host, final Account account) {
             this.sid = sid;
@@ -177,6 +188,36 @@ public final class WhiteboardManager {
         return account.getJid().asBareJid().toString().compareTo(peer.asBareJid().toString()) < 0;
     }
 
+    /**
+     * A MUC occupant advertised a shared whiteboard in their presence ({@code <sxe session=…/>}).
+     * Discover the room board from that (which also covers a member who joins the room after the
+     * board started, since the MUC service replays the other occupants' presence to them), post the
+     * <em>Open board</em> notice and ask for the current document once.
+     */
+    public void onMucPresenceSxe(final Account account, final Jid room, final Jid occupant, final String sid) {
+        if (account == null || room == null || occupant == null || sid == null || sid.isEmpty()) {
+            return;
+        }
+        if (isSelfReflection(account, occupant)) {
+            // Our own presence (or another device on this account) — the board is ours, and
+            // startSession already posted the notice.
+            return;
+        }
+        Session session = sessions.get(sid);
+        if (session == null) {
+            session = new Session(sid, room.asBareJid(), true, false, account);
+            seedDocument(session.doc);
+            sessions.put(sid, session);
+            byPeer.put(key(account, room.asBareJid()), sid);
+            session.noticeCounterpart = occupant;
+            postWhiteboardNotice(account, session);
+        }
+        if (!session.joined) {
+            session.joined = true;
+            send(account, session, sxe(session, "connect"), null);
+        }
+    }
+
     public boolean isWhiteboardJingle(final JinglePacket packet) {
         // <content> is a child of <jingle>, not of the IQ — a plain findChild on the packet never
         // matches, which would make the whiteboard branch dead and the invite get rejected.
@@ -202,16 +243,23 @@ public final class WhiteboardManager {
             return existing.sid;
         }
         final String sid = sessionIdFor(account, barePeer, muc);
-        final boolean host = muc || hostFor(account, barePeer);
-        final Session session = new Session(sid, barePeer, muc, host, account);
+        final Session session = new Session(sid, barePeer, muc, muc || hostFor(account, barePeer), account);
+        session.locallyStarted = true;
         seedDocument(session.doc);
         sessions.put(sid, session);
         byPeer.put(key(account, barePeer), sid);
         if (muc) {
+            // Room board: the room JID is the host and payloads travel as groupchat. Announce in
+            // presence + connect, then post the "Open board" notice into the room so every member
+            // (including this device) sees the button and gets a notification per the room settings.
             advertise(session);
             session.ready = true;
             send(account, session, sxe(session, "connect"), null);
+            // Mark joined so attachSession does not send a second <connect> (which would make every
+            // participant with content answer with another snapshot).
+            session.joined = true;
             notifyUpdate(sid);
+            postWhiteboardNotice(account, session);
         } else {
             // Always invite: whoever opens the board must let the peer know (otherwise a board
             // opened by the non-deterministic-host side would silently do nothing). If both sides
@@ -428,28 +476,40 @@ public final class WhiteboardManager {
     }
 
     /**
-     * Posts an in-chat notice that a contact started a whiteboard (normal bubble + "Open board"
-     * button). Not a push notification. The uuid is remembered on the session so the message can be
-     * removed when the board is cancelled/closed.
+     * Posts an in-chat notice that a board started (normal bubble + "Open board" button). The uuid is
+     * remembered on the session so the message can be removed when the board is cancelled/closed.
+     * Works for a 1:1 conversation and for a MUC room (the notice lands in the room and the sender's
+     * own device sees it too, like a normal group message).
      */
     private void postWhiteboardNotice(final Account account, final Session session) {
         final Jid peer = session.peer;
-        final Conversation conversation =
-                service.findOrCreateConversation(account, peer.asBareJid(), false, false);
-        MujiLog.log(service.getFilesDir(), "WB notice peer=" + peer + " conv=" + (conversation == null ? "null" : conversation.getUuid()));
+        final Conversation conversation = session.muc
+                ? service.findOrCreateConversation(account, peer.asBareJid(), true, false)
+                : service.findOrCreateConversation(account, peer.asBareJid(), false, false);
+        MujiLog.log(service.getFilesDir(), "WB notice peer=" + peer + " muc=" + session.muc
+                + " conv=" + (conversation == null ? "null" : conversation.getUuid()));
         if (conversation == null) {
             return;
         }
-        final Message message = Message.createWhiteboardNotice(conversation, peer);
+        final Message message = Message.createWhiteboardNotice(conversation,
+                session.noticeCounterpart != null ? session.noticeCounterpart : peer);
+        message.setStatus(session.locallyStarted ? Message.STATUS_SEND : Message.STATUS_RECEIVED);
         // A body keeps the chat-list preview and any plain-text fallback meaningful.
-        message.setBody(service.getString(eu.siacs.conversations.R.string.whiteboard_chat_notice));
+        message.setBody(service.getString(session.locallyStarted
+                ? eu.siacs.conversations.R.string.whiteboard_chat_notice_self
+                : eu.siacs.conversations.R.string.whiteboard_chat_notice));
         conversation.add(message);
         service.databaseBackend.createMessage(message);
         session.noticeUuid = message.getUuid();
         service.updateConversationUi();
-        // Notify like a normal received 1:1 text message (unread badge + system notification).
-        message.markUnread();
-        service.getNotificationService().push(message);
+        // Only an incoming board raises the unread badge and a notification — announcing our own
+        // board must not notify us. For an incoming one the room's notification settings apply: a
+        // muted room, or one that only notifies on highlights, will not raise a notification
+        // (NotificationService.notifyMessage honours exactly that).
+        if (!session.locallyStarted) {
+            message.markUnread();
+            service.getNotificationService().push(message);
+        }
     }
 
     /**
@@ -536,7 +596,7 @@ public final class WhiteboardManager {
     /** Handle a bodyless XEP-0284 {@code <sxe/>} message; returns true if it was consumed. */
     public boolean handleSxeMessage(final Account account, final MessagePacket packet) {
         final Element sxe = packet.findChild("sxe", NS_SXE);
-        if (sxe == null || packet.getBody() != null) {
+        if (sxe == null || !isWhiteboardBody(packet)) {
             return false;
         }
         if (packet.fromAccount(account)) {
@@ -557,22 +617,24 @@ public final class WhiteboardManager {
         }
         Session session = sessions.get(sid);
         if (session == null) {
-            // The deterministic host serves the snapshot, so derive the flag here too — otherwise a
-            // peer that opened the board first and only sent <connect> would never receive state.
-            final boolean host = isGroupChat || hostFor(account, from.asBareJid());
+            // For a MUC there is no Jingle invite: the room is the relay and every occupant is a
+            // plain participant. The deterministic host rule only applies to 1:1.
+            final boolean host = !isGroupChat && hostFor(account, from.asBareJid());
             session = new Session(sid, from.asBareJid(), isGroupChat, host, account);
             seedDocument(session.doc);
             sessions.put(sid, session);
             byPeer.put(key(account, from.asBareJid()), sid);
-            // A MUC session has no Jingle invite (the room is the host and payloads are
-            // groupchat), so surface it here as soon as it appears.
+            // A room board has no Jingle invite, so as soon as another participant starts one we
+            // post the same in-chat notice (with the button) and notify per the room settings.
             if (isGroupChat) {
-                if (service.checkListeners()) {
-                    launchWhiteboard(account, from.asBareJid());
-                } else {
-                    service.getNotificationService()
-                            .notifyWhiteboardInvite(account, from.asBareJid());
-                }
+                session.noticeCounterpart = from;
+                postWhiteboardNotice(account, session);
+                // Ask whoever already has the document for the current snapshot, so a member who
+                // discovers the board through an edit (rather than presence) still catches up.
+                // Idempotent via Session.joined; every participant with content answers, and each
+                // answer merges, so nothing is lost.
+                session.joined = true;
+                send(account, session, sxe(session, "connect"), null);
             }
         }
         final Element child = firstChild(sxe);
@@ -617,6 +679,16 @@ public final class WhiteboardManager {
     }
 
     private void onConnect(final Session session, final String from) {
+        if (session.muc) {
+            // A room board has no host: the room relays every groupchat payload and snapshots are
+            // merged on arrival. Answer a join request with our current document (only if we drew
+            // something) so a participant who opens the board late catches up; everyone with content
+            // answers, and each answer merges, so no one's drawing is lost.
+            if (!shapes(session.sid).isEmpty()) {
+                sendState(session, null);
+            }
+            return;
+        }
         if (!session.host) {
             // A participant connected (or we just discovered the host): announce ourselves so the
             // host sends us the current document. Idempotent via Session.joined.
@@ -651,9 +723,9 @@ public final class WhiteboardManager {
 
     private void applyState(final Session session, final Element state) {
         final SxeDocument doc = session.doc;
-        if (state.findChild("document-begin", NS_SXE) != null) {
-            doc.clearShapes();
-        }
+        // A snapshot is merged, not applied destructively: every document shares one root rid and
+        // applyNew merges records, so a remote snapshot (e.g. a room board's current drawing) never
+        // wipes what this client already drew. clearShapes() must not run here.
         for (final Element child : state.getChildren()) {
             switch (child.getName()) {
                 case "new":
@@ -675,18 +747,17 @@ public final class WhiteboardManager {
         notifyUpdate(session.sid);
     }
 
-    /** Opens the whiteboard UI for {@code peer} (from the service, so NEW_TASK is required). */
-    private void launchWhiteboard(final Account account, final Jid peer) {
-        final android.content.Intent intent =
-                eu.siacs.conversations.ui.WhiteboardActivity.create(
-                        service,
-                        account.getJid().asBareJid().toEscapedString(),
-                        peer.asBareJid().toEscapedString());
-        intent.addFlags(android.content.Intent.FLAG_ACTIVITY_NEW_TASK);
-        service.startActivity(intent);
+    // ── Sending ───────────────────────────────────────────────────────────
+
+    /** True when the message carries no body or only our invisible MUC fallback body. */
+    private static boolean isWhiteboardBody(final MessagePacket packet) {
+        final eu.siacs.conversations.xml.LocalizedContent body = packet.getBody();
+        if (body == null || body.content == null) {
+            return true;
+        }
+        return SXE_FALLBACK_BODY.equals(body.content.trim());
     }
 
-    // ── Sending ───────────────────────────────────────────────────────────
     private static Element firstChild(final Element parent) {
         for (final Element child : parent.getChildren()) {
             if (child.getName() != null) {
@@ -725,6 +796,10 @@ public final class WhiteboardManager {
         }
         packet.setId(SxeDocument.newRid());
         packet.addChild(sxe);
+        if (session.muc) {
+            // MUC services drop bodyless groupchat; carry an invisible fallback body.
+            packet.setBody(SXE_FALLBACK_BODY);
+        }
         service.sendMessagePacket(account, packet);
     }
 

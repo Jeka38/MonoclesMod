@@ -1847,8 +1847,6 @@
     <string name="whiteboard_share">Поделиться доской</string>
     <string name="whiteboard_shared">Совместная · синхронизируется</string>
     <string name="whiteboard_not_shared">Локальная · не синхронизируется</string>
-    <string name="whiteboard_invite_title">Доска · %1$s</string>
-    <string name="whiteboard_invite_text">%1$s начал совместную доску. Нажмите, чтобы рисовать.</string>
     <string name="whiteboard_join">Присоединиться</string>
     <string name="whiteboard_tools_toggle">Свернуть или развернуть инструменты</string>
 </resources>

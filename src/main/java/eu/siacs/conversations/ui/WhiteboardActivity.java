@@ -314,7 +314,7 @@ public class WhiteboardActivity extends XmppActivity implements WhiteboardManage
         final String sid = xmppConnectionService.getWhiteboardManager().startSession(account, peer, muc);
         final WhiteboardManager.Session session =
                 xmppConnectionService.getWhiteboardManager().getSession(sid);
-        if (session != null && session.host) {
+        if (session != null && (session.host || session.muc)) {
             // Carry anything drawn before sharing into the shared document, so pressing Share
             // does not wipe the local board.
             for (final WhiteboardShape shape : canvas.getShapes()) {
@@ -331,9 +331,10 @@ public class WhiteboardActivity extends XmppActivity implements WhiteboardManage
             return;
         }
         this.sessionId = session.sid;
-        // If we are the responding side of an invite and have not connected yet, announce
-        // ourselves so the host offers the current document. Idempotent.
-        if (!session.host) {
+        // If we are the responding side of an invite (or opening a room board that already exists)
+        // and have not connected yet, announce ourselves so the current document is offered.
+        // Idempotent.
+        if (!session.host || session.muc) {
             whiteboardManager.joinSession(session);
         }
         shareButton.setSelected(true);

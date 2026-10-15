@@ -1735,8 +1735,6 @@
     <string name="whiteboard_share">Share board</string>
     <string name="whiteboard_shared">Shared · synchronized</string>
     <string name="whiteboard_not_shared">Local · not synchronized</string>
-    <string name="whiteboard_invite_title">Whiteboard · %1$s</string>
-    <string name="whiteboard_invite_text">%1$s started a shared whiteboard. Tap to draw.</string>
     <string name="whiteboard_join">Join</string>
     <string name="whiteboard_tools_toggle">Collapse or expand the tools</string>
 </resources>

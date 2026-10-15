@@ -42,16 +42,24 @@ public final class SxeDocument {
         public final List<String> children = new ArrayList<>();
     }
 
+    /**
+     * A shared root record id. Every whiteboard document uses it so that a {@code <new>} edit (or a
+     * state snapshot) from any peer attaches to the same root node — otherwise a client that
+     * discovered the board through someone else's edit would hold its own private root and the two
+     * drawings would never merge (which is what broke the group board).
+     */
+    public static final String SHARED_ROOT_RID = "whiteboard-root";
+
     private final Map<String, Record> records = new LinkedHashMap<>();
     private final Map<String, Double> nextWeight = new HashMap<>();
     private String rootRid;
 
     public SxeDocument() {
-        this("svg", "http://www.w3.org/2000/svg");
+        this(SHARED_ROOT_RID, "svg", "http://www.w3.org/2000/svg");
     }
 
-    public SxeDocument(final String rootName, final String rootNs) {
-        this.rootRid = newRid();
+    public SxeDocument(final String rootRid, final String rootName, final String rootNs) {
+        this.rootRid = rootRid;
         final Record root = new Record();
         root.rid = rootRid;
         root.type = "element";
@@ -255,8 +263,18 @@ public final class SxeDocument {
             return;
         }
         if ("element".equals(record.type) && (record.parent == null || record.parent.isEmpty())) {
-            // A state snapshot carries its own root element; adopt it so the received
-            // document is rendered from that root.
+            // A state snapshot carries its own root element. Because every document shares the same
+            // root rid, keep our existing root record (and therefore our children) so a received
+            // snapshot merges into ours instead of replacing it.
+            if (record.rid.equals(rootRid)) {
+                final Record existing = records.get(rootRid);
+                if (existing != null) {
+                    existing.name = record.name;
+                    existing.ns = record.ns;
+                    return;
+                }
+            }
+            // A foreign/legacy root: adopt it so the received document is rendered from that root.
             final String oldRoot = rootRid;
             rootRid = record.rid;
             records.put(record.rid, record);
@@ -264,6 +282,17 @@ public final class SxeDocument {
                 records.remove(oldRoot);
             }
             return;
+        }
+        if ("attr".equals(record.type) && rootRid.equals(record.parent)) {
+            // A merged snapshot re-announces the root attributes that every client seeds (viewBox/
+            // version/baseProfile). Fold a same-named root attribute into the existing one instead
+            // of piling up duplicates. Only the root is deduped: shape attributes are referenced by
+            // rid on the wire and must keep their identity.
+            final String existing = findAttr(rootRid, record.name);
+            if (existing != null && !existing.equals(record.rid)) {
+                setChdata(existing, record.chdata);
+                return;
+            }
         }
         records.put(record.rid, record);
         final Record parent = records.get(record.parent);

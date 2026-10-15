@@ -96,6 +96,16 @@ public class PresenceParser extends AbstractParser implements
                         user.setPresence(Presence.parse(show, caps, presenceStatus));
                         final Element muji = packet.findChild("muji", Namespace.JINGLE_MUJI);
                         final Muji parsedMuji = muji == null ? null : Muji.upgrade(muji);
+                        // A shared whiteboard announced in presence lets us discover a room board (and
+                        // a board started before we joined, since the MUC replays occupants to us).
+                        final Element sxe = packet.findChild("sxe", Namespace.SXE);
+                        if (sxe != null) {
+                            mXmppConnectionService.getWhiteboardManager().onMucPresenceSxe(
+                                    account,
+                                    conversation.getJid().asBareJid(),
+                                    from,
+                                    sxe.getAttribute("session"));
+                        }
                         final MucOptions.User previousUser = mucOptions.findUserByFullJid(from);
                         mujiChanged =
                                 !String.valueOf(

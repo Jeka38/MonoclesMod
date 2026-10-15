@@ -1788,6 +1788,7 @@ public class MessageAdapter extends ArrayAdapter<Message> {
                     viewHolder.contact_picture = view.findViewById(R.id.message_photo);
                     viewHolder.message_box = view.findViewById(R.id.message_box);
                     viewHolder.status_message = view.findViewById(R.id.whiteboard_message);
+                    viewHolder.username = view.findViewById(R.id.username);
                     viewHolder.time = view.findViewById(R.id.message_time);
                     viewHolder.whiteboard_open = view.findViewById(R.id.whiteboard_open);
                     break;
@@ -1984,9 +1985,19 @@ public class MessageAdapter extends ArrayAdapter<Message> {
             viewHolder.status_message.setText(activity.getString(
                     received ? R.string.whiteboard_chat_notice : R.string.whiteboard_chat_notice_self));
             viewHolder.time.setText(UIHelper.readableTimeDifferenceFull(activity, message.getMergedTimeSent()));
-            viewHolder.contact_picture.setVisibility(received ? View.VISIBLE : View.GONE);
-            if (received) {
-                AvatarWorkerTask.loadAvatar(message, viewHolder.contact_picture, R.dimen.avatar);
+            // In a MUC show who started the board (like any group message); 1:1 shows the avatar.
+            final boolean muc = conversation.getMode() == Conversation.MODE_MULTI
+                    && !((Conversation) conversation).hasPermanentCounterpart();
+            if (received && muc) {
+                viewHolder.contact_picture.setVisibility(View.GONE);
+                viewHolder.username.setVisibility(View.VISIBLE);
+                viewHolder.username.setText(UIHelper.getColoredUsername(activity.xmppConnectionService, message));
+            } else {
+                viewHolder.username.setVisibility(View.GONE);
+                viewHolder.contact_picture.setVisibility(received ? View.VISIBLE : View.GONE);
+                if (received) {
+                    AvatarWorkerTask.loadAvatar(message, viewHolder.contact_picture, R.dimen.avatar);
+                }
             }
             final Jid peer = message.getCounterpart() != null
                     ? message.getCounterpart()
