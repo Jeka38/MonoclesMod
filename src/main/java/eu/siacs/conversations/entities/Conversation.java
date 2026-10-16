@@ -453,6 +453,25 @@ public class Conversation extends AbstractEntity implements Blockable, Comparabl
         }
     }
 
+    /** Collects the messages matching {@code filter} (copied under the lock, then visited). */
+    public void findMessages(final MessageFilter filter, final OnMessageFound onMessageFound) {
+        final ArrayList<Message> results = new ArrayList<>();
+        synchronized (this.messages) {
+            for (final Message m : this.messages) {
+                if (filter.matches(m)) {
+                    results.add(m);
+                }
+            }
+        }
+        for (Message result : results) {
+            onMessageFound.onMessageFound(result);
+        }
+    }
+
+    public interface MessageFilter {
+        boolean matches(Message message);
+    }
+
     public Message findMessageWithFileAndUuid(final String uuid) {
         synchronized (this.messages) {
             for (final Message message : this.messages) {

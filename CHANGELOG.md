@@ -1,5 +1,10 @@
 ### Changelog
 
+#### Version 1.9.1.38
+* whiteboard: sending the board as a PNG now asks for confirmation before uploading
+* whiteboard: **Start board** is back in the 1:1 chat's overflow menu (it was only reachable through the paperclip popup)
+* whiteboard: ending a room board now clears the `<sxe/>` presence advertisement, so re-entering the room no longer re-shows the "Started a shared whiteboard" button; the notice is also idempotent (never duplicated)
+
 #### Version 1.9.1.37
 * whiteboard: the rail's "Done" button is now **Send** — pick a contact or room and the board is rendered to a PNG (2×, no grid/handles) and uploaded (HTTP upload) into that chat
 * whiteboard: the separate **Move** and **Scale** tools are merged into one classic **Edit** tool (four-way-arrows icon) — drag a shape to move it, drag any of the **eight handles** to resize it freely and non-uniformly in any direction

@@ -1697,6 +1697,7 @@
     <string name="muc_settings_description">Configure room options</string>
     <string name="conference_settings_saved">Settings saved</string>
     <string name="whiteboard_draw">Draw with contact</string>
+    <string name="whiteboard_start">Start board</string>
     <string name="whiteboard_title">Whiteboard</string>
     <string name="whiteboard_title_with">Whiteboard · %1$s</string>
     <string name="whiteboard_hint">Draw here. Pinch with two fingers to zoom and pan.</string>
@@ -1719,6 +1720,8 @@
     <string name="whiteboard_send_short">Send</string>
     <string name="whiteboard_send_contact">Send board as PNG</string>
     <string name="whiteboard_send_pick">Choose a contact or room to send the board image to</string>
+    <string name="whiteboard_send_confirm_title">Send board?</string>
+    <string name="whiteboard_send_confirm">Send the board as a PNG image to %s?</string>
     <string name="whiteboard_sending">Sending board image…</string>
     <string name="whiteboard_sent">Board image sent</string>
     <string name="whiteboard_send_failed">Could not send the board image</string>

@@ -103,12 +103,6 @@
                 android:id="@+id/attach_subject"
                 android:icon="?attr/add_subject"
                 android:title="@string/add_subject" />
-
-            <item
-                android:id="@+id/attach_whiteboard"
-                android:icon="@drawable/ic_whiteboard_call"
-                android:title="@string/whiteboard_draw"
-                android:visible="false" />
         </menu>
     </item>
     <item
@@ -168,6 +162,14 @@
         android:id="@+id/action_muji_conference"
         android:orderInCategory="41"
         android:title="@string/muji_join"
+        android:visible="false"
+        app:showAsAction="never" />
+
+    <item
+        android:id="@+id/action_whiteboard"
+        android:orderInCategory="42"
+        android:icon="@drawable/ic_whiteboard_call"
+        android:title="@string/whiteboard_start"
         android:visible="false"
         app:showAsAction="never" />
 

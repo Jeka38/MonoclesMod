@@ -1870,6 +1870,7 @@ public class ConversationFragment extends XmppFragment
             final MenuItem menuContactDetails = menu.findItem(R.id.action_contact_details);
             final MenuItem menuMucParticipants = menu.findItem(R.id.action_muc_participants);
             final MenuItem menuMuji = menu.findItem(R.id.action_muji_conference);
+            final MenuItem menuWhiteboard = menu.findItem(R.id.action_whiteboard);
             final MenuItem menuCall = menu.findItem(R.id.action_call);
             final MenuItem menuOngoingCall = menu.findItem(R.id.action_ongoing_call);
             final MenuItem menuVideoCall = menu.findItem(R.id.action_video_call);
@@ -1890,6 +1891,7 @@ public class ConversationFragment extends XmppFragment
                     menuInviteToChat.setVisible(false);
                     menuMuji.setTitle(R.string.muji_join);
                     menuMuji.setVisible(conversation.getMode() == Conversation.MODE_MULTI);
+                    menuWhiteboard.setVisible(false);
                 } else {
                     menuMucParticipants.setVisible(false);
                     final XmppConnectionService service = activity == null ? null : activity.xmppConnectionService;
@@ -1900,6 +1902,9 @@ public class ConversationFragment extends XmppFragment
                     menuMuji.setVisible(mujiAvailable);
                     menuMuji.setTitle(
                             mujiActive ? R.string.muji_conference : R.string.muji_join);
+                    // The board is available in a 1:1 chat (from the overflow menu, so it is visible
+                    // without opening the attach popup) and in a room.
+                    menuWhiteboard.setVisible(true);
                     final Optional<OngoingRtpSession> ongoingRtpSession = service == null ? Optional.absent() : service.getJingleConnectionManager().getOngoingRtpConnection(conversation.getContact());
                     if (ongoingRtpSession.isPresent()) {
                         menuOngoingCall.setVisible(true);
@@ -1949,6 +1954,7 @@ public class ConversationFragment extends XmppFragment
                 menuInviteContact.setVisible(false);
                 menuGroupDetails.setVisible(false);
                 menuContactDetails.setVisible(false);
+                menuWhiteboard.setVisible(false);
             }
             deleteCustomBg.setVisible(conversation != null && ChatBackgroundHelper.getBgFile(activity, conversation.getUuid()).exists());
             super.onCreateOptionsMenu(menu, menuInflater);
@@ -3041,6 +3047,8 @@ public class ConversationFragment extends XmppFragment
             }
         } else if (itemId == R.id.action_muji_conference) {
             toggleMujiConference();
+        } else if (itemId == R.id.action_whiteboard) {
+            openWhiteboard();
         } else if (itemId == R.id.action_toggle_pinned) {
             togglePinned();
         } else if (itemId == R.id.action_add_shortcut) {

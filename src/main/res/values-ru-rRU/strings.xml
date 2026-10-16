@@ -1809,6 +1809,7 @@
     <string name="muc_settings_description">Настройка параметров комнаты</string>
     <string name="conference_settings_saved">Настройки сохранены</string>
     <string name="whiteboard_draw">Рисовать с контактом</string>
+    <string name="whiteboard_start">Начать доску</string>
     <string name="whiteboard_title">Доска для рисования</string>
     <string name="whiteboard_title_with">Доска · %1$s</string>
     <string name="whiteboard_hint">Рисуйте здесь. Сведите два пальца, чтобы увеличить и сдвинуть доску.</string>
@@ -1831,6 +1832,8 @@
     <string name="whiteboard_send_short">Отправить</string>
     <string name="whiteboard_send_contact">Отправить доску как PNG</string>
     <string name="whiteboard_send_pick">Выберите контакт или комнату, куда отправить изображение доски</string>
+    <string name="whiteboard_send_confirm_title">Отправить доску?</string>
+    <string name="whiteboard_send_confirm">Отправить доску изображением PNG в «%s»?</string>
     <string name="whiteboard_sending">Отправка изображения доски…</string>
     <string name="whiteboard_sent">Изображение доски отправлено</string>
     <string name="whiteboard_send_failed">Не удалось отправить изображение доски</string>

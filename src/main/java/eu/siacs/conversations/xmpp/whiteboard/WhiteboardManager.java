@@ -296,13 +296,28 @@ public final class WhiteboardManager {
             } catch (final RuntimeException e) {
                 Log.d(Config.LOGTAG, "whiteboard: could not terminate session", e);
             }
+        } else {
+            // Clear the room presence advertisement. The MUC service stores the occupants' last
+            // presence and replays it to anyone who joins later, so a stale <sxe/> would make the
+            // "Open board" button reappear for every re-entry of the room (and for a late joiner)
+            // even though the board is gone.
+            clearAdvertisement(session);
         }
         // The board is gone: drop the in-chat "Open board" notice so it does not linger.
         removeWhiteboardNotice(session);
         notifyUpdate(session.sid);
     }
 
+    /** Re-sends our room presence **without** the {@code <sxe/>} board advertisement. */
+    private void clearAdvertisement(final Session session) {
+        sendAdvertisement(session, false);
+    }
+
     private void advertise(final Session session) {
+        sendAdvertisement(session, true);
+    }
+
+    private void sendAdvertisement(final Session session, final boolean withSxe) {
         final Conversation conversation = service.find(session.account, session.peer);
         if (conversation == null || conversation.getMode() != Conversation.MODE_MULTI) {
             return;
@@ -316,7 +331,9 @@ public final class WhiteboardManager {
                 .selfPresence(session.account, Presence.Status.ONLINE, false, self.getNick());
         packet.setTo(self.getFullJid());
         packet.addChild("x", Namespace.MUC);
-        packet.addChild(sxeElement(session));
+        if (withSxe) {
+            packet.addChild(sxeElement(session));
+        }
         service.sendPresencePacket(session.account, packet);
     }
 
@@ -491,6 +508,20 @@ public final class WhiteboardManager {
         MujiLog.log(service.getFilesDir(), "WB notice peer=" + peer + " muc=" + session.muc
                 + " conv=" + (conversation == null ? "null" : conversation.getUuid()));
         if (conversation == null) {
+            return;
+        }
+        // Idempotent: if this conversation already shows an "Open board" notice, keep it and just
+        // remember its uuid. Re-entering a room (any occupant's presence re-advertises the board)
+        // then never adds a second button, and never makes a dismissed one reappear.
+        final Message[] existing = new Message[1];
+        conversation.findMessages(m -> m.getType() == Message.TYPE_WHITEBOARD,
+                message -> {
+                    if (existing[0] == null) {
+                        existing[0] = message;
+                    }
+                });
+        if (existing[0] != null) {
+            session.noticeUuid = existing[0].getUuid();
             return;
         }
         final Message message = Message.createWhiteboardNotice(conversation,

@@ -349,6 +349,16 @@ public class WhiteboardActivity extends XmppActivity implements WhiteboardManage
             ToastCompat.makeText(this, R.string.whiteboard_send_failed, ToastCompat.LENGTH_SHORT).show();
             return;
         }
+        // Ask for confirmation before rendering/uploading, so a mis-tap does not send the board.
+        new AlertDialog.Builder(this)
+                .setTitle(R.string.whiteboard_send_confirm_title)
+                .setMessage(getString(R.string.whiteboard_send_confirm, conversation.getName()))
+                .setPositiveButton(R.string.ok, (dialog, which) -> doRenderAndSendBoard(conversation))
+                .setNegativeButton(R.string.cancel, null)
+                .show();
+    }
+
+    private void doRenderAndSendBoard(final Conversation conversation) {
         final Toast progress = ToastCompat.makeText(this, R.string.whiteboard_sending, ToastCompat.LENGTH_SHORT);
         progress.show();
         new Thread(() -> {
