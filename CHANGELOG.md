@@ -1,5 +1,8 @@
 ### Changelog
 
+#### Version 1.9.1.36
+* whiteboard: no more empty messages in the room — a board stroke was sent as a `groupchat` with an invisible body (U+2063), which the room archived and other clients (and our own history) rendered as an empty bubble. Room and 1:1 payloads now carry **no body** at all (the XEP examples and our own MUC chat-state messages do the same) plus a `no-store` hint; a MUC relays a bodyless groupchat but does not add it to the room history. A one-time DB migration drops any message whose whole body is that invisible separator
+
 #### Version 1.9.1.35
 * whiteboard: stop flooding stream management — every board edit is a `MessagePacket`, and upstream asks for a stream-management ack (`<r/>`) after *every* outgoing message with an id, so drawing produced a constant `<r/>`/`<a/>` barrage. Board `<state>` edits now send with `MessagePacket.setRequestAck(false)`; they stay reliable via the periodic keep-alive ack and the stanza queue
 

@@ -48,11 +48,13 @@ public final class WhiteboardManager {
     public static final String NS_SXE_TRANSPORT = Namespace.SXE_TRANSPORT;
 
     /**
-     * MUC services usually drop {@code groupchat} messages that carry no body, so a room edit would
-     * never reach the other occupants. Every room payload therefore gets an invisible fallback body
-     * (U+2063) that {@link #handleSxeMessage} swallows; a message with a real body is never consumed.
+     * U+2063 (INVISIBLE SEPARATOR), used only to recognise messages sent by an older build that
+     * padded a room payload with an invisible body. Current builds send SXE payloads with **no**
+     * body at all (like the XEP examples and like our own MUC chat-state messages), so nothing
+     * renders as an empty chat bubble; keeping the check means an older peer's payload is still
+     * swallowed instead of showing up as an empty message.
      */
-    private static final String SXE_FALLBACK_BODY = "\u2063";
+    private static final String LEGACY_SXE_FALLBACK_BODY = "\u2063";
 
     private static final int VIEW_W = (int) WhiteboardView.VIEW_W;
     private static final int VIEW_H = (int) WhiteboardView.VIEW_H;
@@ -593,11 +595,21 @@ public final class WhiteboardManager {
 
     // ── SXE messages ──────────────────────────────────────────────────────
 
-    /** Handle a bodyless XEP-0284 {@code <sxe/>} message; returns true if it was consumed. */
-    public boolean handleSxeMessage(final Account account, final MessagePacket packet) {
+    /**
+     * Handle a XEP-0284 {@code <sxe/>} message; returns true if it was consumed.
+     *
+     * @param live true for live traffic, false for a replayed MAM copy. A replayed copy is always
+     *     swallowed (so an older build's invisible-body payload can never resurface as an empty
+     *     chat row), but it does not create a session, post a join notice or send a {@code <connect>}.
+     */
+    public boolean handleSxeMessage(
+            final Account account, final MessagePacket packet, final boolean live) {
         final Element sxe = packet.findChild("sxe", NS_SXE);
         if (sxe == null || !isWhiteboardBody(packet)) {
             return false;
+        }
+        if (!live) {
+            return true;
         }
         if (packet.fromAccount(account)) {
             // our own carbon of our own edit
@@ -749,13 +761,13 @@ public final class WhiteboardManager {
 
     // ── Sending ───────────────────────────────────────────────────────────
 
-    /** True when the message carries no body or only our invisible MUC fallback body. */
+    /** True when the message carries no body or only the legacy invisible MUC fallback body. */
     private static boolean isWhiteboardBody(final MessagePacket packet) {
         final eu.siacs.conversations.xml.LocalizedContent body = packet.getBody();
         if (body == null || body.content == null) {
             return true;
         }
-        return SXE_FALLBACK_BODY.equals(body.content.trim());
+        return LEGACY_SXE_FALLBACK_BODY.equals(body.content.trim());
     }
 
     private static Element firstChild(final Element parent) {
@@ -812,10 +824,15 @@ public final class WhiteboardManager {
         packet.setId(SxeDocument.newRid());
         packet.addChild(sxe);
         packet.setRequestAck(requestAck);
-        if (session.muc) {
-            // MUC services drop bodyless groupchat; carry an invisible fallback body.
-            packet.setBody(SXE_FALLBACK_BODY);
-        }
+        // Send no <body> at all (the XEP examples carry none, and our own chat-state messages are
+        // bodyless groupchat too). A MUC relays a bodyless groupchat but — unlike one with a body —
+        // does not write it to the room history, so a stroke never shows up as an empty message in
+        // other clients or in our own history after a reload. An invisible body (U+2063), used by an
+        // earlier build, was archived and rendered as exactly such an empty message.
+        //
+        // A board payload is signalling, not a chat line: mark it no-store so an archived MAM copy
+        // does not replay every stroke either.
+        packet.addChild("no-store", "urn:xmpp:hints");
         service.sendMessagePacket(account, packet);
     }
 

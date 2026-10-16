@@ -673,11 +673,13 @@ public class MessageParser extends AbstractParser implements OnMessagePacketRece
             return;
         }
 
-        // XEP-0284 Shared XML Editing: bodyless <sxe/> whiteboard payloads are consumed here so
-        // they never become chat messages. Accepted from live 1:1 and MUC traffic (a MUC session
-        // relays groupchat), but never from replayed MAM history.
-        if (query == null
-                && mXmppConnectionService.getWhiteboardManager().handleSxeMessage(account, packet)) {
+        // XEP-0284 Shared XML Editing: <sxe/> whiteboard payloads are consumed here so they never
+        // become chat messages. Live traffic (query == null) drives the session; a replayed MAM
+        // copy is only swallowed (never re-prompts for a join, and never renders as an empty row —
+        // an older build padded the payload with an invisible body that would otherwise show up).
+        if (mXmppConnectionService
+                .getWhiteboardManager()
+                .handleSxeMessage(account, packet, query == null)) {
             return;
         }
 

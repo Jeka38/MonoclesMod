@@ -78,7 +78,7 @@ import io.ipfs.cid.Cid;
 public class DatabaseBackend extends SQLiteOpenHelper {
 
     public static final String DATABASE_NAME = "history";
-    public static final int DATABASE_VERSION = 60; // = Conversations DATABASE_VERSION + 7
+    public static final int DATABASE_VERSION = 61; // = Conversations DATABASE_VERSION + 8
     private static boolean requiresMessageIndexRebuild = false;
     private static DatabaseBackend instance = null;
     private static final List<String> DB_PRAGMAS = Collections.unmodifiableList(Arrays.asList(
@@ -829,6 +829,17 @@ public class DatabaseBackend extends SQLiteOpenHelper {
         }
         if (oldVersion < 60 && newVersion >= 60) {
             db.execSQL("ALTER TABLE " + Conversation.TABLENAME + " ADD COLUMN " + Conversation.NEXT_COUNTERPART + " TEXT");
+        }
+        if (oldVersion < 61 && newVersion >= 61) {
+            // Earlier builds padded a whiteboard room payload with an invisible body (U+2063); the
+            // room archived it and it rendered as an empty chat message. Current builds send SXE
+            // payloads without a body, so any message already stored whose whole body is that
+            // invisible separator is a leftover of a whiteboard stroke and can be dropped. (Only
+            // that exact body is purged — an ordinary empty body may belong to a file or a
+            // deleted message and must be left alone.)
+            db.execSQL("DELETE FROM " + Message.TABLENAME
+                    + " WHERE " + Message.BODY + " = '\u2063'");
+            requiresMessageIndexRebuild = true;
         }
     }
 
