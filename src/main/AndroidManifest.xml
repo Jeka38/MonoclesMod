@@ -500,17 +500,6 @@
                 android:value=".ui.SettingsActivity" />
         </activity>
         <activity
-            android:name=".ui.LogcatActivity"
-            android:label="@string/title_activity_logcat"
-            android:launchMode="singleTask"
-            android:parentActivityName=".ui.SettingsActivity"
-            android:exported="true">
-
-            <meta-data
-                android:name="android.support.PARENT_ACTIVITY"
-                android:value=".ui.SettingsActivity" />
-        </activity>
-        <activity
             android:name=".ui.MemoryManagementActivity"
             android:label="@string/title_memory_management"
             android:launchMode="singleTask"

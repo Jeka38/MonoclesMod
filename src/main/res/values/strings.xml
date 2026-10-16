@@ -325,16 +325,6 @@
     <string name="pref_expert_options">Expert settings</string>
     <string name="title_activity_about">About</string>
     <string name="pref_about_conversations_summary">Build and licensing information</string>
-    <string name="title_activity_logcat">Logs</string>
-    <string name="pref_logcat_summary">View, copy or share the app log for troubleshooting</string>
-    <string name="logcat_loading">Loading log…</string>
-    <string name="logcat_empty">The log is empty.</string>
-    <string name="logcat_error">Unable to read the log: %s</string>
-    <string name="logcat_show_all">Show all apps</string>
-    <string name="logcat_show_app">Show this app only</string>
-    <string name="logcat_refresh">Refresh</string>
-    <string name="logcat_share">Share log</string>
-    <string name="logcat_copied">Log copied to clipboard</string>
     <string name="title_pref_quiet_hours">Quiet Hours</string>
     <string name="title_pref_quiet_hours_start_time">Start time</string>
     <string name="title_pref_quiet_hours_end_time">End time</string>

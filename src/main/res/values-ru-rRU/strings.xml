@@ -789,16 +789,6 @@
     <string name="please_wait_for_keys_to_be_fetched">Пожалуйста, подождите извлечения ключей</string>
     <string name="preemptively_grant">Предоставить запрос на подписку</string>
     <string name="pref_about_conversations_summary">Информация о сборке и лицензии</string>
-    <string name="title_activity_logcat">Логи</string>
-    <string name="pref_logcat_summary">Просмотр, копирование и отправка лога приложения для диагностики</string>
-    <string name="logcat_loading">Загрузка лога…</string>
-    <string name="logcat_empty">Лог пуст.</string>
-    <string name="logcat_error">Не удалось прочитать лог: %s</string>
-    <string name="logcat_show_all">Показать все приложения</string>
-    <string name="logcat_show_app">Только это приложение</string>
-    <string name="logcat_refresh">Обновить</string>
-    <string name="logcat_share">Отправить лог</string>
-    <string name="logcat_copied">Лог скопирован в буфер обмена</string>
     <string name="pref_accept_files_mobile">Принимать файлы по сотовой сети</string>
     <string name="pref_accept_files_mobileroaming">Принимать файлы по сотовой сети в роуминге</string>
     <string name="pref_accept_files_summary_mobile">При подключении по сотовой сети автоматически принимать файлы меньше чем…</string>

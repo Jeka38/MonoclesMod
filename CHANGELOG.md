@@ -1,8 +1,5 @@
 ### Changelog
 
-#### Version 1.9.1.37
-* logs: an in-app "Logs" screen (Settings → Logs) that reads the system logcat via `logcat -d` and lets you copy or share it as a file — no ADB needed (useful on Huawei/EMUI and when reporting a bug). Filtered to this app by default (`--pid`), with a menu item to show all apps and a refresh action
-
 #### Version 1.9.1.36
 * whiteboard: no more empty messages in the room — a board stroke was sent as a `groupchat` with an invisible body (U+2063), which the room archived and other clients (and our own history) rendered as an empty bubble. Room and 1:1 payloads now carry **no body** at all (the XEP examples and our own MUC chat-state messages do the same) plus a `no-store` hint; a MUC relays a bodyless groupchat but does not add it to the room history. A one-time DB migration drops any message whose whole body is that invisible separator
 
