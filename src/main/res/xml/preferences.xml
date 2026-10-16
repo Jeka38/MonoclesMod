@@ -800,6 +800,9 @@
         </PreferenceCategory>
     </PreferenceScreen>
     <!--About-->
+    <eu.siacs.conversations.ui.LogcatPreference
+        android:summary="@string/pref_logcat_summary"
+        android:title="@string/title_activity_logcat" />
     <eu.siacs.conversations.ui.AboutPreference
         android:summary="@string/pref_about_conversations_summary"
         android:title="@string/title_activity_about" />
