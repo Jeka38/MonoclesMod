@@ -1,5 +1,9 @@
 ### Changelog
 
+#### Version 1.9.1.37
+* whiteboard: the rail's "Done" button is now **Send** — pick a contact or room and the board is rendered to a PNG (2×, no grid/handles) and uploaded (HTTP upload) into that chat
+* whiteboard: the separate **Move** and **Scale** tools are merged into one classic **Edit** tool (four-way-arrows icon) — drag a shape to move it, drag any of the **eight handles** to resize it freely and non-uniformly in any direction
+
 #### Version 1.9.1.36
 * whiteboard: no more empty messages in the room — a board stroke was sent as a `groupchat` with an invisible body (U+2063), which the room archived and other clients (and our own history) rendered as an empty bubble. Room and 1:1 payloads now carry **no body** at all (the XEP examples and our own MUC chat-state messages do the same) plus a `no-store` hint; a MUC relays a bodyless groupchat but does not add it to the room history. A one-time DB migration drops any message whose whole body is that invisible separator
 

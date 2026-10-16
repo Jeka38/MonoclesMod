@@ -2,12 +2,14 @@ package eu.siacs.conversations.ui;
 
 import android.content.Intent;
 import android.graphics.Color;
+import android.net.Uri;
 import android.os.Bundle;
 import android.view.Menu;
 import android.view.MenuItem;
 import android.view.View;
 import android.widget.ImageButton;
 import android.widget.TextView;
+import android.widget.Toast;
 
 import androidx.annotation.Nullable;
 import androidx.appcompat.app.AlertDialog;
@@ -15,16 +17,19 @@ import androidx.appcompat.widget.Toolbar;
 
 import com.rarepebble.colorpicker.ColorPickerView;
 
+import java.io.File;
 import java.util.List;
 
 import eu.siacs.conversations.R;
 import eu.siacs.conversations.entities.Account;
 import eu.siacs.conversations.entities.Conversation;
+import eu.siacs.conversations.entities.Message;
 import eu.siacs.conversations.ui.util.StyledAttributes;
 import eu.siacs.conversations.xmpp.Jid;
 import eu.siacs.conversations.xmpp.whiteboard.WhiteboardManager;
 import eu.siacs.conversations.xmpp.whiteboard.WhiteboardShape;
 import eu.siacs.conversations.xmpp.whiteboard.WhiteboardView;
+import me.drakeet.support.toast.ToastCompat;
 
 /**
  * Collaborative SVG whiteboard for a 1:1 chat or a MUC room.
@@ -37,6 +42,8 @@ public class WhiteboardActivity extends XmppActivity implements WhiteboardManage
 
     public static final String EXTRA_ACCOUNT = "account";
     public static final String EXTRA_PEER = "peer";
+
+    private static final int REQUEST_SEND_BOARD = 0x4d31;
 
     private static final float[] WIDTHS = {1f, 2f, 4f, 8f};
     private static final String DEFAULT_STROKE_COLOR = "#1a1a1a";
@@ -99,8 +106,7 @@ public class WhiteboardActivity extends XmppActivity implements WhiteboardManage
         wireTool(R.id.wb_tool_rect, "rect");
         wireTool(R.id.wb_tool_ellipse, "ellipse");
         wireTool(R.id.wb_tool_pan, "pan");
-        wireTool(R.id.wb_tool_move, "move");
-        wireTool(R.id.wb_tool_scale, "scale");
+        wireTool(R.id.wb_tool_move, "edit");
         wireTool(R.id.wb_tool_text, "text");
         canvas.setTextRequestedListener((x, y) -> promptForText(x, y));
         // Keep the scrollable tool list sized to the available space so it can always be scrolled to
@@ -112,7 +118,7 @@ public class WhiteboardActivity extends XmppActivity implements WhiteboardManage
                 (v, l, t, r, b, ol, ot, or, ob) -> clampToolsHeight(stage));
         clampToolsHeight(stage);
 
-        findViewById(R.id.wb_done).setOnClickListener(v -> canvas.finishDrawing());
+        findViewById(R.id.wb_send).setOnClickListener(v -> sendBoardToContact());
         findViewById(R.id.wb_undo).setOnClickListener(v -> canvas.undo());
         findViewById(R.id.wb_reset_view).setOnClickListener(v -> canvas.resetView());
         findViewById(R.id.wb_clear).setOnClickListener(v -> confirmClear());
@@ -131,10 +137,9 @@ public class WhiteboardActivity extends XmppActivity implements WhiteboardManage
     private void wireTooltips() {
         final int[] ids = {
                 R.id.wb_tool_pencil, R.id.wb_tool_line, R.id.wb_tool_arrow, R.id.wb_tool_rect,
-                R.id.wb_tool_ellipse, R.id.wb_tool_pan, R.id.wb_tool_move,
-                R.id.wb_tool_scale, R.id.wb_tool_text,
+                R.id.wb_tool_ellipse, R.id.wb_tool_pan, R.id.wb_tool_move, R.id.wb_tool_text,
                 R.id.wb_reset_view, R.id.wb_width, R.id.wb_stroke, R.id.wb_fill,
-                R.id.wb_undo, R.id.wb_clear, R.id.wb_done, R.id.wb_share,
+                R.id.wb_undo, R.id.wb_clear, R.id.wb_send, R.id.wb_share,
         };
         for (final int id : ids) {
             final View view = findViewById(id);
@@ -216,8 +221,7 @@ public class WhiteboardActivity extends XmppActivity implements WhiteboardManage
         highlightTool(R.id.wb_tool_rect, "rect".equals(tool));
         highlightTool(R.id.wb_tool_ellipse, "ellipse".equals(tool));
         highlightTool(R.id.wb_tool_pan, "pan".equals(tool));
-        highlightTool(R.id.wb_tool_move, "move".equals(tool));
-        highlightTool(R.id.wb_tool_scale, "scale".equals(tool));
+        highlightTool(R.id.wb_tool_move, "edit".equals(tool));
         highlightTool(R.id.wb_tool_text, "text".equals(tool));
     }
 
@@ -271,6 +275,27 @@ public class WhiteboardActivity extends XmppActivity implements WhiteboardManage
     }
 
     @Override
+    protected void onActivityResult(final int requestCode, final int resultCode, final Intent data) {
+        super.onActivityResult(requestCode, resultCode, data);
+        if (requestCode != REQUEST_SEND_BOARD || resultCode != RESULT_OK || data == null) {
+            return;
+        }
+        final List<Jid> jids = ChooseContactActivity.extractJabberIds(data);
+        if (jids.isEmpty()) {
+            return;
+        }
+        final String accountJid = data.getStringExtra(EXTRA_ACCOUNT);
+        Account targetAccount = account;
+        if (accountJid != null) {
+            final Account chosen = xmppConnectionService.findAccountByJid(Jid.of(accountJid));
+            if (chosen != null) {
+                targetAccount = chosen;
+            }
+        }
+        renderAndSendBoard(jids.get(0), targetAccount);
+    }
+
+    @Override
     protected void refreshUiReal() {
         // nothing periodic
     }
@@ -291,6 +316,108 @@ public class WhiteboardActivity extends XmppActivity implements WhiteboardManage
     }
 
     // ── Sharing ───────────────────────────────────────────────────────────
+
+    /**
+     * Sends the board as a PNG: asks for a contact or room, renders the drawing, writes it to the
+     * app's private Files directory and attaches it to that conversation (uploaded via HTTP upload
+     * when the account supports it).
+     */
+    private void sendBoardToContact() {
+        if (canvas.getShapes().isEmpty()) {
+            ToastCompat.makeText(this, R.string.whiteboard_send_empty, ToastCompat.LENGTH_SHORT).show();
+            return;
+        }
+        final Intent intent = new Intent(this, ChooseContactActivity.class);
+        intent.putExtra(ChooseContactActivity.EXTRA_SHOW_ENTER_JID, true);
+        intent.putExtra(ChooseContactActivity.EXTRA_SELECT_MULTIPLE, false);
+        intent.putExtra(ChooseContactActivity.EXTRA_TITLE_RES_ID, R.string.whiteboard_send_contact);
+        if (account != null) {
+            intent.putExtra(EXTRA_ACCOUNT, account.getJid().asBareJid().toEscapedString());
+        }
+        startActivityForResult(intent, REQUEST_SEND_BOARD);
+    }
+
+    private void renderAndSendBoard(final Jid contactJid, final Account account) {
+        if (account == null || contactJid == null) {
+            return;
+        }
+        final boolean muc = xmppConnectionService.isMuc(account, contactJid)
+                || account.getBookmark(contactJid.asBareJid()) != null;
+        final Conversation conversation =
+                xmppConnectionService.findOrCreateConversation(account, contactJid.asBareJid(), muc, true);
+        if (conversation == null) {
+            ToastCompat.makeText(this, R.string.whiteboard_send_failed, ToastCompat.LENGTH_SHORT).show();
+            return;
+        }
+        final Toast progress = ToastCompat.makeText(this, R.string.whiteboard_sending, ToastCompat.LENGTH_SHORT);
+        progress.show();
+        new Thread(() -> {
+            final Uri uri = writeBoardPng();
+            final WhiteboardActivity activity = this;
+            activity.runOnUiThread(() -> {
+                if (uri == null) {
+                    progress.cancel();
+                    ToastCompat.makeText(activity, R.string.whiteboard_send_failed, ToastCompat.LENGTH_SHORT).show();
+                    return;
+                }
+                activity.delegateUriPermissionsToService(uri);
+                // Send as a file (not as a compressible image) so the PNG is uploaded via HTTP upload
+                // exactly as rendered.
+                activity.xmppConnectionService.attachFileToConversation(conversation, uri, "image/png", null,
+                        new UiCallback<Message>() {
+                            @Override
+                            public void success(final Message message) {
+                                activity.runOnUiThread(() -> {
+                                    progress.cancel();
+                                    ToastCompat.makeText(activity, R.string.whiteboard_sent, ToastCompat.LENGTH_SHORT).show();
+                                });
+                            }
+
+                            @Override
+                            public void error(final int errorCode, final Message message) {
+                                activity.runOnUiThread(() -> {
+                                    progress.cancel();
+                                    ToastCompat.makeText(activity, errorCode, ToastCompat.LENGTH_SHORT).show();
+                                });
+                            }
+
+                            @Override
+                            public void userInputRequired(final android.app.PendingIntent pi, final Message message) {
+                                // no interactive input for an image upload
+                            }
+
+                            @Override
+                            public void progress(final int ignored) {
+                            }
+
+                            @Override
+                            public void showToast() {
+                            }
+                        });
+            });
+        }).start();
+    }
+
+    /** Renders the board (2×) and writes it to a PNG file; returns a {@code file://} URI or null. */
+    @Nullable
+    private Uri writeBoardPng() {
+        try {
+            final android.graphics.Bitmap bitmap = canvas.exportBitmap(2f);
+            final File dir = new File(getFilesDir(), "Files" + File.separator + "Sent");
+            if (!dir.exists() && !dir.mkdirs()) {
+                return null;
+            }
+            final File file = new File(dir, "whiteboard_" + System.currentTimeMillis() + ".png");
+            try (final java.io.FileOutputStream out = new java.io.FileOutputStream(file)) {
+                bitmap.compress(android.graphics.Bitmap.CompressFormat.PNG, 100, out);
+                out.flush();
+            }
+            bitmap.recycle();
+            return Uri.fromFile(file);
+        } catch (final Exception e) {
+            return null;
+        }
+    }
 
     private void toggleSharing() {
         if (sessionId != null) {

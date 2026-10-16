@@ -260,12 +260,6 @@ public class WhiteboardView extends View {
         return String.format(java.util.Locale.US, "%s %.1f %.1f ", cmd, x, y);
     }
 
-    public void finishDrawing() {
-        commitActive();
-        setTool("pan");
-        invalidate();
-    }
-
     // ── Data ──────────────────────────────────────────────────────────────
 
     public List<WhiteboardShape> getShapes() {
@@ -323,6 +317,28 @@ public class WhiteboardView extends View {
         recomputeViewMatrix();
     }
 
+    /**
+     * Renders the board to an ARGB bitmap in document coordinates (1280×720), used to send the board
+     * as a PNG. Drawn onto the page colour with no grid and no selection marks, so the exported
+     * image is exactly the drawing on the paper.
+     *
+     * @param scale factor applied to the document size (e.g. 2 for a 2× export).
+     */
+    public android.graphics.Bitmap exportBitmap(final float scale) {
+        final float factor = scale <= 0f ? 1f : scale;
+        final int width = Math.max(1, Math.round(VIEW_W * factor));
+        final int height = Math.max(1, Math.round(VIEW_H * factor));
+        final android.graphics.Bitmap bitmap =
+                android.graphics.Bitmap.createBitmap(width, height, android.graphics.Bitmap.Config.ARGB_8888);
+        final Canvas canvas = new Canvas(bitmap);
+        canvas.scale(factor, factor);
+        canvas.drawRect(0, 0, VIEW_W, VIEW_H, pagePaint);
+        for (final WhiteboardShape shape : shapes) {
+            drawShape(canvas, shape);
+        }
+        return bitmap;
+    }
+
     // ── Layout / transform ────────────────────────────────────────────────
 
     @Override
@@ -362,9 +378,8 @@ public class WhiteboardView extends View {
 
     @Override
     public boolean onTouchEvent(final MotionEvent event) {
-        // move/scale operate on an object with one finger; a second finger still pans/zooms.
-        final boolean objectTool = "move".equals(tool) || "scale".equals(tool);
-        if (objectTool) {
+        // The edit tool operates on an object with one finger; a second finger still pans/zooms.
+        if ("edit".equals(tool)) {
             return onObjectTouch(event);
         }
         scaleDetector.onTouchEvent(event);
@@ -455,11 +470,13 @@ public class WhiteboardView extends View {
                 final float y = tmpPoint[1];
                 lastX = event.getX();
                 lastY = event.getY();
-                // scale: grabbing the bottom-right handle of the selected shape starts a scale.
-                if ("scale".equals(tool) && selected != null && insideScaleHandle(selected, x, y)) {
-                    transforming = true;
-                    setAnchor(x, y);
-                    return true;
+                // Grabbing one of the selection handles starts a resize in that handle's direction.
+                if (selected != null) {
+                    final int handle = handleAt(selected, x, y);
+                    if (handle >= 0) {
+                        beginResize(selected, handle);
+                        return true;
+                    }
                 }
                 final WhiteboardShape hit = shapeAt(x, y);
                 if (hit != null) {
@@ -471,9 +488,11 @@ public class WhiteboardView extends View {
                 }
                 lastWorldX = x;
                 lastWorldY = y;
-                // Once something is selected, dragging anywhere moves/scales it (precise grabbing is
-                // unrealistic on a phone); a plain tap just selects.
-                transforming = selected != null;
+                // Dragging moves the shape when the finger went down on it (or right next to the
+                // current selection); a tap on empty space only selects. Resizing always uses the
+                // handles, checked above.
+                transforming = selected != null
+                        && (hit != null || isNear(selected, x, y));
                 invalidate();
                 return true;
             }
@@ -484,12 +503,10 @@ public class WhiteboardView extends View {
                 toWorld(event.getX(), event.getY());
                 final float x = tmpPoint[0];
                 final float y = tmpPoint[1];
-                if (transforming) {
-                    if ("scale".equals(tool)) {
-                        applyScale(selected, x, y);
-                    } else {
-                        applyTranslate(selected, x - lastWorldX, y - lastWorldY);
-                    }
+                if (activeHandle >= 0) {
+                    applyResize(selected, x, y);
+                } else if (transforming) {
+                    applyTranslate(selected, x - lastWorldX, y - lastWorldY);
                 }
                 lastWorldX = x;
                 lastWorldY = y;
@@ -498,8 +515,9 @@ public class WhiteboardView extends View {
             }
             case MotionEvent.ACTION_UP:
             case MotionEvent.ACTION_CANCEL: {
-                if (transforming && selected != null) {
+                if ((transforming || activeHandle >= 0) && selected != null) {
                     transforming = false;
+                    activeHandle = -1;
                     if (listener != null) {
                         listener.onShapeUpdated(selected);
                     }
@@ -514,6 +532,156 @@ public class WhiteboardView extends View {
 
     private float lastWorldX = 0f;
     private float lastWorldY = 0f;
+
+    // ── Selection handles / resize ────────────────────────────────────────
+    //
+    // Eight handles: the four corners and the four edge midpoints. Dragging any of them resizes the
+    // shape freely in that direction (the opposite point stays fixed), so an element can grow/shrink
+    // arbitrarily and non-uniformly — like in a normal graphics editor.
+
+    private static final float HANDLE_TOUCH_WORLD = 26f;
+    private static final float HANDLE_DRAW_RADIUS_WORLD = 9f;
+
+    /** Index of the handle under the point, or -1. Handles: 0 TL, 1 TR, 2 BR, 3 BL, 4 T, 5 R, 6 B, 7 L. */
+    private int handleAt(final WhiteboardShape shape, final float x, final float y) {
+        final RectF b = boundsOf(shape);
+        if (b == null) {
+            return -1;
+        }
+        for (int i = 0; i < 8; i++) {
+            final float hx = handleX(b, i);
+            final float hy = handleY(b, i);
+            if (Math.hypot(x - hx, y - hy) <= HANDLE_TOUCH_WORLD) {
+                return i;
+            }
+        }
+        return -1;
+    }
+
+    private static float handleX(final RectF b, final int index) {
+        switch (index) {
+            case 0: case 3: case 7: return b.left;
+            case 1: case 2: case 5: return b.right;
+            default: return b.centerX();
+        }
+    }
+
+    private static float handleY(final RectF b, final int index) {
+        switch (index) {
+            case 0: case 1: case 4: return b.top;
+            case 2: case 3: case 6: return b.bottom;
+            default: return b.centerY();
+        }
+    }
+
+    /** The opposite handle's point: the anchor that stays fixed while resizing. */
+    private static float anchorX(final RectF b, final int index) {
+        switch (index) {
+            case 0: return b.right;
+            case 1: return b.left;
+            case 2: return b.left;
+            case 3: return b.right;
+            case 4: return b.centerX();
+            case 5: return b.left;
+            case 6: return b.centerX();
+            case 7: return b.right;
+            default: return b.centerX();
+        }
+    }
+
+    private static float anchorY(final RectF b, final int index) {
+        switch (index) {
+            case 0: return b.bottom;
+            case 1: return b.bottom;
+            case 2: return b.top;
+            case 3: return b.top;
+            case 4: return b.bottom;
+            case 5: return b.centerY();
+            case 6: return b.top;
+            case 7: return b.centerY();
+            default: return b.centerY();
+        }
+    }
+
+    /** Resize state captured when a handle is grabbed (so the delta is applied to the original). */
+    private int activeHandle = -1;
+    private final Matrix resizeStartTransform = new Matrix();
+    private final RectF resizeStartBounds = new RectF();
+    private float resizeAnchorX = 0f;
+    private float resizeAnchorY = 0f;
+    private float resizeHandleStartX = 0f;
+    private float resizeHandleStartY = 0f;
+
+    private void beginResize(final WhiteboardShape shape, final int handle) {
+        final RectF b = boundsOf(shape);
+        if (b == null) {
+            return;
+        }
+        activeHandle = handle;
+        resizeStartBounds.set(b);
+        resizeAnchorX = anchorX(b, handle);
+        resizeAnchorY = anchorY(b, handle);
+        resizeHandleStartX = handleX(b, handle);
+        resizeHandleStartY = handleY(b, handle);
+        resizeStartTransform.reset();
+        final Matrix t = parseTransform(shape.transform);
+        if (t != null) {
+            resizeStartTransform.set(t);
+        }
+    }
+
+    /**
+     * Scales the shape so the dragged handle follows the finger, keeping the opposite point fixed.
+     * The scale is computed from the gesture's start geometry (absolute, not incremental) so it does
+     * not drift; corner handles scale both axes independently, edge handles only one.
+     */
+    private void applyResize(final WhiteboardShape shape, final float x, final float y) {
+        final int handle = activeHandle;
+        final boolean horizontal = handle == 0 || handle == 1 || handle == 2 || handle == 3
+                || handle == 5 || handle == 7;
+        final boolean vertical = handle == 0 || handle == 1 || handle == 2 || handle == 3
+                || handle == 4 || handle == 6;
+        float sx = 1f;
+        float sy = 1f;
+        if (horizontal) {
+            final float span = resizeHandleStartX - resizeAnchorX;
+            if (Math.abs(span) > 0.01f) {
+                sx = (x - resizeAnchorX) / span;
+            }
+        }
+        if (vertical) {
+            final float span = resizeHandleStartY - resizeAnchorY;
+            if (Math.abs(span) > 0.01f) {
+                sy = (y - resizeAnchorY) / span;
+            }
+        }
+        // Never collapse to nothing; allow growing freely. Flipping is allowed (negative factors).
+        sx = clampScale(sx);
+        sy = clampScale(sy);
+        // Compose as scale-after-transform (world space): the shape's stored transform runs first,
+        // then the resize scale about the fixed anchor (postConcat = the argument is applied last).
+        final Matrix scale = new Matrix();
+        scale.setScale(sx, sy, resizeAnchorX, resizeAnchorY);
+        final Matrix result = new Matrix(resizeStartTransform);
+        result.postConcat(scale);
+        shape.transform = matrixToString(result);
+    }
+
+    private static float clampScale(final float factor) {
+        if (factor > -MIN_SCALE && factor < MIN_SCALE) {
+            return factor < 0f ? -MIN_SCALE : MIN_SCALE;
+        }
+        return factor;
+    }
+
+    /** True when the point is inside the shape's bounds widened by the hit slop. */
+    private boolean isNear(final WhiteboardShape shape, final float x, final float y) {
+        final RectF b = boundsOf(shape);
+        return b != null && x >= b.left - HIT_SLOP_WORLD && x <= b.right + HIT_SLOP_WORLD
+                && y >= b.top - HIT_SLOP_WORLD && y <= b.bottom + HIT_SLOP_WORLD;
+    }
+
+    private static final float MIN_SCALE = 0.02f;
 
     /** The topmost shape whose (transformed) outline is near the point, or null. */
     @Nullable
@@ -585,46 +753,9 @@ public class WhiteboardView extends View {
     }
 
     private static final float HIT_SLOP_WORLD = 12f;
-    private static final float SCALE_HANDLE_WORLD = 22f;
-
-    private boolean insideScaleHandle(final WhiteboardShape shape, final float x, final float y) {
-        final RectF b = boundsOf(shape);
-        return b != null && Math.hypot(x - b.right, y - b.bottom) <= SCALE_HANDLE_WORLD;
-    }
-
-    private RectF anchorBounds = new RectF();
-    private float anchorX = 0f;
-    private float anchorY = 0f;
-    private float scaleStartDistance = 0f;
-
-    private void setAnchor(final float x, final float y) {
-        final RectF b = boundsOf(selected);
-        if (b != null) {
-            anchorBounds.set(b);
-        }
-        anchorX = x;
-        anchorY = y;
-        scaleStartDistance = (float) Math.hypot(x - anchorBounds.left, y - anchorBounds.top);
-        if (scaleStartDistance < 1f) {
-            scaleStartDistance = 1f;
-        }
-    }
 
     private void applyTranslate(final WhiteboardShape shape, final float dx, final float dy) {
         shape.transform = concatMatrix(shape.transform, translateMatrix(dx, dy));
-    }
-
-    private void applyScale(final WhiteboardShape shape, final float x, final float y) {
-        final float distance = (float) Math.hypot(x - anchorBounds.left, y - anchorBounds.top);
-        final float factor = Math.max(0.05f, distance / scaleStartDistance);
-        // Scale about the shape's top-left so dragging the bottom-right handle grows it.
-        final Matrix m = new Matrix();
-        m.setScale(factor, factor, anchorBounds.left, anchorBounds.top);
-        shape.transform = concatMatrix(shape.transform, matrixToString(m));
-        // Reset the reference so the next move scales incrementally from here.
-        anchorBounds.set(boundsOf(shape));
-        scaleStartDistance = Math.max(1f,
-                (float) Math.hypot(x - anchorBounds.left, y - anchorBounds.top));
     }
 
     private static String translateMatrix(final float dx, final float dy) {
@@ -867,7 +998,7 @@ public class WhiteboardView extends View {
         canvas.restore();
     }
 
-    /** Dashed bounding box plus a bottom-right scale handle for the selected shape. */
+    /** Dashed bounding box plus eight resize handles for the selected shape. */
     private void drawSelection(final Canvas canvas, final WhiteboardShape shape) {
         final RectF b = boundsOf(shape);
         if (b == null) {
@@ -881,7 +1012,16 @@ public class WhiteboardView extends View {
         final Paint handle = new Paint(Paint.ANTI_ALIAS_FLAG);
         handle.setStyle(Paint.Style.FILL);
         handle.setColor(0xFF2196F3);
-        canvas.drawCircle(b.right, b.bottom, SCALE_HANDLE_WORLD / 2f, handle);
+        final Paint ring = new Paint(Paint.ANTI_ALIAS_FLAG);
+        ring.setStyle(Paint.Style.STROKE);
+        ring.setStrokeWidth(2f);
+        ring.setColor(0xFFFFFFFF);
+        for (int i = 0; i < 8; i++) {
+            final float hx = handleX(b, i);
+            final float hy = handleY(b, i);
+            canvas.drawCircle(hx, hy, HANDLE_DRAW_RADIUS_WORLD, handle);
+            canvas.drawCircle(hx, hy, HANDLE_DRAW_RADIUS_WORLD, ring);
+        }
     }
 
     private void drawShape(final Canvas canvas, final WhiteboardShape shape) {

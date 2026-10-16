@@ -1706,11 +1706,9 @@
     <string name="whiteboard_tool_rect">Rectangle</string>
     <string name="whiteboard_tool_ellipse">Ellipse</string>
     <string name="whiteboard_tool_pan">Pan / zoom</string>
-    <string name="whiteboard_tool_move">Move object (drag)</string>
-    <string name="whiteboard_tool_scale">Scale object (drag the handle)</string>
+    <string name="whiteboard_tool_move">Select, move or resize an object</string>
     <string name="whiteboard_tool_text">Text</string>
-    <string name="whiteboard_tool_move_short">Move</string>
-    <string name="whiteboard_tool_scale_short">Scale</string>
+    <string name="whiteboard_tool_move_short">Edit</string>
     <string name="whiteboard_tool_pan_short">Pan</string>
     <string name="whiteboard_reset_view_short">Fit</string>
     <string name="whiteboard_width_short">Width</string>
@@ -1718,6 +1716,13 @@
     <string name="whiteboard_fill_short">Fill</string>
     <string name="whiteboard_finish_short">Done</string>
     <string name="whiteboard_share_short">Share</string>
+    <string name="whiteboard_send_short">Send</string>
+    <string name="whiteboard_send_contact">Send board as PNG</string>
+    <string name="whiteboard_send_pick">Choose a contact or room to send the board image to</string>
+    <string name="whiteboard_sending">Sending board image…</string>
+    <string name="whiteboard_sent">Board image sent</string>
+    <string name="whiteboard_send_failed">Could not send the board image</string>
+    <string name="whiteboard_send_empty">Draw something before sending the board.</string>
     <string name="whiteboard_cancel">Cancel board</string>
     <string name="whiteboard_chat_notice">Started a shared whiteboard.</string>
     <string name="whiteboard_chat_notice_self">You started a shared whiteboard.</string>

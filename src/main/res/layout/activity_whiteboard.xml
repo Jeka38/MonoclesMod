@@ -129,16 +129,6 @@
                                 android:text="@string/whiteboard_tool_move_short" />
                         </LinearLayout>
 
-                        <LinearLayout style="@style/WhiteboardRailItem">
-                            <ImageButton
-                                android:id="@+id/wb_tool_scale"
-                                style="@style/WhiteboardRailButton"
-                                android:contentDescription="@string/whiteboard_tool_scale"
-                                android:src="@drawable/ic_whiteboard_scale" />
-                            <TextView style="@style/WhiteboardRailLabel"
-                                android:text="@string/whiteboard_tool_scale_short" />
-                        </LinearLayout>
-
                         <View style="@style/WhiteboardRailDivider" />
 
                         <LinearLayout style="@style/WhiteboardRailItem">
@@ -243,12 +233,12 @@
 
                         <LinearLayout style="@style/WhiteboardRailItem">
                             <ImageButton
-                                android:id="@+id/wb_done"
+                                android:id="@+id/wb_send"
                                 style="@style/WhiteboardRailButton"
-                                android:contentDescription="@string/whiteboard_finish"
-                                android:src="@drawable/ic_whiteboard_done" />
+                                android:contentDescription="@string/whiteboard_send_contact"
+                                android:src="@drawable/ic_whiteboard_send" />
                             <TextView style="@style/WhiteboardRailLabel"
-                                android:text="@string/whiteboard_finish_short" />
+                                android:text="@string/whiteboard_send_short" />
                         </LinearLayout>
 
                         <View style="@style/WhiteboardRailDivider" />
