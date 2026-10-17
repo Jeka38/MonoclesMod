@@ -34,6 +34,7 @@ import eu.siacs.conversations.services.XmppConnectionService;
 import eu.siacs.conversations.utils.CryptoHelper;
 import eu.siacs.conversations.utils.FileWriterException;
 import eu.siacs.conversations.utils.MimeUtils;
+import io.ipfs.cid.Cid;
 import okhttp3.Call;
 import okhttp3.HttpUrl;
 import okhttp3.OkHttpClient;
@@ -581,11 +582,49 @@ public class HttpDownloadConnection implements Transferable {
             }
             outputStream.flush();
             outputStream.close();
+            verifyIntegrityIfNeeded(file);
+        }
+
+        /**
+         * XEP-0385 §4.2: a client that retrieves shared media MUST verify it against one of the
+         * hashes in {@code <media-sharing><file>} and discard the content when none matches. This
+         * client only enforces it for a plain (not end-to-end encrypted) transfer, since an OMEMO /
+         * PGP payload has its own MAC and its on-disk bytes differ from the shared media anyway.
+         */
+        private void verifyIntegrityIfNeeded(final DownloadableFile file) throws IOException {
+            if (message.getEncryption() == Message.ENCRYPTION_AXOLOTL
+                    || message.getEncryption() == Message.ENCRYPTION_PGP
+                    || message.getEncryption() == Message.ENCRYPTION_DECRYPTED) {
+                return;
+            }
+            final List<Cid> expected = message.getFileParams().getCids();
+            if (expected.isEmpty() || !file.canRead()) {
+                return;
+            }
+            final Cid[] actual;
+            try {
+                actual = mXmppConnectionService.getFileBackend().calculateCids(new FileInputStream(file));
+            } catch (final Exception e) {
+                Log.w(Config.LOGTAG, "unable to compute CIDs for integrity check", e);
+                return;
+            }
+            for (final Cid cid : actual) {
+                if (expected.contains(cid)) {
+                    return;
+                }
+            }
+            // No hash matched: the server (or a man in the middle) served different bytes.
+            Log.w(Config.LOGTAG, "downloaded file did not match any SIMS hash; discarding");
+            file.delete();
+            throw new InvalidFileException("Downloaded content did not match the expected hash");
         }
 
         private void updateImageBounds() {
             final boolean privateMessage = message.isPrivateMessage();
-            message.setType(privateMessage ? Message.TYPE_PRIVATE_FILE : Message.TYPE_FILE);
+            final String mime = message.getMimeType();
+            // Keep an image an image (XEP-0385 media-type), otherwise fall back to a generic file.
+            final boolean image = mime != null && mime.startsWith("image/");
+            message.setType(privateMessage ? Message.TYPE_PRIVATE_FILE : (image ? Message.TYPE_IMAGE : Message.TYPE_FILE));
             final String url;
             final String ref = mUrl.fragment();
             if (ref != null && AesGcmURL.IV_KEY.matcher(ref).matches()) {

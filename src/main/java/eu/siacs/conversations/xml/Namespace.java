@@ -100,6 +100,11 @@ public final class Namespace {
     public static final String VCARD_UPDATE = "vcard-temp:x:update";
     public static final String SDP_OFFER_ANSWER = "urn:ietf:rfc:3264";
     public static final String HASHES = "urn:xmpp:hashes:2";
+    // XEP-0385: Stateless Inline Media Sharing (SIMS)
+    public static final String SIMS = "urn:xmpp:sims:1";
+    public static final String REFERENCE = "urn:xmpp:reference:0";
+    public static final String THUMBS = "urn:xmpp:thumbs:1";
+    public static final String SCHEMA_ORG = "https://schema.org/";
     public static final String REPORTING = "urn:xmpp:reporting:1";
     public static final String REPORTING_REASON_SPAM = "urn:xmpp:reporting:spam";
     public static final String MDS_DISPLAYED = "urn:xmpp:mds:displayed:0";

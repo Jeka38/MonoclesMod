@@ -213,6 +213,15 @@ authored.
   inline authoring (emphasis/code/deleted), ordered lists and
   nested quotes are shown but not composed in this client.
 
+## File / media sharing — XEP-0385 (SIMS)
+
+The incoming side of Stateless Inline Media Sharing. A peer attaches `<reference xmlns='urn:xmpp:reference:0' type='data'><media-sharing xmlns='urn:xmpp:sims:1'>` to a message; the `<file>` is the ordinary Jingle File Transfer `<file>` element (media-type, name, size, `<hash xmlns='urn:xmpp:hashes:2' algo=…>`, `<desc>`, `<thumbnail>`) and `<sources>` lists one or more `<reference uri=…>` download locations. `urn:xmpp:sims:1` is advertised in `AbstractGenerator.STATIC_FEATURES` (so it is in the caps hash) — do not remove it, or peers stop sending `<media-sharing>`.
+
+- **Model:** `Message.FileParams(Element)` parses the `<media-sharing>` file metadata (size/width/height/duration) and **picks the best source across all `<sources>`** rather than the first one: `sourceRank` prefers an `https?://` URL (3) over `aesgcm://` (2) over `cid:` (1) over an `xmpp:` (Jingle, 0) URI, skipping anything `isUsableSource` cannot fetch. Do not go back to `sources.findChild("reference", …)` (first-child) — a message that lists a Jingle URI before an HTTP URL would then download via Jingle. `getDescription()` reads the XEP-0385 `<desc>`.
+- **Typing on receive:** `MessageParser.applySimsType(message)` sets the type from the media-type **before the download**, so a bodyless `<media-sharing>` renders as an image/audio/file immediately instead of as a plain text link (a private MUC message keeps its `TYPE_PRIVATE_FILE`). `Message.getMimeType()` also falls back to the SIMS `media-type` when neither the relative path nor a URL yields an extension. `HttpDownloadConnection.updateImageBounds()` keeps an `image/*` a `TYPE_IMAGE` after the download.
+- **Integrity (XEP-0385 §4.2):** after an HTTP download `HttpDownloadConnection.FileDownloader.verifyIntegrityIfNeeded(file)` recomputes the CIDs (`FileBackend.calculateCids` = SHA-256/1/512) and requires one to equal an advertised `Message.FileParams.getCids()`; no match deletes the file and throws `InvalidFileException` (the transfer then shows as failed). It is deliberately **skipped for OMEMO/PGP/decrypted transfers** (their ciphertext differs from the pre-encryption bytes and the envelope has its own MAC) and for a file the app cannot read (scoped-storage MediaStore download). Do not enable it for encrypted transfers.
+- **Not done:** resume of a partially downloaded shared media is not hash-checked incrementally; a `cid:` source falls back to the existing `BobTransfer` path, and a Jingle source uses the existing JingleFileTransfer flow.
+
 ## Profile cards (vCard)
 
 Full profile cards, modelled on Psi's info dialog (`infodlg.cpp` / `info.ui`): general, work, address, about and photo.

@@ -43,6 +43,8 @@ public abstract class AbstractGenerator {
             "http://jabber.org/protocol/chatstates",
             Namespace.ROSTERX,
             "urn:xmpp:styling:0",
+            // XEP-0385: Stateless Inline Media Sharing (advertised so peers send <media-sharing>)
+            Namespace.SIMS,
             Namespace.JINGLE_APPS_SVG_WHITEBOARD,
             Namespace.SXE_TRANSPORT,
             Namespace.SXE

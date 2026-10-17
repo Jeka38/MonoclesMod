@@ -128,6 +128,30 @@ public class MessageParser extends AbstractParser implements OnMessagePacketRece
         return result != null ? result : fallback;
     }
 
+    /**
+     * XEP-0385 (SIMS): set the message type from the {@code <media-sharing>} media-type so a received
+     * file is shown as an image/audio/file without waiting for the download. A private MUC message
+     * keeps its {@code TYPE_PRIVATE*} variant.
+     */
+    private static void applySimsType(final Message message) {
+        final Message.FileParams fileParams = message.getFileParams();
+        if (fileParams == null) {
+            return;
+        }
+        final String mediaType = fileParams.getMediaType();
+        if (mediaType == null || mediaType.isEmpty()) {
+            return;
+        }
+        final boolean privateMessage = message.isPrivateMessage();
+        final boolean image = mediaType.startsWith("image/");
+        final boolean audio = mediaType.startsWith("audio/");
+        if (image) {
+            message.setType(privateMessage ? Message.TYPE_PRIVATE_FILE : Message.TYPE_IMAGE);
+        } else if (audio || mediaType.startsWith("video/") || mediaType.startsWith("application/")) {
+            message.setType(privateMessage ? Message.TYPE_PRIVATE_FILE : Message.TYPE_FILE);
+        }
+    }
+
     private static boolean clientMightSendHtml(Account account, Jid from) {
         String resource = from.getResource();
         if (resource == null) {
@@ -906,6 +930,10 @@ public class MessageParser extends AbstractParser implements OnMessagePacketRece
                 if (CryptoHelper.isPgpEncryptedUrl(message.getFileParams().url)) {
                     message.setEncryption(Message.ENCRYPTION_DECRYPTED);
                 }
+                // XEP-0385: give the message the right type straight away from the media-type, so a
+                // received <media-sharing> renders as an image/file/audio (even before it is
+                // downloaded) instead of as a plain text link.
+                applySimsType(message);
             }
             message.markable = packet.hasChild("markable", "urn:xmpp:chat-markers:0");
             if (reactions != null) {

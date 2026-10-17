@@ -48,6 +48,7 @@ import java.lang.ref.WeakReference;
 import java.util.ArrayList;
 import java.util.Iterator;
 import java.util.List;
+import java.util.Locale;
 import java.util.Set;
 import java.util.concurrent.CopyOnWriteArraySet;
 import java.util.regex.Matcher;
@@ -1742,11 +1743,17 @@ public class Message extends AbstractEntity implements AvatarService.Avatarable 
         } else {
             final String url = URL.tryParse(getOob() == null ? body.split("\n")[0] : getOob().toString());
             if (url == null) {
-                return null;
+                // No relative path and no usable URL: fall back to the SIMS media-type so a received
+                // <media-sharing> message is still recognised as the right kind of media.
+                return getFileParams().getMediaType();
             }
             extension = MimeUtils.extractRelevantExtension(url);
         }
-        return MimeUtils.guessMimeTypeFromExtension(extension);
+        final String mime = MimeUtils.guessMimeTypeFromExtension(extension);
+        if (mime == null) {
+            return getFileParams().getMediaType();
+        }
+        return mime;
     }
 
     public synchronized boolean treatAsDownloadable() {
@@ -1924,7 +1931,7 @@ public class Message extends AbstractEntity implements AvatarService.Avatarable 
             if (el.getName().equals("reference") && el.getNamespace().equals("urn:xmpp:reference:0")) {
                 sims = el;
                 final String refUri = el.getAttribute("uri");
-                if (refUri != null) url = refUri;
+                if (isUsableSource(refUri)) url = refUri;
                 final Element mediaSharing = el.findChild("media-sharing", "urn:xmpp:sims:1");
                 if (mediaSharing != null) {
                     Element file = mediaSharing.findChild("file", "urn:xmpp:jingle:apps:file-transfer:5");
@@ -1945,13 +1952,60 @@ public class Message extends AbstractEntity implements AvatarService.Avatarable 
                         }
                     }
 
+                    // XEP-0385 allows several sources (HTTP upload, a Jingle session URI, a
+                    // Bits-of-Binary cid, …). Pick the most useful one for an in-app download:
+                    // prefer an HTTP(S) URL, then a cid: (BobTransfer), then anything else.
                     final Element sources = mediaSharing.findChild("sources", "urn:xmpp:sims:1");
                     if (sources != null) {
-                        final Element ref = sources.findChild("reference", "urn:xmpp:reference:0");
-                        if (ref != null) url = ref.getAttribute("uri");
+                        String best = null;
+                        int bestRank = -1;
+                        for (final Element ref : sources.getChildren()) {
+                            if (!"reference".equals(ref.getName())
+                                    || !"urn:xmpp:reference:0".equals(ref.getNamespace())) {
+                                continue;
+                            }
+                            final String candidate = ref.getAttribute("uri");
+                            if (!isUsableSource(candidate)) {
+                                continue;
+                            }
+                            final int rank = sourceRank(candidate);
+                            if (rank > bestRank) {
+                                bestRank = rank;
+                                best = candidate;
+                            }
+                        }
+                        if (best != null) {
+                            url = best;
+                        }
                     }
                 }
             }
+        }
+
+        /** True when a SIMS source URI is something this client could actually fetch. */
+        private static boolean isUsableSource(final String uri) {
+            if (uri == null || uri.isEmpty()) {
+                return false;
+            }
+            final String u = uri.toLowerCase(Locale.US);
+            return u.startsWith("http://") || u.startsWith("https://")
+                    || u.startsWith("cid:") || u.startsWith("aesgcm://")
+                    || u.startsWith("xmpp:");
+        }
+
+        /** Higher rank = preferred download source (HTTP > AES-GCM > BobTransfer > Jingle). */
+        private static int sourceRank(final String uri) {
+            final String u = uri.toLowerCase(Locale.US);
+            if (u.startsWith("https://") || u.startsWith("http://")) {
+                return 3;
+            }
+            if (u.startsWith("aesgcm://")) {
+                return 2;
+            }
+            if (u.startsWith("cid:")) {
+                return 1;
+            }
+            return 0;
         }
 
 
@@ -1995,6 +2049,13 @@ public class Message extends AbstractEntity implements AvatarService.Avatarable 
             if (file == null) return null;
 
             return file.findChildContent("name", file.getNamespace());
+        }
+
+        /** XEP-0385 {@code <desc>}: a human-readable description of the shared media. */
+        public String getDescription() {
+            Element file = getFileElement();
+            if (file == null) return null;
+            return file.findChildContent("desc", file.getNamespace());
         }
 
         public void setName(final String name) {

@@ -1,5 +1,8 @@
 ### Changelog
 
+#### Version 1.9.1.40
+* SIMS (XEP-0385) incoming support: a received `<media-sharing>` is typed from its media-type (image/audio/video/file) right away, the best download source is chosen among all `<sources>` (HTTP > AES-GCM > BobTransfer `cid:` > Jingle), the media-type is used when a URL has no usable extension, and a downloaded file is **verified against the shared hashes** (mismatched content is discarded). `urn:xmpp:sims:1` is now advertised in caps
+
 #### Version 1.9.1.39
 * whiteboard: fix the missing "Started a shared whiteboard" message in a 1:1 chat — the previous idempotency guard reused *any* existing board notice, so a leftover one from an earlier board suppressed the peer's new board (now the guard applies to rooms only, and a fresh 1:1 notice is always posted). The button is also surfaced now when our session already exists (a missed/duplicate invite) and when a 1:1 board is discovered from the peer's SXE traffic
 
