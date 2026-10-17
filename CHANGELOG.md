@@ -1,5 +1,8 @@
 ### Changelog
 
+#### Version 1.9.1.39
+* whiteboard: fix the missing "Started a shared whiteboard" message in a 1:1 chat — the previous idempotency guard reused *any* existing board notice, so a leftover one from an earlier board suppressed the peer's new board (now the guard applies to rooms only, and a fresh 1:1 notice is always posted). The button is also surfaced now when our session already exists (a missed/duplicate invite) and when a 1:1 board is discovered from the peer's SXE traffic
+
 #### Version 1.9.1.38
 * whiteboard: sending the board as a PNG now asks for confirmation before uploading
 * whiteboard: **Start board** is back in the 1:1 chat's overflow menu (it was only reachable through the paperclip popup)

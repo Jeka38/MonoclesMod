@@ -446,14 +446,23 @@ public final class WhiteboardManager {
         final boolean known = sessions.containsKey(sid) || byPeer.containsKey(key(account, peer));
         switch (action) {
             case "session-initiate": {
-                if (sessions.containsKey(sid)) {
+                final Session existing = sessions.get(sid);
+                if (existing != null) {
                     // A duplicate invite for a session we already have (e.g. both sides opened the
                     // board and the same deterministic sid was computed). Just accept it again so the
-                    // peer's `session-accept` expectation is met, but do not create a second session
-                    // or post another chat notice.
-                    final Session existing = sessions.get(sid);
-                    if (existing != null && !existing.joined) {
+                    // peer's `session-accept` expectation is met, but do not create a second session.
+                    if (!existing.joined) {
                         joinSession(existing);
+                    }
+                    // Surface the "Open board" button when the peer's invite arrives for a session
+                    // that has no notice yet. Without this the peer's board is invisible if we
+                    // happened to hold the session already (e.g. we opened it once and left the
+                    // screen: startSession had put the session in the map, so the peer's initiate
+                    // looked like a duplicate and no notice was ever posted because startSession for
+                    // a 1:1 does not post one). `noticeUuid == null` is the dedup guard.
+                    if (existing.noticeUuid == null) {
+                        existing.noticeCounterpart = from;
+                        postWhiteboardNotice(account, existing);
                     }
                     break;
                 }
@@ -510,19 +519,27 @@ public final class WhiteboardManager {
         if (conversation == null) {
             return;
         }
-        // Idempotent: if this conversation already shows an "Open board" notice, keep it and just
-        // remember its uuid. Re-entering a room (any occupant's presence re-advertises the board)
-        // then never adds a second button, and never makes a dismissed one reappear.
-        final Message[] existing = new Message[1];
-        conversation.findMessages(m -> m.getType() == Message.TYPE_WHITEBOARD,
-                message -> {
-                    if (existing[0] == null) {
-                        existing[0] = message;
-                    }
-                });
-        if (existing[0] != null) {
-            session.noticeUuid = existing[0].getUuid();
-            return;
+        // A room board is re-discovered whenever the MUC replays an occupant's presence, so a
+        // duplicate "Open board" button must never be added there. A 1:1 board start however is a
+        // single event (one Jingle session-initiate), so a stale notice from an earlier board must
+        // not suppress the new one: drop every leftover notice and post a fresh one.
+        final java.util.List<Message> existing = new java.util.ArrayList<>();
+        conversation.findMessages(m -> m.getType() == Message.TYPE_WHITEBOARD, existing::add);
+        if (session.muc) {
+            if (!existing.isEmpty()) {
+                session.noticeUuid = existing.get(0).getUuid();
+                return;
+            }
+        } else {
+            boolean changed = false;
+            for (final Message stale : existing) {
+                conversation.deleteMessage(stale);
+                service.databaseBackend.deleteMessageInConversation(stale);
+                changed = true;
+            }
+            if (changed) {
+                service.updateConversationUi();
+            }
         }
         final Message message = Message.createWhiteboardNotice(conversation,
                 session.noticeCounterpart != null ? session.noticeCounterpart : peer);
@@ -668,7 +685,9 @@ public final class WhiteboardManager {
             sessions.put(sid, session);
             byPeer.put(key(account, from.asBareJid()), sid);
             // A room board has no Jingle invite, so as soon as another participant starts one we
-            // post the same in-chat notice (with the button) and notify per the room settings.
+            // post the same in-chat notice (with the button) and notify per the room settings. A 1:1
+            // board is normally announced by its Jingle invite; if that was missed we still surface
+            // the button when the peer's SXE traffic reveals the board.
             if (isGroupChat) {
                 session.noticeCounterpart = from;
                 postWhiteboardNotice(account, session);
@@ -678,6 +697,9 @@ public final class WhiteboardManager {
                 // answer merges, so nothing is lost.
                 session.joined = true;
                 send(account, session, sxe(session, "connect"), null);
+            } else if (session.noticeUuid == null) {
+                session.noticeCounterpart = from;
+                postWhiteboardNotice(account, session);
             }
         }
         final Element child = firstChild(sxe);
