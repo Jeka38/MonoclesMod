@@ -1,8 +1,5 @@
 ### Changelog
 
-#### Version 1.9.1.44
-* whiteboard: the board is no longer owned by its creator — it now lives while **anyone** is on it and is closed and fully deleted only when the **last participant** leaves (rooms and 1:1 alike). Participation is explicit (`<open/>`/`<leave/>`, plus the room presence `<sxe/>` advertisement); closing the board screen or toggling "Share" off announces the departure, keeping the board alive for the others, and only the last one out ends it for everyone. `creator` is kept only to label the "Open board" notice
-
 #### Version 1.9.1.43
 * whiteboard: an invite sent as an XEP-0353 Jingle Message Initiation `<propose>` (`urn:xmpp:jingle:apps:svg-whiteboard:0`) is now handled — `JingleConnectionManager.deliverMessage` only accepted all-RTP proposals, so a whiteboard proposal was ignored and the "Open board" button never appeared; the board now surfaces with the usual notice and the proposal is answered with `<proceed/>`, and a `<retract/>`/`<reject/>` withdraws it
 

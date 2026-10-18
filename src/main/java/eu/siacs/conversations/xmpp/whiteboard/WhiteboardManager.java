@@ -64,7 +64,7 @@ public final class WhiteboardManager {
         void onWhiteboardUpdated(String sid);
 
         /**
-         * A board was ended (the last participant left, or the peer closed it). The activity should
+         * A board was ended (locally by its creator, or by the peer/room). The activity should
          * detach and, if it is still showing that board, close itself.
          */
         void onWhiteboardEnded(String sid);
@@ -89,28 +89,12 @@ public final class WhiteboardManager {
         /** For a MUC notice, the occupant (full JID) that started the board, to show their nick. */
         public Jid noticeCounterpart = null;
         /**
-         * The occupant (full JID) that created the room board, kept only so the notice can show who
-         * started it. It no longer owns the board's lifetime: the board lives while at least one
-         * participant still has it open (see {@link #participants}).
+         * The occupant (full JID) that created the room board. A room board has no central authority,
+         * so the creator is whoever first opened it; that occupant owns the board's lifetime — when
+         * they leave, the board is closed for everyone. Carried on the wire as {@code creator="…"} on
+         * the {@code <sxe/>} so every occupant learns it.
          */
         public Jid creator = null;
-        /**
-         * The **other** participants that currently have the board open — a full occupant JID for a
-         * MUC, a bare JID for a 1:1 chat. Together with {@link #opened} (this device) this is the
-         * board's participant set: the board is kept alive while it is non-empty and is closed and
-         * fully deleted when the **last** one leaves.
-         */
-        public final java.util.Set<String> participants = ConcurrentHashMap.newKeySet();
-        /** True while this device itself has the board open (is a participant of it). */
-        public boolean opened = false;
-        /** True after we announced a leave, so re-opening re-announces our presence to the peers. */
-        public boolean left = false;
-        /**
-         * This device's own participant key, captured when we opened (our full MUC occupant for a
-         * room, our bare JID for a 1:1 chat), so our own departure from the room can be recognised
-         * even after the MUC roster entry is already gone.
-         */
-        public String selfKey = null;
 
         Session(final String sid, final Jid peer, final boolean muc, final boolean host, final Account account) {
             this.sid = sid;
@@ -176,9 +160,25 @@ public final class WhiteboardManager {
     }
 
     /**
-     * Records a candidate creator of a room board and keeps the **smallest** full occupant JID, so
-     * every device agrees who the notice should name. The creator no longer owns the board's
-     * lifetime (the last participant leaving closes it), it only labels the "Open board" notice.
+     * True when this device is the creator of the room board and therefore owns its lifetime (closing
+     * the board when the creator leaves). A 1:1 board is always ours.
+     */
+    public boolean isOwner(final Session session) {
+        if (session == null) {
+            return false;
+        }
+        if (!session.muc) {
+            return true;
+        }
+        return isSelfOccupant(session, session.creator);
+    }
+
+    /**
+     * Records a candidate creator of a room board and keeps the **smallest** full occupant JID. A
+     * room board has no central authority and the session id is derived from the room alone, so
+     * several occupants can open the board and each would otherwise stamp itself as creator; taking
+     * the minimum makes every device converge on the same creator, which is what the "creator leaves
+     * closes the board" rule needs to be consistent across clients.
      */
     private void observeMucCreator(final Session session, @Nullable final Jid candidate) {
         if (!session.muc || candidate == null) {
@@ -188,6 +188,16 @@ public final class WhiteboardManager {
             return;
         }
         session.creator = candidate;
+    }
+
+    /** True when {@code occupant} is our own occupant in the room of this session. */
+    private boolean isSelfOccupant(final Session session, @Nullable final Jid occupant) {
+        if (occupant == null) {
+            return false;
+        }
+        final Jid self = selfOccupant(session.account, session.peer);
+        return self != null && self.asBareJid().equals(occupant.asBareJid())
+                && self.getResource() != null && self.getResource().equals(occupant.getResource());
     }
 
     // ── Lookups ───────────────────────────────────────────────────────────
@@ -259,18 +269,11 @@ public final class WhiteboardManager {
      * A MUC occupant advertised a shared whiteboard in their presence ({@code <sxe session=…/>}).
      * Discover the room board from that (which also covers a member who joins the room after the
      * board started, since the MUC service replays the other occupants' presence to them), post the
-     * <em>Open board</em> notice, record the occupant as a board participant and ask for the current
-     * document once.
-     *
-     * <p>A presence that does **not** carry {@code <sxe/>} is deliberately ignored here: an occupant
-     * re-sends presence without it on a nick/status change, which must not look like a departure.
-     * Only an explicit {@code <leave/>}, a {@code <close/>} or the occupant leaving the room removes
-     * a participant.
+     * <em>Open board</em> notice and ask for the current document once.
      */
     public void onMucPresenceSxe(final Account account, final Jid room, final Jid occupant, final String sid,
                                  @Nullable final Jid creator) {
-        if (account == null || room == null || occupant == null
-                || sid == null || sid.isEmpty()) {
+        if (account == null || room == null || occupant == null || sid == null || sid.isEmpty()) {
             return;
         }
         if (isSelfReflection(account, occupant)) {
@@ -284,17 +287,15 @@ public final class WhiteboardManager {
             seedDocument(session.doc);
             sessions.put(sid, session);
             byPeer.put(key(account, room.asBareJid()), sid);
-            // The creator is only used to label the notice. The board's lifetime is governed by the
-            // participant set (the last one out closes and deletes it), not by the creator.
+            // The creator owns the board's lifetime: prefer the advertised creator, else the occupant
+            // whose presence announced it (a brand-new board is announced by its creator). The
+            // smallest occupant JID wins so all devices agree who that is.
             observeMucCreator(session, creator != null ? creator : occupant);
             session.noticeCounterpart = session.creator;
             postWhiteboardNotice(account, session);
         } else {
             observeMucCreator(session, creator != null ? creator : occupant);
         }
-        // The presence advertisement means this occupant has the board open: record them as a
-        // participant (this is also how a late joiner learns the current participants).
-        addParticipant(session, occupant);
         if (!session.joined) {
             session.joined = true;
             send(account, session, sxe(session, "connect"), null);
@@ -302,13 +303,9 @@ public final class WhiteboardManager {
     }
 
     /**
-     * Called when a MUC occupant leaves the room. A room board is kept alive while at least one
-     * participant remains; the occupant is removed from the participant set, and the board is closed
-     * and fully deleted for everyone only once the **last** participant is gone. Runs on every room
-     * presence change so this happens even when the user is not looking at the board.
-     *
-     * <p>Only a device that is itself on the board ({{@code session.opened}}) concludes the board is
-     * over — a passive occupant that merely received the board payloads must never close it.
+     * Called when a MUC occupant leaves the room. If the occupant was the creator of the room board,
+     * the board is closed for everyone (the creator owns its lifetime). Runs on every room presence
+     * change so a creator who leaves ends the board even when we are not looking at it.
      */
     public void onMucOccupantUnavailable(final Account account, final Jid room, final Jid occupant) {
         if (account == null || room == null || occupant == null) {
@@ -318,118 +315,19 @@ public final class WhiteboardManager {
             if (!session.muc || !session.peer.asBareJid().equals(room.asBareJid())) {
                 continue;
             }
-            if (session.opened && session.selfKey != null
-                    && session.selfKey.equals(participantKey(session, occupant))) {
-                // We ourselves left the room: forget the board locally. The other occupants learn
-                // from our unavailable presence (and close it if they turn out to be the last), so
-                // there is nothing to broadcast — and no directed presence may be sent to a room we
-                // just left (it would rejoin us).
-                forgetSession(session);
+            if (session.creator == null || !sameOccupant(session.creator, occupant)) {
                 continue;
             }
-            // Drop the departing occupant (a no-op when they were never a participant).
-            removeParticipant(session, occupant);
-            pruneStaleParticipants(session);
-            if (boardIsEmpty(session)) {
-                // Nobody is on the board any more: we are not on it, and the room has no remaining
-                // participant. Drop our local copy; the last participant's own departure presence (or
-                // their `<close/>`) is what reaches the others.
-                forgetSession(session);
-            }
-        }
-    }
-
-    /**
-     * Records a **remote** participant as having the board open. The key is a full occupant JID for a
-     * MUC (each occupant is its own participant) and a bare JID for a 1:1 chat.
-     */
-    private void addParticipant(final Session session, @Nullable final Jid participant) {
-        final String key = participantKey(session, participant);
-        if (key != null) {
-            session.participants.add(key);
-        }
-    }
-
-    /**
-     * Removes a remote participant and reports whether the board has become empty — i.e. nobody
-     * remains: no other participant and this device is not on the board either. A JID that is not
-     * currently a participant returns false, so a stranger leaving the room never ends the board.
-     */
-    private boolean removeParticipant(final Session session, @Nullable final Jid participant) {
-        final String key = participantKey(session, participant);
-        if (key == null || !session.participants.remove(key)) {
-            return false;
-        }
-        return boardIsEmpty(session);
-    }
-
-    private static boolean boardIsEmpty(final Session session) {
-        return !session.opened && session.participants.isEmpty();
-    }
-
-    /**
-     * Drops participant entries whose occupant is no longer in the room. A MUC nick change makes the
-     * occupant appear under a new JID (and the old one leaves with the "nick changed" status code,
-     * which is deliberately not treated as a departure), so without this a stale entry could keep a
-     * passive observer's board "non-empty" forever.
-     */
-    private void pruneStaleParticipants(final Session session) {
-        if (!session.muc || session.participants.isEmpty()) {
-            return;
-        }
-        final Conversation conversation = service.find(session.account, session.peer);
-        if (conversation == null || conversation.getMode() != Conversation.MODE_MULTI) {
-            return;
-        }
-        final java.util.Set<String> present = new java.util.HashSet<>();
-        for (final MucOptions.User user : conversation.getMucOptions().getUsers(true)) {
-            final Jid full = user.getFullJid();
-            if (full != null) {
-                present.add(full.toEscapedString());
-            }
-        }
-        session.participants.removeIf(key -> !present.contains(key));
-    }
-
-    private static String participantKey(final Session session, @Nullable final Jid jid) {
-        if (session == null || jid == null) {
-            return null;
-        }
-        // A MUC keys by the full occupant JID (each occupant is a participant); a 1:1 chat keys by
-        // the bare JID (a contact is one participant regardless of the resource).
-        return session.muc ? jid.toEscapedString() : jid.asBareJid().toEscapedString();
-    }
-
-    /**
-     * Called when this device leaves the board screen without deleting the board (the "Share" toggle
-     * off, or the user simply closing the screen). Announces the departure so the other participants
-     * drop us, and only when we were the **last** participant does it close and fully delete the
-     * board. Returns true when the board was ended because we were the last one.
-     */
-    public boolean leaveSession(final Session session) {
-        if (session == null) {
-            return false;
-        }
-        session.opened = false;
-        if (session.muc) {
-            // Stop advertising the board in our room presence so it is not re-discovered as active.
-            clearAdvertisement(session);
-        }
-        if (boardIsEmpty(session)) {
-            // Nobody else is on the board: close and delete it for everyone.
+            // The creator left: end the board for us (and broadcast a close so other occupants that
+            // did not see the leave also drop it).
             endSession(session, true);
-            return true;
         }
-        // Others remain: tell them we left so they drop us from the participant list, and keep our
-        // local session so re-opening the board re-attaches to the still-running document.
-        session.left = true;
-        try {
-            send(session.account, session, sxe(session, "leave"), null);
-        } catch (final RuntimeException e) {
-            Log.d(Config.LOGTAG, "whiteboard: could not announce board leave", e);
-        }
-        notifyUpdate(session.sid);
-        return false;
+    }
+
+    private static boolean sameOccupant(final Jid a, final Jid b) {
+        return a != null && b != null
+                && a.asBareJid().equals(b.asBareJid())
+                && a.getResource() != null && a.getResource().equals(b.getResource());
     }
 
     public boolean isWhiteboardJingle(final JinglePacket packet) {
@@ -454,10 +352,6 @@ public final class WhiteboardManager {
         final Jid barePeer = peer.asBareJid();
         final Session existing = getSessionForPeer(account, barePeer);
         if (existing != null) {
-            // Already running: just make sure we are counted as a participant again (we may have
-            // toggled sharing off earlier while the other participants kept the board alive).
-            // `openSession` re-announces our presence (`<open/>`, and for a room the presence `<sxe/>`).
-            openSession(existing);
             return existing.sid;
         }
         final String sid = sessionIdFor(account, barePeer, muc);
@@ -467,12 +361,14 @@ public final class WhiteboardManager {
         sessions.put(sid, session);
         byPeer.put(key(account, barePeer), sid);
         if (muc) {
-            // Room board: the room JID is the host and payloads travel as groupchat. The creator is
-            // only used to label the notice; the board's lifetime is governed by the participant set.
+            // Room board: the room JID is the host and payloads travel as groupchat. This device
+            // offers itself as a creator candidate (it is opening the board); a convergence step
+            // (smallest occupant JID wins) makes every device agree who owns the board's lifetime.
             observeMucCreator(session, selfOccupant(account, barePeer));
-            // Connect, then post the "Open board" notice into the room so every member (including
-            // this device) sees the button and gets a notification per the room settings.
-            // `openSession` announces the join (room presence advertisement + `<open/>`).
+            // Announce in presence + connect, then post the "Open board" notice into the room so
+            // every member (including this device) sees the button and gets a notification per the
+            // room settings.
+            advertise(session);
             session.ready = true;
             send(account, session, sxe(session, "connect"), null);
             // Mark joined so attachSession does not send a second <connect> (which would make every
@@ -487,47 +383,7 @@ public final class WhiteboardManager {
             // invite, so there is no double document. `host` is still used for snapshot duty.
             sendJingle(account, session, "session-initiate");
         }
-        openSession(session);
         return sid;
-    }
-
-    /** Marks this device as a board participant, so the board lives while we (or anyone) is on it. */
-    private void openSession(final Session session) {
-        if (session == null || session.opened) {
-            return;
-        }
-        final boolean rejoin = session.left;
-        session.left = false;
-        session.opened = true;
-        session.selfKey = participantKey(session,
-                session.muc ? selfOccupant(session.account, session.peer) : session.account.getJid());
-        if (session.muc) {
-            // Re-send our room presence with the <sxe/> advertisement: that is how the other
-            // occupants see that we have the board open (and how a late joiner learns about it).
-            advertise(session);
-        }
-        // Tell the other participants we are on the board, so a peer that dropped us when we left
-        // re-adds us. A passive receiver that only holds the session for the document fetch does not
-        // send <open/>, so it is never counted as a participant.
-        try {
-            send(session.account, session, sxe(session, "open"), null);
-        } catch (final RuntimeException e) {
-            Log.d(Config.LOGTAG, "whiteboard: could not announce board open", e);
-        }
-        if (rejoin) {
-            // We had left entirely; ask for the current document so this screen is up to date.
-            session.joined = true;
-            send(session.account, session, sxe(session, "connect"), null);
-        }
-    }
-
-    /**
-     * The board screen was opened by this device: count us as a participant (the board lives while at
-     * least one participant remains). Idempotent, and also re-registers a device that had left an
-     * earlier time (e.g. the board screen was closed while the other participants kept it alive).
-     */
-    public void openBoard(final Session session) {
-        openSession(session);
     }
 
     /** Accept an incoming invite and connect to the host. */
@@ -586,23 +442,6 @@ public final class WhiteboardManager {
             clearAdvertisement(session);
         }
         // The board is gone: drop the in-chat "Open board" notice so it does not linger.
-        removeWhiteboardNotice(session);
-        notifyUpdate(session.sid);
-        notifyEnded(session.sid);
-    }
-
-    /**
-     * Drops a board locally without telling anyone: removes the session, its {@code byPeer} entry,
-     * the in-chat notice and notifies the UI. Used when we cannot (or must not) broadcast — e.g. we
-     * left the room ourselves, so a directed presence would rejoin us and the room already saw our
-     * unavailable presence.
-     */
-    private void forgetSession(final Session session) {
-        if (session == null) {
-            return;
-        }
-        sessions.remove(session.sid);
-        byPeer.remove(key(session.account, session.peer));
         removeWhiteboardNotice(session);
         notifyUpdate(session.sid);
         notifyEnded(session.sid);
@@ -858,8 +697,6 @@ public final class WhiteboardManager {
                     if (!existing.joined) {
                         joinSession(existing);
                     }
-                    // The peer is inviting, so it has the board open.
-                    addParticipant(existing, from);
                     // Surface the "Open board" button when the peer's invite arrives for a session
                     // that has no notice yet. Without this the peer's board is invisible if we
                     // happened to hold the session already (e.g. we opened it once and left the
@@ -893,9 +730,6 @@ public final class WhiteboardManager {
                 // end too. Do NOT auto-open the screen or post a push — surface it as a normal
                 // in-chat message with an "Open board" button instead.
                 joinSession(session);
-                // The initiator obviously has the board open, so record it as a participant (this is
-                // also how a peer that does not implement our `<open/>` signal is tracked).
-                addParticipant(session, from);
                 notifyUpdate(sid);
                 postWhiteboardNotice(account, session);
                 break;
@@ -1110,10 +944,10 @@ public final class WhiteboardManager {
         }
         final Element sxeChild = firstChild(sxe);
         if (sxeChild != null && "close".equals(sxeChild.getName())) {
-            // The board was ended: the last participant left (or, for 1:1, the peer closed it). Drop
-            // any local copy, its notice and tell the UI the board is gone — even when we no longer
-            // hold the session (app restart, re-entry). A room board has no Jingle session-terminate,
-            // so this <close/> is the client extension that carries it.
+            // The board was ended (by the creator/owner or, for 1:1, the peer). Drop any local copy,
+            // its notice and tell the UI the board is gone — even when we no longer hold the session
+            // (app restart, re-entry). A room board has no Jingle session-terminate, so this <close/>
+            // is the client extension that carries it.
             final Session local = sessions.remove(sid);
             final Jid room = local != null ? local.peer : from.asBareJid();
             final Account noticeAccount = local != null ? local.account : account;
@@ -1124,11 +958,6 @@ public final class WhiteboardManager {
             return true;
         }
         Session session = sessions.get(sid);
-        if (session == null && sxeChild != null && "leave".equals(sxeChild.getName())) {
-            // A leave for a board we do not have: nothing to drop, and it must NOT create a session
-            // (nor post a notice for a board that is already gone).
-            return true;
-        }
         if (session == null) {
             // For a MUC there is no Jingle invite: the room is the relay and every occupant is a
             // plain participant. The deterministic host rule only applies to 1:1.
@@ -1142,8 +971,8 @@ public final class WhiteboardManager {
             // board is normally announced by its Jingle invite; if that was missed we still surface
             // the button when the peer's SXE traffic reveals the board.
             if (isGroupChat) {
-                // The creator is only used to label the notice; the board's lifetime is governed by
-                // the participant set (the last one out closes and deletes it).
+                // The creator owns the board's lifetime; it is advertised on the <sxe/> so a late
+                // joiner learns who to watch for leaving (smallest occupant JID wins).
                 observeMucCreator(session, sxe.getAttributeAsJid("creator"));
                 session.noticeCounterpart = session.creator != null ? session.creator : from;
                 postWhiteboardNotice(account, session);
@@ -1157,11 +986,6 @@ public final class WhiteboardManager {
                 session.noticeCounterpart = from;
                 postWhiteboardNotice(account, session);
             }
-            if (!isGroupChat) {
-                // A 1:1 board discovered through the peer's SXE traffic: the peer clearly has it
-                // open, so record it (covers a peer that does not send an explicit <open/>).
-                addParticipant(session, from);
-            }
         } else if (isGroupChat) {
             observeMucCreator(session, sxe.getAttributeAsJid("creator"));
         }
@@ -1170,21 +994,6 @@ public final class WhiteboardManager {
             return true;
         }
         switch (child.getName()) {
-            case "open":
-                // A peer has the board open: this is the explicit participation signal (SXE edit
-                // traffic alone does not count, so a passive receiver is never treated as a
-                // participant).
-                addParticipant(session, from);
-                break;
-            case "leave":
-                // A participant left the board. Drop them; the last one to leave closes and deletes
-                // the board for everyone.
-                if (removeParticipant(session, from)) {
-                    endSession(session, true);
-                } else {
-                    notifyUpdate(session.sid);
-                }
-                break;
             case "connect":
                 onConnect(session, from.toString());
                 break;
@@ -1314,8 +1123,8 @@ public final class WhiteboardManager {
         final Element el = new Element("sxe", NS_SXE);
         el.setAttribute("session", session.sid);
         el.setAttribute("id", SxeDocument.newRid());
-        // Carry the creator so the notice can name who started the board (the board's lifetime is
-        // governed by the participant set, not by the creator).
+        // Carry the creator so every occupant can (a) show the invitation from the right person and
+        // (b) close the board when that creator leaves the room.
         if (session.muc && session.creator != null) {
             el.setAttribute("creator", session.creator.toEscapedString());
         }

@@ -363,10 +363,9 @@ public class PresenceParser extends AbstractParser implements
                         addedStatusMessage = true;
                         mXmppConnectionService.getAvatarService().clear(user);
                     }
-                    // A board is kept alive while at least one participant remains: whoever leaves
-                    // (another occupant, or us) is removed from the board's participant set, and the
-                    // board is closed and fully deleted only when the last participant is gone. Runs
-                    // here too, so it happens without opening the board.
+                    // A board's creator owns its lifetime: whoever leaves (another occupant, or us),
+                    // if they were the board's creator the board closes for everyone — even here,
+                    // without opening it.
                     if (!codes.contains(MucOptions.STATUS_CODE_CHANGED_NICK)) {
                         mXmppConnectionService.getWhiteboardManager().onMucOccupantUnavailable(
                                 account,

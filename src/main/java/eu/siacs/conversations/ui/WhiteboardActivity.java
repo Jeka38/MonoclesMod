@@ -271,14 +271,15 @@ public class WhiteboardActivity extends XmppActivity implements WhiteboardManage
             whiteboardManager.removeListener(this);
             listenerRegistered = false;
         }
-        // Leaving the board screen: announce our departure. The board is kept alive while at least
-        // one participant remains and is closed and fully deleted only when the **last** one leaves
-        // ("last one out closes it"). `isFinishing()` guards against a system-initiated destroy,
-        // which is not the user leaving. A cancelled board already detached, so this is a no-op then.
+        // Leaving the board screen: if we are the board's creator, the board is closed for everyone
+        // ("полное отключение доски"). A participant who merely joined someone else's board leaving
+        // does not end it — and `isFinishing()` guards against a system-initiated destroy, which is
+        // not the user leaving. `finish()` from a cancelled board already detached, so this is a
+        // no-op then.
         if (isFinishing()) {
             final WhiteboardManager.Session session = currentSession();
-            if (session != null && whiteboardManager != null) {
-                whiteboardManager.leaveSession(session);
+            if (session != null && whiteboardManager != null && whiteboardManager.isOwner(session)) {
+                whiteboardManager.endSession(session);
             }
         }
         super.onDestroy();
@@ -458,9 +459,7 @@ public class WhiteboardActivity extends XmppActivity implements WhiteboardManage
             final WhiteboardManager.Session session =
                     xmppConnectionService.getWhiteboardManager().getSession(sessionId);
             if (session != null) {
-                // Leaving sharing: if others remain they keep the board; if we were the last one it
-                // is closed and fully deleted.
-                xmppConnectionService.getWhiteboardManager().leaveSession(session);
+                xmppConnectionService.getWhiteboardManager().endSession(session);
             }
             detachSession();
             return;
@@ -494,9 +493,6 @@ public class WhiteboardActivity extends XmppActivity implements WhiteboardManage
             return;
         }
         this.sessionId = session.sid;
-        // We are looking at the board: count as a participant (the board lives while someone is on
-        // it). Idempotent; re-registers us if we had left an earlier time.
-        whiteboardManager.openBoard(session);
         // If we are the responding side of an invite (or opening a room board that already exists)
         // and have not connected yet, announce ourselves so the current document is offered.
         // Idempotent.
@@ -580,8 +576,8 @@ public class WhiteboardActivity extends XmppActivity implements WhiteboardManage
         if (sid == null || !sid.equals(sessionId)) {
             return;
         }
-        // The board was ended (the last participant left, or the peer/room closed it): detach and
-        // leave the screen so the user is not left looking at a board that no longer exists.
+        // The board was ended (by its creator leaving / cancelling, or by the peer): detach and leave
+        // the screen so the user is not left looking at a board that no longer exists.
         runOnUiThread(() -> {
             detachSession();
             if (!isFinishing()) {
