@@ -14,4 +14,11 @@
         android:icon="?attr/icon_scan_qr_code"
         app:showAsAction="always"
         android:visible="false"/>
+    <item
+        android:id="@+id/action_hide_offline"
+        android:checkable="true"
+        android:checked="false"
+        android:orderInCategory="85"
+        android:title="@string/hide_offline"
+        app:showAsAction="never" />
 </menu>

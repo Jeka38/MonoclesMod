@@ -1,5 +1,8 @@
 ### Changelog
 
+#### Version 1.9.1.42
+* whiteboard: "Send board" can now be sent to a **conference room** (the contact picker lists bookmarked rooms, and the result marks a room pick so the conversation is created in MUC mode) and the picker gained a **"hide offline"** menu toggle (persisted in the `hide_offline` preference), so the list is no longer cluttered with offline contacts
+
 #### Version 1.9.1.41
 * whiteboard: the board's creator now owns its lifetime — when the creator leaves the board (or the room), the board closes for everyone; joining a board does not create a new one (the same room-wide session is reused); a board cancellation really ends the shared session on the other side (1:1 `session-terminate`, room `<close/>`) and closes the screen for all participants; the room creator is advertised on the `<sxe/>` (`creator`) and converged to the smallest occupant JID so every device agrees
 

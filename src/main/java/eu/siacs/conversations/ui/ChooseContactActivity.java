@@ -38,6 +38,7 @@ import eu.siacs.conversations.entities.Contact;
 import eu.siacs.conversations.entities.Conversation;
 import eu.siacs.conversations.entities.ListItem;
 import eu.siacs.conversations.entities.MucOptions;
+import eu.siacs.conversations.entities.Presence;
 import eu.siacs.conversations.ui.interfaces.OnBackendConnected;
 import eu.siacs.conversations.ui.util.ActivityResult;
 import eu.siacs.conversations.ui.util.PendingItem;
@@ -50,6 +51,12 @@ public class ChooseContactActivity extends AbstractSearchableListItemActivity im
     public static final String EXTRA_SELECT_MULTIPLE = "extra_select_multiple";
     public static final String EXTRA_SHOW_ENTER_JID = "extra_show_enter_jid";
     public static final String EXTRA_CONVERSATION = "extra_conversation";
+    /** When true, also list the account's bookmarked conferences, so a board/file can go to a room. */
+    public static final String EXTRA_SHOW_CONFERENCES = "extra_show_conferences";
+    /** Set on the result when the picked item was a bookmarked room (not a 1:1 contact). */
+    public static final String EXTRA_PICKED_CONFERENCE = "extra_picked_conference";
+    /** When true, offer a "hide offline" toggle in the menu (defaults to the saved preference). */
+    public static final String EXTRA_SHOW_HIDE_OFFLINE = "extra_show_hide_offline";
     private static final String EXTRA_FILTERED_CONTACTS = "extra_filtered_contacts";
     private List<String> mActivatedAccounts = new ArrayList<>();
     private Set<String> selected = new HashSet<>();
@@ -58,6 +65,10 @@ public class ChooseContactActivity extends AbstractSearchableListItemActivity im
     private boolean showEnterJid = false;
     private boolean startSearching = false;
     private boolean multiple = false;
+    private boolean showConferences = false;
+    private boolean showHideOffline = false;
+    private boolean mHideOfflineContacts = false;
+    private MenuItem mMenuHideOffline;
 
     private PendingItem<ActivityResult> postponedActivityResult = new PendingItem<>();
 
@@ -136,6 +147,10 @@ public class ChooseContactActivity extends AbstractSearchableListItemActivity im
 
         getListView().setOnItemClickListener(this);
         this.showEnterJid = intent.getBooleanExtra(EXTRA_SHOW_ENTER_JID, false);
+        this.showConferences = intent.getBooleanExtra(EXTRA_SHOW_CONFERENCES, false);
+        this.showHideOffline = intent.getBooleanExtra(EXTRA_SHOW_HIDE_OFFLINE, false);
+        this.mHideOfflineContacts = showHideOffline
+                && getPreferences().getBoolean("hide_offline", false);
         this.binding.fab.setOnClickListener(this::onFabClicked);
         if (this.showEnterJid) {
             this.binding.fab.show();
@@ -258,6 +273,12 @@ public class ChooseContactActivity extends AbstractSearchableListItemActivity im
         if (startSearching) {
             mMenuSearchView.expandActionView();
         }
+        mMenuHideOffline = menu.findItem(R.id.action_hide_offline);
+        if (mMenuHideOffline != null) {
+            mMenuHideOffline.setVisible(showHideOffline);
+            mMenuHideOffline.setChecked(mHideOfflineContacts);
+            mMenuHideOffline.setTitle(mHideOfflineContacts ? R.string.show_offline_users : R.string.hide_offline);
+        }
         return true;
     }
 
@@ -292,7 +313,10 @@ public class ChooseContactActivity extends AbstractSearchableListItemActivity im
                 for (final Contact contact : account.getRoster().getContacts()) {
                     if (contact.showInContactList() &&
                             !filterContacts.contains(contact.getJid().asBareJid().toString())
-                            && contact.match(this, needle)) {
+                            && contact.match(this, needle)
+                            && (!mHideOfflineContacts
+                            || (needle != null && !needle.trim().isEmpty())
+                            || contact.getShownStatus().compareTo(Presence.Status.OFFLINE) < 0)) {
                         getListItems().add(contact);
                     }
                 }
@@ -301,6 +325,17 @@ public class ChooseContactActivity extends AbstractSearchableListItemActivity im
                 self.setSystemName(getString(R.string.note_to_self));
                 if (self.match(this, needle)) {
                     getListItems().add(self);
+                }
+
+                // Optionally include the account's bookmarked conferences so the board (or a file) can
+                // be sent to a room, not only to a 1:1 contact.
+                if (showConferences) {
+                    for (final eu.siacs.conversations.entities.Bookmark bookmark : account.getBookmarks()) {
+                        if (!filterContacts.contains(bookmark.getJid().asBareJid().toString())
+                                && bookmark.match(this, needle)) {
+                            getListItems().add(bookmark);
+                        }
+                    }
                 }
             }
         }
@@ -324,6 +359,13 @@ public class ChooseContactActivity extends AbstractSearchableListItemActivity im
         switch (item.getItemId()) {
             case R.id.action_scan_qr_code:
                 ScanActivity.scan(this);
+                return true;
+            case R.id.action_hide_offline:
+                mHideOfflineContacts = !item.isChecked();
+                getPreferences().edit().putBoolean("hide_offline", mHideOfflineContacts).apply();
+                item.setChecked(mHideOfflineContacts);
+                item.setTitle(mHideOfflineContacts ? R.string.show_offline_users : R.string.hide_offline);
+                filterContacts();
                 return true;
         }
         return super.onOptionsItemSelected(item);
@@ -450,11 +492,22 @@ public class ChooseContactActivity extends AbstractSearchableListItemActivity im
         final Intent data = new Intent();
         data.putExtra("contact", item.getJid().toString());
         String account = request.getStringExtra(EXTRA_ACCOUNT);
-        if (account == null && item instanceof Contact) {
-            account = ((Contact) item).getAccount().getJid().asBareJid().toEscapedString();
+        if (account == null) {
+            if (item instanceof Contact) {
+                account = ((Contact) item).getAccount().getJid().asBareJid().toEscapedString();
+            } else if (item instanceof eu.siacs.conversations.entities.Bookmark) {
+                final eu.siacs.conversations.entities.Bookmark bookmark =
+                        (eu.siacs.conversations.entities.Bookmark) item;
+                if (bookmark.getAccount() != null) {
+                    account = bookmark.getAccount().getJid().asBareJid().toEscapedString();
+                }
+            }
         }
         data.putExtra(EXTRA_ACCOUNT, account);
         data.putExtra(EXTRA_SELECT_MULTIPLE, false);
+        // Remember a room choice so the caller can tell it apart from a contact (the JID alone does
+        // not say whether the target is a MUC room for a bare room JID).
+        data.putExtra(EXTRA_PICKED_CONFERENCE, item instanceof eu.siacs.conversations.entities.Bookmark);
         copy(request, data);
         setResult(RESULT_OK, data);
         finish();

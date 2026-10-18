@@ -311,7 +311,8 @@ public class WhiteboardActivity extends XmppActivity implements WhiteboardManage
                 targetAccount = chosen;
             }
         }
-        renderAndSendBoard(jids.get(0), targetAccount);
+        final boolean room = data.getBooleanExtra(ChooseContactActivity.EXTRA_PICKED_CONFERENCE, false);
+        renderAndSendBoard(jids.get(0), targetAccount, room);
     }
 
     @Override
@@ -349,6 +350,10 @@ public class WhiteboardActivity extends XmppActivity implements WhiteboardManage
         final Intent intent = new Intent(this, ChooseContactActivity.class);
         intent.putExtra(ChooseContactActivity.EXTRA_SHOW_ENTER_JID, true);
         intent.putExtra(ChooseContactActivity.EXTRA_SELECT_MULTIPLE, false);
+        // List bookmarked rooms too, so the board (a PNG) can be sent to a conference, and offer the
+        // "hide offline" toggle so the list is not cluttered with offline contacts.
+        intent.putExtra(ChooseContactActivity.EXTRA_SHOW_CONFERENCES, true);
+        intent.putExtra(ChooseContactActivity.EXTRA_SHOW_HIDE_OFFLINE, true);
         intent.putExtra(ChooseContactActivity.EXTRA_TITLE_RES_ID, R.string.whiteboard_send_contact);
         if (account != null) {
             intent.putExtra(EXTRA_ACCOUNT, account.getJid().asBareJid().toEscapedString());
@@ -356,14 +361,15 @@ public class WhiteboardActivity extends XmppActivity implements WhiteboardManage
         startActivityForResult(intent, REQUEST_SEND_BOARD);
     }
 
-    private void renderAndSendBoard(final Jid contactJid, final Account account) {
+    private void renderAndSendBoard(final Jid contactJid, final Account account, final boolean muc) {
         if (account == null || contactJid == null) {
             return;
         }
-        final boolean muc = xmppConnectionService.isMuc(account, contactJid)
+        final boolean isRoom = muc
+                || xmppConnectionService.isMuc(account, contactJid)
                 || account.getBookmark(contactJid.asBareJid()) != null;
         final Conversation conversation =
-                xmppConnectionService.findOrCreateConversation(account, contactJid.asBareJid(), muc, true);
+                xmppConnectionService.findOrCreateConversation(account, contactJid.asBareJid(), isRoom, true);
         if (conversation == null) {
             ToastCompat.makeText(this, R.string.whiteboard_send_failed, ToastCompat.LENGTH_SHORT).show();
             return;
