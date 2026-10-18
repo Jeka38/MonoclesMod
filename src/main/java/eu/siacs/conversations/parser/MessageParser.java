@@ -707,6 +707,23 @@ public class MessageParser extends AbstractParser implements OnMessagePacketRece
             return;
         }
 
+        // XEP-0353 JMI whiteboard proposal (WHITEBOARD_PROFILE §9.3). A <propose/> that offers the
+        // whiteboard is bodyless, so it never reaches the Jingle-message loop further below (that
+        // lives inside the "has body" branch) and would silently vanish, leaving no "Open board"
+        // button. Consume it here for live 1:1 traffic and answer with <proceed/>.
+        if (query == null
+                && !isTypeGroupChat
+                && mucUserElement == null
+                && !packet.fromAccount(account)) {
+            for (final Element child : packet.getChildren()) {
+                if (mXmppConnectionService
+                        .getWhiteboardManager()
+                        .handleJingleMessageInitiation(account, counterpart, child)) {
+                    return;
+                }
+            }
+        }
+
         final Invite invite = extractInvite(packet);
         if (invite != null) {
             if (invite.jid.asBareJid().equals(account.getJid().asBareJid())) {

@@ -1,5 +1,8 @@
 ### Changelog
 
+#### Version 1.9.1.43
+* whiteboard: an invite sent as an XEP-0353 Jingle Message Initiation `<propose>` (`urn:xmpp:jingle:apps:svg-whiteboard:0`) is now handled — `JingleConnectionManager.deliverMessage` only accepted all-RTP proposals, so a whiteboard proposal was ignored and the "Open board" button never appeared; the board now surfaces with the usual notice and the proposal is answered with `<proceed/>`, and a `<retract/>`/`<reject/>` withdraws it
+
 #### Version 1.9.1.42
 * whiteboard: "Send board" can now be sent to a **conference room** (the contact picker lists bookmarked rooms, and the result marks a room pick so the conversation is created in MUC mode) and the picker gained a **"hide offline"** menu toggle (persisted in the `hide_offline` preference), so the list is no longer cluttered with offline contacts
 

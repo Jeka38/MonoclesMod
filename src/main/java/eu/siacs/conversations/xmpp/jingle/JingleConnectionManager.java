@@ -338,6 +338,15 @@ public class JingleConnectionManager extends AbstractConnectionManager {
         if (sessionId == null) {
             return;
         }
+        // XEP-0353 whiteboard proposal (WHITEBOARD_PROFILE §9.3): the description is the whiteboard
+        // application instead of RTP. Hand it to the whiteboard manager (the "Open board" notice +
+        // a <proceed/>) before the RTP-only handling below, which would otherwise ignore it.
+        if (!from.asBareJid().equals(account.getJid().asBareJid())
+                && mXmppConnectionService
+                        .getWhiteboardManager()
+                        .handleJingleMessageInitiation(account, from, message)) {
+            return;
+        }
         if ("accept".equals(message.getName())) {
             for (AbstractJingleConnection connection : connections.values()) {
                 if (connection instanceof JingleRtpConnection rtpConnection) {

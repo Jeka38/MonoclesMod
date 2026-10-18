@@ -570,6 +570,110 @@ public final class WhiteboardManager {
         return session != null && session.ready;
     }
 
+    // ── XEP-0353 Jingle Message Initiation proposals ──────────────────────
+
+    /**
+     * Handles an incoming XEP-0353 Jingle Message Initiation element that concerns the whiteboard —
+     * the optional "Full profile" way to invite from inside an existing chat (WHITEBOARD_PROFILE
+     * §9.3 / extended spec §JMI). The peer sends a bodyless
+     * {@code <propose><description xmlns='urn:xmpp:jingle:apps:svg-whiteboard:0'/></propose>} and
+     * only starts the real Jingle session once it receives a {@code <proceed/>}. A later
+     * {@code <retract/>}/{@code <reject/>} withdraws that proposal.
+     *
+     * <p>Such a message carries no body, so it never reaches the Jingle-message routing in
+     * {@code MessageParser} (which lives inside the "has body" branch). Without handling it here the
+     * "Open board" button is never posted for such an invite.
+     *
+     * @return true when the element concerned the whiteboard and was consumed.
+     */
+    public boolean handleJingleMessageInitiation(
+            final Account account, final Jid from, final Element element) {
+        if (account == null || from == null || element == null
+                || !Namespace.JINGLE_MESSAGE.equals(element.getNamespace())) {
+            return false;
+        }
+        final String name = element.getName();
+        if (name == null) {
+            return false;
+        }
+        switch (name) {
+            case "propose":
+                return handleProposal(account, from, element);
+            case "retract":
+            case "reject":
+                return handleProposalWithdrawal(account, from, element);
+            default:
+                return false;
+        }
+    }
+
+    private boolean handleProposal(final Account account, final Jid from, final Element propose) {
+        final Element description = propose.findChild("description");
+        if (description == null || !NS_WHITEBOARD.equals(description.getNamespace())) {
+            return false;
+        }
+        final String sid = propose.getAttribute("id");
+        if (sid == null) {
+            return false;
+        }
+        MujiLog.log(service.getFilesDir(), "WB proposal sid=" + sid + " from=" + from);
+        final Jid peer = from.asBareJid();
+        Session session = sessions.get(sid);
+        if (session == null) {
+            // The proposal id becomes the Jingle `sid` of the ensuing session-initiate (XEP-0353),
+            // so adopting it here means the real invite lands in this very session.
+            session = new Session(sid, peer, false, hostFor(account, peer), account);
+            session.fullPeer = from.toString();
+            seedDocument(session.doc);
+            sessions.put(sid, session);
+            byPeer.put(key(account, peer), sid);
+        }
+        // Invitations surface as a normal in-chat message with an "Open board" button (the screen is
+        // never force-opened), then the proposer is told to proceed so it sends the session-initiate.
+        if (session.noticeUuid == null) {
+            session.noticeCounterpart = from;
+            postWhiteboardNotice(account, session);
+        }
+        proceedProposal(account, from, sid);
+        return true;
+    }
+
+    /**
+     * A JMI {@code <retract/>}/{@code <reject/>} for a board we only know from a proposal: drop the
+     * placeholder session and its "Open board" notice, since the board will never be started.
+     */
+    private boolean handleProposalWithdrawal(
+            final Account account, final Jid from, final Element element) {
+        final Element description = element.findChild("description");
+        if (description == null || !NS_WHITEBOARD.equals(description.getNamespace())) {
+            return false;
+        }
+        final String sid = element.getAttribute("id");
+        if (sid == null) {
+            return false;
+        }
+        final Session session = sessions.remove(sid);
+        if (session == null) {
+            return false;
+        }
+        byPeer.remove(key(account, session.peer));
+        removeWhiteboardNotice(session);
+        notifyUpdate(sid);
+        notifyEnded(sid);
+        return true;
+    }
+
+    /** Answers a whiteboard JMI {@code <propose/>} so the proposer continues with session-initiate. */
+    private void proceedProposal(final Account account, final Jid target, final String sid) {
+        final MessagePacket packet = new MessagePacket();
+        packet.setType(MessagePacket.TYPE_CHAT);
+        packet.setTo(target);
+        packet.setId(SxeDocument.newRid());
+        packet.addChild("proceed", Namespace.JINGLE_MESSAGE).setAttribute("id", sid);
+        packet.addChild("store", "urn:xmpp:hints");
+        service.sendMessagePacket(account, packet);
+    }
+
     // ── Jingle dispatch ───────────────────────────────────────────────────
 
     public void dispatchJingle(final Account account, final JinglePacket packet) {
@@ -610,6 +714,16 @@ public final class WhiteboardManager {
                 final Session session = new Session(sid, peer, false, hostFor(account, peer), account);
                 session.fullPeer = from.toString();
                 seedDocument(session.doc);
+                // A JMI proposal (XEP-0353) may have registered a placeholder under its own propose
+                // id; if the real invite arrives with a different sid, drop the orphan so the peer
+                // never ends up with two sessions (and two "Open board" notices).
+                final String placeholderSid = byPeer.get(key(account, peer));
+                if (placeholderSid != null && !placeholderSid.equals(sid)) {
+                    final Session placeholder = sessions.remove(placeholderSid);
+                    if (placeholder != null) {
+                        removeWhiteboardNotice(placeholder);
+                    }
+                }
                 sessions.put(sid, session);
                 byPeer.put(key(account, peer), sid);
                 // Synchronize by default: accept the invite so the shared document is live on this
