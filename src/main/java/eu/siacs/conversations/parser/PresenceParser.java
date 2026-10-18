@@ -104,7 +104,8 @@ public class PresenceParser extends AbstractParser implements
                                     account,
                                     conversation.getJid().asBareJid(),
                                     from,
-                                    sxe.getAttribute("session"));
+                                    sxe.getAttribute("session"),
+                                    sxe.getAttributeAsJid("creator"));
                         }
                         final MucOptions.User previousUser = mucOptions.findUserByFullJid(from);
                         mujiChanged =
@@ -361,6 +362,15 @@ public class PresenceParser extends AbstractParser implements
                         conversation.add(statusMessage);
                         addedStatusMessage = true;
                         mXmppConnectionService.getAvatarService().clear(user);
+                    }
+                    // A board's creator owns its lifetime: whoever leaves (another occupant, or us),
+                    // if they were the board's creator the board closes for everyone — even here,
+                    // without opening it.
+                    if (!codes.contains(MucOptions.STATUS_CODE_CHANGED_NICK)) {
+                        mXmppConnectionService.getWhiteboardManager().onMucOccupantUnavailable(
+                                account,
+                                conversation.getJid().asBareJid(),
+                                from);
                     }
                 }
             } else if (type.equals("error")) {

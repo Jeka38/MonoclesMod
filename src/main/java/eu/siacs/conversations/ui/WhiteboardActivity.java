@@ -271,7 +271,26 @@ public class WhiteboardActivity extends XmppActivity implements WhiteboardManage
             whiteboardManager.removeListener(this);
             listenerRegistered = false;
         }
+        // Leaving the board screen: if we are the board's creator, the board is closed for everyone
+        // ("полное отключение доски"). A participant who merely joined someone else's board leaving
+        // does not end it — and `isFinishing()` guards against a system-initiated destroy, which is
+        // not the user leaving. `finish()` from a cancelled board already detached, so this is a
+        // no-op then.
+        if (isFinishing()) {
+            final WhiteboardManager.Session session = currentSession();
+            if (session != null && whiteboardManager != null && whiteboardManager.isOwner(session)) {
+                whiteboardManager.endSession(session);
+            }
+        }
         super.onDestroy();
+    }
+
+    @Nullable
+    private WhiteboardManager.Session currentSession() {
+        if (sessionId == null || whiteboardManager == null) {
+            return null;
+        }
+        return whiteboardManager.getSession(sessionId);
     }
 
     @Override
@@ -544,6 +563,21 @@ public class WhiteboardActivity extends XmppActivity implements WhiteboardManage
         if (session != null && peer != null && peer.asBareJid().equals(session.peer.asBareJid())) {
             runOnUiThread(() -> attachSession(session));
         }
+    }
+
+    @Override
+    public void onWhiteboardEnded(final String sid) {
+        if (sid == null || !sid.equals(sessionId)) {
+            return;
+        }
+        // The board was ended (by its creator leaving / cancelling, or by the peer): detach and leave
+        // the screen so the user is not left looking at a board that no longer exists.
+        runOnUiThread(() -> {
+            detachSession();
+            if (!isFinishing()) {
+                finish();
+            }
+        });
     }
 
     // ── Toolbar dialogs ───────────────────────────────────────────────────

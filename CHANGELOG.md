@@ -1,5 +1,8 @@
 ### Changelog
 
+#### Version 1.9.1.41
+* whiteboard: the board's creator now owns its lifetime — when the creator leaves the board (or the room), the board closes for everyone; joining a board does not create a new one (the same room-wide session is reused); a board cancellation really ends the shared session on the other side (1:1 `session-terminate`, room `<close/>`) and closes the screen for all participants; the room creator is advertised on the `<sxe/>` (`creator`) and converged to the smallest occupant JID so every device agrees
+
 #### Version 1.9.1.40
 * SIMS (XEP-0385) incoming support: a received `<media-sharing>` is typed from its media-type (image/audio/video/file) right away, the best download source is chosen among all `<sources>` (HTTP > AES-GCM > BobTransfer `cid:` > Jingle), the media-type is used when a URL has no usable extension, and a downloaded file is **verified against the shared hashes** (mismatched content is discarded). `urn:xmpp:sims:1` is now advertised in caps
 
