@@ -1,5 +1,8 @@
 ### Changelog
 
+#### Version 1.9.1.54
+* Muji group call: the "More" popup no longer covers the "More" button — `showAsDropDown` anchors at the button's *bottom* edge, so the popup was left overlapping it. Positioning now uses explicit screen coordinates (`showAtLocation`) and places the popup's bottom edge above the button's top, still clamped inside the display
+
 #### Version 1.9.1.53
 * Muji group call: the "More" popup no longer puts a shared grey panel behind its actions — the switch-camera and whiteboard entries are now **stand-alone round buttons formatted exactly like the main call controls** (grey circle, white icon), stacked vertically on a transparent popup
 

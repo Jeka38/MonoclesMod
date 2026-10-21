@@ -7,11 +7,13 @@ import android.graphics.Color;
 import android.graphics.drawable.ColorDrawable;
 import android.content.Intent;
 import android.content.res.ColorStateList;
+import android.graphics.Rect;
 import android.os.Bundle;
 import android.os.Handler;
 import android.os.Looper;
 import android.util.DisplayMetrics;
 import android.util.Log;
+import android.view.Gravity;
 import android.view.LayoutInflater;
 import android.view.View;
 import android.view.ViewGroup;
@@ -263,25 +265,35 @@ public class MujiConferenceActivity extends XmppActivity {
         popup.setWidth(popupWidth);
         popup.setHeight(popupHeight);
 
-        // Centre horizontally on the anchor, then clamp into the window so the popup never pokes
-        // out of the screen (the "More" button sits at the right edge). showAsDropDown() offsets
-        // are relative to the anchor in window coordinates, so clamp against the window width
-        // measured the same way.
-        final View root = anchor.getRootView();
-        final int[] anchorInWindow = new int[2];
-        anchor.getLocationInWindow(anchorInWindow);
-        final int windowWidth = root.getWidth();
-        int xOffset = (anchor.getWidth() - popupWidth) / 2;
-        if (windowWidth > 0) {
-            final int minOffset = -anchorInWindow[0];
-            final int maxOffset = windowWidth - anchorInWindow[0] - popupWidth;
-            xOffset = Math.max(minOffset, Math.min(xOffset, maxOffset));
-        }
-        // Prefer the position above the anchor (the control bar sits at the bottom of the screen);
-        // showAsDropDown() moves the popup below the anchor if it would not fit above.
+        // Position it explicitly in screen coordinates (showAtLocation) instead of showAsDropDown,
+        // so the result is deterministic: the popup's bottom edge is guaranteed to stay above the
+        // top of the "More" button, and the whole popup stays inside the visible display.
+        final Rect visible = new Rect();
+        anchor.getWindowVisibleDisplayFrame(visible);
+        final int[] anchorOnScreen = new int[2];
+        anchor.getLocationOnScreen(anchorOnScreen);
         final int margin = (int) (8 * getResources().getDisplayMetrics().density);
-        final int yOffset = -(popupHeight + margin);
-        popup.showAsDropDown(anchor, xOffset, yOffset);
+
+        // Centre on the anchor, clamped so it cannot leave the screen horizontally.
+        int x = anchorOnScreen[0] + (anchor.getWidth() - popupWidth) / 2;
+        final int minX = visible.left + margin;
+        final int maxX = visible.right - popupWidth - margin;
+        if (maxX >= minX) {
+            x = Math.max(minX, Math.min(x, maxX));
+        }
+        // Above the button: bottom edge = anchor top - margin (never overlapping the button).
+        int y = anchorOnScreen[1] - margin - popupHeight;
+        final int minY = visible.top + margin;
+        final int maxY = visible.bottom - popupHeight - margin;
+        if (y < minY) {
+            // Not enough room above - put it below the button instead, still on screen.
+            y = Math.min(anchorOnScreen[1] + anchor.getHeight() + margin, Math.max(minY, maxY));
+        }
+        if (maxY >= minY) {
+            y = Math.max(minY, Math.min(y, maxY));
+        }
+
+        popup.showAtLocation(anchor, Gravity.NO_GRAVITY, x, y);
     }
 
     @Override
