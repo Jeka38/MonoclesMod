@@ -1,5 +1,8 @@
 ### Changelog
 
+#### Version 1.9.1.46
+* Muji group call: mic, camera, the red hang-up and the speaker buttons are now **always visible**; the control bar is a five-slot row with equal weights, so the hang-up button is centred with the others evenly spaced left and right. Switch camera and whiteboard moved into a "More" overflow popup, and the camera button works even before anyone else joins (an audio-only call can be upgraded to video, requesting the camera permission first)
+
 #### Version 1.9.1.45
 * WebXDC removed entirely: the "Choose WebXDC" attach menu entries, the `WebxdcStore` WebView activity (and its manifest entry), the in-chat `WebxdcPage` mini-app, the `WebxdcUpdate` store, the XEP-`urn:xmpp:webxdc:0` handling in `MessageParser`, the `monocles.webxdc_updates` DB table and its accessors, the icons/themes/layouts/strings, and the now-unused `org.tomlj` dependency. A received `.xdc` file is just an ordinary file now
 

@@ -969,6 +969,8 @@
     <string name="muji_switch_camera">Сменить камеру</string>
     <string name="muji_speaker_on">Динамик включён</string>
     <string name="muji_speaker_off">Динамик выключен</string>
+    <string name="muji_more">Ещё</string>
+    <string name="muji_whiteboard">Доска</string>
     <string name="muji_self">Вы</string>
     <string name="muji_state_ended">Завершено</string>
     <string name="pref_showtextformatting_sum">Показывать панель инструментов форматирования текста в чате, когда отображается клавиатура</string>

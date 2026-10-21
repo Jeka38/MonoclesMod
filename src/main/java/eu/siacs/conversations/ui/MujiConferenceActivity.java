@@ -1,6 +1,8 @@
 package eu.siacs.conversations.ui;
 
 import android.animation.ValueAnimator;
+import android.Manifest;
+import android.content.pm.PackageManager;
 import android.graphics.Color;
 import android.content.Intent;
 import android.content.res.ColorStateList;
@@ -13,8 +15,11 @@ import android.view.View;
 import android.view.ViewGroup;
 import android.view.animation.AccelerateDecelerateInterpolator;
 import android.widget.TextView;
+import android.widget.Toast;
 
+import androidx.annotation.NonNull;
 import androidx.annotation.Nullable;
+import androidx.appcompat.widget.PopupMenu;
 import androidx.appcompat.widget.Toolbar;
 
 import com.google.android.material.button.MaterialButton;
@@ -85,6 +90,7 @@ public class MujiConferenceActivity extends XmppActivity {
     private static final double AUDIO_LEVEL_THRESHOLD = 0.04d;
     private static final int SPEAKING_COLOR = 0xFF4CAF50;
     private static final String SELF_KEY = "self";
+    private static final int REQUEST_CAMERA = 0x3401;
 
     private final Handler handler = new Handler(Looper.getMainLooper());
     private final Map<String, ParticipantView> views = new HashMap<>();
@@ -110,8 +116,8 @@ public class MujiConferenceActivity extends XmppActivity {
     private TextView status;
     private MaterialButton micButton;
     private MaterialButton videoButton;
-    private MaterialButton switchCameraButton;
     private MaterialButton speakerButton;
+    private MaterialButton moreButton;
 
     private Account account;
     private Jid room;
@@ -152,19 +158,41 @@ public class MujiConferenceActivity extends XmppActivity {
         setTitle(R.string.muji_conference);
         this.status = findViewById(R.id.muji_status);
         this.container = findViewById(R.id.muji_participants);
-        final MaterialButton whiteboard = findViewById(R.id.muji_whiteboard);
-        whiteboard.setOnClickListener(v -> openWhiteboard());
         final MaterialButton leave = findViewById(R.id.muji_leave);
         leave.setOnClickListener(v -> leaveConference());
         this.micButton = findViewById(R.id.muji_mic);
         this.videoButton = findViewById(R.id.muji_video);
-        this.switchCameraButton = findViewById(R.id.muji_switch_camera);
         this.speakerButton = findViewById(R.id.muji_speaker);
+        this.moreButton = findViewById(R.id.muji_more);
         micButton.setOnClickListener(v -> toggleMicrophone());
         videoButton.setOnClickListener(v -> toggleVideo());
-        switchCameraButton.setOnClickListener(v -> switchCamera());
         speakerButton.setOnClickListener(v -> toggleSpeaker());
+        moreButton.setOnClickListener(this::showMoreMenu);
         updateSpeakerButton();
+    }
+
+    /** Shows the secondary actions (switch camera, whiteboard) in an overflow popup anchored to
+     * the "More" button. */
+    private void showMoreMenu(final View anchor) {
+        final PopupMenu popup = new PopupMenu(this, anchor);
+        popup.inflate(R.menu.muji_conference);
+        final android.view.Menu menu = popup.getMenu();
+        final android.view.MenuItem switchCamera = menu.findItem(R.id.action_muji_switch_camera);
+        if (switchCamera != null) {
+            switchCamera.setVisible(isCameraSwitchable());
+        }
+        popup.setOnMenuItemClickListener(item -> {
+            final int itemId = item.getItemId();
+            if (itemId == R.id.action_muji_switch_camera) {
+                switchCamera();
+                return true;
+            } else if (itemId == R.id.action_muji_whiteboard) {
+                openWhiteboard();
+                return true;
+            }
+            return false;
+        });
+        popup.show();
     }
 
     @Override
@@ -288,28 +316,21 @@ public class MujiConferenceActivity extends XmppActivity {
                 connections.add(connection);
             }
         }
-boolean microphone = conference.isMicrophoneEnabled();
-        boolean video = false;
-        boolean hasVideo = false;
-        boolean cameraSwitchable = false;
+        final boolean microphone = conference.isMicrophoneEnabled();
+        final boolean video;
         if (connections.isEmpty()) {
             // Nobody has joined yet — reflect our own call state so the controls
             // look exactly like they do once two or more participants are talking.
             final VideoTrack selfVideo = conference.getLocalVideoTrack();
-            hasVideo = selfVideo != null;
-            video = hasVideo && conference.getMedia().contains(Media.VIDEO);
+            video = selfVideo != null && conference.getMedia().contains(Media.VIDEO);
         } else {
+            boolean anyVideo = false;
             for (final JingleRtpConnection connection : connections) {
-                if (connection.getLocalVideoTrack().isPresent()) {
-                    hasVideo = true;
-                    if (connection.isVideoEnabled()) {
-                        video = true;
-                    }
-                    if (connection.isCameraSwitchable()) {
-                        cameraSwitchable = true;
-                    }
+                if (connection.getLocalVideoTrack().isPresent() && connection.isVideoEnabled()) {
+                    anyVideo = true;
                 }
             }
+            video = anyVideo;
         }
         final int neutral = 0xFF525252;
         final int red = 0xFFD32F2F;
@@ -321,11 +342,21 @@ boolean microphone = conference.isMicrophoneEnabled();
                         ? R.drawable.ic_videocam_black_24dp
                         : R.drawable.ic_videocam_off_black_24dp);
         videoButton.setBackgroundTintList(ColorStateList.valueOf(video ? neutral : red));
-        videoButton.setVisibility(hasVideo ? View.VISIBLE : View.GONE);
-        switchCameraButton.setVisibility(cameraSwitchable ? View.VISIBLE : View.GONE);
+        videoButton.setVisibility(View.VISIBLE);
         micButton.setVisibility(View.VISIBLE);
         speakerButton.setVisibility(View.VISIBLE);
+        moreButton.setVisibility(View.VISIBLE);
         updateSpeakerButton();
+    }
+
+    /** True when at least one connection provides a camera that can be flipped. */
+    private boolean isCameraSwitchable() {
+        for (final JingleRtpConnection connection : connections()) {
+            if (connection.getLocalVideoTrack().isPresent() && connection.isCameraSwitchable()) {
+                return true;
+            }
+        }
+        return false;
     }
 
     private void updateAudioLevels() {
@@ -375,6 +406,26 @@ boolean microphone = conference.isMicrophoneEnabled();
     private void toggleVideo() {
         final List<JingleRtpConnection> connections = connections();
         if (connections.isEmpty()) {
+            // Nobody has joined yet: toggle the shared camera track directly. This is what lets a
+            // conference started audio-only be upgraded to video from the always-visible button.
+            final MujiConference conference = getActiveConference();
+            if (conference == null) {
+                return;
+            }
+            final boolean enable = !conference.getMedia().contains(Media.VIDEO);
+            if (enable && (!isCameraFeatureAvailable() || !ensureCameraPermission())) {
+                return;
+            }
+            updateConferenceVideoMedia(enable);
+            final VideoTrack track = conference.getLocalVideoTrack();
+            if (track != null) {
+                try {
+                    track.setEnabled(enable);
+                } catch (final IllegalStateException e) {
+                    Log.w(Config.LOGTAG, "unable to toggle the conference camera", e);
+                }
+            }
+            refresh();
             return;
         }
         boolean hasTrack = false;
@@ -397,6 +448,29 @@ boolean microphone = conference.isMicrophoneEnabled();
         }
         updateConferenceVideoMedia(enable);
         refresh();
+    }
+
+    /** Requests the camera permission when needed; returns true when it is already granted. */
+    private boolean ensureCameraPermission() {
+        if (checkSelfPermission(Manifest.permission.CAMERA) == PackageManager.PERMISSION_GRANTED) {
+            return true;
+        }
+        requestPermissions(new String[] {Manifest.permission.CAMERA}, REQUEST_CAMERA);
+        return false;
+    }
+
+    @Override
+    public void onRequestPermissionsResult(
+            final int requestCode, @NonNull final String[] permissions, @NonNull final int[] grantResults) {
+        super.onRequestPermissionsResult(requestCode, permissions, grantResults);
+        if (requestCode != REQUEST_CAMERA) {
+            return;
+        }
+        if (grantResults.length > 0 && grantResults[0] == PackageManager.PERMISSION_GRANTED) {
+            toggleVideo();
+        } else {
+            Toast.makeText(this, R.string.no_camera_permission, Toast.LENGTH_SHORT).show();
+        }
     }
 
     private void updateConferenceVideoMedia(final boolean videoEnabled) {
@@ -851,8 +925,8 @@ boolean microphone = conference.isMicrophoneEnabled();
         clearParticipants();
         micButton.setVisibility(View.GONE);
         videoButton.setVisibility(View.GONE);
-        switchCameraButton.setVisibility(View.GONE);
         speakerButton.setVisibility(View.GONE);
+        moreButton.setVisibility(View.GONE);
     }
 
     private String stateLabel(@Nullable final RtpEndUserState state) {
