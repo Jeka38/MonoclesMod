@@ -503,12 +503,17 @@ public class MujiConference {
 
     /**
      * Whether the shared camera can be flipped between front and back. Works before anyone else
-     * has joined too (the shared {@link WebRTCResources} holds the camera), so the switch-camera
-     * entry is available in a solo call.
+     * has joined too. Falls back to a static device-camera count, because the live camera wrapper
+     * only exists once video is actually contributed - otherwise the switch-camera action would
+     * disappear exactly when the camera is off (which is when the user reaches for it).
      */
     public boolean isCameraSwitchable() {
         final WebRTCResources resources = this.webRTCResources;
-        return resources != null && resources.isCameraSwitchable();
+        if (resources != null && resources.isCameraSwitchable()) {
+            return true;
+        }
+        return VideoSourceWrapper.deviceHasMultipleCameras(
+                xmppConnectionService.getApplicationContext());
     }
 
     /** Flips the shared conference camera between front and back. */
@@ -517,6 +522,11 @@ public class MujiConference {
         if (resources == null) {
             return Futures.immediateFailedFuture(
                     new IllegalStateException("Conference has no camera"));
+        }
+        // Make sure the shared camera exists so the flip is not a silent no-op when the button is
+        // used before video was switched on.
+        if (resources.getVideoTrack() == null) {
+            resources.getOrCreateVideoTrack();
         }
         return resources.switchCamera();
     }

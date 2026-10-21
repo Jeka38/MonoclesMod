@@ -138,7 +138,10 @@ public final class WebRTCResources {
 
     boolean isCameraSwitchable() {
         final VideoSourceWrapper wrapper = this.videoSourceWrapper;
-        return wrapper != null && wrapper.isCameraSwitchable();
+        if (wrapper != null) {
+            return wrapper.isCameraSwitchable();
+        }
+        return VideoSourceWrapper.deviceHasMultipleCameras(context);
     }
 
     boolean isFrontCamera() {

@@ -8,6 +8,7 @@ import com.google.common.collect.Iterables;
 import com.google.common.util.concurrent.ListenableFuture;
 import com.google.common.util.concurrent.SettableFuture;
 
+import org.webrtc.Camera1Enumerator;
 import org.webrtc.Camera2Enumerator;
 import org.webrtc.CameraEnumerationAndroid;
 import org.webrtc.CameraEnumerator;
@@ -29,6 +30,8 @@ class VideoSourceWrapper {
 
     private static final int CAPTURING_RESOLUTION = 1920;
     private static final int CAPTURING_MAX_FRAME_RATE = 30;
+
+    @Nullable private static volatile Boolean deviceHasMultipleCameras;
 
     private final CameraVideoCapturer cameraVideoCapturer;
     private final CameraEnumerationAndroid.CaptureFormat captureFormat;
@@ -128,6 +131,32 @@ class VideoSourceWrapper {
 
     public boolean isCameraSwitchable() {
         return this.availableCameras.size() > 1;
+    }
+
+    /**
+     * Whether the device exposes more than one camera, enumerated **without starting capture**.
+     * The live camera lives in a shared {@link VideoSourceWrapper} that is only created once video
+     * is actually contributed, so a check against that wrapper is false while the camera is off -
+     * exactly when the user looks for the switch-camera action. This static check is what keeps the
+     * action available in that case. Cached for the process lifetime.
+     */
+    public static boolean deviceHasMultipleCameras(final Context context) {
+        final Boolean cached = deviceHasMultipleCameras;
+        if (cached != null) {
+            return cached;
+        }
+        boolean result = false;
+        try {
+            final CameraEnumerator enumerator =
+                    Camera2Enumerator.isSupported(context)
+                            ? new Camera2Enumerator(context)
+                            : new Camera1Enumerator(true);
+            result = enumerator.getDeviceNames().length > 1;
+        } catch (final RuntimeException e) {
+            Log.w(Config.LOGTAG, "unable to enumerate cameras", e);
+        }
+        deviceHasMultipleCameras = result;
+        return result;
     }
 
     public static class Factory {

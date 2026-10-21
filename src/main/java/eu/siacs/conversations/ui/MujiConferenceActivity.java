@@ -26,6 +26,9 @@ import androidx.appcompat.widget.Toolbar;
 import com.google.android.material.button.MaterialButton;
 import com.google.android.material.imageview.ShapeableImageView;
 import com.google.common.base.Optional;
+import com.google.common.base.Throwables;
+import com.google.common.util.concurrent.FutureCallback;
+import com.google.common.util.concurrent.Futures;
 
 import org.webrtc.EglBase;
 import org.webrtc.VideoFrame;
@@ -50,6 +53,7 @@ import eu.siacs.conversations.ui.util.AvatarWorkerTask;
 import eu.siacs.conversations.ui.widget.MujiParticipantGridView;
 import eu.siacs.conversations.ui.widget.SpeakingBorderView;
 import eu.siacs.conversations.ui.widget.TextureViewRenderer;
+import eu.siacs.conversations.ui.util.MainThreadExecutor;
 import eu.siacs.conversations.ui.util.StyledAttributes;
 import eu.siacs.conversations.xmpp.Jid;
 import eu.siacs.conversations.xmpp.jingle.JingleRtpConnection;
@@ -188,8 +192,9 @@ public class MujiConferenceActivity extends XmppActivity {
 
         final MaterialButton switchCamera =
                 content.findViewById(R.id.muji_more_switch_camera);
-        final boolean switchable = isCameraSwitchable();
-        switchCamera.setVisibility(switchable ? View.VISIBLE : View.GONE);
+        // Keep the action available on any multi-camera device, not only while the shared camera
+        // happens to be running (see VideoSourceWrapper.deviceHasMultipleCameras).
+        switchCamera.setVisibility(isCameraSwitchable() ? View.VISIBLE : View.GONE);
         switchCamera.setOnClickListener(
                 v -> {
                     switchCamera();
@@ -202,12 +207,15 @@ public class MujiConferenceActivity extends XmppActivity {
                             popup.dismiss();
                         });
 
-        // Anchor the popup above the button (the control bar sits at the bottom of the screen).
+        // Position it above the round "More" button. showAsDropDown anchors to the button's
+        // bottom-left, so a negative y offset lifts the popup above the control bar.
         content.measure(
                 View.MeasureSpec.makeMeasureSpec(0, View.MeasureSpec.UNSPECIFIED),
                 View.MeasureSpec.makeMeasureSpec(0, View.MeasureSpec.UNSPECIFIED));
-        final int x = -(content.getMeasuredWidth() - anchor.getWidth()) / 2;
-        popup.showAsDropDown(anchor, x, -(anchor.getHeight() + content.getMeasuredHeight()));
+        final int xOffset = (anchor.getWidth() - content.getMeasuredWidth()) / 2;
+        final int margin = (int) (8 * getResources().getDisplayMetrics().density);
+        final int yOffset = -(content.getMeasuredHeight() + margin);
+        popup.showAsDropDown(anchor, xOffset, yOffset);
     }
 
     @Override
@@ -503,9 +511,32 @@ public class MujiConferenceActivity extends XmppActivity {
 
     private void switchCamera() {
         final MujiConference conference = getActiveConference();
-        if (conference != null) {
-            conference.switchCamera();
+        if (conference == null) {
+            return;
         }
+        Futures.addCallback(
+                conference.switchCamera(),
+                new FutureCallback<>() {
+                    @Override
+                    public void onSuccess(@Nullable final Boolean isFrontCamera) {
+                        // The self preview is mirrored for the front camera; refresh() rebinds it.
+                        refresh();
+                    }
+
+                    @Override
+                    public void onFailure(@NonNull final Throwable throwable) {
+                        Log.d(
+                                Config.LOGTAG,
+                                "could not switch camera",
+                                Throwables.getRootCause(throwable));
+                        Toast.makeText(
+                                        MujiConferenceActivity.this,
+                                        R.string.could_not_switch_camera,
+                                        Toast.LENGTH_LONG)
+                                .show();
+                    }
+                },
+                MainThreadExecutor.getInstance());
     }
 
     private void toggleSpeaker() {
