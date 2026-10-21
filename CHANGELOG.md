@@ -1,5 +1,8 @@
 ### Changelog
 
+#### Version 1.9.1.44
+* fix: a message containing a link with a `/me` substring (e.g. `https://mega.nz/…`) was mangled — the `/me` command was detected in the middle of the URL (the `//me` of `https://mega…`) and replaced with `* nick`, rendering `https://* nickga.nz/…`. `Message.getMeCommandIndex()` now requires `/me` to be a standalone token at the start of a line (only whitespace before it, whitespace/end-of-line after it)
+
 #### Version 1.9.1.43
 * whiteboard: an invite sent as an XEP-0353 Jingle Message Initiation `<propose>` (`urn:xmpp:jingle:apps:svg-whiteboard:0`) is now handled — `JingleConnectionManager.deliverMessage` only accepted all-RTP proposals, so a whiteboard proposal was ignored and the "Open board" button never appeared; the board now surfaces with the usual notice and the proposal is answered with `<proceed/>`, and a `<retract/>`/`<reject/>` withdraws it
 

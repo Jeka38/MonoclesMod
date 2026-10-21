@@ -177,6 +177,12 @@ message carries.
   `<unstyled xmlns='urn:xmpp:styling:0'/>` — `Message.isUnstyled()` makes the renderer skip.
 - **The `/me` command is the adapter's job** (`MessageAdapter` → `getMeCommandIndex`, rendered bold
   italic with the nickname). Do not expand it in `renderStyling` too, or it is applied twice.
+  `Message.getMeCommandIndex()` must require the command to be a **standalone token at the start of a
+  line**: only whitespace may precede it, and it must be followed by whitespace or the end of the
+  message. Checking only "some whitespace earlier on the line" is not enough — the `/me` inside
+  `https://mega.nz/…` then matched (the space in `"Тест "` satisfied the test) and the link rendered
+  as `https://* nickga.nz/…`. The follow-up character check is what makes a bare `/me`, `"  /me x"`
+  and a `> quote\n/me x` still work while a URL substring never does.
 - **Caps:** `urn:xmpp:styling:0` is advertised in `AbstractGenerator.STATIC_FEATURES`.
 - **Not done:** we advertise support and render everything, but the editor has no insertion buttons
   for the directives — a user types them by hand (or pastes them). Ordered lists/nesting limits are

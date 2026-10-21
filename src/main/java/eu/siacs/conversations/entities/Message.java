@@ -1573,6 +1573,16 @@ public class Message extends AbstractEntity implements AvatarService.Avatarable 
         return body;
     }
 
+    /**
+     * The index of the {@code /me} action command, or -1 when the message is not an action.
+     *
+     * <p>The command must be the first non-whitespace token of its line: {@code "/me waves"} and
+     * {@code "  /me waves"} are actions, but so is a {@code /me} that follows a quoted block
+     * ({@code "> hi\n/me waves"}). Only whitespace may precede it, and it must be followed by
+     * whitespace or the end of the message — otherwise a substring like the {@code /me} inside
+     * {@code "https://mega.nz/…"} would be mistaken for the command (which turned the link into
+     * "https://* nickga.nz/…").
+     */
     public int getMeCommandIndex() {
         if (this.body == null) {
             return -1;
@@ -1584,12 +1594,21 @@ public class Message extends AbstractEntity implements AvatarService.Avatarable 
             if (index < 0) {
                 return -1;
             }
+            // The command must start the line (only whitespace before it) …
             final int lineStart = body.lastIndexOf('\n', index - 1) + 1;
-            boolean commandLine = index == lineStart;
-            for (int i = lineStart; !commandLine && i < index; i++) {
-                commandLine = Character.isWhitespace(body.charAt(i));
+            boolean commandLine = true;
+            for (int i = lineStart; i < index; i++) {
+                if (!Character.isWhitespace(body.charAt(i))) {
+                    commandLine = false;
+                    break;
+                }
             }
-            if (commandLine) {
+            // … and must be a standalone token: "/me " or "/me" at the end of the line, never a
+            // substring such as the "/me" in "https://mega.nz".
+            final int after = index + ME_COMMAND.length();
+            final boolean endOfLineOrWhitespace = after >= body.length()
+                    || Character.isWhitespace(body.charAt(after));
+            if (commandLine && endOfLineOrWhitespace) {
                 return index;
             }
             from = index + ME_COMMAND.length();
