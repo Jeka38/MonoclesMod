@@ -4,6 +4,7 @@ import android.animation.ValueAnimator;
 import android.Manifest;
 import android.content.pm.PackageManager;
 import android.graphics.Color;
+import android.graphics.drawable.ColorDrawable;
 import android.content.Intent;
 import android.content.res.ColorStateList;
 import android.os.Bundle;
@@ -14,12 +15,12 @@ import android.view.LayoutInflater;
 import android.view.View;
 import android.view.ViewGroup;
 import android.view.animation.AccelerateDecelerateInterpolator;
+import android.widget.PopupWindow;
 import android.widget.TextView;
 import android.widget.Toast;
 
 import androidx.annotation.NonNull;
 import androidx.annotation.Nullable;
-import androidx.appcompat.widget.PopupMenu;
 import androidx.appcompat.widget.Toolbar;
 
 import com.google.android.material.button.MaterialButton;
@@ -171,28 +172,42 @@ public class MujiConferenceActivity extends XmppActivity {
         updateSpeakerButton();
     }
 
-    /** Shows the secondary actions (switch camera, whiteboard) in an overflow popup anchored to
-     * the "More" button. */
+    /** Shows the secondary actions (switch camera, whiteboard) as an icon-only popup above the
+     * "More" button. */
     private void showMoreMenu(final View anchor) {
-        final PopupMenu popup = new PopupMenu(this, anchor);
-        popup.inflate(R.menu.muji_conference);
-        final android.view.Menu menu = popup.getMenu();
-        final android.view.MenuItem switchCamera = menu.findItem(R.id.action_muji_switch_camera);
-        if (switchCamera != null) {
-            switchCamera.setVisible(isCameraSwitchable());
-        }
-        popup.setOnMenuItemClickListener(item -> {
-            final int itemId = item.getItemId();
-            if (itemId == R.id.action_muji_switch_camera) {
-                switchCamera();
-                return true;
-            } else if (itemId == R.id.action_muji_whiteboard) {
-                openWhiteboard();
-                return true;
-            }
-            return false;
-        });
-        popup.show();
+        final View content = getLayoutInflater().inflate(R.layout.popup_muji_more, null);
+        final PopupWindow popup =
+                new PopupWindow(
+                        content,
+                        ViewGroup.LayoutParams.WRAP_CONTENT,
+                        ViewGroup.LayoutParams.WRAP_CONTENT,
+                        true);
+        popup.setBackgroundDrawable(new ColorDrawable(Color.TRANSPARENT));
+        popup.setOutsideTouchable(true);
+        popup.setElevation(8f * getResources().getDisplayMetrics().density);
+
+        final MaterialButton switchCamera =
+                content.findViewById(R.id.muji_more_switch_camera);
+        final boolean switchable = isCameraSwitchable();
+        switchCamera.setVisibility(switchable ? View.VISIBLE : View.GONE);
+        switchCamera.setOnClickListener(
+                v -> {
+                    switchCamera();
+                    popup.dismiss();
+                });
+        content.findViewById(R.id.muji_more_whiteboard)
+                .setOnClickListener(
+                        v -> {
+                            openWhiteboard();
+                            popup.dismiss();
+                        });
+
+        // Anchor the popup above the button (the control bar sits at the bottom of the screen).
+        content.measure(
+                View.MeasureSpec.makeMeasureSpec(0, View.MeasureSpec.UNSPECIFIED),
+                View.MeasureSpec.makeMeasureSpec(0, View.MeasureSpec.UNSPECIFIED));
+        final int x = -(content.getMeasuredWidth() - anchor.getWidth()) / 2;
+        popup.showAsDropDown(anchor, x, -(anchor.getHeight() + content.getMeasuredHeight()));
     }
 
     @Override
@@ -349,14 +364,10 @@ public class MujiConferenceActivity extends XmppActivity {
         updateSpeakerButton();
     }
 
-    /** True when at least one connection provides a camera that can be flipped. */
+    /** True when the shared camera can be flipped (works with no participants too). */
     private boolean isCameraSwitchable() {
-        for (final JingleRtpConnection connection : connections()) {
-            if (connection.getLocalVideoTrack().isPresent() && connection.isCameraSwitchable()) {
-                return true;
-            }
-        }
-        return false;
+        final MujiConference conference = getActiveConference();
+        return conference != null && conference.isCameraSwitchable();
     }
 
     private void updateAudioLevels() {
@@ -491,11 +502,10 @@ public class MujiConferenceActivity extends XmppActivity {
     }
 
     private void switchCamera() {
-        final List<JingleRtpConnection> connections = connections();
-        if (connections.isEmpty()) {
-            return;
+        final MujiConference conference = getActiveConference();
+        if (conference != null) {
+            conference.switchCamera();
         }
-        connections.get(0).switchCamera();
     }
 
     private void toggleSpeaker() {

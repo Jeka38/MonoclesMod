@@ -18,6 +18,9 @@ import android.util.Log;
 import androidx.annotation.Nullable;
 import androidx.core.content.ContextCompat;
 
+import com.google.common.util.concurrent.Futures;
+import com.google.common.util.concurrent.ListenableFuture;
+
 import java.lang.ref.WeakReference;
 import java.util.ArrayList;
 import java.util.HashMap;
@@ -496,6 +499,26 @@ public class MujiConference {
     public boolean isFrontCamera() {
         final WebRTCResources resources = this.webRTCResources;
         return resources == null || resources.isFrontCamera();
+    }
+
+    /**
+     * Whether the shared camera can be flipped between front and back. Works before anyone else
+     * has joined too (the shared {@link WebRTCResources} holds the camera), so the switch-camera
+     * entry is available in a solo call.
+     */
+    public boolean isCameraSwitchable() {
+        final WebRTCResources resources = this.webRTCResources;
+        return resources != null && resources.isCameraSwitchable();
+    }
+
+    /** Flips the shared conference camera between front and back. */
+    public ListenableFuture<Boolean> switchCamera() {
+        final WebRTCResources resources = this.webRTCResources;
+        if (resources == null) {
+            return Futures.immediateFailedFuture(
+                    new IllegalStateException("Conference has no camera"));
+        }
+        return resources.switchCamera();
     }
 
     /**

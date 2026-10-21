@@ -1,5 +1,8 @@
 ### Changelog
 
+#### Version 1.9.1.49
+* Muji group call: the switch-camera action is back and now works in a solo call as well — it is read from the shared conference camera instead of the per-participant connections, so it no longer disappears when nobody else has joined yet. The "More" popup now shows **icon buttons** (switch camera, whiteboard) instead of plain text rows
+
 #### Version 1.9.1.48
 * fix: the system permission dialog's buttons were unresponsive — the manifest declared `android.permission.SYSTEM_ALERT_WINDOW` ("display over other apps") although no code ever uses an overlay window, and Android's tapjacking protection then swallows taps on a permission dialog while the app holds that permission (a known problem on EMUI/MIUI). The unused permission was removed
 
