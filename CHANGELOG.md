@@ -1,5 +1,8 @@
 ### Changelog
 
+#### Version 1.9.1.52
+* Muji group call: the "More" popup (and the control bar) can no longer leave the screen — the popup is measured and size-capped against the display and its drop-down offset is clamped horizontally, so the buttons never poke past the screen edge (the "More" button sits at the right edge). The five-button control bar is also scaled down only when it would not fit the smallest displays
+
 #### Version 1.9.1.51
 * Muji group call: the "More" popup now stacks its actions **vertically** and draws them as **flat icon buttons without the grey circle plate** (`MujiFlatButton`) — the icons are tinted with the theme's text colour and sit on the popup card surface
 

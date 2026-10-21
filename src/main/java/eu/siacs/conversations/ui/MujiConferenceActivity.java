@@ -10,6 +10,7 @@ import android.content.res.ColorStateList;
 import android.os.Bundle;
 import android.os.Handler;
 import android.os.Looper;
+import android.util.DisplayMetrics;
 import android.util.Log;
 import android.view.LayoutInflater;
 import android.view.View;
@@ -174,10 +175,55 @@ public class MujiConferenceActivity extends XmppActivity {
         speakerButton.setOnClickListener(v -> toggleSpeaker());
         moreButton.setOnClickListener(this::showMoreMenu);
         updateSpeakerButton();
+        fitControlBar();
+    }
+
+    /**
+     * Shrinks the control buttons just enough to fit the screen. The row is a centred compact
+     * group of five 56 dp buttons with 6 dp margins (340 dp in total), which is wider than the
+     * ~320 dp of the smallest supported displays, so without this the outermost buttons would be
+     * clipped. On any normal screen the sizes are unchanged.
+     */
+    private void fitControlBar() {
+        final View bar = findViewById(R.id.muji_controls);
+        if (bar == null || !(bar instanceof ViewGroup)) {
+            return;
+        }
+        final ViewGroup group = (ViewGroup) bar;
+        final int count = group.getChildCount();
+        if (count == 0) {
+            return;
+        }
+        final DisplayMetrics metrics = getResources().getDisplayMetrics();
+        final int available =
+                metrics.widthPixels - group.getPaddingLeft() - group.getPaddingRight();
+        int margin = (int) (6 * metrics.density);
+        int size = (int) (56 * metrics.density);
+        if (count * (size + 2 * margin) > available) {
+            // Tighten the gaps first, then shrink the buttons until the row fits.
+            margin = Math.max(1, (int) (2 * metrics.density));
+            size = Math.max((int) (36 * metrics.density), (available - count * 2 * margin) / count);
+        }
+        final int finalSize = size;
+        final int finalMargin = margin;
+        for (int i = 0; i < count; i++) {
+            final View child = group.getChildAt(i);
+            final ViewGroup.MarginLayoutParams params =
+                    (ViewGroup.MarginLayoutParams) child.getLayoutParams();
+            params.width = finalSize;
+            params.height = finalSize;
+            params.setMarginStart(finalMargin);
+            params.setMarginEnd(finalMargin);
+            child.setLayoutParams(params);
+            if (child instanceof MaterialButton) {
+                ((MaterialButton) child)
+                        .setIconSize((int) (finalSize * (26f / 56f)));
+            }
+        }
     }
 
     /** Shows the secondary actions (switch camera, whiteboard) as an icon-only popup above the
-     * "More" button. */
+     * "More" button, clamped so it never leaves the visible screen. */
     private void showMoreMenu(final View anchor) {
         final View content = getLayoutInflater().inflate(R.layout.popup_muji_more, null);
         final PopupWindow popup =
@@ -207,14 +253,34 @@ public class MujiConferenceActivity extends XmppActivity {
                             popup.dismiss();
                         });
 
-        // Position it above the round "More" button. showAsDropDown anchors to the button's
-        // bottom-left, so a negative y offset lifts the popup above the control bar.
+        // Cap the popup to the screen so it can never be wider/taller than the display.
+        final DisplayMetrics metrics = getResources().getDisplayMetrics();
         content.measure(
-                View.MeasureSpec.makeMeasureSpec(0, View.MeasureSpec.UNSPECIFIED),
-                View.MeasureSpec.makeMeasureSpec(0, View.MeasureSpec.UNSPECIFIED));
-        final int xOffset = (anchor.getWidth() - content.getMeasuredWidth()) / 2;
+                View.MeasureSpec.makeMeasureSpec(metrics.widthPixels, View.MeasureSpec.AT_MOST),
+                View.MeasureSpec.makeMeasureSpec(metrics.heightPixels, View.MeasureSpec.AT_MOST));
+        final int popupWidth = Math.min(content.getMeasuredWidth(), metrics.widthPixels);
+        final int popupHeight = Math.min(content.getMeasuredHeight(), metrics.heightPixels);
+        popup.setWidth(popupWidth);
+        popup.setHeight(popupHeight);
+
+        // Centre horizontally on the anchor, then clamp into the window so the popup never pokes
+        // out of the screen (the "More" button sits at the right edge). showAsDropDown() offsets
+        // are relative to the anchor in window coordinates, so clamp against the window width
+        // measured the same way.
+        final View root = anchor.getRootView();
+        final int[] anchorInWindow = new int[2];
+        anchor.getLocationInWindow(anchorInWindow);
+        final int windowWidth = root.getWidth();
+        int xOffset = (anchor.getWidth() - popupWidth) / 2;
+        if (windowWidth > 0) {
+            final int minOffset = -anchorInWindow[0];
+            final int maxOffset = windowWidth - anchorInWindow[0] - popupWidth;
+            xOffset = Math.max(minOffset, Math.min(xOffset, maxOffset));
+        }
+        // Prefer the position above the anchor (the control bar sits at the bottom of the screen);
+        // showAsDropDown() moves the popup below the anchor if it would not fit above.
         final int margin = (int) (8 * getResources().getDisplayMetrics().density);
-        final int yOffset = -(content.getMeasuredHeight() + margin);
+        final int yOffset = -(popupHeight + margin);
         popup.showAsDropDown(anchor, xOffset, yOffset);
     }
 
