@@ -1,5 +1,8 @@
 ### Changelog
 
+#### Version 1.9.1.48
+* fix: the system permission dialog's buttons were unresponsive — the manifest declared `android.permission.SYSTEM_ALERT_WINDOW` ("display over other apps") although no code ever uses an overlay window, and Android's tapjacking protection then swallows taps on a permission dialog while the app holds that permission (a known problem on EMUI/MIUI). The unused permission was removed
+
 #### Version 1.9.1.47
 * Muji group call: the control buttons are now a **centred** compact group with equal margins, so the red hang-up button is exactly in the middle and the others are evenly spaced to its left and right on any screen width
 
