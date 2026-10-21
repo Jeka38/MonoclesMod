@@ -1,5 +1,8 @@
 ### Changelog
 
+#### Version 1.9.1.51
+* Muji group call: the "More" popup now stacks its actions **vertically** and draws them as **flat icon buttons without the grey circle plate** (`MujiFlatButton`) — the icons are tinted with the theme's text colour and sit on the popup card surface
+
 #### Version 1.9.1.50
 * Muji group call: the switch-camera action was still missing on devices with two cameras — it was hidden whenever the shared camera track was not running (the camera only exists once video is contributed), so it disappeared exactly when the camera was off. Switchability now comes from a cached device camera enumeration (`Camera2`/`Camera1`, no capture), and `switchCamera()` starts the shared camera first so a flip before enabling video is not a silent no-op; a failed flip now shows "Could not switch camera"
 

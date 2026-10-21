@@ -297,6 +297,27 @@
         <item name="iconSize">26dp</item>
     </style>
 
+    <!-- Icon-only button with no backing plate, used inside the Muji "More" popup: transparent
+         background (only a ripple on touch) and the icon tinted with the theme's main text colour
+         so it stays visible on the popup's light and dark surface. -->
+    <style name="MujiFlatButton" parent="Widget.MaterialComponents.Button.TextButton">
+        <item name="android:layout_width">48dp</item>
+        <item name="android:layout_height">48dp</item>
+        <item name="android:insetTop">0dp</item>
+        <item name="android:insetBottom">0dp</item>
+        <item name="android:insetLeft">0dp</item>
+        <item name="android:insetRight">0dp</item>
+        <item name="android:minWidth">0dp</item>
+        <item name="android:minHeight">0dp</item>
+        <item name="android:padding">0dp</item>
+        <item name="backgroundTint">@android:color/transparent</item>
+        <item name="rippleColor">?android:attr/colorControlHighlight</item>
+        <item name="iconPadding">0dp</item>
+        <item name="iconGravity">textStart</item>
+        <item name="iconSize">26dp</item>
+        <item name="iconTint">?attr/text_Color_Main</item>
+    </style>
+
     <style name="WhiteboardToolButton" parent="Widget.AppCompat.ImageButton">
         <item name="android:layout_width">44dp</item>
         <item name="android:layout_height">44dp</item>
