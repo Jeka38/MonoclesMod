@@ -1,5 +1,8 @@
 ### Changelog
 
+#### Version 1.9.1.53
+* Muji group call: the "More" popup no longer puts a shared grey panel behind its actions — the switch-camera and whiteboard entries are now **stand-alone round buttons formatted exactly like the main call controls** (grey circle, white icon), stacked vertically on a transparent popup
+
 #### Version 1.9.1.52
 * Muji group call: the "More" popup (and the control bar) can no longer leave the screen — the popup is measured and size-capped against the display and its drop-down offset is clamped horizontally, so the buttons never poke past the screen edge (the "More" button sits at the right edge). The five-button control bar is also scaled down only when it would not fit the smallest displays
 
