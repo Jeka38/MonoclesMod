@@ -25,97 +25,64 @@
         android:layout_weight="1" />
 
     <!--
-      Five equally weighted slots spread the buttons across the whole width, so the red
-      hang-up button always sits exactly in the centre with mic/camera to its left and
-      speaker/More to its right. Anything else (switch camera, whiteboard) lives in the
-      "More" popup.
+      The controls are a compact *centred* group: wrap_content width, centred
+      horizontally, with equal margins between the buttons — so the red hang-up
+      button always sits exactly in the centre of the group and the others are
+      evenly spaced to its left and right, no matter the screen width. Anything
+      else (switch camera, whiteboard) lives in the "More" popup.
     -->
     <LinearLayout
         android:id="@+id/muji_controls"
-        android:layout_width="match_parent"
+        android:layout_width="wrap_content"
         android:layout_height="wrap_content"
+        android:layout_gravity="center_horizontal"
         android:orientation="horizontal"
-        android:paddingHorizontal="4dp"
-        android:paddingVertical="10dp">
+        android:paddingTop="10dp"
+        android:paddingBottom="10dp">
 
-        <FrameLayout
-            android:layout_width="0dp"
-            android:layout_height="wrap_content"
-            android:layout_weight="1">
+        <com.google.android.material.button.MaterialButton
+            android:id="@+id/muji_mic"
+            style="@style/MujiCircleButton"
+            android:layout_marginHorizontal="6dp"
+            android:contentDescription="@string/muji_mic_off"
+            app:backgroundTint="#525252"
+            app:icon="@drawable/ic_mic_black_24dp"
+            app:iconTint="@android:color/white" />
 
-            <com.google.android.material.button.MaterialButton
-                android:id="@+id/muji_mic"
-                style="@style/MujiCircleButton"
-                android:layout_gravity="center"
-                android:layout_marginHorizontal="2dp"
-                android:contentDescription="@string/muji_mic_off"
-                app:backgroundTint="#525252"
-                app:icon="@drawable/ic_mic_black_24dp"
-                app:iconTint="@android:color/white" />
-        </FrameLayout>
+        <com.google.android.material.button.MaterialButton
+            android:id="@+id/muji_video"
+            style="@style/MujiCircleButton"
+            android:layout_marginHorizontal="6dp"
+            android:contentDescription="@string/muji_video_off"
+            app:backgroundTint="#525252"
+            app:icon="@drawable/ic_videocam_black_24dp"
+            app:iconTint="@android:color/white" />
 
-        <FrameLayout
-            android:layout_width="0dp"
-            android:layout_height="wrap_content"
-            android:layout_weight="1">
+        <com.google.android.material.button.MaterialButton
+            android:id="@+id/muji_leave"
+            style="@style/MujiCircleButton"
+            android:layout_marginHorizontal="6dp"
+            android:contentDescription="@string/muji_leave"
+            app:backgroundTint="#D32F2F"
+            app:icon="@drawable/ic_call_end_white_48dp"
+            app:iconTint="@android:color/white" />
 
-            <com.google.android.material.button.MaterialButton
-                android:id="@+id/muji_video"
-                style="@style/MujiCircleButton"
-                android:layout_gravity="center"
-                android:layout_marginHorizontal="2dp"
-                android:contentDescription="@string/muji_video_off"
-                app:backgroundTint="#525252"
-                app:icon="@drawable/ic_videocam_black_24dp"
-                app:iconTint="@android:color/white" />
-        </FrameLayout>
+        <com.google.android.material.button.MaterialButton
+            android:id="@+id/muji_speaker"
+            style="@style/MujiCircleButton"
+            android:layout_marginHorizontal="6dp"
+            android:contentDescription="@string/muji_speaker_off"
+            app:backgroundTint="#525252"
+            app:icon="@drawable/ic_volume_off_black_24dp"
+            app:iconTint="@android:color/white" />
 
-        <FrameLayout
-            android:layout_width="0dp"
-            android:layout_height="wrap_content"
-            android:layout_weight="1">
-
-            <com.google.android.material.button.MaterialButton
-                android:id="@+id/muji_leave"
-                style="@style/MujiCircleButton"
-                android:layout_gravity="center"
-                android:layout_marginHorizontal="2dp"
-                android:contentDescription="@string/muji_leave"
-                app:backgroundTint="#D32F2F"
-                app:icon="@drawable/ic_call_end_white_48dp"
-                app:iconTint="@android:color/white" />
-        </FrameLayout>
-
-        <FrameLayout
-            android:layout_width="0dp"
-            android:layout_height="wrap_content"
-            android:layout_weight="1">
-
-            <com.google.android.material.button.MaterialButton
-                android:id="@+id/muji_speaker"
-                style="@style/MujiCircleButton"
-                android:layout_gravity="center"
-                android:layout_marginHorizontal="2dp"
-                android:contentDescription="@string/muji_speaker_off"
-                app:backgroundTint="#525252"
-                app:icon="@drawable/ic_volume_off_black_24dp"
-                app:iconTint="@android:color/white" />
-        </FrameLayout>
-
-        <FrameLayout
-            android:layout_width="0dp"
-            android:layout_height="wrap_content"
-            android:layout_weight="1">
-
-            <com.google.android.material.button.MaterialButton
-                android:id="@+id/muji_more"
-                style="@style/MujiCircleButton"
-                android:layout_gravity="center"
-                android:layout_marginHorizontal="2dp"
-                android:contentDescription="@string/muji_more"
-                app:backgroundTint="#525252"
-                app:icon="@drawable/ic_more_vert_black_24dp"
-                app:iconTint="@android:color/white" />
-        </FrameLayout>
+        <com.google.android.material.button.MaterialButton
+            android:id="@+id/muji_more"
+            style="@style/MujiCircleButton"
+            android:layout_marginHorizontal="6dp"
+            android:contentDescription="@string/muji_more"
+            app:backgroundTint="#525252"
+            app:icon="@drawable/ic_more_vert_black_24dp"
+            app:iconTint="@android:color/white" />
     </LinearLayout>
 </LinearLayout>

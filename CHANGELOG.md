@@ -1,5 +1,8 @@
 ### Changelog
 
+#### Version 1.9.1.47
+* Muji group call: the control buttons are now a **centred** compact group with equal margins, so the red hang-up button is exactly in the middle and the others are evenly spaced to its left and right on any screen width
+
 #### Version 1.9.1.46
 * Muji group call: mic, camera, the red hang-up and the speaker buttons are now **always visible**; the control bar is a five-slot row with equal weights, so the hang-up button is centred with the others evenly spaced left and right. Switch camera and whiteboard moved into a "More" overflow popup, and the camera button works even before anyone else joins (an audio-only call can be upgraded to video, requesting the camera permission first)
 
