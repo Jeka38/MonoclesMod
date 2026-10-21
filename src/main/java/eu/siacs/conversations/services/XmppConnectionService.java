@@ -114,8 +114,6 @@ import com.google.common.collect.Multimap;
 
 import com.otaliastudios.transcoder.strategy.DefaultAudioStrategy;
 
-import de.monocles.mod.WebxdcUpdate;
-
 import org.conscrypt.Conscrypt;
 import org.openintents.openpgp.IOpenPgpService2;
 import org.openintents.openpgp.util.OpenPgpApi;
@@ -797,18 +795,6 @@ public class XmppConnectionService extends Service {
 
     public Map<String, Message> getMessageFuzzyIds(Conversation conversation, Collection<String> ids) {
         return this.databaseBackend.getMessageFuzzyIds(conversation, ids);
-    }
-
-    public void insertWebxdcUpdate(final WebxdcUpdate update) {
-        this.databaseBackend.insertWebxdcUpdate(update);
-    }
-
-    public WebxdcUpdate findLastWebxdcUpdate(Message message) {
-        return this.databaseBackend.findLastWebxdcUpdate(message);
-    }
-
-    public List<WebxdcUpdate> findWebxdcUpdates(Message message, long serial) {
-        return this.databaseBackend.findWebxdcUpdates(message, serial);
     }
 
     public AvatarService getAvatarService() {

@@ -19,8 +19,6 @@ import com.google.common.base.Stopwatch;
 import com.google.common.collect.HashMultimap;
 import com.google.common.collect.Multimap;
 
-import de.monocles.mod.WebxdcUpdate;
-
 import org.json.JSONException;
 import org.json.JSONObject;
 import org.whispersystems.libsignal.IdentityKey;
@@ -312,29 +310,10 @@ public class DatabaseBackend extends SQLiteOpenHelper {
 
 
             if(monoclesVersion < 8) {
-                db.execSQL(
-                        "CREATE TABLE monocles.webxdc_updates (" +
-                                "serial INTEGER PRIMARY KEY AUTOINCREMENT, " +
-                                Message.CONVERSATION + " TEXT NOT NULL, " +
-                                "sender TEXT NOT NULL, " +
-                                "thread TEXT NOT NULL, " +
-                                "threadParent TEXT, " +
-                                "info TEXT, " +
-                                "document TEXT, " +
-                                "summary TEXT, " +
-                                "payload TEXT" +
-                                ")"
-                );
-                db.execSQL("CREATE INDEX monocles.webxdc_index ON webxdc_updates (" + Message.CONVERSATION + ", thread)");
                 db.execSQL("PRAGMA monocles.user_version = 8");
             }
 
             if(monoclesVersion < 9) {
-                db.execSQL(
-                        "ALTER TABLE monocles.webxdc_updates " +
-                                "ADD COLUMN message_id TEXT"
-                );
-                db.execSQL("CREATE UNIQUE INDEX monocles.webxdc_message_id_index ON webxdc_updates (" + Message.CONVERSATION + ", message_id)");
                 db.execSQL("PRAGMA monocles.user_version = 9");
             }
 
@@ -976,51 +955,6 @@ public class DatabaseBackend extends SQLiteOpenHelper {
         return true;
     }
 
-    public void insertWebxdcUpdate(final WebxdcUpdate update) {
-        SQLiteDatabase db = this.getWritableDatabase();
-        db.insertWithOnConflict("monocles.webxdc_updates", null, update.getContentValues(), SQLiteDatabase.CONFLICT_IGNORE);
-    }
-
-    public WebxdcUpdate findLastWebxdcUpdate(Message message) {
-        if (message.getThread() == null) {
-            Log.w(Config.LOGTAG, "WebXDC message with no thread!");
-            return null;
-        }
-
-        SQLiteDatabase db = this.getReadableDatabase();
-        String[] selectionArgs = {message.getConversation().getUuid(), message.getThread().getContent()};
-        Cursor cursor = db.query("monocles.webxdc_updates", null,
-                Message.CONVERSATION + "=? AND thread=?",
-                selectionArgs, null, null, "serial ASC");
-        WebxdcUpdate update = null;
-        if (cursor.moveToLast()) {
-            update = new WebxdcUpdate(cursor, cursor.getLong(cursor.getColumnIndex("serial")));
-        }
-        cursor.close();
-        return update;
-    }
-
-    public List<WebxdcUpdate> findWebxdcUpdates(Message message, long serial) {
-        SQLiteDatabase db = this.getReadableDatabase();
-        String[] selectionArgs = {message.getConversation().getUuid(), message.getThread().getContent(), String.valueOf(serial)};
-        Cursor cursor = db.query("monocles.webxdc_updates", null,
-                Message.CONVERSATION + "=? AND thread=? AND serial>?",
-                selectionArgs, null, null, "serial ASC");
-        long maxSerial = 0;
-        if (cursor.moveToLast()) {
-            maxSerial = cursor.getLong(cursor.getColumnIndex("serial"));
-        }
-        cursor.moveToFirst();
-        cursor.moveToPrevious();
-
-        List<WebxdcUpdate> updates = new ArrayList<>();
-        while (cursor.moveToNext()) {
-            updates.add(new WebxdcUpdate(cursor, maxSerial));
-        }
-        cursor.close();
-        return updates;
-    }
-
     public void createConversation(Conversation conversation) {
         SQLiteDatabase db = this.getWritableDatabase();
         db.insert(Conversation.TABLENAME, null, conversation.getContentValues());
@@ -1623,7 +1557,6 @@ public class DatabaseBackend extends SQLiteOpenHelper {
         db.beginTransaction();
         final String[] args = {conversation.getUuid()};
         int num = db.delete(Message.TABLENAME, Message.CONVERSATION + "=?", args);
-        db.delete("monocles.webxdc_updates", Message.CONVERSATION + "=?", args);
         db.setTransactionSuccessful();
         db.endTransaction();
         Log.d(Config.LOGTAG, "deleted " + num + " messages for " + conversation.getJid().asBareJid() + " in " + (SystemClock.elapsedRealtime() - start) + "ms");

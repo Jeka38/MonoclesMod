@@ -1,5 +1,8 @@
 ### Changelog
 
+#### Version 1.9.1.45
+* WebXDC removed entirely: the "Choose WebXDC" attach menu entries, the `WebxdcStore` WebView activity (and its manifest entry), the in-chat `WebxdcPage` mini-app, the `WebxdcUpdate` store, the XEP-`urn:xmpp:webxdc:0` handling in `MessageParser`, the `monocles.webxdc_updates` DB table and its accessors, the icons/themes/layouts/strings, and the now-unused `org.tomlj` dependency. A received `.xdc` file is just an ordinary file now
+
 #### Version 1.9.1.44
 * fix: a message containing a link with a `/me` substring (e.g. `https://mega.nz/…`) was mangled — the `/me` command was detected in the middle of the URL (the `//me` of `https://mega…`) and replaced with `* nick`, rendering `https://* nickga.nz/…`. `Message.getMeCommandIndex()` now requires `/me` to be a standalone token at the start of a line (only whitespace before it, whitespace/end-of-line after it)
 

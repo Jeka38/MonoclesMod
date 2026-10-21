@@ -91,7 +91,7 @@ ProGuard + shrinking (`-dontobfuscate`) are enabled on **both** debug and releas
 
 - **File downloads are redesigned:** HTTP transfers save to the **public Download folder** (`Download/<APP_DIRECTORY>/`) using the **original filename**. Name priority is the SIMS `<name>` element (`Message.FileParams.getName()`) first, then the last URL path segment (`HttpDownloadConnection.originalFilenameFromUrl`). Downloaded files show an "Open file" button in the chat.
 - The chat shows the original filename under a downloaded/openable file — but **deliberately not** under image/video previews (`displayMediaPreviewMessage`). Do not "fix" the preview to show the name.
-- OMEMO-encrypted HTTP downloads and background fetches (webxdc previews, link images) are **deliberately not** redirected — they keep private storage/temp paths.
+- OMEMO-encrypted HTTP downloads and background fetches (link images) are **deliberately not** redirected — they keep private storage/temp paths.
 - Legacy Jingle (XEP-0234) transfers intentionally keep the upstream private-storage behaviour.
 - `ServiceManagementDialog` derives its action menu from disco#info; if `disco#info` fails (error/timeout) it falls back to showing all actions rather than collapsing to just "Copy JID".
 - **MUC conversation name fallback** (`Conversation.getName()`): `muc_name` → bookmark name → **JID local part (before `@`)**. The room topic/subject is deliberately **not** used as a fallback — do not "fix" it back.

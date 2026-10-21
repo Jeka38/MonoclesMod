@@ -114,7 +114,6 @@ dependencies {
     implementation project(':libs:AXML')
     implementation 'com.github.ipld:java-cid:v1.3.1'
     implementation 'com.github.woltapp:blurhash:master'
-    implementation 'org.tomlj:tomlj:1.1.0'
     coreLibraryDesugaring 'com.android.tools:desugar_jdk_libs:2.0.4'
     implementation 'io.michaelrocks:libphonenumber-android:8.13.28'
     implementation 'io.github.nishkarsh:android-permissions:2.1.6'
@@ -154,8 +153,8 @@ android {
         targetSdkVersion 34
 
         // versionNameSuffix " -beta_(2023-10-26)" // " beta_(XXXX-XX-XX)" // activate for beta versions
-        versionCode 425
-        versionName "1.9.1.44"
+        versionCode 426
+        versionName "1.9.1.45"
         //resConfigs "en"
 
         archivesBaseName += "-$versionName"

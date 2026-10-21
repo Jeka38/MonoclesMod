@@ -9,7 +9,6 @@ import android.net.Uri;
 
 
 import de.monocles.mod.BobTransfer;
-import de.monocles.mod.WebxdcUpdate;
 import java.io.ByteArrayInputStream;
 import java.io.File;
 
@@ -756,44 +755,6 @@ public class MessageParser extends AbstractParser implements OnMessagePacketRece
         final boolean isRosterContact = messageSender != null && messageSender.showInContactList();
         final boolean isPrivateMucMessage = mucUserElement != null && !isTypeGroupChat && counterpart.isFullJid();
         final boolean conversationIsProbablyMuc = isTypeGroupChat || (mucUserElement != null || account.getXmppConnection().getMucServersWithholdAccount().contains(counterpart.getDomain().toEscapedString()));
-        final Element webxdc = packet.findChild("x", "urn:xmpp:webxdc:0");
-        final Element thread = packet.findChild("thread");
-        if (webxdc != null && thread != null) {
-            final Conversation conversation;
-            if (isPrivateMucMessage) {
-                conversation = mXmppConnectionService.findOrCreateConversation(account, counterpart.asBareJid(), counterpart, true, false, query, false, null);
-            } else {
-                conversation = mXmppConnectionService.findOrCreateConversation(account, counterpart.asBareJid(), conversationIsProbablyMuc, false, query, false);
-            }
-            Jid webxdcSender = counterpart.asBareJid();
-            if (conversation.getMode() == Conversation.MODE_MULTI) {
-                if(conversation.getMucOptions().nonanonymous()) {
-                    webxdcSender = conversation.getMucOptions().getTrueCounterpart(counterpart);
-                } else {
-                    webxdcSender = counterpart;
-                }
-            }
-            final var document = webxdc.findChildContent("document", "urn:xmpp:webxdc:0");
-            final var summary = webxdc.findChildContent("summary", "urn:xmpp:webxdc:0");
-            final var payload = webxdc.findChildContent("json", "urn:xmpp:json:0");
-            if (document != null || summary != null || payload != null) {
-                mXmppConnectionService.insertWebxdcUpdate(new WebxdcUpdate(
-                        conversation,
-                        remoteMsgId,
-                        counterpart,
-                        thread,
-                        body == null ? null : body.content,
-                        document,
-                        summary,
-                        payload
-                ));
-            }
-
-            final var realtime = webxdc.findChildContent("data", "urn:xmpp:webxdc:0");
-            if (realtime != null) conversation.webxdcRealtimeData(thread, realtime);
-
-            mXmppConnectionService.updateConversationUi();
-        }
 
         if ((body != null || pgpEncrypted != null || (axolotlEncrypted != null && axolotlEncrypted.hasChild("payload")) || !attachments.isEmpty() || html != null || (packet.hasChild("subject") && packet.hasChild("thread"))) && !isMucStatusMessage) {
             final Conversation conversation;

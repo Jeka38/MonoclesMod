@@ -602,13 +602,6 @@ public class UIHelper {
             return context.getString(R.string.ebook);
         } else if (mime.equals("application/gpx+xml")) {
             return context.getString(R.string.gpx_track);
-        } else if (mime.equals("application/webxdc+zip")) {
-            final var name = message.getFileParams().getName();
-            if (name != null && name.length() < 20) {
-                return name;
-            } else {
-                return "WebXDC";
-            }
         } else if (mime.equals("text/plain")) {
             return context.getString(R.string.plain_text_document);
         } else {

@@ -65,7 +65,6 @@ import com.google.common.base.Optional;
 
 import de.monocles.mod.ConversationPage;
 import de.monocles.mod.Util;
-import de.monocles.mod.WebxdcPage;
 
 import java.time.ZoneId;
 import java.time.ZonedDateTime;
@@ -2101,14 +2100,6 @@ public class Conversation extends AbstractEntity implements Blockable, Comparabl
         pagerAdapter.refreshSessions();
     }
 
-    public void startWebxdc(WebxdcPage page) {
-        pagerAdapter.startWebxdc(page);
-    }
-
-    public void webxdcRealtimeData(final Element thread, final String base64) {
-        pagerAdapter.webxdcRealtimeData(thread, base64);
-    }
-
     public void startCommand(Element command, XmppConnectionService xmppConnectionService) {
         pagerAdapter.startCommand(command, xmppConnectionService);
     }
@@ -2239,25 +2230,6 @@ public class Conversation extends AbstractEntity implements Blockable, Comparabl
             }
         }
 
-        public void webxdcRealtimeData(final Element thread, final String base64) {
-            if (sessions == null) return;
-
-            for (ConversationPage session : sessions) {
-                if (session instanceof WebxdcPage) {
-                    if (((WebxdcPage) session).threadMatches(thread)) {
-                        ((WebxdcPage) session).realtimeData(base64);
-                    }
-                }
-            }
-        }
-
-        public void startWebxdc(WebxdcPage page) {
-            show();
-            sessions.add(page);
-            notifyDataSetChanged();
-            if (mPager != null) mPager.setCurrentItem(getCount() - 1);
-        }
-
         public void startCommand(Element command, XmppConnectionService xmppConnectionService) {
             show();
             CommandSession session = new CommandSession(command.getAttribute("name"), command.getAttribute("node"), xmppConnectionService);
@@ -2334,7 +2306,6 @@ public class Conversation extends AbstractEntity implements Blockable, Comparabl
         public void removeSession(ConversationPage session) {
             sessions.remove(session);
             notifyDataSetChanged();
-            if (session instanceof WebxdcPage) mPager.setCurrentItem(0);
         }
 
         public boolean switchToSession(final String node) {

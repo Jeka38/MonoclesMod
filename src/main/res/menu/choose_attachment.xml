@@ -41,11 +41,6 @@
         android:title="@string/live_location" />
 
     <item
-        android:id="@+id/attach_webxdc"
-        android:icon="?attr/icon_webxdcs"
-        android:title="@string/choose_webxdc" />
-
-    <item
         android:id="@+id/attach_subject"
         android:icon="?attr/add_subject"
         android:title="@string/add_subject" />

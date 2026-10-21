@@ -50,7 +50,6 @@ import android.text.style.StyleSpan;
 import android.util.Base64;
 import android.util.DisplayMetrics;
 import android.util.Log;
-import android.util.LruCache;
 import android.view.HapticFeedbackConstants;
 import android.view.MotionEvent;
 import android.view.View;
@@ -106,8 +105,6 @@ import java.util.regex.Pattern;
 
 import de.monocles.mod.BobTransfer;
 import de.monocles.mod.Util;
-import de.monocles.mod.WebxdcPage;
-import de.monocles.mod.WebxdcUpdate;
 import eu.siacs.conversations.Config;
 import eu.siacs.conversations.R;
 import eu.siacs.conversations.crypto.axolotl.FingerprintStatus;
@@ -190,7 +187,6 @@ public class MessageAdapter extends ArrayAdapter<Message> {
     private boolean mShowMucStatusMessages = true;
     private boolean mShowJoinLeave = false;
     private final boolean mForceNames;
-    private final Map<String, WebxdcUpdate> lastWebxdcUpdate = new HashMap<>();
     private final Map<String, String> mucNameCache = new HashMap<>();
     private final Set<String> mucNameFetches = new HashSet<>();
     private final Set<String> mucJidCache = new HashSet<>();
@@ -1286,68 +1282,6 @@ public class MessageAdapter extends ArrayAdapter<Message> {
     }
 
 
-    private void displayWebxdcMessage(ViewHolder viewHolder, final Message message, final boolean darkBackground, final int type) {
-        Cid webxdcCid = message.getFileParams().getCids().get(0);
-        WebxdcPage webxdc = new WebxdcPage(activity, webxdcCid, message, activity.xmppConnectionService);
-        displayTextMessage(viewHolder, message, darkBackground, type);
-        viewHolder.image.setVisibility(GONE);
-        viewHolder.audioPlayer.setVisibility(GONE);
-        viewHolder.download_button.setVisibility(View.VISIBLE);
-        viewHolder.download_button.setText(activity.getResources().getString(R.string.open) + " " + webxdc.getName());
-        viewHolder.download_button.setOnClickListener(v -> {
-            Conversation conversation = (Conversation) message.getConversation();
-            if (!conversation.switchToSession("webxdc\0" + message.getUuid())) {
-                conversation.startWebxdc(webxdc);
-            }
-        });
-
-        final WebxdcUpdate lastUpdate;
-        synchronized(lastWebxdcUpdate) { lastUpdate = lastWebxdcUpdate.get(message.getUuid()); }
-        if (lastUpdate == null) {
-            new Thread(() -> {
-                final WebxdcUpdate update = activity.xmppConnectionService.findLastWebxdcUpdate(message);
-                if (update != null) {
-                    synchronized(lastWebxdcUpdate) { lastWebxdcUpdate.put(message.getUuid(), update); }
-                    activity.xmppConnectionService.updateConversationUi();
-                }
-            }).start();
-        } else {
-            if (lastUpdate != null && (lastUpdate.getSummary() != null || lastUpdate.getDocument() != null)) {
-                viewHolder.messageBody.setVisibility(View.VISIBLE);
-                viewHolder.messageBody.setText(
-                        (lastUpdate.getDocument() == null ? "" : lastUpdate.getDocument() + "\n") +
-                                (lastUpdate.getSummary() == null ? "" : lastUpdate.getSummary())
-                );
-            }
-        }
-
-        final LruCache<String, Drawable> cache = activity.xmppConnectionService.getDrawableCache();
-        final Drawable d = cache.get("webxdc:icon:" + webxdcCid);
-        if (d == null) {
-            new Thread(() -> {
-                Drawable icon = webxdc.getIcon();
-                if (icon != null) {
-                    cache.put("webxdc:icon:" + webxdcCid, icon);
-                    activity.xmppConnectionService.updateConversationUi();
-                }
-            }).start();
-        } else {
-            viewHolder.images.setVisibility(View.VISIBLE);
-            viewHolder.image.setVisibility(View.VISIBLE);
-
-            int width = d.getIntrinsicWidth();
-            int height = d.getIntrinsicHeight();
-            imagePreviewLayout(width, height, viewHolder.image);
-
-            ViewGroup.LayoutParams params_image = viewHolder.image.getLayoutParams();
-            LinearLayout.LayoutParams layoutParams = new LinearLayout.LayoutParams(params_image.width, params_image.height);
-            layoutParams.setMargins(0, (int) (metrics.density * 4), 0, (int) (metrics.density * 4));
-            viewHolder.images.setLayoutParams(layoutParams);
-
-            viewHolder.image.setImageDrawable(d);
-        }
-    }
-
     private void displayOpenableMessage(ViewHolder viewHolder, final Message message, final boolean darkBackground, final int type) {
         displayTextMessage(viewHolder, message, darkBackground, type);
         setFileNameInBody(viewHolder, message, darkBackground, type);
@@ -2240,8 +2174,6 @@ public class MessageAdapter extends ArrayAdapter<Message> {
                 displayMediaPreviewMessage(viewHolder, message, darkBackground, type);
             } else if (message.getFileParams().runtime > 0 && (message.getFileParams().width == 0 && message.getFileParams().height == 0)) {
                 displayAudioMessage(viewHolder, message, darkBackground, type);
-            } else if ("application/webxdc+zip".equals(message.getFileParams().getMediaType()) && message.getConversation() instanceof Conversation && !message.getFileParams().getCids().isEmpty()) {
-                displayWebxdcMessage(viewHolder, message, darkBackground, type);
             } else {
                 displayOpenableMessage(viewHolder, message, darkBackground, type);
             }

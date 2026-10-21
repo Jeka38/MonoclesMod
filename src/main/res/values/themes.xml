@@ -137,8 +137,6 @@
         <item name="icon_tag" type="reference">@drawable/ic_tag_black_24dp</item>
         <item name="icon_chat_selected" type="reference">@drawable/chat_selected_black_24</item>
         <item name="icon_account" type="reference">@drawable/ic_account_black_24dp</item>
-        <item name="icon_webxdcs" type="reference">@drawable/webxdcs</item>
-        <item name="icon_webxdcs_selected" type="reference">@drawable/webxdcs_filled_black</item>
         <item name="icon_accounts_selected" type="reference">@drawable/accounts_selected_black_24</item>
         <item name="icon_add_group" type="reference">@drawable/ic_group_add_black_24dp</item>
         <item name="icon_add_person" type="reference">@drawable/ic_person_add_black_24dp</item>
@@ -370,8 +368,6 @@
         <item name="icon_tag" type="reference">@drawable/ic_tag_white_24dp</item>
         <item name="icon_chat_selected" type="reference">@drawable/chat_selected_white_24</item>
         <item name="icon_account" type="reference">@drawable/ic_account_white_24dp</item>
-        <item name="icon_webxdcs" type="reference">@drawable/webxdcs_white</item>
-        <item name="icon_webxdcs_selected" type="reference">@drawable/webxdcs_filled_white</item>
         <item name="icon_accounts_selected" type="reference">@drawable/accounts_selected_white_24</item>
         <item name="icon_add_group" type="reference">@drawable/ic_group_add_white_24dp</item>
         <item name="icon_add_person" type="reference">@drawable/ic_person_add_white_24dp</item>

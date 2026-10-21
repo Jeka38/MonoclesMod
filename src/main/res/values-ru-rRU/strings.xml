@@ -1743,7 +1743,6 @@
     <string name="new_notification">Новое уведомление</string>
     <string name="new_message">Новое сообщение</string>
     <string name="emojis">Эмодзи</string>
-    <string name="webxdc_hint">Чтобы использовать WebXDC, отправьте его еще раз в не зашифрованном виде</string>
     <string name="open">Открыть</string>
     <string name="unencrypted">не зашифрованный</string>
     <string name="gifs">GIF</string>
@@ -1773,7 +1772,6 @@
     <string name="pref_jump_to_commands_tab">Перейти на вкладку команд</string>
     <string name="invite_to_start_chat">Пригласить начать чат</string>
     <string name="pref_jump_to_commands_tab_summary">Автоматический переход на вкладку команд для просмотра и использования специальных команд</string>
-    <string name="webxdcs">WebXDCs</string>
     <string name="confirm_password_txt">Подтвердите пароль</string>
     <string name="password_changed_txt">Пароль изменен</string>
     <string name="enter_a_new_password_txt">Введите новый пароль</string>
@@ -1789,10 +1787,6 @@
     <string name="server_info_bind2">XEP-0386: Привязка 2</string>
     <string name="server_info_sasl2">XEP-0388: Расширяемый профиль SASL</string>
     <string name="server_info_login_mechanism">Механизм входа</string>
-    <string name="webxdc_store_hint_title">Использование WebXDC</string>
-    <string name="webxdc_store_hint_summary">Чтобы использовать приложения WebXDC с обновлениями статуса, вам необходимо отключить шифрование при отправке WebXDC. Пожалуйста, включите шифрование позже снова.</string>
-    <string name="send_encrypted">Отправить зашифрованное</string>
-    <string name="choose_webxdc">Выберите WebXDC</string>
     <string name="manage_lists_users">Управление списками (пользователи)</string>
     <string name="manage_lists_hint">Выберите список, чтобы просмотреть или изменить его состав</string>
     <string name="muc_server">Сервер</string>

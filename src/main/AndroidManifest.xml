@@ -338,12 +338,6 @@
         </activity>
 
         <activity
-            android:name="de.monocles.mod.WebxdcStore"
-            android:label="@string/webxdcs"
-            android:launchMode="standard"
-            android:exported="false" />
-
-        <activity
             android:name="de.monocles.mod.RegisterMonoclesActivity"
             android:label="@string/create_account"
             android:exported="false"

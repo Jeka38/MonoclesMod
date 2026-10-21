@@ -1618,7 +1618,6 @@
     <string name="new_notification">New notification</string>
     <string name="new_message">New message</string>
     <string name="emojis">Emojis</string>
-    <string name="webxdc_hint">To use WebXDC send it unencrypted again</string>
     <string name="open">Open</string>
     <string name="unencrypted">unencrypted</string>
     <string name="gifs">GIFs</string>
@@ -1647,7 +1646,6 @@
     <string name="pref_jump_to_commands_tab_summary">Automatically jump to commands tab to list and use ad-hoc commands</string>
     <string name="pref_jump_to_commands_tab">Jump to commands tab</string>
     <string name="invite_to_start_chat">Invite to start chat</string>
-    <string name="webxdcs">WebXDCs</string>
     <string name="app_name" translatable="false">monocles mod</string>
     <string name="enter_a_new_password_txt">Enter a New Password</string>
     <string name="confirm_password_txt">Confirm Password</string>
@@ -1664,10 +1662,6 @@
     <string name="server_info_bind2">XEP-0386: Bind 2</string>
     <string name="server_info_sasl2">XEP-0388: Extensible SASL Profile</string>
     <string name="server_info_login_mechanism">Login mechanism</string>
-    <string name="webxdc_store_hint_title">WebXDC usage</string>
-    <string name="webxdc_store_hint_summary">To use WebXDC apps with status updates you need to disable encryption when sending the WebXDC. Please enable encryption afterwards again.</string>
-    <string name="send_encrypted">Send encrypted</string>
-    <string name="choose_webxdc">Choose WebXDC</string>
     <string name="internal_media_viewer_title">Internal media viewer</string>
     <string name="internal_media_viewer_summary">Open image and video files with the internal media viewer</string>
     <string name="avater_shape_oval">Oval</string>
