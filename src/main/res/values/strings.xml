@@ -982,6 +982,7 @@
     </plurals>
     <string name="group_chat_members">Participants</string>
     <string name="message_deleted">Message was deleted</string>
+    <string name="message_retracted">This message was retracted (%s)</string>
     <string name="channel_details">Room details</string>
     <string name="join_public_channel">Join public room</string>
     <string name="create_private_group_chat">Create private room</string>

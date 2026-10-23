@@ -1,5 +1,8 @@
 ### Changelog
 
+#### Version 1.9.1.55
+* **Message retraction (XEP-0424)** — withdrawing a message is now done with the modern **v1** form (`<retract xmlns='urn:xmpp:message-retract:1' id='…'/>`), so other clients see the standardization placeholder instead of an ordinary message. The incoming side accepts both v1 and the legacy v0.3 (`<apply-to xmlns='urn:xmpp:fasten:0'><retract/></apply-to>`), advertises both in caps, and matches the retracted id against UUID / origin-id / **stanza-id** / edit ids (the old lookup never checked the stanza-id, so a MUC retraction like `<retract id='1792766308589286'/>` was never applied). The retracted row shows **«Это сообщение было отозвано (дата и точное время)»** — the exact retraction time (stored in a new `retractedAt` column) — both in the chat bubble and in the chat list, and survives a reload. A MUC retraction can now only remove a message by the same occupant. The menu's Retract and Delete actions were unified (the old Retract handler blanked and re-sent the body)
+
 #### Version 1.9.1.54
 * Muji group call: the "More" popup no longer covers the "More" button — `showAsDropDown` anchors at the button's *bottom* edge, so the popup was left overlapping it. Positioning now uses explicit screen coordinates (`showAtLocation`) and places the popup's bottom edge above the button's top, still clamped inside the display
 

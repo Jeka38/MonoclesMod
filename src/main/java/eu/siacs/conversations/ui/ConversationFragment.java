@@ -2450,32 +2450,45 @@ public class ConversationFragment extends XmppFragment
                 }
             }
             final boolean messageDeleted = m.isMessageDeleted();
-            deleteMessage.setVisible(true);
+            // A retracted row shows a placeholder, not the original text: never expose the internal
+            // marker body through copy / select / quote / share / notes.
+            final boolean retracted = m.isRetracted();
+            deleteMessage.setVisible(!retracted);
             if (showReactions != null) {
                 final boolean hasReactions = m.getConversation() instanceof Conversation
                         && ((Conversation) m.getConversation()).hasReactions(m);
                 showReactions.setVisible(hasReactions);
             }
-            if (!encrypted && !m.getBody().equals("")) {
+            if (!encrypted && !retracted && !m.getBody().equals("")) {
                 copyMessage.setVisible(true);
                 selectText.setVisible(true);
                 addToNotes.setVisible(true);
                 quoteMessage.setVisible(!showError && MessageUtils.prepareQuote(m).length() > 0);
             }
-            quoteMessage.setVisible(!encrypted && !showError);
+            quoteMessage.setVisible(!encrypted && !retracted && !showError);
             if (m.getEncryption() == Message.ENCRYPTION_DECRYPTION_FAILED && !fileDeleted) {
                 retryDecryption.setVisible(true);
             }
-            if (!encrypted && !unInitiatedButKnownSize && t == null) {
+            if (!encrypted && !retracted && !unInitiatedButKnownSize && t == null) {
                 quoteMessage.setVisible(!showError && QuoteHelper.isMessageQuoteable(m));
             }
             if (!showError
+                    && !retracted
                     && relevantForCorrection.getType() == Message.TYPE_TEXT
                     && !m.isGeoUri()
                     && relevantForCorrection.isEditable()
                     && m.getConversation() instanceof Conversation) {
                 correctMessage.setVisible(true);
-                if (!relevantForCorrection.getBody().equals("") && !relevantForCorrection.getBody().equals(" ")) retractMessage.setVisible(false);
+            }
+            // "Retract" is offered for our own, still-withdrawable text messages. The placeholder
+            // body marks an already retracted row — do not offer the action again for it.
+            if (!retracted
+                    && relevantForCorrection.getType() == Message.TYPE_TEXT
+                    && !m.isGeoUri()
+                    && relevantForCorrection.getStatus() >= Message.STATUS_SEND
+                    && m.getConversation() instanceof Conversation) {
+                retractMessage.setVisible(true);
+                correctMessage.setVisible(true);
             }
             if (relevantForCorrection.getReactions() != null) {
                 correctMessage.setVisible(false);
@@ -2576,24 +2589,9 @@ public class ConversationFragment extends XmppFragment
             correctMessage(selectedMessage);
             return true;
         } else if (itemId == R.id.retract_message) {
-            new AlertDialog.Builder(activity)
-                    .setTitle(R.string.retract_message)
-                    .setMessage(R.string.retract_message_dialog_msg)
-                    .setPositiveButton(R.string.yes, (dialog, whichButton) -> {
-                        Message message = selectedMessage;
-                        while (message.mergeable(message.next())) {
-                            message = message.next();
-                        }
-                        message.setInReplyTo(null);
-                        message.clearPayloads();
-                        message.setBody(" ");
-                        message.setSubject(null);
-                        message.putEdited(message.getUuid(), message.getServerMsgId(), message.getBody(), message.getTimeSent());
-                        message.setServerMsgId(null);
-                        message.setUuid(UUID.randomUUID().toString());
-                        sendMessage(message);
-                    })
-                    .setNegativeButton(R.string.no, null).show();
+            // "Retract" and "Delete" perform the same XEP-0424 retraction for our own messages; keep
+            // a single code path (deleteMessage) so both stay in sync.
+            deleteMessage(selectedMessage);
             return true;
         } else if (itemId == R.id.moderate_message) {
             activity.quickEdit("Spam", (reason) -> {
@@ -4408,31 +4406,40 @@ public class ConversationFragment extends XmppFragment
 
         builder.setPositiveButton(R.string.confirm, (dialog, which) -> {
 
-            if (finalMessage.getType() == Message.TYPE_TEXT
+            final boolean ownTextMessage = finalMessage.getType() == Message.TYPE_TEXT
                     && !finalMessage.isGeoUri()
-                    && finalMessage.getConversation() instanceof Conversation) {
-
+                    && finalMessage.getConversation() instanceof Conversation
+                    && finalMessage.getStatus() >= Message.STATUS_SEND;
+            if (ownTextMessage) {
+                // Retract our own message (XEP-0424): tell the peers and keep a placeholder row with
+                // the exact retraction time. Deleting somebody else's message stays a purely local
+                // operation (the else branch), as before.
+                final long time = System.currentTimeMillis();
                 Message retractedMessage = finalMessage;
-                retractedMessage.setMessageDeleted(true);
+                retractedMessage.setRetractedAt(time);
 
-                long time = System.currentTimeMillis();
+                // XEP-0424 carrier: a bodyless message that only transports the <retract/>. It is
+                // tagged as a reaction carrier so it never renders as a chat row and never bumps the
+                // chat list / unread count.
                 Message retractmessage = new Message(conversation,
-                        "This person attempted to retract a previous message, but it's unsupported by your client.",
+                        "",
                         Message.ENCRYPTION_NONE,
                         Message.STATUS_SEND);
+                // The retraction must address the id the *others* know this message by: in a MUC that
+                // is the stanza-id the room assigned, in 1:1/PM the origin-id (remote msg id). This
+                // is the same rule replyId()/reactionId() use, with the last-resort local UUID.
+                retractmessage.setRetractId(retractedMessage.reactionId());
                 if (retractedMessage.getEditedList().size() > 0) {
                     retractmessage.setRetractId(retractedMessage.getEditedList().get(0).getEditedId());
-                } else {
-                    retractmessage.setRetractId(retractedMessage.getRemoteMsgId() != null ? retractedMessage.getRemoteMsgId() : retractedMessage.getUuid());
                 }
 
                 retractedMessage.putEdited(retractedMessage.getUuid(), retractedMessage.getServerMsgId(), retractedMessage.getBody(), retractedMessage.getTimeSent());
-                retractedMessage.setBody(Message.DELETED_MESSAGE_BODY);
-                retractedMessage.setServerMsgId(null);
-                retractedMessage.setRemoteMsgId(message.getRemoteMsgId());
-                retractedMessage.setMessageDeleted(true);
+                // Keep the row (do not delete it, do not set the DB "deleted" flag) so the retraction
+                // placeholder — with its exact time — survives a reload and is shown in this client
+                // just as it is everywhere else.
+                retractedMessage.setBody(Message.RETRACTED_MESSAGE_BODY);
 
-                retractmessage.setType(Message.TYPE_TEXT);
+                retractmessage.setType(Message.TYPE_REACTION);
                 retractmessage.setCounterpart(message.getCounterpart());
                 retractmessage.setTrueCounterpart(message.getTrueCounterpart());
                 retractmessage.setTime(time);
@@ -4440,23 +4447,20 @@ public class ConversationFragment extends XmppFragment
                 retractmessage.setCarbon(false);
                 retractmessage.setRemoteMsgId(retractmessage.getUuid());
                 retractmessage.setMessageDeleted(true);
-                retractedMessage.setTime(time); //set new time here to keep orginal timestamps
                 for (Edit itm : retractedMessage.getEditedList()) {
                     Message tmpRetractedMessage = conversation.findMessageWithUuidOrRemoteId(itm.getEditedId());
                     if (tmpRetractedMessage != null) {
-                        tmpRetractedMessage.setMessageDeleted(true);
+                        tmpRetractedMessage.setRetractedAt(time);
                         activity.xmppConnectionService.updateMessage(tmpRetractedMessage, tmpRetractedMessage.getUuid());
                     }
                 }
                 activity.xmppConnectionService.updateMessage(retractedMessage, retractedMessage.getUuid());
-                if (finalMessage.getStatus() >= Message.STATUS_SEND) {
-                    //only send retraction messages vor outgoing messages!
-                    sendMessage(retractmessage);
-                }
-                activity.xmppConnectionService.deleteMessage(conversation, retractedMessage);
+                sendMessage(retractmessage);
+                // The carrier is fire-and-forget: drop it locally (its only job is the stanza).
                 activity.xmppConnectionService.deleteMessage(conversation, retractmessage);
+            } else {
+                activity.xmppConnectionService.deleteMessage(conversation, message);
             }
-            activity.xmppConnectionService.deleteMessage(conversation, message);
             activity.onConversationsListItemUpdated();
             refresh();
         });

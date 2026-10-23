@@ -57,6 +57,7 @@ public abstract class AbstractGenerator {
             "urn:xmpp:message-correct:0"
     };
     private final String[] MESSAGE_RETRACTION_FEATURES = {
+            "urn:xmpp:message-retract:1",
             "urn:xmpp:message-retract:0"
     };
     private final String[] PRIVACY_SENSITIVE = {

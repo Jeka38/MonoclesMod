@@ -137,7 +137,11 @@ public class Message extends AbstractEntity implements AvatarService.Avatarable 
     public static final String ERROR_MESSAGE_CANCELLED = "eu.siacs.conversations.cancelled";
     public static final String DELETED_MESSAGE_BODY = "eu.siacs.conversations.message_deleted";
     public static final String DELETED_MESSAGE_BODY_OLD = "de.pixart.messenger.message_deleted";
+    /** Marker body stored for a message removed by an incoming XEP-0424 retraction. Distinct from
+     *  the local "delete" placeholder so the retraction time can be rendered as well. */
+    public static final String RETRACTED_MESSAGE_BODY = "eu.siacs.conversations.message_retracted";
     public static final String RETRACT_ID = "retractId";
+    public static final String RETRACTED_AT = "retractedAt";
 
     public boolean markable = false;
     protected String conversationUuid;
@@ -150,6 +154,9 @@ public class Message extends AbstractEntity implements AvatarService.Avatarable 
 
     protected long timeSent;
     protected long timeReceived;
+    /** Wall-clock time of the XEP-0424 retraction that removed this message, or 0 when it was not
+     *  retracted. Rendered next to the "message was retracted" placeholder. */
+    protected long retractedAt = 0L;
     protected int encryption;
     protected int status;
     protected int type;
@@ -344,6 +351,10 @@ public class Message extends AbstractEntity implements AvatarService.Avatarable 
                 payloads
         );
         m.setOccupantId(cursor.getString(cursor.getColumnIndex("occupant_id")));
+        final int retractedAtIndex = cursor.getColumnIndex(RETRACTED_AT);
+        if (retractedAtIndex >= 0 && !cursor.isNull(retractedAtIndex)) {
+            m.retractedAt = cursor.getLong(retractedAtIndex);
+        }
         return m;
     }
 
@@ -409,6 +420,7 @@ public class Message extends AbstractEntity implements AvatarService.Avatarable 
         }
         values.put("payloads", payloads.size() < 1 ? null : payloads.stream().map(Object::toString).collect(Collectors.joining()));
         values.put("occupant_id", occupantId);
+        values.put(RETRACTED_AT, retractedAt);
         return values;
     }
 
@@ -1217,6 +1229,31 @@ public class Message extends AbstractEntity implements AvatarService.Avatarable 
         this.retractId = id;
     }
 
+    /** Wall-clock time of the XEP-0424 retraction that removed this message (0 = not retracted). */
+    public long getRetractedAt() {
+        return this.retractedAt;
+    }
+
+    public void setRetractedAt(final long time) {
+        this.retractedAt = time;
+    }
+
+    /**
+     * True when this message was withdrawn by a peer (XEP-0424) rather than deleted locally. Such a
+     * row is deliberately **not** flagged {@link #isMessageDeleted()} — that flag means "delete this
+     * row from the DB" and the query in {@code DatabaseBackend.getMessages} filters those rows out,
+     * so the retraction placeholder would disappear after a reload. The placeholder body (and the
+     * {@link #getRetractedAt()} time) is what marks the retraction instead.
+     */
+    public boolean isRetracted() {
+        return this.retractId != null || hasRetractedBody();
+    }
+
+    /** True when the stored body is the retraction placeholder. */
+    public boolean hasRetractedBody() {
+        return this.body != null && this.body.trim().equals(RETRACTED_MESSAGE_BODY);
+    }
+
     public synchronized void setTransferable(Transferable transferable) {
         this.transferable = transferable;
     }
@@ -1521,6 +1558,11 @@ public class Message extends AbstractEntity implements AvatarService.Avatarable 
     }
 
     public SpannableStringBuilder getSpannableBody(GetThumbnailForCid thumbnailer, Drawable fallbackImg) {
+        if (hasRetractedBody() || hasDeletedBody()) {
+            // A retracted/deleted row only carries an internal marker body; never render it as text.
+            // The adapters substitute the localized placeholder (with the retraction time) instead.
+            return new SpannableStringBuilder("");
+        }
         final String plain = MessageUtils.filterLtrRtl(getBody(getInReplyTo() != null)).trim();
         final SpannableStringBuilder spannableBody = new SpannableStringBuilder(plain);
         spannableBody.setSpan(PLAIN_TEXT_SPAN, 0, spannableBody.length(), 0);

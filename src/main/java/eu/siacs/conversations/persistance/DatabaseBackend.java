@@ -76,7 +76,7 @@ import io.ipfs.cid.Cid;
 public class DatabaseBackend extends SQLiteOpenHelper {
 
     public static final String DATABASE_NAME = "history";
-    public static final int DATABASE_VERSION = 61; // = Conversations DATABASE_VERSION + 8
+    public static final int DATABASE_VERSION = 62; // = Conversations DATABASE_VERSION + 9
     private static boolean requiresMessageIndexRebuild = false;
     private static DatabaseBackend instance = null;
     private static final List<String> DB_PRAGMAS = Collections.unmodifiableList(Arrays.asList(
@@ -331,6 +331,15 @@ public class DatabaseBackend extends SQLiteOpenHelper {
                                 "ADD COLUMN occupant_id TEXT"
                 );
                 db.execSQL("PRAGMA monocles.user_version = 10");
+            }
+
+            if(monoclesVersion < 11) {
+                // XEP-0424: timestamp of the retraction that removed a message (for the placeholder).
+                db.execSQL(
+                        "ALTER TABLE monocles." + Message.TABLENAME + " " +
+                                "ADD COLUMN " + Message.RETRACTED_AT + " NUMBER"
+                );
+                db.execSQL("PRAGMA monocles.user_version = 11");
             }
 
             db.setTransactionSuccessful();
@@ -819,6 +828,12 @@ public class DatabaseBackend extends SQLiteOpenHelper {
             db.execSQL("DELETE FROM " + Message.TABLENAME
                     + " WHERE " + Message.BODY + " = '\u2063'");
             requiresMessageIndexRebuild = true;
+        }
+        if (oldVersion < 62 && newVersion >= 62) {
+            // XEP-0424 retraction: remember when a message was withdrawn so the placeholder can show
+            // the exact retraction time. Stored on the monocles side table next to the other extras.
+            db.execSQL("ALTER TABLE monocles." + Message.TABLENAME
+                    + " ADD COLUMN " + Message.RETRACTED_AT + " NUMBER");
         }
     }
 

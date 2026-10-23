@@ -617,6 +617,7 @@
     <string name="message_copied_to_clipboard">Сообщение скопировано в буфер обмена</string>
     <string name="message_decrypting">Расшифровка сообщения. Пожалуйста подождите…</string>
     <string name="message_deleted">Сообщение было удалено</string>
+    <string name="message_retracted">Это сообщение было отозвано (%s)</string>
     <string name="message_encryption">Шифрование сообщений</string>
     <string name="message_options">Параметры сообщения</string>
     <string name="messages_channel_name">Сообщения</string>

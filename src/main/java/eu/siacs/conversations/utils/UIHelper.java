@@ -167,6 +167,20 @@ public class UIHelper {
         return readableTimeDifference(context, time, true, false);
     }
 
+    /**
+     * Date and exact time of a XEP-0424 retraction, used in the "message was retracted" placeholder.
+     * Falls back to the message's sent time for retractions stored before the retraction timestamp
+     * existed (so the placeholder never shows a bogus "just now").
+     */
+    public static String retractionTime(final Context context, final Message message) {
+        long time = message.getRetractedAt();
+        if (time == 0) {
+            time = message.getMergedTimeSent();
+        }
+        return DateUtils.formatDateTime(context, time,
+                DateUtils.FORMAT_SHOW_DATE | DateUtils.FORMAT_SHOW_TIME | DateUtils.FORMAT_SHOW_YEAR);
+    }
+
     public static String readableTimeDifference(Context context, long time,
                                                 boolean fullDate, boolean printTz) {
         if (time == 0) {
@@ -391,7 +405,10 @@ public class UIHelper {
             return new Pair<>(displayBody, true);
         } else {
             final String body = MessageUtils.filterLtrRtl(message.getBody());
-            if (message.hasDeletedBody()) {
+            if (message.hasRetractedBody()) {
+                return new Pair<>(context.getString(R.string.message_retracted,
+                        retractionTime(context, message)), false);
+            } else if (message.hasDeletedBody()) {
                 return new Pair<>(context.getString(R.string.message_deleted), false);
             } else if (message.hasMeCommand()) {
                 final int meIndex = message.getMeCommandIndex();

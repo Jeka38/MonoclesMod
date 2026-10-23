@@ -740,6 +740,42 @@ public class Conversation extends AbstractEntity implements Blockable, Comparabl
         return null;
     }
 
+    /**
+     * Finds the message a XEP-0424 retraction addresses. The retraction's id is matched against
+     * every id a peer could legitimately have used:
+     * <ul>
+     *   <li>the local UUID (an outgoing message retracted from another of our own clients),</li>
+     *   <li>the origin-id / remote msg id (1:1 and MUC-PM traffic),</li>
+     *   <li>the stanza-id (server msg id) — this is what a MUC addresses, as in the
+     *       {@code <retract xmlns='urn:xmpp:message-retract:1' id='1792766308589286'/>} example,</li>
+     *   <li>the id of a previous edit of the message.</li>
+     * </ul>
+     * Unlike the older sent-message-only lookups this also matches received messages, since a
+     * retraction removes both directions.
+     */
+    public Message findMessageToRetract(final String id) {
+        if (id == null) {
+            return null;
+        }
+        synchronized (this.messages) {
+            for (int i = this.messages.size() - 1; i >= 0; --i) {
+                final Message message = this.messages.get(i);
+                if (id.equals(message.getUuid())
+                        || id.equals(message.getRemoteMsgId())
+                        || id.equals(message.getServerMsgId())
+                        || message.remoteMsgIdMatchInEdit(id)) {
+                    return message;
+                }
+                for (Edit edit : message.getEditedList()) {
+                    if (id.equals(edit.getEditedId())) {
+                        return message;
+                    }
+                }
+            }
+        }
+        return null;
+    }
+
     public boolean hasMessageWithCounterpart(Jid counterpart) {
         synchronized (this.messages) {
             for (Message message : this.messages) {

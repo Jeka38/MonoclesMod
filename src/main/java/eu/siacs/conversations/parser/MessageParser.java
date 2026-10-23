@@ -628,10 +628,28 @@ public class MessageParser extends AbstractParser implements OnMessagePacketRece
             }
         }
         final Element applyToElement = packet.findChild("apply-to", "urn:xmpp:fasten:0");
-        final String retractId = applyToElement != null && applyToElement.findChild("retract", "urn:xmpp:message-retract:0") != null ? applyToElement.getAttribute("id") : null;
+        // XEP-0424 Message Retraction:
+        //   v1    — a direct <retract xmlns='urn:xmpp:message-retract:1' id='…'/>
+        //   v0.3  — <apply-to xmlns='urn:xmpp:fasten:0' id='…'><retract xmlns='urn:xmpp:message-retract:0'/>
+        // Both are accepted for peer compatibility.
+        final Element retractElement = packet.findChild("retract", Namespace.MESSAGE_RETRACT);
+        final String retractId;
+        if (retractElement != null && retractElement.getAttribute("id") != null) {
+            retractId = retractElement.getAttribute("id");
+        } else {
+            retractId = applyToElement != null
+                    && applyToElement.findChild("retract", Namespace.MESSAGE_RETRACT_LEGACY) != null
+                    ? applyToElement.getAttribute("id")
+                    : null;
+        }
 
-        if (packet.getBody() == null && retractId != null) {   //It's RECOMMENDED that you include a Fallback Indication (XEP-0428) [6] tag with fallback text in the <body/>, so that older clients can still indicate the intent to retract and so that older servers will archive the retraction.
-            //Otherwhise the following code will not execute the retraction, because it searchs for body content!
+        // A XEP-0424 retraction is normally bodyless. The XEP *recommends* a XEP-0428 fallback body so
+        // older clients can render something; when there is one we still keep it out of the chat rows
+        // (see the TYPE_REACTION tagging below).
+        final boolean bodylessRetraction = packet.getBody() == null && retractId != null;
+        if (bodylessRetraction) {
+            // Otherwise the code below would not reach the retraction handling, because it looks for
+            // body content.
             packet.setBody("This person attempted to retract a previous message, but it's unsupported by your client.");
         }
 
@@ -918,6 +936,11 @@ public class MessageParser extends AbstractParser implements OnMessagePacketRece
                 message.addPayload(reactions);
                 if (isReactionCarrier) message.setType(Message.TYPE_REACTION);
             }
+            if (retractId != null && bodylessRetraction) {
+                // XEP-0424 carrier: keep it out of the chat rows / chat list even when the target
+                // message was not found in memory (it may not be loaded yet).
+                message.setType(Message.TYPE_REACTION);
+            }
             for (Element el : packet.getChildren()) {
                 if ((el.getName().equals("query") && el.getNamespace().equals("http://jabber.org/protocol/disco#items") && el.getAttribute("node").equals("http://jabber.org/protocol/commands")) ||
                         (el.getName().equals("fallback") && el.getNamespace().equals("urn:xmpp:fallback:0"))) {
@@ -1062,7 +1085,7 @@ public class MessageParser extends AbstractParser implements OnMessagePacketRece
             }
 
             if (retractId != null && mXmppConnectionService.allowMessageRetraction()) {
-                final Message retractedMessage = conversation.findSentMessageWithUuidOrRemoteId(retractId, true, true);
+                final Message retractedMessage = conversation.findMessageToRetract(retractId);
                 if (retractedMessage != null) {
                     final boolean fingerprintsMatch = retractedMessage.getFingerprint() == null
                             || message.getFingerprint() == null
@@ -1082,21 +1105,35 @@ public class MessageParser extends AbstractParser implements OnMessagePacketRece
                             }
                         }
                     }
-                    if (fingerprintsMatch && ((trueCountersMatch || !conversationMultiMode || mucUserMatches || (isCarbon && activeSelf) && !duplicate) || conversationMultiMode)) {
+                    // A retraction may only remove a message the same person sent. In a MUC the
+                    // existing condition is an unconditional `|| conversationMultiMode`, which would
+                    // let any occupant retract anyone's message once we match on the stanza-id, so
+                    // require the occupant (or, for our own messages, our own session) to match as
+                    // well. 1:1 traffic keeps the fingerprint/trueCounterpart checks.
+                    final boolean senderMatches = conversationMultiMode
+                            ? (retractedMessage.getStatus() > Message.STATUS_RECEIVED
+                                    ? message.getStatus() > Message.STATUS_RECEIVED
+                                    : (mucUserMatches || (retractedMessage.getTrueCounterpart() != null
+                                            && message.getTrueCounterpart() != null
+                                            && retractedMessage.getTrueCounterpart().asBareJid()
+                                                    .equals(message.getTrueCounterpart().asBareJid()))))
+                            : true;
+                    if (fingerprintsMatch && senderMatches && ((trueCountersMatch || !conversationMultiMode || mucUserMatches || (isCarbon && activeSelf) && !duplicate) || conversationMultiMode)) {
                         Log.d(Config.LOGTAG, "retracted message '" + retractedMessage.getBody() + "' with '" + message.getBody() + "'");
                         synchronized (retractedMessage) {
 
-                            retractedMessage.setBody(mXmppConnectionService.getString(R.string.message_deleted));
+                            retractedMessage.setBody(Message.RETRACTED_MESSAGE_BODY);
                             retractedMessage.setRetractId(retractId);
+                            retractedMessage.setRetractedAt(System.currentTimeMillis());
 
                             extractChatState(mXmppConnectionService.find(account, counterpart.asBareJid()), isTypeGroupChat, packet);
 
                             message.setMessageDeleted(true);
                             message.setRetractId(retractId);
+                            message.setRetractedAt(retractedMessage.getRetractedAt());
 
-                            if (message.getStatus() > Message.STATUS_RECEIVED) {
-                                retractedMessage.setMessageDeleted(true);
-                            }
+                            // NB: do *not* flag the retracted row as deleted — that hides it from the
+                            // DB reload; the placeholder body is what marks the retraction.
 
                             for (Edit itm : retractedMessage.getEditedList()) {
                                 Message tmpRetractedMessage = conversation.findMessageWithUuidOrRemoteId(itm.getEditedId());

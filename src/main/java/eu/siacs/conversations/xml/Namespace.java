@@ -111,4 +111,8 @@ public final class Namespace {
     public static final String MDS_SERVER_ASSIST = "urn:xmpp:mds:server-assist:0";
     /** XEP-0394: Message Markup. */
     public static final String MARKUP = "urn:xmpp:markup:0";
+    /** XEP-0424: Message Retraction, v1 (a direct {@code <retract/>} child, no {@code <apply-to>}). */
+    public static final String MESSAGE_RETRACT = "urn:xmpp:message-retract:1";
+    /** XEP-0424: Message Retraction, v0.3 (wrapped in {@code <apply-to xmlns='urn:xmpp:fasten:0'>}). */
+    public static final String MESSAGE_RETRACT_LEGACY = "urn:xmpp:message-retract:0";
 }

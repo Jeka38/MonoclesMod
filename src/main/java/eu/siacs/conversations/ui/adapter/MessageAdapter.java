@@ -972,6 +972,14 @@ public class MessageAdapter extends ArrayAdapter<Message> {
     }
 
     private SpannableStringBuilder getSpannableBody(final Message message) {
+        if (message.hasRetractedBody() || message.hasDeletedBody()) {
+            // Show the localized placeholder instead of the internal marker body (and include the
+            // exact retraction time for a XEP-0424 retraction).
+            final String text = message.hasRetractedBody()
+                    ? activity.getString(R.string.message_retracted, UIHelper.retractionTime(activity, message))
+                    : activity.getString(R.string.message_deleted);
+            return new SpannableStringBuilder(text);
+        }
         Drawable fallbackImg = ResourcesCompat.getDrawable(activity.getResources(), activity.getThemeResource(R.attr.ic_attach_photo, R.drawable.ic_attach_photo), null);
         SpannableStringBuilder spannable = replaceYoutube(activity.getApplicationContext(), message.getMergedBody((cid) -> {
             try {

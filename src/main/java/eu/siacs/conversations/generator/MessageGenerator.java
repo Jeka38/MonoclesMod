@@ -70,11 +70,18 @@ public class MessageGenerator extends AbstractGenerator {
             packet.addChild("replace", "urn:xmpp:message-correct:0").setAttribute("id", message.getEditedIdWireFormat());
         }
         else if (message.isMessageDeleted()) {
-            Element apply = packet.addChild("apply-to", "urn:xmpp:fasten:0").setAttribute("id", (message.getRetractId() != null ? message.getRetractId() : (message.getRemoteMsgId() != null ? message.getRemoteMsgId() : (message.getEditedIdWireFormat() != null ? message.getEditedIdWireFormat() : message.getUuid()))));
-            apply.addChild("retract", "urn:xmpp:message-retract:0");
+            // XEP-0424 Message Retraction v1: a direct <retract/> child addressing the id of the
+            // message to be withdrawn. Advertised as urn:xmpp:message-retract:1; the old v0.3 form
+            // (wrapped in <apply-to xmlns='urn:xmpp:fasten:0'>) is still parsed on receive for peer
+            // compatibility, but we no longer emit it. The stanza id / origin-id is already set by
+            // preparePacket() above.
+            packet.addChild("retract", Namespace.MESSAGE_RETRACT)
+                    .setAttribute("id", message.getRetractId() != null
+                            ? message.getRetractId()
+                            : (message.getRemoteMsgId() != null ? message.getRemoteMsgId() : message.getUuid()));
+            // XEP-0428 fallback so a client without retraction support still shows something.
             packet.addChild("fallback", "urn:xmpp:fallback:0");
             packet.addChild("store", "urn:xmpp:hints");
-            packet.setBody("This person attempted to retract a previous message, but it's unsupported by your client.");
         }
         if (!legacyEncryption) {
             if (message.getSubject() != null && message.getSubject().length() > 0) packet.addChild("subject").setContent(message.getSubject());
@@ -190,7 +197,8 @@ public class MessageGenerator extends AbstractGenerator {
             return packet;
         }
         MessagePacket packet = preparePacket(message, false);
-        if (message.getRawBody() != null) packet.setBody(message.getRawBody());
+        // A XEP-0424 retraction carrier is bodyless (the <retract/> payload is the whole message).
+        if (message.getRawBody() != null && !message.isMessageDeleted()) packet.setBody(message.getRawBody());
         return packet;
     }
 
