@@ -335,6 +335,9 @@ public class DatabaseBackend extends SQLiteOpenHelper {
 
             if(monoclesVersion < 11) {
                 // XEP-0424: timestamp of the retraction that removed a message (for the placeholder).
+                // This is the single place this column is added — the main DB migration (onUpgrade)
+                // must not add it as well (it runs *after* onConfigure and crashed with
+                // "duplicate column name: retractedAt"; see the note in onUpgrade).
                 db.execSQL(
                         "ALTER TABLE monocles." + Message.TABLENAME + " " +
                                 "ADD COLUMN " + Message.RETRACTED_AT + " NUMBER"
@@ -829,12 +832,10 @@ public class DatabaseBackend extends SQLiteOpenHelper {
                     + " WHERE " + Message.BODY + " = '\u2063'");
             requiresMessageIndexRebuild = true;
         }
-        if (oldVersion < 62 && newVersion >= 62) {
-            // XEP-0424 retraction: remember when a message was withdrawn so the placeholder can show
-            // the exact retraction time. Stored on the monocles side table next to the other extras.
-            db.execSQL("ALTER TABLE monocles." + Message.TABLENAME
-                    + " ADD COLUMN " + Message.RETRACTED_AT + " NUMBER");
-        }
+        // NB: the XEP-0424 `retractedAt` column lives on the *monocles side table* and is added by
+        // monoclesMigrate() (monocles.user_version 11). That runs from onConfigure, i.e. before
+        // onUpgrade, so it must NOT be added again here — doing so hit
+        // "duplicate column name: retractedAt" and crashed service creation.
     }
 
     private boolean isColumnExisting(SQLiteDatabase db, String TableName, String ColumnName) {

@@ -1,5 +1,8 @@
 ### Changelog
 
+#### Version 1.9.1.56
+* **fix: crash on update to 1.9.1.55** ("Unable to create service … duplicate column name: retractedAt"). The XEP-0424 `retractedAt` column was added in *two* migrations: the monocles side-table migration (`monoclesMigrate`, which runs from `onConfigure` and got there first) and the `oldVersion < 62` block in the main `onUpgrade`. The second `ALTER TABLE … ADD COLUMN retractedAt` then failed. The column is now added in exactly one place (the monocles migration); the main DB version stays at 62 so devices that already ran the broken build upgrade cleanly
+
 #### Version 1.9.1.55
 * **Message retraction (XEP-0424)** — withdrawing a message is now done with the modern **v1** form (`<retract xmlns='urn:xmpp:message-retract:1' id='…'/>`), so other clients see the standardization placeholder instead of an ordinary message. The incoming side accepts both v1 and the legacy v0.3 (`<apply-to xmlns='urn:xmpp:fasten:0'><retract/></apply-to>`), advertises both in caps, and matches the retracted id against UUID / origin-id / **stanza-id** / edit ids (the old lookup never checked the stanza-id, so a MUC retraction like `<retract id='1792766308589286'/>` was never applied). The retracted row shows **«Это сообщение было отозвано (дата и точное время)»** — the exact retraction time (stored in a new `retractedAt` column) — both in the chat bubble and in the chat list, and survives a reload. A MUC retraction can now only remove a message by the same occupant. The menu's Retract and Delete actions were unified (the old Retract handler blanked and re-sent the body)
 
