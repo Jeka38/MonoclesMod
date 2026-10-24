@@ -75,6 +75,11 @@ public final class WhiteboardManager {
         public final Jid peer;
         public final boolean muc;
         public final Account account;
+        /**
+         * True when this side is the SXE **host**: the Jingle initiator for a 1:1 board (which owns
+         * the snapshot duty and answers `<connect/>` with a state offer), or the room relay for a
+         * MUC. Per XEP-0284 §4.1 the 1:1 host MUST be the initiator — this is *not* a JID comparison.
+         */
         public boolean host;
         public String fullPeer = "";
         public final SxeDocument doc = new SxeDocument();
@@ -282,15 +287,6 @@ public final class WhiteboardManager {
     }
 
     /**
-     * For a 1:1 session the host is chosen deterministically (the account with the smaller bare JID)
-     * so both ends agree even when they both pressed "open" at the same time — otherwise both would
-     * believe they are the host and answer each other's state offers, replacing their own drawing.
-     */
-    private static boolean hostFor(final Account account, final Jid peer) {
-        return account.getJid().asBareJid().toString().compareTo(peer.asBareJid().toString()) < 0;
-    }
-
-    /**
      * A MUC occupant advertised a shared whiteboard in their presence ({@code <sxe session=…/>}).
      * Discover the room board from that (which also covers a member who joins the room after the
      * board started, since the MUC service replays the other occupants' presence to them), post the
@@ -380,9 +376,15 @@ public final class WhiteboardManager {
             return existing.sid;
         }
         final String sid = sessionIdFor(account, barePeer, muc);
-        final Session session = new Session(sid, barePeer, muc, muc || hostFor(account, barePeer), account);
+        // For a 1:1 board the INITIATOR is the host (XEP-0284 §4.1: "The host can be the initiator
+        // of the session (and MUST be for a one-to-one session)"). It must NOT be decided by a JID
+        // comparison: opening a board whose sid ranks us "smaller/larger" has nothing to do with who
+        // sends session-initiate, and conflating the two made the initiator send an unsolicited
+        // session-accept + <connect/> (so the peer showed no invitation at all). A room board has no
+        // host (the room relays), so keep host=false there.
+        final Session session = new Session(sid, barePeer, muc, !muc, account);
         session.locallyStarted = true;
-        // We send the session-initiate, so we are the Jingle initiator.
+        // We send the session-initiate, so we are the Jingle initiator (and the host of a 1:1 board).
         session.initiator = true;
         seedDocument(session.doc);
         sessions.put(sid, session);
@@ -413,19 +415,35 @@ public final class WhiteboardManager {
         return sid;
     }
 
-    /** Accept an incoming invite and connect to the host. */
+    /**
+     * Accepts an incoming invite and joins the shared document.
+     *
+     * <p>Crucially the two Jingle actions are gated on <em>different</em> roles:
+     * <ul>
+     *   <li>{@code session-accept} only ever comes from the party that RECEIVED a
+     *       {@code session-initiate} ({@code !Session.initiator}). Sending it for a session we
+     *       started (which happens when our JID is the larger one, i.e. {@code host == false})
+     *       reaches the peer as an unsolicited accept with no invite, and Psi then shows no
+     *       invitation at all.</li>
+     *   <li>{@code <connect/>} is sent by the joiner — the party that is <em>not</em> the SXE host
+     *       (for a 1:1 board: not the initiator, {@code Session.host}); the host waits for the
+     *       joiner's connect and answers with the state offer.</li>
+     * </ul>
+     */
     public void joinSession(final Session session) {
         if (session == null || session.joined) {
             return;
         }
         session.joined = true;
-        if (!session.muc) {
+        if (!session.muc && !session.initiator) {
             sendJingle(session.account, session, "session-accept");
             // Psi offers the whiteboard of a call with senders="none"; ask for edit permission right
             // away so the board is not silently read-only on our side.
             ensureEditable(session);
         }
-        send(session.account, session, sxe(session, "connect"), null);
+        if (!session.host || session.muc) {
+            send(session.account, session, sxe(session, "connect"), null);
+        }
     }
 
     public void endSession(final Session session) {
@@ -789,8 +807,9 @@ public final class WhiteboardManager {
         Session session = sessions.get(sid);
         if (session == null) {
             // The proposal id becomes the Jingle `sid` of the ensuing session-initiate (XEP-0353),
-            // so adopting it here means the real invite lands in this very session.
-            session = new Session(sid, peer, false, hostFor(account, peer), account);
+            // so adopting it here means the real invite lands in this very session. The proposer is
+            // the initiator and therefore the host of a 1:1 board.
+            session = new Session(sid, peer, false, false, account);
             session.fullPeer = from.toString();
             seedDocument(session.doc);
             sessions.put(sid, session);
@@ -928,8 +947,6 @@ public final class WhiteboardManager {
             return;
         }
         final Jid peer = from.asBareJid();
-        final boolean isInitiate = "session-initiate".equals(action);
-        final boolean known = sessions.containsKey(sid) || byPeer.containsKey(key(account, peer));
         switch (action) {
             case "session-initiate": {
                 final Session existing = sessions.get(sid);
@@ -966,11 +983,12 @@ public final class WhiteboardManager {
                 }
                 // Same deterministic id as the initiator computed; adopt it so both ends share
                 // one session and the live edits land in the session the UI is attached to.
-                final Session session = new Session(sid, peer, false, hostFor(account, peer), account);
+                final Session session = new Session(sid, peer, false, false, account);
                 session.fullPeer = from.toString();
-                // We are the responder here: the peer initiated. Record the offered `senders` so
-                // ensureEditable() can tell whether we may actually edit (Psi offers the whiteboard
-                // of a call with senders="none", which would otherwise swallow every stroke).
+                // We are the responder here: the peer sent the session-initiate, so the peer is the
+                // initiator and the host. Record the offered `senders` so ensureEditable() can tell
+                // whether we may actually edit (Psi offers the whiteboard of a call with
+                // senders="none", which would otherwise swallow every stroke).
                 session.initiator = false;
                 session.senders = offeredSenders(packet);
                 adoptContentIdentity(session, packet);
@@ -1244,10 +1262,10 @@ public final class WhiteboardManager {
         }
         Session session = sessions.get(sid);
         if (session == null) {
-            // For a MUC there is no Jingle invite: the room is the relay and every occupant is a
-            // plain participant. The deterministic host rule only applies to 1:1.
-            final boolean host = !isGroupChat && hostFor(account, from.asBareJid());
-            session = new Session(sid, from.asBareJid(), isGroupChat, host, account);
+            // We discovered the board from the peer's <sxe/> traffic, so the PEER is the initiator
+            // and the host of a 1:1 board; a room board has no Jingle session (the room is the
+            // relay). Do not derive this from a JID comparison.
+            session = new Session(sid, from.asBareJid(), isGroupChat, false, account);
             seedDocument(session.doc);
             sessions.put(sid, session);
             byPeer.put(key(account, from.asBareJid()), sid);

@@ -1,5 +1,8 @@
 ### Changelog
 
+#### Version 1.9.1.62
+* **fix: the peer showed no whiteboard invitation when Monocles opened the board** — `Session.host` was derived from a bare-JID comparison (`hostFor`: the smaller JID) but was also used to decide who sends `session-accept`. Opening a board whose JID ranks us "larger" left `host=false` for a session **we** had started, so `attachSession` sent an unsolicited `session-accept` (plus a `<connect/>`) with no preceding `session-initiate`, and Psi — seeing an accept for a session it never offered — showed nothing. Roles now follow the profile/Iris: the **Jingle initiator is the host** (`Session.initiator`, XEP-0284 §4.1); `session-accept` is only sent by the responder and `<connect/>` only by the joiner. The JID-derived `hostFor()` was removed
+
 #### Version 1.9.1.61
 * **fix: our drawing fell outside Psi's whiteboard canvas** — Monocles used a 1280×720 document while the whiteboard profile (and Iris/Psi) use `viewBox="0 0 600 400"`. The `viewBox` is a **shared document attribute** and Psi sizes its scene from whatever arrives, so our strokes at x>600 landed outside its canvas. The canvas now defaults to the profile's 600×400 and, per session, adopts the negotiated `viewBox` (`WhiteboardManager.documentSize` → `WhiteboardView.setDocumentSize`), so both sides draw into the same coordinate space
 

@@ -476,7 +476,7 @@ public class WhiteboardActivity extends XmppActivity implements WhiteboardManage
         final String sid = xmppConnectionService.getWhiteboardManager().startSession(account, peer, muc);
         final WhiteboardManager.Session session =
                 xmppConnectionService.getWhiteboardManager().getSession(sid);
-        if (session != null && (session.host || session.muc)) {
+        if (session != null && (session.initiator || session.muc)) {
             // Carry anything drawn before sharing into the shared document, so pressing Share
             // does not wipe the local board.
             for (final WhiteboardShape shape : canvas.getShapes()) {
@@ -493,10 +493,10 @@ public class WhiteboardActivity extends XmppActivity implements WhiteboardManage
             return;
         }
         this.sessionId = session.sid;
-        // If we are the responding side of an invite (or opening a room board that already exists)
-        // and have not connected yet, announce ourselves so the current document is offered.
-        // Idempotent.
-        if (!session.host || session.muc) {
+        // Join only if we are NOT the initiator: the initiator already sent session-initiate in
+        // startSession (and would otherwise send an unsolicited session-accept, which makes the peer
+        // show no invitation at all). A room board always joins (no Jingle session).
+        if (!session.initiator || session.muc) {
             whiteboardManager.joinSession(session);
         }
         shareButton.setSelected(true);
