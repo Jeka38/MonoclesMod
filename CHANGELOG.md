@@ -1,5 +1,8 @@
 ### Changelog
 
+#### Version 1.9.1.63
+* **fix: a whiteboard opened in Monocles never reached Psi** — `jingleTarget` fell back to `Contact.getMostAvailableResource()`, which is a *display* helper that wraps the resource in parentheses (`"(" + resource + ")"`). The Jingle IQ was therefore addressed to `` user@host/(pc) `` — a nonexistent resource — and the invite vanished (the reverse direction worked because Psi proposes to the bare JID). The resource is now taken from the presence map's plain keys
+
 #### Version 1.9.1.62
 * **fix: the peer showed no whiteboard invitation when Monocles opened the board** — `Session.host` was derived from a bare-JID comparison (`hostFor`: the smaller JID) but was also used to decide who sends `session-accept`. Opening a board whose JID ranks us "larger" left `host=false` for a session **we** had started, so `attachSession` sent an unsolicited `session-accept` (plus a `<connect/>`) with no preceding `session-initiate`, and Psi — seeing an accept for a session it never offered — showed nothing. Roles now follow the profile/Iris: the **Jingle initiator is the host** (`Session.initiator`, XEP-0284 §4.1); `session-accept` is only sent by the responder and `<connect/>` only by the joiner. The JID-derived `hostFor()` was removed
 

@@ -1155,21 +1155,55 @@ public final class WhiteboardManager {
         if (session.muc) {
             return session.peer;
         }
+        final Jid bare = session.peer.asBareJid();
         if (!session.fullPeer.isEmpty()) {
             return Jid.of(session.fullPeer);
         }
-        final Contact contact = account.getRoster().getContact(session.peer);
+        final Contact contact = account.getRoster().getContact(bare);
         if (contact != null) {
             final Jid resource = contact.resourceWhichSupport(NS_WHITEBOARD);
             if (resource != null && resource.isFullJid()) {
                 return resource;
             }
-            final String mostAvailable = contact.getMostAvailableResource();
-            if (mostAvailable != null && !mostAvailable.isEmpty()) {
-                return contact.getJid().asBareJid().withResource(mostAvailable);
+            final String mostAvailable = mostAvailableResource(contact);
+            if (mostAvailable != null) {
+                return bare.withResource(mostAvailable);
             }
         }
+        // No known resource: fall back to the first resource of the presence set (a Jingle IQ to a
+        // *bare* JID is rejected by the server with service-unavailable, so the invite would vanish).
+        final String[] resources = contact == null ? new String[0] : contact.getPresences().toResourceArray();
+        if (resources.length > 0 && !resources[0].isEmpty()) {
+            return bare.withResource(resources[0]);
+        }
+        MujiLog.log(service.getFilesDir(), "WB no full JID for " + bare + " (presence missing)");
         return session.peer;
+    }
+
+    /**
+     * The peer's highest-priority resource name, or null. Do NOT use
+     * {@link Contact#getMostAvailableResource()}: it wraps the resource in parentheses
+     * ({@code "(" + resource + ")"}) for display, so passing it to {@link Jid#withResource} built an
+     * invalid JID (`` user@host/(pc) ``) and the Jingle IQ was never routable — which is why an
+     * invite sent from Monocles never reached Psi. The presence map's keys are the plain resources.
+     */
+    @Nullable
+    private static String mostAvailableResource(final Contact contact) {
+        final Map<String, Presence> presences = contact.getPresences().getPresencesMap();
+        String bestResource = null;
+        Presence best = null;
+        for (final Map.Entry<String, Presence> entry : presences.entrySet()) {
+            final String resource = entry.getKey();
+            if (resource == null || resource.isEmpty()) {
+                continue;
+            }
+            // Same ranking upstream uses for its display helper: the "smallest" Presence wins.
+            if (best == null || entry.getValue().compareTo(best) < 0) {
+                best = entry.getValue();
+                bestResource = resource;
+            }
+        }
+        return bestResource;
     }
 
     private void sendJingle(final Account account, final Session session, final String action) {
