@@ -1,5 +1,8 @@
 ### Changelog
 
+#### Version 1.9.1.61
+* **fix: our drawing fell outside Psi's whiteboard canvas** — Monocles used a 1280×720 document while the whiteboard profile (and Iris/Psi) use `viewBox="0 0 600 400"`. The `viewBox` is a **shared document attribute** and Psi sizes its scene from whatever arrives, so our strokes at x>600 landed outside its canvas. The canvas now defaults to the profile's 600×400 and, per session, adopts the negotiated `viewBox` (`WhiteboardManager.documentSize` → `WhiteboardView.setDocumentSize`), so both sides draw into the same coordinate space
+
 #### Version 1.9.1.60
 * **fix: Psi's drawing was invisible on the whiteboard** — `WhiteboardManager.shapes()` matched the shared document's element name against `"path"` and read only a `d` attribute, so Psi's shape tools (`<polygon>`, and likewise `<polyline>/<rect>/<circle>/<ellipse>/<line>`) were skipped before rendering and never appeared, even though our own strokes showed up in Psi. Every drawable SVG element is now converted to the equivalent path data; metadata (`<title>/<desc>/<defs>/<g>`) is still ignored
 

@@ -532,6 +532,10 @@ public class WhiteboardActivity extends XmppActivity implements WhiteboardManage
         if (sessionId == null) {
             return;
         }
+        // Adopt the shared viewBox first: the canvas must use the same coordinate space as the peer,
+        // otherwise our strokes land outside its canvas (and vice versa).
+        final float[] size = xmppConnectionService.getWhiteboardManager().documentSize(sessionId);
+        canvas.setDocumentSize(size[0], size[1]);
         final List<WhiteboardShape> shapes =
                 xmppConnectionService.getWhiteboardManager().shapes(sessionId);
         canvas.loadShapes(shapes);

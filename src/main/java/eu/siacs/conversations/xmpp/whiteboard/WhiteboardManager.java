@@ -56,8 +56,8 @@ public final class WhiteboardManager {
      */
     private static final String LEGACY_SXE_FALLBACK_BODY = "\u2063";
 
-    private static final int VIEW_W = (int) WhiteboardView.VIEW_W;
-    private static final int VIEW_H = (int) WhiteboardView.VIEW_H;
+    private static final int VIEW_W = (int) WhiteboardView.DEFAULT_VIEW_W;
+    private static final int VIEW_H = (int) WhiteboardView.DEFAULT_VIEW_H;
 
     public interface OnWhiteboardUpdate {
         /** A shared document changed (a session became ready or remote edits arrived). */
@@ -703,6 +703,39 @@ public final class WhiteboardManager {
     public boolean isReady(final String sid) {
         final Session session = sessions.get(sid);
         return session != null && session.ready;
+    }
+
+    /**
+     * The negotiated document size (the shared SVG {@code viewBox}, e.g. "0 0 600 400"), so the
+     * canvas can draw into the same coordinate space as the peer. Falls back to the profile default
+     * when the session is unknown or carries no valid {@code viewBox}.
+     */
+    public float[] documentSize(final String sid) {
+        final float[] fallback = {
+            WhiteboardView.DEFAULT_VIEW_W, WhiteboardView.DEFAULT_VIEW_H
+        };
+        final Session session = sid == null ? null : sessions.get(sid);
+        if (session == null) {
+            return fallback;
+        }
+        final String viewBox = session.doc.getAttr(session.doc.getRootRid(), "viewBox");
+        if (viewBox == null) {
+            return fallback;
+        }
+        // SVG viewBox: "min-x min-y width height" — separated by whitespace and/or a comma.
+        final String[] parts = viewBox.trim().split("[\\s,]+");
+        if (parts.length != 4) {
+            return fallback;
+        }
+        try {
+            final float width = Float.parseFloat(parts[2]);
+            final float height = Float.parseFloat(parts[3]);
+            if (width > 0f && height > 0f) {
+                return new float[] {width, height};
+            }
+        } catch (final NumberFormatException ignored) {
+        }
+        return fallback;
     }
 
     // ── XEP-0353 Jingle Message Initiation proposals ──────────────────────

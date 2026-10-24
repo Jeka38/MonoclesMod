@@ -142,6 +142,17 @@ public final class SxeDocument {
         return null;
     }
 
+    /** The current value of an attribute record on {@code element}, or null when it is absent. */
+    @Nullable
+    public String getAttr(final String element, final String name) {
+        final String rid = findAttr(element, name);
+        if (rid == null) {
+            return null;
+        }
+        final Record record = records.get(rid);
+        return record == null ? null : record.chdata;
+    }
+
     public boolean setChdata(final String rid, final String value) {
         final Record record = records.get(rid);
         if (record == null) {

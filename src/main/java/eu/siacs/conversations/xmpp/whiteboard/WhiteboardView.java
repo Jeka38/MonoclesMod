@@ -29,9 +29,18 @@ import java.util.List;
  */
 public class WhiteboardView extends View {
 
-    /** Logical document size (the SVG {@code viewBox}). */
-    public static final float VIEW_W = 1280f;
-    public static final float VIEW_H = 720f;
+    /**
+     * Default logical document size — the SVG {@code viewBox} of the shared document. This is the
+     * profile's canvas ({@code 0 0 600 400}, the same one Iris/Psi seed), NOT a phone-screen
+     * resolution: the {@code viewBox} is a shared attribute, so a different size would place our
+     * strokes outside the peer's canvas. The actual size is adopted from the session document
+     * ({@link #setDocumentSize}) because the host — or a later resize — decides it.
+     */
+    public static final float DEFAULT_VIEW_W = 600f;
+    public static final float DEFAULT_VIEW_H = 400f;
+
+    private float viewW = DEFAULT_VIEW_W;
+    private float viewH = DEFAULT_VIEW_H;
 
     private static final int MAX_POINTS = 4000;
 
@@ -318,6 +327,30 @@ public class WhiteboardView extends View {
     }
 
     /**
+     * Adopts the document size (the shared SVG {@code viewBox}). {@link WhiteboardManager} seeds the
+     * profile canvas and parses a peer's {@code viewBox}, so both clients draw into one coordinate
+     * space; without this our (phone-resolution) coordinates fell outside the peer's canvas.
+     */
+    public void setDocumentSize(final float width, final float height) {
+        if (width <= 0f || height <= 0f || (width == viewW && height == viewH)) {
+            return;
+        }
+        this.viewW = width;
+        this.viewH = height;
+        // Re-fit the new document and drop any stale pan/zoom (it was relative to the old size).
+        userMatrix.reset();
+        onSizeChanged(getWidth(), getHeight(), getWidth(), getHeight());
+    }
+
+    public float getDocumentWidth() {
+        return viewW;
+    }
+
+    public float getDocumentHeight() {
+        return viewH;
+    }
+
+    /**
      * Renders the board to an ARGB bitmap in document coordinates (1280×720), used to send the board
      * as a PNG. Drawn onto the page colour with no grid and no selection marks, so the exported
      * image is exactly the drawing on the paper.
@@ -326,13 +359,13 @@ public class WhiteboardView extends View {
      */
     public android.graphics.Bitmap exportBitmap(final float scale) {
         final float factor = scale <= 0f ? 1f : scale;
-        final int width = Math.max(1, Math.round(VIEW_W * factor));
-        final int height = Math.max(1, Math.round(VIEW_H * factor));
+        final int width = Math.max(1, Math.round(viewW * factor));
+        final int height = Math.max(1, Math.round(viewH * factor));
         final android.graphics.Bitmap bitmap =
                 android.graphics.Bitmap.createBitmap(width, height, android.graphics.Bitmap.Config.ARGB_8888);
         final Canvas canvas = new Canvas(bitmap);
         canvas.scale(factor, factor);
-        canvas.drawRect(0, 0, VIEW_W, VIEW_H, pagePaint);
+        canvas.drawRect(0, 0, viewW, viewH, pagePaint);
         for (final WhiteboardShape shape : shapes) {
             drawShape(canvas, shape);
         }
@@ -344,12 +377,17 @@ public class WhiteboardView extends View {
     @Override
     protected void onSizeChanged(final int w, final int h, final int oldw, final int oldh) {
         super.onSizeChanged(w, h, oldw, oldh);
+        if (w <= 0 || h <= 0) {
+            // setDocumentSize() may re-fit before the first real layout; keep the previous matrix
+            // instead of scaling by zero (the framework calls this again with the real size).
+            return;
+        }
         // Uniform scale so circles stay circles and the brush has the same thickness in every
         // direction (a non-uniform x/y scale stretched the drawing). "Cover" the viewport and
         // centre it, so the board fills the whole window; the rest is reachable by panning.
-        final float scale = Math.max(w / VIEW_W, h / VIEW_H);
-        final float dx = (w - VIEW_W * scale) / 2f;
-        final float dy = (h - VIEW_H * scale) / 2f;
+        final float scale = Math.max(w / viewW, h / viewH);
+        final float dx = (w - viewW * scale) / 2f;
+        final float dy = (h - viewH * scale) / 2f;
         baseMatrix.reset();
         baseMatrix.postScale(scale, scale);
         baseMatrix.postTranslate(dx, dy);
@@ -845,12 +883,12 @@ public class WhiteboardView extends View {
         return sum / Math.max(1, event.getPointerCount());
     }
 
-    private static float clampX(final float x) {
-        return Math.max(0f, Math.min(VIEW_W, x));
+    private float clampX(final float x) {
+        return Math.max(0f, Math.min(viewW, x));
     }
 
-    private static float clampY(final float y) {
-        return Math.max(0f, Math.min(VIEW_H, y));
+    private float clampY(final float y) {
+        return Math.max(0f, Math.min(viewH, y));
     }
 
     /**
@@ -983,9 +1021,9 @@ public class WhiteboardView extends View {
         super.onDraw(canvas);
         canvas.save();
         canvas.concat(viewMatrix);
-        canvas.clipRect(0, 0, VIEW_W, VIEW_H);
-        canvas.drawRect(0, 0, VIEW_W, VIEW_H, pagePaint);
-        canvas.drawRect(0, 0, VIEW_W, VIEW_H, gridPaint);
+        canvas.clipRect(0, 0, viewW, viewH);
+        canvas.drawRect(0, 0, viewW, viewH, pagePaint);
+        canvas.drawRect(0, 0, viewW, viewH, gridPaint);
         for (final WhiteboardShape shape : shapes) {
             drawShape(canvas, shape);
         }
