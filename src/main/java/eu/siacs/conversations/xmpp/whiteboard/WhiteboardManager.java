@@ -8,7 +8,9 @@ import java.util.ArrayList;
 import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.UUID;
 import java.util.concurrent.ConcurrentHashMap;
+import java.util.concurrent.TimeUnit;
 
 import eu.siacs.conversations.Config;
 import eu.siacs.conversations.entities.Account;
@@ -21,6 +23,7 @@ import eu.siacs.conversations.services.XmppConnectionService;
 import eu.siacs.conversations.xml.Element;
 import eu.siacs.conversations.xml.Namespace;
 import eu.siacs.conversations.xmpp.Jid;
+import eu.siacs.conversations.xmpp.jingle.JingleConnectionManager;
 import eu.siacs.conversations.xmpp.jingle.MujiLog;
 import eu.siacs.conversations.xmpp.jingle.stanzas.JinglePacket;
 import eu.siacs.conversations.xmpp.jingle.stanzas.Reason;
@@ -58,6 +61,14 @@ public final class WhiteboardManager {
 
     private static final int VIEW_W = (int) WhiteboardView.DEFAULT_VIEW_W;
     private static final int VIEW_H = (int) WhiteboardView.DEFAULT_VIEW_H;
+
+    /**
+     * How long a 1:1 board waits for the peer's {@code <proceed/>} answer to our XEP-0353
+     * {@code <propose/>} before falling back to a direct {@code session-initiate}. The fallback keeps
+     * the board working with a client that speaks the whiteboard but does not implement the Jingle
+     * Message Initiation proposal (the profile's "minimal" tier).
+     */
+    private static final int PROPOSAL_TIMEOUT_SECONDS = 10;
 
     public interface OnWhiteboardUpdate {
         /** A shared document changed (a session became ready or remote edits arrived). */
@@ -106,6 +117,20 @@ public final class WhiteboardManager {
          * attribute of the whiteboard content, which names roles, not JIDs.
          */
         public boolean initiator = false;
+        /**
+         * True while we announced the board with an outgoing XEP-0353 {@code <propose/>} and are
+         * waiting for the peer's {@code <proceed/>}. The Jingle {@code session-initiate} must only
+         * be sent once a resource answered — the answering full JID is the one that gets the
+         * session (XEP-0353 §4), and a Jingle IQ to a bare JID is rejected by the server.
+         */
+        public boolean proposed = false;
+        /**
+         * True once the peer answered our proposal with a {@code <ringing/>}, i.e. it does implement
+         * Jingle Message Initiation and is merely waiting for its user to open the board. This
+         * suppresses the direct-invite fallback, so a slow acceptance never produces a second
+         * invitation next to the ringing proposal.
+         */
+        public boolean ringingReceived = false;
         /**
          * Negotiated {@code senders} of the whiteboard content: {@code "both"}, {@code "none"},
          * {@code "initiator"} or {@code "responder"}. Per the whiteboard profile this lists who may
@@ -365,9 +390,10 @@ public final class WhiteboardManager {
     // ── Session lifecycle ─────────────────────────────────────────────────
 
     /**
-     * Start (or return the already running) shared session for this peer. The session id is derived
-     * deterministically so both ends converge on the same session no matter who opened the board
-     * first, which is what keeps the live edits flowing to the same session the UI is attached to.
+     * Start (or return the already running) shared session for this peer. A room board derives its
+     * session id deterministically (the room alone identifies it, and every occupant must converge
+     * on the same one). A 1:1 board is announced with an XEP-0353 {@code <propose/>} instead, whose
+     * id becomes the Jingle {@code sid} (XEP-0353 §4), so it gets a fresh random id.
      */
     public String startSession(final Account account, final Jid peer, final boolean muc) {
         final Jid barePeer = peer.asBareJid();
@@ -375,7 +401,12 @@ public final class WhiteboardManager {
         if (existing != null) {
             return existing.sid;
         }
-        final String sid = sessionIdFor(account, barePeer, muc);
+        // A 1:1 board is announced with an XEP-0353 <propose/> (the proposal id becomes the Jingle
+        // `sid`, so it must be a fresh id — a deterministic one cannot double as a proposal id and,
+        // worse, made a repeated invite collide with the peer's still-known session). A room board
+        // keeps the deterministic id (no Jingle session, the room relays).
+        final boolean propose = !muc && Config.USE_JINGLE_MESSAGE_INIT;
+        final String sid = propose ? UUID.randomUUID().toString() : sessionIdFor(account, barePeer, muc);
         // For a 1:1 board the INITIATOR is the host (XEP-0284 §4.1: "The host can be the initiator
         // of the session (and MUST be for a one-to-one session)"). It must NOT be decided by a JID
         // comparison: opening a board whose sid ranks us "smaller/larger" has nothing to do with who
@@ -405,11 +436,18 @@ public final class WhiteboardManager {
             session.joined = true;
             notifyUpdate(sid);
             postWhiteboardNotice(account, session);
+        } else if (propose) {
+            // XEP-0353 Jingle Message Initiation: announce the board with a <propose/> to the bare
+            // JID so *every* resource of the contact rings and the one that answers with
+            // <proceed/> gets the session under the proposal id (which becomes the Jingle `sid`).
+            // This is what Psi and the other whiteboard clients expect for a board started from
+            // inside a chat; a bare session-initiate to the bare JID (or to a resource that does
+            // not exist) is rejected by the server with service-unavailable and the invite never
+            // arrives. `sendJingle(…, "session-initiate")` follows from handleProceed().
+            session.proposed = true;
+            sendProposal(account, session);
+            scheduleProposalFallback(account, session);
         } else {
-            // Always invite: whoever opens the board must let the peer know (otherwise a board
-            // opened by the non-deterministic-host side would silently do nothing). If both sides
-            // invite the same deterministic sid, the receiver already has it and ignores the second
-            // invite, so there is no double document. `host` is still used for snapshot duty.
             sendJingle(account, session, "session-initiate");
         }
         return sid;
@@ -466,10 +504,18 @@ public final class WhiteboardManager {
         byPeer.remove(key(session.account, session.peer));
         if (broadcast) {
             if (!session.muc) {
-                try {
-                    sendJingle(session.account, session, "session-terminate");
-                } catch (final RuntimeException e) {
-                    Log.d(Config.LOGTAG, "whiteboard: could not terminate session", e);
+                if (session.proposed) {
+                    // The Jingle session was never started (we are still waiting for the peer's
+                    // <proceed/>), so withdraw the proposal instead of terminating a session that
+                    // does not exist (XEP-0353).
+                    session.proposed = false;
+                    sendJmiAction(session.account, session.peer, "retract", session.sid);
+                } else {
+                    try {
+                        sendJingle(session.account, session, "session-terminate");
+                    } catch (final RuntimeException e) {
+                        Log.d(Config.LOGTAG, "whiteboard: could not terminate session", e);
+                    }
                 }
             } else {
                 // A room board has no Jingle session: broadcast an explicit <close/> so every
@@ -785,6 +831,10 @@ public final class WhiteboardManager {
         switch (name) {
             case "propose":
                 return handleProposal(account, from, element);
+            case "proceed":
+                return handleProceed(account, from, element);
+            case "ringing":
+                return handleRinging(element);
             case "retract":
             case "reject":
                 return handleProposalWithdrawal(account, from, element);
@@ -802,47 +852,109 @@ public final class WhiteboardManager {
         if (sid == null) {
             return false;
         }
-        MujiLog.log(service.getFilesDir(), "WB proposal sid=" + sid + " from=" + from);
+        MujiLog.log(service.getFilesDir(), "WB proposal rx sid=" + sid + " from=" + from);
         final Jid peer = from.asBareJid();
-        Session session = sessions.get(sid);
-        if (session == null) {
-            // The proposal id becomes the Jingle `sid` of the ensuing session-initiate (XEP-0353),
-            // so adopting it here means the real invite lands in this very session. The proposer is
-            // the initiator and therefore the host of a 1:1 board.
-            session = new Session(sid, peer, false, false, account);
-            session.fullPeer = from.toString();
-            seedDocument(session.doc);
-            sessions.put(sid, session);
-            byPeer.put(key(account, peer), sid);
+        if (sessions.get(sid) != null) {
+            // A repeated proposal for a board we already know: just answer it again so the proposer
+            // can continue with its session-initiate.
+            proceedProposal(account, from, sid);
+            return true;
         }
+        // Both sides opened the board at once, so both proposals are in flight. XEP-0166's tie-break
+        // (the same rule Conversations uses for RTP) decides which one survives — exactly one side
+        // keeps its own proposal — so the two ends never end up with two boards. We keep ours when
+        // (sid, ourJid) <= (theirSid, theirJid).
+        final String ourSid = byPeer.get(key(account, peer));
+        final Session ours = ourSid == null ? null : sessions.get(ourSid);
+        if (ours != null && ours.proposed) {
+            if (keepsOwnProposal(ours.sid, sid, account.getJid().asBareJid(), peer)) {
+                // We keep ours: decline theirs. The peer applies the same rule and withdraws its own.
+                MujiLog.log(service.getFilesDir(), "WB proposal tie-break: keeping ours " + ours.sid);
+                sendJmiAction(account, from, "reject", sid);
+                return true;
+            }
+            MujiLog.log(service.getFilesDir(), "WB proposal tie-break: yielding to " + sid);
+            abandonProposal(ours);
+        }
+        // The proposal id becomes the Jingle `sid` of the ensuing session-initiate (XEP-0353), so
+        // adopting it here means the real invite lands in this very session. The proposer is the
+        // initiator and therefore the host of a 1:1 board.
+        final Session session = new Session(sid, peer, false, false, account);
+        session.fullPeer = from.toString();
+        seedDocument(session.doc);
+        sessions.put(sid, session);
+        byPeer.put(key(account, peer), sid);
         // Invitations surface as a normal in-chat message with an "Open board" button (the screen is
         // never force-opened), then the proposer is told to proceed so it sends the session-initiate.
-        if (session.noticeUuid == null) {
-            session.noticeCounterpart = from;
-            postWhiteboardNotice(account, session);
-        }
+        session.noticeCounterpart = from;
+        postWhiteboardNotice(account, session);
         proceedProposal(account, from, sid);
         return true;
     }
 
     /**
-     * A JMI {@code <retract/>}/{@code <reject/>} for a board we only know from a proposal: drop the
-     * placeholder session and its "Open board" notice, since the board will never be started.
+     * The peer answered our {@code <propose/>} with a {@code <proceed/>}: send the Jingle
+     * {@code session-initiate} to the resource that answered (XEP-0353 §4 — the proposal rings every
+     * resource, and the one that proceeds gets the session).
+     */
+    private boolean handleProceed(final Account account, final Jid from, final Element proceed) {
+        final String sid = proceed.getAttribute("id");
+        final Session session = sid == null ? null : sessions.get(sid);
+        if (session == null || session.muc || !session.proposed) {
+            return false;
+        }
+        session.proposed = false;
+        if (from != null && from.isFullJid()) {
+            // A Jingle IQ must target a full JID; the server rejects a bare-JID one with
+            // service-unavailable, which is exactly why the invite never arrived before.
+            session.fullPeer = from.toString();
+        }
+        MujiLog.log(service.getFilesDir(), "WB proceed rx sid=" + sid + " from=" + from
+                + " -> session-initiate to " + session.fullPeer);
+        sendJingle(account, session, "session-initiate");
+        return true;
+    }
+
+    /** A {@code <ringing/>} for a whiteboard proposal of ours: swallowed (the board has no UI ring). */
+    private boolean handleRinging(final Element ringing) {
+        final String sid = ringing.getAttribute("id");
+        if (sid == null) {
+            return false;
+        }
+        final Session session = sessions.get(sid);
+        if (session == null) {
+            return false;
+        }
+        // The peer implements Jingle Message Initiation (it is ringing the proposal), so the direct
+        // invite fallback must not fire while its user is still deciding.
+        session.ringingReceived = true;
+        return true;
+    }
+
+    /**
+     * A JMI {@code <retract/>}/{@code <reject/>}: the board will never start, so drop the session and
+     * its "Open board" notice. A retract/reject for a board we proposed ourselves carries no
+     * {@code <description/>} (the reference implementation sends only the id), so the element is also
+     * recognised by the id of a pending outgoing proposal.
      */
     private boolean handleProposalWithdrawal(
             final Account account, final Jid from, final Element element) {
-        final Element description = element.findChild("description");
-        if (description == null || !NS_WHITEBOARD.equals(description.getNamespace())) {
-            return false;
-        }
         final String sid = element.getAttribute("id");
         if (sid == null) {
             return false;
         }
-        final Session session = sessions.remove(sid);
+        final Session session = sessions.get(sid);
         if (session == null) {
             return false;
         }
+        final Element description = element.findChild("description");
+        final boolean whiteboard = description != null && NS_WHITEBOARD.equals(description.getNamespace());
+        if (!whiteboard && !(session.proposed && session.initiator)) {
+            return false;
+        }
+        MujiLog.log(service.getFilesDir(), "WB proposal withdrawn sid=" + sid
+                + " by " + element.getName() + " from " + from);
+        sessions.remove(sid);
         byPeer.remove(key(account, session.peer));
         removeWhiteboardNotice(session);
         notifyUpdate(sid);
@@ -850,15 +962,93 @@ public final class WhiteboardManager {
         return true;
     }
 
+    /**
+     * Announces a 1:1 board with an XEP-0353 {@code <propose/>} to the contact's bare JID, so every
+     * resource rings and the answering one gets the session. This is what Psi and the other
+     * whiteboard clients do for a board started from inside a chat, and what the "Full" profile tier
+     * defines; a bare {@code session-initiate} is only sent once a resource proceeded.
+     */
+    private void sendProposal(final Account account, final Session session) {
+        final MessagePacket packet = new MessagePacket();
+        packet.setType(MessagePacket.TYPE_CHAT); // a proposal wants a carbon copy
+        packet.setTo(session.peer.asBareJid());
+        packet.setId(SxeDocument.newRid());
+        final Element propose = packet.addChild("propose", Namespace.JINGLE_MESSAGE);
+        propose.setAttribute("id", session.sid);
+        propose.addChild("description", NS_WHITEBOARD);
+        packet.addChild("store", "urn:xmpp:hints");
+        MujiLog.log(service.getFilesDir(), "WB tx propose sid=" + session.sid + " to="
+                + session.peer.asBareJid());
+        service.sendMessagePacket(account, packet);
+    }
+
+    /**
+     * If no resource answers the proposal within {@link #PROPOSAL_TIMEOUT_SECONDS} (a whiteboard peer
+     * that implements the profile only in its "minimal" tier, without Jingle Message Initiation), fall
+     * back to a direct {@code session-initiate} so the board still reaches it. Cancelled implicitly
+     * once {@code proposed} is cleared (proceed/reject/retract/end).
+     */
+    private void scheduleProposalFallback(final Account account, final Session session) {
+        JingleConnectionManager.SCHEDULED_EXECUTOR_SERVICE.schedule(
+                () -> {
+                    if (!session.proposed || session.ringingReceived || sessions.get(session.sid) != session) {
+                        return;
+                    }
+                    session.proposed = false;
+                    MujiLog.log(service.getFilesDir(),
+                            "WB propose unanswered, direct invite sid=" + session.sid);
+                    sendJingle(account, session, "session-initiate");
+                },
+                PROPOSAL_TIMEOUT_SECONDS,
+                TimeUnit.SECONDS);
+    }
+
     /** Answers a whiteboard JMI {@code <propose/>} so the proposer continues with session-initiate. */
     private void proceedProposal(final Account account, final Jid target, final String sid) {
+        // XEP-0353: a resource that is willing to take the session first signals <ringing/>, then
+        // <proceed/> (the reference implementation does the same). Both are bodyless.
+        sendJmiAction(account, target, "ringing", sid);
+        sendJmiAction(account, target, "proceed", sid);
+    }
+
+    /** Sends a bodyless JMI action ({@code ringing}/{@code proceed}/{@code reject}/{@code retract}). */
+    private void sendJmiAction(
+            final Account account, final Jid to, final String action, final String sid) {
+        if (account == null || to == null) {
+            return;
+        }
         final MessagePacket packet = new MessagePacket();
         packet.setType(MessagePacket.TYPE_CHAT);
-        packet.setTo(target);
+        packet.setTo(to);
         packet.setId(SxeDocument.newRid());
-        packet.addChild("proceed", Namespace.JINGLE_MESSAGE).setAttribute("id", sid);
+        packet.addChild(action, Namespace.JINGLE_MESSAGE).setAttribute("id", sid);
         packet.addChild("store", "urn:xmpp:hints");
         service.sendMessagePacket(account, packet);
+    }
+
+    /**
+     * The XEP-0166 tie-break for two proposals that crossed: the one with the smaller {@code (sid,
+     * bare JID)} pair survives, so exactly one side keeps its own proposal and the other yields.
+     */
+    private static boolean keepsOwnProposal(
+            final String ourSid, final String theirSid, final Jid ourJid, final Jid theirJid) {
+        final int bySid = ourSid.compareTo(theirSid);
+        if (bySid != 0) {
+            return bySid < 0;
+        }
+        return ourJid.toString().compareTo(theirJid.toString()) <= 0;
+    }
+
+    /** Drops our own unanswered proposal without broadcasting (the peer withdrew it after tie-break). */
+    private void abandonProposal(final Session ours) {
+        if (ours == null) {
+            return;
+        }
+        sessions.remove(ours.sid);
+        byPeer.remove(key(ours.account, ours.peer));
+        removeWhiteboardNotice(ours);
+        notifyUpdate(ours.sid);
+        notifyEnded(ours.sid);
     }
 
     // ── Jingle dispatch ───────────────────────────────────────────────────
@@ -1543,6 +1733,13 @@ public final class WhiteboardManager {
         if ((news == null || news.isEmpty())
                 && (sets == null || sets.isEmpty())
                 && (removes == null || removes.isEmpty())) {
+            return;
+        }
+        // The Jingle session does not exist yet while the peer's <proceed/> is outstanding: the SXE
+        // payloads are addressed by the sid, which the peer only learns from the session-initiate, so
+        // a stroke drawn now would go nowhere (and would be sent to the bare JID). Any drawing done in
+        // that window stays in the local document and is carried over by the initial snapshot.
+        if (session.proposed) {
             return;
         }
         // The peer ignores edits from a role the negotiated `senders` excludes (Iris gates the

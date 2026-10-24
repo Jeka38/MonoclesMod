@@ -1,5 +1,8 @@
 ### Changelog
 
+#### Version 1.9.1.64
+* **fix: a whiteboard opened in Monocles still showed no invitation in Psi** — Monocles sent a bare Jingle `session-initiate`, but Psi (and the other whiteboard clients) start a board from inside a chat through **XEP-0353 Jingle Message Initiation**: a `<propose/>` to the contact's bare JID, and the `session-initiate` only after a `<proceed/>` from the resource that takes the call. Monocles now does the same — it proposes, then sends `session-initiate` to the **answering full JID** (a Jingle IQ to a bare JID is rejected by the server). The proposal id is used as the Jingle `sid` (as XEP-0353 requires) instead of the old deterministic id, which could collide with the peer's still-known session. As the responder Monocles answers `<ringing/>` + `<proceed/>`; crossing proposals are resolved with the XEP-0166 tie-break; and it falls back to a direct invite after 10 s for a peer that implements only the minimal profile
+
 #### Version 1.9.1.63
 * **fix: a whiteboard opened in Monocles never reached Psi** — `jingleTarget` fell back to `Contact.getMostAvailableResource()`, which is a *display* helper that wraps the resource in parentheses (`"(" + resource + ")"`). The Jingle IQ was therefore addressed to `` user@host/(pc) `` — a nonexistent resource — and the invite vanished (the reverse direction worked because Psi proposes to the bare JID). The resource is now taken from the presence map's plain keys
 

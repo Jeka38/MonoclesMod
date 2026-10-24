@@ -47,7 +47,11 @@ public abstract class AbstractGenerator {
             Namespace.SIMS,
             Namespace.JINGLE_APPS_SVG_WHITEBOARD,
             Namespace.SXE_TRANSPORT,
-            Namespace.SXE
+            Namespace.SXE,
+            // XEP-0353: a whiteboard is announced with a <propose/> from inside the chat. Iris
+            // intentionally omits a disco feature for it (the local enable flag controls policy
+            // only), so this is only a hint for another Monocles — the proposal is always sent.
+            Namespace.JINGLE_MESSAGE
     };
     private final String[] MESSAGE_CONFIRMATION_FEATURES = {
             "urn:xmpp:chat-markers:0",
