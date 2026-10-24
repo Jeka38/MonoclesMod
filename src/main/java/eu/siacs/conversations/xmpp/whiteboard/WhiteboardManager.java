@@ -95,6 +95,31 @@ public final class WhiteboardManager {
          * the {@code <sxe/>} so every occupant learns it.
          */
         public Jid creator = null;
+        /**
+         * True when this side sent the Jingle {@code session-initiate} (so we are the Jingle
+         * *initiator*); false when the peer invited us. Needed to interpret the {@code senders}
+         * attribute of the whiteboard content, which names roles, not JIDs.
+         */
+        public boolean initiator = false;
+        /**
+         * Negotiated {@code senders} of the whiteboard content: {@code "both"}, {@code "none"},
+         * {@code "initiator"} or {@code "responder"}. Per the whiteboard profile this lists who may
+         * edit; when it does not include our role the peer **ignores every edit we send** (Iris
+         * gates {@code document->applyEdits} on {@code mayEdit(peerRole)}), so a session frozen with
+         * {@code senders="none"} silently swallows all strokes. Psi starts a call that merely carries
+         * a whiteboard this way. {@link #ensureEditable} negotiates it back to {@code both}.
+         */
+        public String senders = "both";
+        /** True once we asked the peer to let us edit, so we do not re-ask on every stroke. */
+        public boolean sendersRequested = false;
+        /**
+         * Name of the whiteboard Jingle {@code <content/>}. Iris looks a content up by
+         * (name, creator), so a {@code content-modify} must echo the exact values of the offer; we
+         * default to our own name but adopt whatever the peer offered.
+         */
+        public String contentName = "whiteboard";
+        /** Creator of the whiteboard content: "initiator" (the normal case). */
+        public String contentCreator = "initiator";
 
         Session(final String sid, final Jid peer, final boolean muc, final boolean host, final Account account) {
             this.sid = sid;
@@ -357,6 +382,8 @@ public final class WhiteboardManager {
         final String sid = sessionIdFor(account, barePeer, muc);
         final Session session = new Session(sid, barePeer, muc, muc || hostFor(account, barePeer), account);
         session.locallyStarted = true;
+        // We send the session-initiate, so we are the Jingle initiator.
+        session.initiator = true;
         seedDocument(session.doc);
         sessions.put(sid, session);
         byPeer.put(key(account, barePeer), sid);
@@ -394,6 +421,9 @@ public final class WhiteboardManager {
         session.joined = true;
         if (!session.muc) {
             sendJingle(session.account, session, "session-accept");
+            // Psi offers the whiteboard of a call with senders="none"; ask for edit permission right
+            // away so the board is not silently read-only on our side.
+            ensureEditable(session);
         }
         send(session.account, session, sxe(session, "connect"), null);
     }
@@ -676,6 +706,79 @@ public final class WhiteboardManager {
 
     // ── Jingle dispatch ───────────────────────────────────────────────────
 
+    /** Reads the {@code senders} attribute of the whiteboard {@code <content/>} ("both" default). */
+    private static String offeredSenders(final JinglePacket packet) {
+        final Element content = packet.getJingleChild("content");
+        final String senders = content == null ? null : content.getAttribute("senders");
+        return senders == null || senders.isEmpty() ? "both" : senders;
+    }
+
+    /** Adopts the name/creator of the offered content so a later content-modify matches it. */
+    private static void adoptContentIdentity(final Session session, final JinglePacket packet) {
+        final Element content = packet.getJingleChild("content");
+        if (content == null) {
+            return;
+        }
+        final String name = content.getAttribute("name");
+        if (name != null && !name.isEmpty()) {
+            session.contentName = name;
+        }
+        final String creator = content.getAttribute("creator");
+        if (creator != null && !creator.isEmpty()) {
+            session.contentCreator = creator;
+        }
+    }
+
+    /**
+     * Whether our role is allowed to edit under the negotiated {@code senders}. The attribute names
+     * roles, not JIDs: for a session we initiated our role is "initiator", otherwise "responder".
+     * A value that does not include our role (notably {@code none}, which Psi uses for the
+     * whiteboard of a call that has not switched it on) means the peer ignores all our edits.
+     */
+    private static boolean mayEdit(final Session session) {
+        final String senders = session.senders == null ? "both" : session.senders;
+        if ("both".equals(senders)) {
+            return true;
+        }
+        if ("none".equals(senders)) {
+            return false;
+        }
+        return session.initiator ? "initiator".equals(senders) : "responder".equals(senders);
+    }
+
+    /**
+     * Per the whiteboard profile a document is *frozen* with {@code senders="none"} (the peer both
+     * stops editing and ignores edits) — that is how Psi starts the whiteboard of a call. The peer
+     * switches it on by widening {@code senders}, so we ask once with {@code content-modify};
+     * without it the board looks connected yet silently swallows every stroke. Only {@code none} is
+     * requested: a role-specific value ({@code initiator}/{@code responder}) is a deliberate
+     * "presenter" restriction and must be respected.
+     */
+    private void ensureEditable(final Session session) {
+        if (session == null || session.muc || session.sendersRequested) {
+            return;
+        }
+        if (!"none".equals(session.senders)) {
+            return;
+        }
+        session.sendersRequested = true;
+        MujiLog.log(service.getFilesDir(), "WB request edit permission sid=" + session.sid);
+        // XEP-0284/content-modify: a childless <content/> that only carries the new senders value.
+        // creator/name MUST match the offered content (Iris looks the content up by those two).
+        final JinglePacket packet =
+                new JinglePacket(JinglePacket.Action.CONTENT_MODIFY, session.sid);
+        packet.setTo(jingleTarget(session.account, session));
+        final Element content = new Element("content", Namespace.JINGLE);
+        content.setAttribute("creator", session.contentCreator);
+        content.setAttribute("name", session.contentName);
+        content.setAttribute("senders", "both");
+        packet.addJingleChild(content);
+        service.sendIqPacket(session.account, packet, null);
+        // Optimistically allow local editing so the user is not blocked while the peer processes it
+        // (a refusal is simply dropped by the peer's own gate).
+        session.senders = "both";
+    }
+
     public void dispatchJingle(final Account account, final JinglePacket packet) {
         final String sid = packet.getSessionId();
         final String action = packet.getAction() == null ? null : packet.getAction().toString();
@@ -713,6 +816,12 @@ public final class WhiteboardManager {
                 // one session and the live edits land in the session the UI is attached to.
                 final Session session = new Session(sid, peer, false, hostFor(account, peer), account);
                 session.fullPeer = from.toString();
+                // We are the responder here: the peer initiated. Record the offered `senders` so
+                // ensureEditable() can tell whether we may actually edit (Psi offers the whiteboard
+                // of a call with senders="none", which would otherwise swallow every stroke).
+                session.initiator = false;
+                session.senders = offeredSenders(packet);
+                adoptContentIdentity(session, packet);
                 seedDocument(session.doc);
                 // A JMI proposal (XEP-0353) may have registered a placeholder under its own propose
                 // id; if the real invite arrives with a different sid, drop the orphan so the peer
@@ -738,6 +847,21 @@ public final class WhiteboardManager {
                 final Session session = sessions.get(sid);
                 if (session != null) {
                     session.fullPeer = from.toString();
+                    // The answer must repeat the offered host; also refresh `senders` in case the
+                    // responder narrowed or widened the editing permission.
+                    session.senders = offeredSenders(packet);
+                    ensureEditable(session);
+                }
+                break;
+            }
+            case "content-modify": {
+                final Session session = sessions.get(sid);
+                if (session != null) {
+                    session.senders = offeredSenders(packet);
+                    // Allow a later re-request: if the peer freezes the board again (senders="none")
+                    // and we draw, ensureEditable() must be able to ask once more.
+                    session.sendersRequested = false;
+                    notifyUpdate(sid);
                 }
                 break;
             }
@@ -1216,6 +1340,18 @@ public final class WhiteboardManager {
                 && (sets == null || sets.isEmpty())
                 && (removes == null || removes.isEmpty())) {
             return;
+        }
+        // The peer ignores edits from a role the negotiated `senders` excludes (Iris gates the
+        // application of incoming edits on mayEdit(peerRole)); Psi starts the whiteboard of a call
+        // frozen with senders="none". Ask once for permission (content-modify) — it is an IQ, so the
+        // peer applies it before this message on the same stream — and keep the stroke when the
+        // request flips us to "both". A role-specific value (presenter mode) is respected and the
+        // edit is dropped.
+        if (!session.muc && !mayEdit(session)) {
+            ensureEditable(session);
+            if (!mayEdit(session)) {
+                return;
+            }
         }
         final Element el = sxeElement(session);
         final Element state = el.addChild("state", NS_SXE);

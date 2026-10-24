@@ -1,5 +1,8 @@
 ### Changelog
 
+#### Version 1.9.1.58
+* **fix: the whiteboard still did not synchronize with Psi** — Psi opens the whiteboard of a call with `<content … senders="none">`, and per the whiteboard profile `senders` lists **who may edit**: the peer then ignores every edit it receives (Iris gates the application of incoming edits on `mayEdit(peerRole)`), so the board looked connected but all strokes were silently dropped. Monocles ignored `senders`. It now records the negotiated value (`Session.senders`, plus `Session.initiator` since the attribute names roles, not JIDs), skips sending edits it knows are ignored, and asks the peer to widen it to `both` with a Jingle `content-modify` (re-requested after a `session-accept`/`content-modify` if needed)
+
 #### Version 1.9.1.57
 * **fix: the collaborative whiteboard did not synchronize with Psi** — Monocles sent its Jingle `session-accept` before acknowledging the peer's `session-initiate`. XEP-0166 requires the acknowledgement first, and Psi (Iris) enforces it strictly: it answered `<bad-request/>` to the accept, so the session never became active and **every `<sxe/>` edit was ignored** (the board opened on both sides, but nothing was drawn across). The IQ result is now sent before dispatching the invite. Also fixed: the `session-accept` now repeats the offered `<host/>` (the initiator) instead of naming ourselves
 
