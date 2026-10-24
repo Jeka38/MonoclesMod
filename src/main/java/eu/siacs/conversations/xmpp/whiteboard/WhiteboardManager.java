@@ -775,7 +775,9 @@ public final class WhiteboardManager {
         packet.addJingleChild(content);
         service.sendIqPacket(session.account, packet, null);
         // Optimistically allow local editing so the user is not blocked while the peer processes it
-        // (a refusal is simply dropped by the peer's own gate).
+        // (a refusal is simply dropped by the peer's own gate). Do NOT notify listeners here: this
+        // runs from within sendEdits (i.e. while a stroke is being added) and a listener would
+        // reload the canvas mid-stroke.
         session.senders = "both";
     }
 
@@ -794,9 +796,18 @@ public final class WhiteboardManager {
             case "session-initiate": {
                 final Session existing = sessions.get(sid);
                 if (existing != null) {
-                    // A duplicate invite for a session we already have (e.g. both sides opened the
-                    // board and the same deterministic sid was computed). Just accept it again so the
-                    // peer's `session-accept` expectation is met, but do not create a second session.
+                    // A duplicate invite for a session we already have: either both sides opened the
+                    // board and computed the same deterministic sid, or — the common case — a XEP-0353
+                    // <propose/> pre-created this session under the very sid the ensuing
+                    // session-initiate reuses. In the latter case this is the FIRST time we see the
+                    // offer's content, so the `senders` (and content identity) MUST still be read: a
+                    // board frozen with senders="none" (Psi's whiteboard-of-a-call) would otherwise
+                    // keep the default "both" and silently swallow every stroke.
+                    existing.initiator = false;
+                    existing.senders = offeredSenders(packet);
+                    adoptContentIdentity(existing, packet);
+                    // Just accept it again so the peer's `session-accept` expectation is met, but do
+                    // not create a second session.
                     if (!existing.joined) {
                         joinSession(existing);
                     }
@@ -810,6 +821,9 @@ public final class WhiteboardManager {
                         existing.noticeCounterpart = from;
                         postWhiteboardNotice(account, existing);
                     }
+                    // A <propose/> already joined the session before the offer arrived, so asks for
+                    // edit permission now that the offered `senders` is finally known. Idempotent.
+                    ensureEditable(existing);
                     break;
                 }
                 // Same deterministic id as the initiator computed; adopt it so both ends share

@@ -1,5 +1,8 @@
 ### Changelog
 
+#### Version 1.9.1.59
+* **fix: the whiteboard still did not synchronize with Psi when the invitation came as a XEP-0353 `<propose/>`** — the proposal pre-creates the session under the very `sid` the following `session-initiate` reuses, so the offer took the "session already exists" branch, which never read the content — and therefore never saw `senders="none"` (the frozen board Psi uses). The edit-permission request was consequently never sent, the document stayed frozen on Psi's side and every stroke was dropped. The offered `senders`/content identity is now read in **both** branches
+
 #### Version 1.9.1.58
 * **fix: the whiteboard still did not synchronize with Psi** — Psi opens the whiteboard of a call with `<content … senders="none">`, and per the whiteboard profile `senders` lists **who may edit**: the peer then ignores every edit it receives (Iris gates the application of incoming edits on `mayEdit(peerRole)`), so the board looked connected but all strokes were silently dropped. Monocles ignored `senders`. It now records the negotiated value (`Session.senders`, plus `Session.initiator` since the attribute names roles, not JIDs), skips sending edits it knows are ignored, and asks the peer to widen it to `both` with a Jingle `content-modify` (re-requested after a `session-accept`/`content-modify` if needed)
 
