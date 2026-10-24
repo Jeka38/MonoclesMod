@@ -1,5 +1,8 @@
 ### Changelog
 
+#### Version 1.9.1.60
+* **fix: Psi's drawing was invisible on the whiteboard** — `WhiteboardManager.shapes()` matched the shared document's element name against `"path"` and read only a `d` attribute, so Psi's shape tools (`<polygon>`, and likewise `<polyline>/<rect>/<circle>/<ellipse>/<line>`) were skipped before rendering and never appeared, even though our own strokes showed up in Psi. Every drawable SVG element is now converted to the equivalent path data; metadata (`<title>/<desc>/<defs>/<g>`) is still ignored
+
 #### Version 1.9.1.59
 * **fix: the whiteboard still did not synchronize with Psi when the invitation came as a XEP-0353 `<propose/>`** — the proposal pre-creates the session under the very `sid` the following `session-initiate` reuses, so the offer took the "session already exists" branch, which never read the content — and therefore never saw `senders="none"` (the frozen board Psi uses). The edit-permission request was consequently never sent, the document stayed frozen on Psi's side and every stroke was dropped. The offered `senders`/content identity is now read in **both** branches
 

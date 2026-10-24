@@ -577,7 +577,7 @@ public final class WhiteboardManager {
         final SxeDocument doc = session.doc;
         for (final String child : doc.children(doc.getRootRid())) {
             final SxeDocument.Record record = doc.getRecord(child);
-            if (record == null || !"element".equals(record.type) || !"path".equals(record.name)) {
+            if (record == null || !"element".equals(record.type)) {
                 continue;
             }
             final Map<String, String> attrs = new LinkedHashMap<>();
@@ -587,12 +587,117 @@ public final class WhiteboardManager {
                     attrs.put(attr.name, attr.chdata);
                 }
             }
+            // Only drawable SVG elements. The peer may use any of the SVG basic shapes, not just
+            // <path/>: Psi's shape tools emit <polygon>/<polyline>/<rect>/<circle>/<ellipse>/<line>,
+            // and an earlier build discarded those records entirely (it matched the element name
+            // against "path"), so Psi's drawing never appeared on our board. svgPathData() converts
+            // each of them to the "d" the canvas already parses.
+            final String d = svgPathData(record.name, attrs);
+            if (d == null) {
+                continue;
+            }
             out.add(WhiteboardShape.fromRemote(
-                    child, attrs.get("id"), attrs.get("d"),
+                    child, attrs.get("id"), d,
                     attrs.get("stroke"), attrs.get("stroke-width"), attrs.get("fill"),
-                    attrs.get("transform")));
+                    attrs.get("transform"), record.name));
         }
         return out;
+    }
+
+    /**
+     * Converts a drawable SVG element into path data ({@code d}). Returns null for metadata and for
+     * elements we cannot draw. {@code <path/>} keeps its own {@code d}; the basic shapes are mapped
+     * with the standard SVG equivalent (as the whiteboard profile's schema allows them), so a shape
+     * produced by any client renders here.
+     */
+    @Nullable
+    private static String svgPathData(final String name, final Map<String, String> attrs) {
+        if (name == null) {
+            return null;
+        }
+        switch (name) {
+            case "path":
+                return attrs.get("d");
+            case "polygon":
+            case "polyline": {
+                final String points = attrs.get("points");
+                if (points == null || points.trim().isEmpty()) {
+                    return null;
+                }
+                // The points list is "x,y x,y …"; build explicit L commands (the same form our own
+                // shapes produce) instead of relying on SVG's implicit-lineto-after-moveto parsing.
+                final String[] pairs = points.trim().split("\\s+");
+                final StringBuilder sb = new StringBuilder();
+                for (int i = 0; i < pairs.length; i++) {
+                    final String pair = pairs[i].trim();
+                    if (pair.isEmpty()) {
+                        continue;
+                    }
+                    sb.append(sb.length() == 0 ? "M " : " L ").append(pair.replace(',', ' '));
+                }
+                if (sb.length() == 0) {
+                    return null;
+                }
+                if ("polygon".equals(name)) {
+                    sb.append(" Z");
+                }
+                return sb.toString();
+            }
+            case "line": {
+                final String x1 = attrs.get("x1"), y1 = attrs.get("y1");
+                final String x2 = attrs.get("x2"), y2 = attrs.get("y2");
+                if (x1 == null || y1 == null || x2 == null || y2 == null) {
+                    return null;
+                }
+                return "M " + x1 + " " + y1 + " L " + x2 + " " + y2;
+            }
+            case "rect": {
+                final float x = parseFloat(attrs.get("x"), 0f);
+                final float y = parseFloat(attrs.get("y"), 0f);
+                final float w = parseFloat(attrs.get("width"), 0f);
+                final float h = parseFloat(attrs.get("height"), 0f);
+                if (w == 0f && h == 0f) {
+                    return null;
+                }
+                return "M " + x + " " + y + " L " + (x + w) + " " + y + " L " + (x + w) + " "
+                        + (y + h) + " L " + x + " " + (y + h) + " Z";
+            }
+            case "circle": {
+                final float cx = parseFloat(attrs.get("cx"), 0f);
+                final float cy = parseFloat(attrs.get("cy"), 0f);
+                final float r = parseFloat(attrs.get("r"), 0f);
+                if (r == 0f) {
+                    return null;
+                }
+                return "M " + (cx - r) + " " + cy + " A " + r + " " + r + " 0 1 0 " + (cx + r) + " "
+                        + cy + " A " + r + " " + r + " 0 1 0 " + (cx - r) + " " + cy + " Z";
+            }
+            case "ellipse": {
+                final float cx = parseFloat(attrs.get("cx"), 0f);
+                final float cy = parseFloat(attrs.get("cy"), 0f);
+                final float rx = Math.abs(parseFloat(attrs.get("rx"), 0f));
+                final float ry = Math.abs(parseFloat(attrs.get("ry"), 0f));
+                if (rx == 0f && ry == 0f) {
+                    return null;
+                }
+                return "M " + (cx - rx) + " " + cy + " A " + rx + " " + ry + " 0 1 0 " + (cx + rx) + " "
+                        + cy + " A " + rx + " " + ry + " 0 1 0 " + (cx - rx) + " " + cy + " Z";
+            }
+            default:
+                // <g>, <image>, <title>, <desc>, <defs>, … are not standalone drawable paths here.
+                return null;
+        }
+    }
+
+    private static float parseFloat(@Nullable final String value, final float fallback) {
+        if (value == null || value.isEmpty()) {
+            return fallback;
+        }
+        try {
+            return Float.parseFloat(value.trim());
+        } catch (final NumberFormatException e) {
+            return fallback;
+        }
     }
 
     public boolean isReady(final String sid) {

@@ -33,6 +33,12 @@ public final class WhiteboardShape {
     public String fill = "";
     /** The SVG {@code transform} attribute (e.g. {@code matrix(a b c d e f)}), or "" if identity. */
     public String transform = "";
+    /**
+     * For a remote shape, the original SVG element name ({@code path}, {@code polygon}, …), so a
+     * later edit does not add a {@code d} attribute to a shape that has none (e.g. a {@code polygon}
+     * carries {@code points}, and SVG has no {@code d} on it). Empty for locally created shapes.
+     */
+    public String remoteElement = "";
 
     public static WhiteboardShape create(final String kind) {
         final WhiteboardShape shape = new WhiteboardShape();
@@ -131,8 +137,17 @@ public final class WhiteboardShape {
             final String rid, final String id, final String d,
             final String stroke, final String strokeWidth, final String fill,
             final String transform) {
+        return fromRemote(rid, id, d, stroke, strokeWidth, fill, transform, "path");
+    }
+
+    /** As {@link #fromRemote} but remembers the original SVG element name (see {@link #remoteElement}). */
+    public static WhiteboardShape fromRemote(
+            final String rid, final String id, final String d,
+            final String stroke, final String strokeWidth, final String fill,
+            final String transform, @Nullable final String element) {
         final WhiteboardShape shape = new WhiteboardShape();
         shape.kind = "remote";
+        shape.remoteElement = element == null ? "" : element;
         shape.rid = rid == null ? "" : rid;
         shape.id = id == null || id.isEmpty() ? WhiteboardShape.create("remote").id : id;
         shape.d = d == null ? "" : d;
@@ -151,7 +166,12 @@ public final class WhiteboardShape {
     public List<String[]> attrs() {
         final List<String[]> out = new ArrayList<>();
         out.add(new String[]{"id", id});
-        out.add(new String[]{"d", pathData()});
+        // A remote shape keeps the element the peer sent: SVG has no `d` on a <polygon>/<circle>/…,
+        // so only a <path> gets one. Otherwise we would push an invalid attribute the peer's parser
+        // has to reject.
+        if (!isRemote() || remoteElement.isEmpty() || "path".equals(remoteElement)) {
+            out.add(new String[]{"d", pathData()});
+        }
         out.add(new String[]{"stroke", stroke});
         out.add(new String[]{"stroke-width", trimFloat(strokeWidth)});
         out.add(new String[]{"fill", isFilled() ? fill : "none"});
