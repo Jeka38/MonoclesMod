@@ -1,5 +1,8 @@
 ### Changelog
 
+#### Version 1.9.1.57
+* **fix: the collaborative whiteboard did not synchronize with Psi** — Monocles sent its Jingle `session-accept` before acknowledging the peer's `session-initiate`. XEP-0166 requires the acknowledgement first, and Psi (Iris) enforces it strictly: it answered `<bad-request/>` to the accept, so the session never became active and **every `<sxe/>` edit was ignored** (the board opened on both sides, but nothing was drawn across). The IQ result is now sent before dispatching the invite. Also fixed: the `session-accept` now repeats the offered `<host/>` (the initiator) instead of naming ourselves
+
 #### Version 1.9.1.56
 * **fix: crash on update to 1.9.1.55** ("Unable to create service … duplicate column name: retractedAt"). The XEP-0424 `retractedAt` column was added in *two* migrations: the monocles side-table migration (`monoclesMigrate`, which runs from `onConfigure` and got there first) and the `oldVersion < 62` block in the main `onUpgrade`. The second `ALTER TABLE … ADD COLUMN retractedAt` then failed. The column is now added in exactly one place (the monocles migration); the main DB version stays at 62 so devices that already ran the broken build upgrade cleanly
 

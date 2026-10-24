@@ -897,9 +897,18 @@ public final class WhiteboardManager {
             content.addChild("description", NS_WHITEBOARD);
             final Element transport = new Element("transport", NS_SXE_TRANSPORT);
             final Element host = transport.addChild("host", NS_SXE_TRANSPORT);
-            host.setContent(session.muc
-                    ? session.peer.toEscapedString()
-                    : account.getJid().asBareJid().toEscapedString());
+            // XEP-0284 §4.1/§4.2: the <host/> names the entity that relays the SXE payloads. For a
+            // 1:1 session that is the *initiator*, and the answer MUST repeat the offered host.
+            // Sending our own JID in the session-accept (as an earlier build did) is wrong.
+            if (session.muc) {
+                host.setContent(session.peer.toEscapedString());
+            } else if ("session-accept".equals(action)) {
+                // we are the responder: the initiator (our peer) is the host
+                host.setContent(session.peer.toEscapedString());
+            } else {
+                // we are the initiator
+                host.setContent(account.getJid().asBareJid().toEscapedString());
+            }
             content.addChild(transport);
             packet.addJingleChild(content);
         } else {

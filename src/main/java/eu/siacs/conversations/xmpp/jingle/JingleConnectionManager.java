@@ -95,10 +95,14 @@ public class JingleConnectionManager extends AbstractConnectionManager {
         final WhiteboardManager whiteboardManager = mXmppConnectionService.getWhiteboardManager();
         if (whiteboardManager.isWhiteboardJingle(packet)
                 || whiteboardManager.getSession(sessionId) != null) {
-            whiteboardManager.dispatchJingle(account, packet);
-            // Acknowledge the IQ so the peer's session-initiate/accept does not time out.
+            // Acknowledge the IQ FIRST, then dispatch. XEP-0166 requires the responder to
+            // acknowledge a session-initiate before it negotiates further, and Iris/Psi enforces
+            // this strictly: it only accepts a session-accept once its own session-initiate has
+            // been acked (the content is still `Unacked` until then) and otherwise replies
+            // <bad-request/>, which left the session inactive and every <sxe/> edit ignored.
             mXmppConnectionService.sendIqPacket(
                     account, packet.generateResponse(IqPacket.TYPE.RESULT), null);
+            whiteboardManager.dispatchJingle(account, packet);
             return;
         }
         final AbstractJingleConnection.Id id = AbstractJingleConnection.Id.of(account, packet);
