@@ -1,5 +1,8 @@
 ### Changelog
 
+#### Version 1.9.1.67
+* **the ``` fence lines of a code block are no longer shown**: a message that still carries the Markdown fences in its body (another client, a bridge) used to render stray ``` / ```bash above and below the card — they are now dropped from the rendered message, while the language still appears in the card header
+
 #### Version 1.9.1.66
 * **code blocks are now a rounded card with a header** (Telegram-like) instead of a bare tinted rectangle: a lighter header band with a hairline divider, a muted `code c++` label and a copy glyph, a darker monospaced body, rounded corners, padding on all sides (including air on the right of the longest line), and the card scaling with the message font. Tapping the block copies the code to the clipboard. Both XEP-0393 preformatted blocks and XEP-0394 `bcode` use it
 

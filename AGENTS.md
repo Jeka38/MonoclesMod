@@ -174,9 +174,11 @@ message carries.
   whitespace; the close is matched **lazily**, must not be preceded by whitespace, and both
   directives must contain text (empty directives are ignored). Preformatted blocks are literal —
   no child spans — and quotations may nest, so a quote's content is re-parsed past the `>` markers.
-  A fence line may only be ``` alone or ``` plus a plain language token: ` ```test``` ` on one line is
-  **not** a fence (it would otherwise swallow the whole message into an empty block, which is how the
-  outgoing text once disappeared). An empty block (fence with no content) yields no block either.
+  A fence line may only be ``` alone or ``` plus a plain language token — one space between the two
+  is tolerated (` ``` bash ` renders like ` ```bash `, since that is the spelling most other clients
+  send): ` ```test``` ` on one line is **not** a fence (it would otherwise swallow the whole message
+  into an empty block, which is how the outgoing text once disappeared), and neither is a fence
+  followed by prose. An empty block (fence with no content) yields no block either.
   `Span` carries its content range separately from the marker range, so marker runs of any length
   (`` `` ``) are stripped correctly.
 - **Send:** `Message.applySource` **strips the styling characters** from the outgoing body (`_ ~ `
@@ -189,9 +191,23 @@ message carries.
 - **Receive — `Message.renderStyling`** runs in `getSpannableBody` after `renderMarkup`. Inline
   directives become `StyleSpan`/`TypefaceSpan`/`StrikethroughSpan` (applied over the markers too, as
   the XEP recommends); blocks become `entities/CodeBlockSpan` (the shared code card, see the markup
-  section below) and `StylingSpan.Quote` (indent + bar). Every span carries `StylingSpan.STYLING_FLAG` (bit 27) so a re-render
-  clears the previous pass. A sender can opt out with an empty
-  `<unstyled xmlns='urn:xmpp:styling:0'/>` — `Message.isUnstyled()` makes the renderer skip.
+  section below) and `StylingSpan.Quote` (indent + bar). Every span carries
+  `StylingSpan.STYLING_FLAG` (bit 27) so a re-render clears the previous pass. A sender can opt out
+  with an empty `<unstyled xmlns='urn:xmpp:styling:0'/>` — `Message.isUnstyled()` makes the renderer
+  skip.
+- **The fence lines are dropped from the rendered body, not styled.** `` ``` `` / `` ```lang `` are
+  directives, not content, so `renderStyling` deletes `[block.start, block.contentStart)` **and**
+  `[block.contentEnd, block.end)` (the closing fence plus the newline in front of it) from the
+  `SpannableStringBuilder` *after* all spans are placed — the block content itself is untouched, and
+  the deletions run from the end so earlier offsets stay valid. A message that still carries the
+  fences in its body (another client sends raw Markdown, a bridge, an older peer) therefore no longer
+  shows stray backticks above/below the card or a repeated language name; the language still reaches
+  the card header (`CodeBlockSpan.title()`). The body string itself is never modified — only the
+  rendered spannable — so copy/send/preview are unaffected. Verified against the parser with a JVM
+  harness: fenced/bare/unclosed blocks and two blocks in one message all render without fences.
+  Caveat: the adapter's `/me` path uses `Message.getMeCommandIndex()` computed on the *raw* body, so
+  a code block placed **before** a `/me` in the same message shifts the offsets the adapter replaces
+  (guarded by a bounds check, so it cannot crash).
 - **The `/me` command is the adapter's job** (`MessageAdapter` → `getMeCommandIndex`, rendered bold
   italic with the nickname). Do not expand it in `renderStyling` too, or it is applied twice.
   `Message.getMeCommandIndex()` must require the command to be a **standalone token at the start of a

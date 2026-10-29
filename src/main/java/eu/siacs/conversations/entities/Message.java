@@ -1464,6 +1464,10 @@ public class Message extends AbstractEntity implements AvatarService.Avatarable 
         if (isUnstyled()) {
             return;
         }
+        // The fence lines themselves (` ``` ` and ` ```lang `) are directives, not content: they are
+        // dropped from the rendered body after the spans are placed, so a received message that still
+        // carries them does not show stray backticks and a language name next to the code card.
+        final java.util.List<int[]> fences = new java.util.ArrayList<>();
         for (final Object item : MessageStyling.parse(body)) {
             if (item instanceof MessageStyling.Span) {
                 final MessageStyling.Span span = (MessageStyling.Span) item;
@@ -1481,6 +1485,8 @@ public class Message extends AbstractEntity implements AvatarService.Avatarable 
                             block.contentStart,
                             Math.max(block.contentStart, block.contentEnd),
                             Spanned.SPAN_EXCLUSIVE_EXCLUSIVE | StylingSpan.STYLING_FLAG);
+                    addFence(fences, block.start, block.contentStart);
+                    addFence(fences, block.contentEnd, block.end);
                 } else {
                     body.setSpan(
                             new StylingSpan.Quote(block.depth),
@@ -1489,6 +1495,19 @@ public class Message extends AbstractEntity implements AvatarService.Avatarable 
                             Spanned.SPAN_EXCLUSIVE_EXCLUSIVE | StylingSpan.STYLING_FLAG);
                 }
             }
+        }
+        // Delete from the end so the earlier ranges keep their offsets.
+        for (int i = fences.size() - 1; i >= 0; i--) {
+            final int[] range = fences.get(i);
+            body.delete(range[0], range[1]);
+        }
+    }
+
+    /** Records a fence-line range; empty ranges (a missing fence) are ignored. */
+    private static void addFence(
+            @NonNull final java.util.List<int[]> fences, final int start, final int end) {
+        if (end > start) {
+            fences.add(new int[]{start, end});
         }
     }
 

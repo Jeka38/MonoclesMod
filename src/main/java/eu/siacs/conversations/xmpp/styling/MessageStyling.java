@@ -188,7 +188,13 @@ public final class MessageStyling {
         if (!trimmed.startsWith("```")) {
             return null;
         }
-        final String rest = trimmed.substring(3);
+        String rest = trimmed.substring(3);
+        // tolerate the very common "``` bash" spelling (a space between the fence and the language)
+        int skip = 0;
+        while (skip < rest.length() && (rest.charAt(skip) == ' ' || rest.charAt(skip) == '\t')) {
+            skip++;
+        }
+        rest = rest.substring(skip);
         // a fence is ``` alone or ``` followed by a plain language token; ````test``` ` (inline triple
         // backticks) is not a fence, otherwise it would swallow the whole message into an empty block
         for (int i = 0; i < rest.length(); i++) {
