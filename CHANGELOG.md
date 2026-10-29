@@ -1,5 +1,8 @@
 ### Changelog
 
+#### Version 1.9.1.66
+* **code blocks are now a rounded card with a header** (Telegram-like) instead of a bare tinted rectangle: a lighter header band with a hairline divider, a muted `code c++` label and a copy glyph, a darker monospaced body, rounded corners, padding on all sides (including air on the right of the longest line), and the card scaling with the message font. Tapping the block copies the code to the clipboard. Both XEP-0393 preformatted blocks and XEP-0394 `bcode` use it
+
 #### Version 1.9.1.65
 * **fix: a drawing made in Psi+ with the pencil / simple brush was painted as a solid filled blob in Monocles** — Qt's SVG generator (which Psi uses) serialises a *solid transparent* brush as `fill="#000000" fill-opacity="0"`, and Psi's pencil uses exactly that brush (the default fill colour is transparent). The board only looked at the fill **colour**, saw black and filled the whole freehand path. `WhiteboardShape` now carries `fill-opacity` and treats a zero-opacity fill as unfilled (also `fill="none"`/`transparent`), and a translucent fill is drawn with its opacity applied
 

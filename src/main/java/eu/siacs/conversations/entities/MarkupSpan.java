@@ -1,15 +1,11 @@
 package eu.siacs.conversations.entities;
 
 import android.graphics.Canvas;
-import android.graphics.Color;
 import android.graphics.Paint;
 import android.graphics.Typeface;
 import android.text.Layout;
 import android.text.Spanned;
-import android.text.TextPaint;
 import android.text.style.LeadingMarginSpan;
-import android.text.style.LineBackgroundSpan;
-import android.text.style.LineHeightSpan;
 import android.text.style.StrikethroughSpan;
 import android.text.style.StyleSpan;
 import android.text.style.TypefaceSpan;
@@ -52,71 +48,6 @@ public final class MarkupSpan {
                 return new QuoteBarSpan();
             default:
                 return null;
-        }
-    }
-
-    /**
-     * A code block, Telegram style: monospaced text, a lighter block background and the language
-     * printed above it when the sender provided one.
-     */
-    public static class CodeBlockSpan extends TypefaceSpan implements LineBackgroundSpan, LineHeightSpan {
-
-        private static final float LABEL_SP = 12f;
-        private static final int BACKGROUND_ALPHA = 40;
-        private static final int PANEL_BACKGROUND = 0xFF000000;
-
-        @Nullable
-        private final String language;
-        private int labelHeight = 0;
-
-        public CodeBlockSpan(@Nullable final String language) {
-            super("monospace");
-            this.language = language;
-        }
-
-        @Override
-        public void chooseHeight(
-                final CharSequence text,
-                final int start,
-                final int end,
-                final int spanstartv,
-                final int lineHeight,
-                final Paint.FontMetricsInt fm) {
-            if (language != null && fm != null) {
-                final int label = Math.round(LABEL_SP * density());
-                fm.ascent -= label;
-                labelHeight = label;
-            }
-        }
-
-        @Override
-        public void drawBackground(
-                final Canvas canvas,
-                final Paint paint,
-                final int left,
-                final int right,
-                final int top,
-                final int baseline,
-                final int bottom,
-                final CharSequence text,
-                final int start,
-                final int end,
-                final int lineNumber) {
-            final int color = paint.getColor();
-            final int alpha = paint.getAlpha();
-            // whole block : soft tint, slightly stronger than the bubble
-            paint.setColor(PANEL_BACKGROUND);
-            paint.setAlpha(BACKGROUND_ALPHA);
-            canvas.drawRect(left, top, right, bottom, paint);
-            // language label : a small chip in the top-left of the first line
-            if (language != null && lineNumber == 0) {
-                paint.setTextSize(LABEL_SP * density());
-                paint.setColor(Color.WHITE);
-                paint.setAlpha(200);
-                canvas.drawText(language, left + 8 * density(), top + labelHeight - 3 * density(), paint);
-            }
-            paint.setColor(color);
-            paint.setAlpha(alpha);
         }
     }
 

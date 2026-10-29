@@ -615,6 +615,7 @@
 \nВы должны включить автоматическое удаление вложений или удалить медиа-файлы вручную. В Вашем устройстве закончится память!</string>
     <string name="message">Сообщение</string>
     <string name="message_copied_to_clipboard">Сообщение скопировано в буфер обмена</string>
+    <string name="code_copied_to_clipboard">Код скопирован в буфер обмена</string>
     <string name="message_decrypting">Расшифровка сообщения. Пожалуйста подождите…</string>
     <string name="message_deleted">Сообщение было удалено</string>
     <string name="message_retracted">Это сообщение было отозвано (%s)</string>

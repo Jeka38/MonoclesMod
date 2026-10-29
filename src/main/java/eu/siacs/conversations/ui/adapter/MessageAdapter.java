@@ -110,6 +110,7 @@ import eu.siacs.conversations.R;
 import eu.siacs.conversations.crypto.axolotl.FingerprintStatus;
 import eu.siacs.conversations.entities.Account;
 import eu.siacs.conversations.entities.Bookmark;
+import eu.siacs.conversations.entities.CodeBlockSpan;
 import eu.siacs.conversations.entities.Contact;
 import eu.siacs.conversations.entities.ServiceDiscoveryResult;
 import eu.siacs.conversations.entities.Conversation;
@@ -1005,6 +1006,9 @@ public class MessageAdapter extends ArrayAdapter<Message> {
         if (activity.xmppConnectionService != null && activity.xmppConnectionService.getBooleanPreference("enable_smiles", R.bool.enable_smiles)) {
             spannable = UIHelper.replaceEmojisWithSmiles(activity, spannable, activity.xmppConnectionService.emojiSearch());
         }
+        // A code block draws a header with a copy glyph; the tap handler needs a Context, which the
+        // entity layer does not have (see CodeBlockSpan.attach).
+        CodeBlockSpan.attach(spannable, activity);
         return spannable;
     }
 

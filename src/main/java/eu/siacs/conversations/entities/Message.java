@@ -1477,7 +1477,7 @@ public class Message extends AbstractEntity implements AvatarService.Avatarable 
                 final int end = Math.max(block.start, block.end);
                 if (block.preformatted) {
                     body.setSpan(
-                            new StylingSpan.CodeBlock(block.language),
+                            new CodeBlockSpan(block.language),
                             block.contentStart,
                             Math.max(block.contentStart, block.contentEnd),
                             Spanned.SPAN_EXCLUSIVE_EXCLUSIVE | StylingSpan.STYLING_FLAG);

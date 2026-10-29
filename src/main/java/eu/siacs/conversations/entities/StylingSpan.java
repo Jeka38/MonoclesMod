@@ -4,10 +4,7 @@ import android.graphics.Canvas;
 import android.graphics.Paint;
 import android.graphics.Typeface;
 import android.text.Layout;
-import android.text.TextPaint;
 import android.text.style.LeadingMarginSpan;
-import android.text.style.LineBackgroundSpan;
-import android.text.style.LineHeightSpan;
 import android.text.style.StrikethroughSpan;
 import android.text.style.StyleSpan;
 import android.text.style.TypefaceSpan;
@@ -44,43 +41,6 @@ public final class StylingSpan {
                 return new TypefaceSpan("monospace");
             default:
                 throw new AssertionError("unknown directive: " + style);
-        }
-    }
-
-    /** A {@code ```} preformatted block: monospaced, with a subtle panel background. */
-    public static class CodeBlock extends TypefaceSpan implements LineBackgroundSpan {
-
-        private static final int BACKGROUND_ALPHA = 36;
-        private static final int PANEL = 0xFF000000;
-
-        @Nullable
-        private final String language;
-
-        public CodeBlock(@Nullable final String language) {
-            super("monospace");
-            this.language = language;
-        }
-
-        @Override
-        public void drawBackground(
-                final Canvas canvas,
-                final Paint paint,
-                final int left,
-                final int right,
-                final int top,
-                final int baseline,
-                final int bottom,
-                final CharSequence text,
-                final int start,
-                final int end,
-                final int lineNumber) {
-            final int color = paint.getColor();
-            final int alpha = paint.getAlpha();
-            paint.setColor(PANEL);
-            paint.setAlpha(BACKGROUND_ALPHA);
-            canvas.drawRect(left, top, right, bottom, paint);
-            paint.setColor(color);
-            paint.setAlpha(alpha);
         }
     }
 

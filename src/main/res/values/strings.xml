@@ -676,6 +676,7 @@
     <string name="copy_to_clipboard">Copy to clipboard</string>
     <string name="select_text">Select text</string>
     <string name="message_copied_to_clipboard">Message copied to clipboard</string>
+    <string name="code_copied_to_clipboard">Code copied to clipboard</string>
     <string name="message">Message</string>
     <string name="quote">Quote</string>
     <string name="show_error_message">Show error message</string>

@@ -188,8 +188,8 @@ message carries.
   through literally.
 - **Receive — `Message.renderStyling`** runs in `getSpannableBody` after `renderMarkup`. Inline
   directives become `StyleSpan`/`TypefaceSpan`/`StrikethroughSpan` (applied over the markers too, as
-  the XEP recommends); blocks become `entities/StylingSpan.CodeBlock` (monospaced panel) and
-  `.Quote` (indent + bar). Every span carries `StylingSpan.STYLING_FLAG` (bit 27) so a re-render
+  the XEP recommends); blocks become `entities/CodeBlockSpan` (the shared code card, see the markup
+  section below) and `StylingSpan.Quote` (indent + bar). Every span carries `StylingSpan.STYLING_FLAG` (bit 27) so a re-render
   clears the previous pass. A sender can opt out with an empty
   `<unstyled xmlns='urn:xmpp:styling:0'/>` — `Message.isUnstyled()` makes the renderer skip.
 - **The `/me` command is the adapter's job** (`MessageAdapter` → `getMeCommandIndex`, rendered bold
@@ -218,10 +218,36 @@ authored.
   dropped. `build(List<Mark>)` writes the element back.
 - **Receive — `Message.renderMarkup`** runs in `getSpannableBody` on the plain body. Inline kinds
   become `StyleSpan`/`TypefaceSpan`/`StrikethroughSpan`; blocks become `entities/MarkupSpan`:
-  `CodeBlockSpan` (monospaced, block background, **language printed above the first line** —
-  `LineHeightSpan` reserves the label row, `LineBackgroundSpan` draws the panel and the label),
-  `ListItemSpan` (hanging indent + bullet/ordinal) and `QuoteBarSpan` (quote bar). All carry
-  `MarkupSpan.MARKUP_FLAG` (bit 28) so a re-render clears the previous spans first.
+  `ListItemSpan` (hanging indent + bullet/ordinal) and `QuoteBarSpan` (quote bar), while a `bcode`
+  becomes the **shared `entities/CodeBlockSpan`** (the same card XEP-0393 preformatted blocks use).
+  All carry `MarkupSpan.MARKUP_FLAG` (bit 28) so a re-render clears the previous spans first.
+- **A code block is a rounded card with a header (Telegram look), drawn by `entities/CodeBlockSpan`.**
+  The message body is one `TextView`, so there is no view to inflate: the span itself paints a
+  rounded scrim panel (radius = 0.5×text size), a **lighter header band** with a hairline divider
+  holding a muted `code` / `code <language>` title, and a stroked **copy glyph** (two overlapping
+  rounded sheets, `Path.Op.DIFFERENCE`) right-aligned in that band; the code body is the **darker**
+  part of the card. `LineHeightSpan.WithDensity` reserves the header above the first line and the
+  bottom padding below the last one, `LeadingMarginSpan` gives the code its 10 dp left gutter, and
+  `LineBackgroundSpan` draws per-line panels that overlap by 1 px (no hairline seams) and are rounded
+  only on the first/last line. First/last line are detected from the line `start`/`end` the layout
+  passes in — **there is no `lineNumber` shortcut**: the numbers are layout-absolute, not
+  span-relative. All metrics derive from `paint.getTextSize()`, never from a fixed dp, so the card
+  follows the font scale. Colours are black scrims (20 % body / 10 % header — the body scrim is the
+  stronger one) plus the base text colour at ~70 % for the label and the glyph, so one implementation
+  works on light and dark bubbles. **The text colour must be captured in `drawBackground` *before*
+  the panel sets the paint to black and passed into `drawHeader`** — reading `paint.getColor()` after
+  the scrim gives `Color.BLACK`, which made the label and the glyph invisible on dark themes; and do
+  not hardcode white (`Color.WHITE` made them invisible on light ones).
+  **Right padding comes from a trailing U+00A0, not from the card width.** A `wrap_content` bubble is
+  exactly as wide as its widest line, so the layout's `right` (= the card's right edge) is the text's
+  right edge and a full-width card leaves the longest code line glued to its border.
+  `CodeBlockSpan.attach` therefore inserts one non-breaking space after the **longest** logical line
+  (after the span's end, right air only — it is invisible and the stored `code` substring is captured
+  *before* the insert and de-indented per line with `(?m)[\s\u00A0]+$`) so the layout grows by one
+  character cell. Do not try to solve this by shrinking the card: the text would overflow it.
+  The whole block carries a `ClickableSpan` that copies the code (`CodeBlockSpan.attach(body, activity)`
+  is called from `MessageAdapter.getSpannableBody`, since the entity layer has no `Context`;
+  `updateDrawState` is deliberately empty so the code does not turn into a coloured link).
 - **Send — only code blocks are authored.** `Message.setBody(Spanned)`/`appendBody(Spanned)` run the
   text through `MessageMarkup.parseSource`, which is Telegram-style: lines fenced with ``` open a code
   block, an optional language on the fence line (` ```python `) is stored, the fence lines stay out of
