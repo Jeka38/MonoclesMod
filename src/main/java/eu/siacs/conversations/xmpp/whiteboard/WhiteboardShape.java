@@ -31,6 +31,14 @@ public final class WhiteboardShape {
     public String stroke = DEFAULT_STROKE;
     public float strokeWidth = 2f;
     public String fill = "";
+    /**
+     * The SVG {@code fill-opacity} attribute of a remote shape (1 = opaque). Qt's SVG generator —
+     * which Psi uses for its whiteboard — writes a <em>solid transparent</em> brush as
+     * {@code fill="#000000" fill-opacity="0"}, so the colour alone says nothing: a pencil stroke has
+     * a black fill colour with zero opacity. Without this the whole freehand line was painted as a
+     * black blob ("рисунок заполняется цветом").
+     */
+    public float fillOpacity = 1f;
     /** The SVG {@code transform} attribute (e.g. {@code matrix(a b c d e f)}), or "" if identity. */
     public String transform = "";
     /**
@@ -73,12 +81,25 @@ public final class WhiteboardShape {
     }
 
     public boolean isFilled() {
-        if (fill == null || fill.isEmpty() || "none".equals(fill)) {
+        if (fill == null || fill.isEmpty() || isTransparentFill(fill)) {
             return false;
         }
-        // Remote shapes carry their fill verbatim, so a non-empty fill means "filled". Text is
-        // glyph outlines and is always filled.
+        // A remote shape carries its fill verbatim, but the colour is only half the story: Qt/Psi send
+        // a solid *transparent* brush as `fill="#000000" fill-opacity="0"`, i.e. a black fill colour
+        // with zero opacity. Treating that as filled painted every pencil stroke as a black blob.
+        if (fillOpacity <= 0f) {
+            return false;
+        }
+        // Text is glyph outlines and is always filled.
         return "rect".equals(kind) || "ellipse".equals(kind) || "text".equals(kind) || isRemote();
+    }
+
+    /** {@code fill="none"}, {@code fill="transparent"} and paint-server references are not fills. */
+    private static boolean isTransparentFill(final String value) {
+        final String v = value.trim();
+        return "none".equalsIgnoreCase(v)
+                || "transparent".equalsIgnoreCase(v)
+                || v.startsWith("url(");
     }
 
     private static String polyline(final float[] points, final boolean close) {
@@ -137,7 +158,7 @@ public final class WhiteboardShape {
             final String rid, final String id, final String d,
             final String stroke, final String strokeWidth, final String fill,
             final String transform) {
-        return fromRemote(rid, id, d, stroke, strokeWidth, fill, transform, "path");
+        return fromRemote(rid, id, d, stroke, strokeWidth, fill, null, transform, "path");
     }
 
     /** As {@link #fromRemote} but remembers the original SVG element name (see {@link #remoteElement}). */
@@ -145,6 +166,19 @@ public final class WhiteboardShape {
             final String rid, final String id, final String d,
             final String stroke, final String strokeWidth, final String fill,
             final String transform, @Nullable final String element) {
+        return fromRemote(rid, id, d, stroke, strokeWidth, fill, null, transform, element);
+    }
+
+    /**
+     * The full form, which also keeps the peer's {@code fill-opacity}: a client may send an opaque
+     * fill colour with zero opacity (Qt's SVG generator does exactly that for a transparent brush,
+     * which is how Psi's pencil draws), and only the two values together describe a fill.
+     */
+    public static WhiteboardShape fromRemote(
+            final String rid, final String id, final String d,
+            final String stroke, final String strokeWidth, final String fill,
+            @Nullable final String fillOpacity, final String transform,
+            @Nullable final String element) {
         final WhiteboardShape shape = new WhiteboardShape();
         shape.kind = "remote";
         shape.remoteElement = element == null ? "" : element;
@@ -158,9 +192,22 @@ public final class WhiteboardShape {
             shape.strokeWidth = 2f;
         }
         shape.fill = fill == null || "none".equals(fill) ? "" : fill;
+        shape.fillOpacity = parseOpacity(fillOpacity);
         shape.transform = transform == null ? "" : transform;
         return shape;
     }
+
+    private static float parseOpacity(@Nullable final String value) {
+        if (value == null || value.isEmpty()) {
+            return 1f;
+        }
+        try {
+            return Math.max(0f, Math.min(1f, Float.parseFloat(value.trim())));
+        } catch (final NumberFormatException e) {
+            return 1f;
+        }
+    }
+
 
     /** The SVG attributes of this shape for a collaborative edit. */
     public List<String[]> attrs() {
@@ -175,6 +222,11 @@ public final class WhiteboardShape {
         out.add(new String[]{"stroke", stroke});
         out.add(new String[]{"stroke-width", trimFloat(strokeWidth)});
         out.add(new String[]{"fill", isFilled() ? fill : "none"});
+        // Only a translucent fill needs the attribute: an opaque fill (the normal case, including
+        // everything this client draws) must not gain a new record on the peer.
+        if (fillOpacity < 1f) {
+            out.add(new String[]{"fill-opacity", trimFloat(fillOpacity)});
+        }
         // A transform (move/rotate/scale from another client) must round-trip; empty = identity.
         out.add(new String[]{"transform", transform == null ? "" : transform});
         return out;

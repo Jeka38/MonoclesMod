@@ -1073,7 +1073,7 @@ public class WhiteboardView extends View {
             canvas.concat(transform);
         }
         if (shape.isFilled()) {
-            fillPaint.setColor(parseColor(shape.fill, Color.TRANSPARENT));
+            fillPaint.setColor(applyAlpha(parseColor(shape.fill, Color.TRANSPARENT), shape.fillOpacity));
             canvas.drawPath(path, fillPaint);
         }
         strokePaint.setColor(parseColor(shape.stroke, Color.BLACK));
@@ -1130,6 +1130,19 @@ public class WhiteboardView extends View {
             return pathForData(shape.d);
         }
         return pathForData(shape.pathData());
+    }
+
+    /**
+     * Scales a colour's alpha by an SVG {@code fill-opacity} (1 keeps it unchanged). Psi sends a
+     * *solid transparent* brush as {@code fill="#000000" fill-opacity="0"}, so the opacity must be
+     * applied on top of the colour's own alpha.
+     */
+    private static int applyAlpha(final int color, final float opacity) {
+        if (opacity >= 1f) {
+            return color;
+        }
+        final int alpha = Math.round(Color.alpha(color) * Math.max(0f, opacity));
+        return (color & 0x00FFFFFF) | (alpha << 24);
     }
 
     private static int parseColor(final String value, final int fallback) {

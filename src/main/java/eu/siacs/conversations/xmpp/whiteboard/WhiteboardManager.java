@@ -663,7 +663,7 @@ public final class WhiteboardManager {
             out.add(WhiteboardShape.fromRemote(
                     child, attrs.get("id"), d,
                     attrs.get("stroke"), attrs.get("stroke-width"), attrs.get("fill"),
-                    attrs.get("transform"), record.name));
+                    attrs.get("fill-opacity"), attrs.get("transform"), record.name));
         }
         return out;
     }
