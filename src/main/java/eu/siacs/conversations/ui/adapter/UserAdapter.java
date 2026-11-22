@@ -106,10 +106,9 @@ public class UserAdapter extends ListAdapter<MucOptions.User, UserAdapter.ViewHo
             selectedUser = user;
             return false;
         });
+        // A MUC nick is the resourcepart of the occupant JID and may legally contain '@'.
+        // Show it verbatim — stripping everything before '@' truncated real nicks.
         String name = user.getNick();
-        if (name != null && name.contains("@")) {
-            name = name.substring(name.indexOf("@") + 1);
-        }
         if (name == null || name.isEmpty()) {
             final Contact contact = user.getContact();
             if (contact != null) {

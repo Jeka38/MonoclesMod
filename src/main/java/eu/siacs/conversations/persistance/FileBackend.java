@@ -2620,6 +2620,50 @@ public class FileBackend {
         new Thread(new SaveFileFinisher(getFile(message), new File(getDestinationToSaveFile(message)), activity, this)).start();
     }
 
+    /**
+     * Copies one of the app's own media files into the public Downloads folder so other apps can
+     * use it. On Android 10+ the raw path is not writable, so go through the MediaStore Downloads
+     * collection (the same route HTTP downloads use). Returns false when the copy failed.
+     */
+    public boolean saveFileToDownloads(final File source, String displayName) {
+        if (source == null || !source.exists()) return false;
+        if (displayName == null || displayName.trim().isEmpty()) {
+            displayName = source.getName();
+        }
+        final String name = uniqueDownloadName(displayName);
+        final File destination = new File(getGlobalDownloadsPath(), name);
+        try {
+            if (isScopedStoragePublicDownload(destination)) {
+                try (InputStream in = new FileInputStream(source);
+                     OutputStream out = createPublicDownloadOutputStream(destination)) {
+                    copyStream(in, out);
+                }
+            } else {
+                copyFile(source, destination);
+            }
+            Log.d(Config.LOGTAG, "saved " + name + " to public downloads");
+            return true;
+        } catch (Exception e) {
+            // MediaStore can also throw SecurityException/IllegalArgumentException on some ROMs.
+            Log.e(Config.LOGTAG, "could not save " + name + " to public downloads", e);
+            return false;
+        }
+    }
+
+    private static String uniqueDownloadName(final String displayName) {
+        final File dir = new File(getGlobalDownloadsPath());
+        final int dot = displayName.lastIndexOf('.');
+        final String base = dot > 0 ? displayName.substring(0, dot) : displayName;
+        final String extension = dot > 0 ? displayName.substring(dot) : "";
+        String candidate = displayName;
+        int counter = 2;
+        while (new File(dir, candidate).exists()) {
+            candidate = base + " (" + counter + ")" + extension;
+            counter++;
+        }
+        return candidate;
+    }
+
     private static class SaveFileFinisher implements Runnable {
 
         private final DownloadableFile source;

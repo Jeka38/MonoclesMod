@@ -2472,9 +2472,10 @@ public class ConversationFragment extends XmppFragment
             if (!encrypted && !retracted && !unInitiatedButKnownSize && t == null) {
                 quoteMessage.setVisible(!showError && QuoteHelper.isMessageQuoteable(m));
             }
+            // MUC private messages are TYPE_PRIVATE, not TYPE_TEXT — isTypeText() covers both.
             if (!showError
                     && !retracted
-                    && relevantForCorrection.getType() == Message.TYPE_TEXT
+                    && relevantForCorrection.isTypeText()
                     && !m.isGeoUri()
                     && relevantForCorrection.isEditable()
                     && m.getConversation() instanceof Conversation) {
@@ -2700,6 +2701,9 @@ public class ConversationFragment extends XmppFragment
      */
     private boolean reactionSendInProgress = false;
 
+    /** Same as {@link #reactionSendInProgress}, but for XEP-0439 quick responses / actions. */
+    private boolean quickResponseSendInProgress = false;
+
     /**
      * Opens the standard {@code androidx.emoji2} emoji picker (the same one used for the message
      * input) in "reaction" mode: the next picked emoji is toggled as a XEP-0444 reaction on the
@@ -2789,6 +2793,48 @@ public class ConversationFragment extends XmppFragment
         } else {
             sendMessage(carrier);
         }
+    }
+
+    /**
+     * XEP-0439 §5.2: selecting a response sends its {@code value} as an ordinary body and copies the
+     * response's {@code xml:lang} onto it. Encryption follows the conversation like a normal message.
+     */
+    public void sendQuickResponse(final Message origin, final String value, final String language) {
+        if (activity == null || activity.xmppConnectionService == null || value == null) return;
+        final Conversational conversational = origin == null ? null : origin.getConversation();
+        if (!(conversational instanceof Conversation)) return;
+        final Conversation target = (Conversation) conversational;
+        final Message message = new Message(target, value, target.getNextEncryption());
+        if (language != null) {
+            message.setBodyLanguage(language);
+        }
+        Message.configurePrivateMessage(message);
+        quickResponseSendInProgress = true;
+        final int encryption = message.getEncryption();
+        if (encryption == Message.ENCRYPTION_OTR) {
+            sendOtrMessage(message);
+        } else if (encryption == Message.ENCRYPTION_PGP) {
+            sendPgpMessage(message);
+        } else {
+            sendMessage(message);
+        }
+    }
+
+    /**
+     * XEP-0439 §5.4: selecting an action sends a message with only {@code <action-selected/>} and no
+     * {@code <body/>}. It is a protocol carrier, so it is never stored locally nor shown in the chat.
+     */
+    public void sendQuickAction(final Message origin, final String id) {
+        if (activity == null || activity.xmppConnectionService == null || id == null || id.isEmpty()) return;
+        final Conversational conversational = origin == null ? null : origin.getConversation();
+        if (!(conversational instanceof Conversation)) return;
+        final Conversation target = (Conversation) conversational;
+        final Message carrier = new Message(target, "", Message.ENCRYPTION_NONE, Message.STATUS_SEND);
+        carrier.setBody((String) null); // generator omits <body/> when the raw body is null
+        carrier.addPayload(new Element("action-selected", Namespace.QUICK_RESPONSE).setAttribute("id", id));
+        Message.configurePrivateMessage(carrier);
+        quickResponseSendInProgress = true;
+        sendMessage(carrier);
     }
 
     /**
@@ -5482,10 +5528,11 @@ public class ConversationFragment extends XmppFragment
     }
 
     protected void messageSent() {
-        if (reactionSendInProgress) {
-            // Sending a reaction is not sending a chat message: do not clear the composer and do
-            // not scroll the list (that was making the chat jump to the bottom).
+        if (reactionSendInProgress || quickResponseSendInProgress) {
+            // Sending a reaction or tapping a quick-response chip is not composing a chat message:
+            // do not clear the composer and do not scroll the list.
             reactionSendInProgress = false;
+            quickResponseSendInProgress = false;
             return;
         }
         binding.textinputSubject.setText("");

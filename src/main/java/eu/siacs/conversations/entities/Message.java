@@ -1816,6 +1816,31 @@ public class Message extends AbstractEntity implements AvatarService.Avatarable 
     public List<Element> getPayloads() {
         return new ArrayList<>(this.payloads);
     }
+
+    /**
+     * XEP-0439 quick responses shipped with this message. They live in the regular payload list so
+     * they survive the database round-trip like every other stanza child.
+     */
+    public List<Element> getQuickResponses() {
+        return getQuickResponseElements("response");
+    }
+
+    /** XEP-0439 actions shipped with this message (available on older messages too, per §6). */
+    public List<Element> getQuickActions() {
+        return getQuickResponseElements("action");
+    }
+
+    private List<Element> getQuickResponseElements(final String name) {
+        final List<Element> result = new ArrayList<>();
+        if (this.payloads == null) return result;
+        for (final Element el : this.payloads) {
+            if (name.equals(el.getName()) && Namespace.QUICK_RESPONSE.equals(el.getNamespace())) {
+                result.add(el);
+            }
+        }
+        return result;
+    }
+
     public String getMimeType() {
         String extension;
         if (relativeFilePath != null) {

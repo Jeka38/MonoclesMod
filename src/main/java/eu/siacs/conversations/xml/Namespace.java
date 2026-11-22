@@ -115,4 +115,6 @@ public final class Namespace {
     public static final String MESSAGE_RETRACT = "urn:xmpp:message-retract:1";
     /** XEP-0424: Message Retraction, v0.3 (wrapped in {@code <apply-to xmlns='urn:xmpp:fasten:0'>}). */
     public static final String MESSAGE_RETRACT_LEGACY = "urn:xmpp:message-retract:0";
+    /** XEP-0439: Quick Response (the published namespace still carries the {@code tmp} prefix). */
+    public static final String QUICK_RESPONSE = "urn:xmpp:tmp:quick-response";
 }

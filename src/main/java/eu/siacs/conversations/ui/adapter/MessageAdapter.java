@@ -360,6 +360,112 @@ public class MessageAdapter extends ArrayAdapter<Message> {
         }
     }
 
+    /**
+     * Renders XEP-0439 choices as chips under the message. Per §6, quick responses are only offered
+     * for the most recently received text message; actions stay available on every message that
+     * carries them. Duplicate values/ids and duplicate labels are ignored (§5).
+     */
+    private void bindQuickResponses(final ViewHolder viewHolder, final Message message, final int position) {
+        if (viewHolder.quick_responses == null) {
+            return;
+        }
+        final List<Element> responses = message.getQuickResponses();
+        final List<Element> actions = message.getQuickActions();
+        viewHolder.quick_responses.removeAllViews();
+        if (message.isRetracted() || message.isMessageDeleted()) {
+            viewHolder.quick_responses.setVisibility(View.GONE);
+            return;
+        }
+        final boolean showResponses = !responses.isEmpty()
+                && message.getStatus() == Message.STATUS_RECEIVED
+                && isLatestReceivedTextMessage(position);
+        if ((!showResponses || responses.isEmpty()) && actions.isEmpty()) {
+            viewHolder.quick_responses.setVisibility(View.GONE);
+            return;
+        }
+        final Set<String> seenLabels = new HashSet<>();
+        if (showResponses) {
+            final Set<String> seenValues = new HashSet<>();
+            for (final Element el : responses) {
+                final String value = el.getAttribute("value");
+                if (value == null || value.isEmpty() || !seenValues.add(value)) continue;
+                final String label = quickChoiceLabel(el, value);
+                if (!seenLabels.add(label)) continue;
+                addQuickResponseChip(viewHolder.quick_responses, label,
+                        v -> selectQuickResponse(message, value, el.getAttribute("xml:lang")));
+            }
+        }
+        final Set<String> seenIds = new HashSet<>();
+        for (final Element el : actions) {
+            final String id = el.getAttribute("id");
+            if (id == null || id.isEmpty() || !seenIds.add(id)) continue;
+            final String label = quickChoiceLabel(el, id);
+            if (!seenLabels.add(label)) continue;
+            addQuickResponseChip(viewHolder.quick_responses, label,
+                    v -> selectQuickAction(message, id));
+        }
+        viewHolder.quick_responses.setVisibility(
+                viewHolder.quick_responses.getChildCount() == 0 ? View.GONE : View.VISIBLE);
+    }
+
+    private String quickChoiceLabel(final Element el, final String fallback) {
+        final String label = el.getAttribute("label");
+        return label == null || label.isEmpty() ? fallback : label;
+    }
+
+    private boolean isLatestReceivedTextMessage(final int position) {
+        for (int i = position + 1; i < getCount(); i++) {
+            final Message newer = getItem(i);
+            if (newer == null || newer.getType() == Message.TYPE_STATUS
+                    || newer.getType() == Message.TYPE_REACTION || newer.isRetracted()) {
+                continue;
+            }
+            final String body = newer.getBody();
+            if (newer.getStatus() == Message.STATUS_RECEIVED && body != null && !body.isEmpty()) {
+                return false;
+            }
+        }
+        return true;
+    }
+
+    private void addQuickResponseChip(final FlowLayout container, final String label,
+                                      final View.OnClickListener listener) {
+        final TextView chip = new TextView(activity);
+        chip.setText(label);
+        chip.setTextSize(13);
+        chip.setPadding((int) (10 * metrics.density), (int) (5 * metrics.density),
+                (int) (10 * metrics.density), (int) (5 * metrics.density));
+        final android.graphics.drawable.GradientDrawable background =
+                new android.graphics.drawable.GradientDrawable();
+        background.setShape(android.graphics.drawable.GradientDrawable.RECTANGLE);
+        background.setCornerRadius(14 * metrics.density);
+        background.setColor(StyledAttributes.getColor(activity, R.attr.color_background_secondary));
+        background.setStroke((int) Math.max(1, metrics.density),
+                StyledAttributes.getColor(activity, R.attr.colorAccent));
+        chip.setBackground(background);
+        chip.setTextColor(StyledAttributes.getColor(activity, R.attr.colorAccent));
+        final FlowLayout.LayoutParams params = new FlowLayout.LayoutParams(
+                FlowLayout.LayoutParams.WRAP_CONTENT, FlowLayout.LayoutParams.WRAP_CONTENT);
+        params.setMargins(0, 0, (int) (4 * metrics.density), (int) (4 * metrics.density));
+        chip.setLayoutParams(params);
+        chip.setClickable(true);
+        chip.setFocusable(true);
+        chip.setOnClickListener(listener);
+        container.addView(chip);
+    }
+
+    private void selectQuickResponse(final Message message, final String value, final String language) {
+        if (mConversationFragment != null) {
+            mConversationFragment.sendQuickResponse(message, value, language);
+        }
+    }
+
+    private void selectQuickAction(final Message message, final String id) {
+        if (mConversationFragment != null) {
+            mConversationFragment.sendQuickAction(message, id);
+        }
+    }
+
     private void toggleReaction(final Message message, final String emoji) {
         if (mConversationFragment != null) {
             mConversationFragment.toggleReaction(message, emoji);
@@ -1772,6 +1878,7 @@ public class MessageAdapter extends ArrayAdapter<Message> {
                     viewHolder.cancel_transfer = view.findViewById(R.id.cancel_transfer);
                     viewHolder.reactions = view.findViewById(R.id.reactions);
                     viewHolder.reaction_button = view.findViewById(R.id.reaction_button);
+                    viewHolder.quick_responses = view.findViewById(R.id.quick_responses);
                     break;
                 case RECEIVED:
                     view = activity.getLayoutInflater().inflate(R.layout.message_received, parent, false);
@@ -1809,6 +1916,7 @@ public class MessageAdapter extends ArrayAdapter<Message> {
                     viewHolder.commands_list = view.findViewById(R.id.commands_list);
                     viewHolder.reactions = view.findViewById(R.id.reactions);
                     viewHolder.reaction_button = view.findViewById(R.id.reaction_button);
+                    viewHolder.quick_responses = view.findViewById(R.id.quick_responses);
                     break;
                 case STATUS:
                     view = activity.getLayoutInflater().inflate(R.layout.message_status, parent, false);
@@ -2296,6 +2404,7 @@ public class MessageAdapter extends ArrayAdapter<Message> {
         }
         displayStatus(viewHolder, message, type, darkBackground);
         bindReactions(viewHolder, message, type);
+        bindQuickResponses(viewHolder, message, position);
         return view;
     }
 
@@ -2487,6 +2596,7 @@ public class MessageAdapter extends ArrayAdapter<Message> {
         protected ImageButton cancel_transfer;
         protected FlowLayout reactions;
         protected ImageButton reaction_button;
+        protected FlowLayout quick_responses;
     }
 
     public void setBubbleBackgroundColor(final View viewHolder, final int type,

@@ -51,7 +51,10 @@ public abstract class AbstractGenerator {
             // XEP-0353: a whiteboard is announced with a <propose/> from inside the chat. Iris
             // intentionally omits a disco feature for it (the local enable flag controls policy
             // only), so this is only a hint for another Monocles — the proposal is always sent.
-            Namespace.JINGLE_MESSAGE
+            Namespace.JINGLE_MESSAGE,
+            // XEP-0439 defines no separate disco name; advertise the protocol namespace itself so
+            // bots know the client can render <response/> and <action/> choices.
+            Namespace.QUICK_RESPONSE
     };
     private final String[] MESSAGE_CONFIRMATION_FEATURES = {
             "urn:xmpp:chat-markers:0",

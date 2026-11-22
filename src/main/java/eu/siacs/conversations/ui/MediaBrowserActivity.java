@@ -3,16 +3,25 @@ package eu.siacs.conversations.ui;
 import android.content.Context;
 import android.content.Intent;
 import android.os.Bundle;
+import android.util.Log;
 import android.view.Menu;
 import android.view.MenuItem;
 import android.view.View;
 
+import androidx.appcompat.app.AlertDialog;
+import androidx.appcompat.view.ActionMode;
 import androidx.appcompat.widget.Toolbar;
 import androidx.databinding.DataBindingUtil;
 
+import java.io.File;
 import java.util.ArrayList;
+import java.util.Collection;
+import java.util.HashSet;
 import java.util.List;
+import java.util.Set;
+import java.util.UUID;
 
+import eu.siacs.conversations.Config;
 import eu.siacs.conversations.R;
 import eu.siacs.conversations.databinding.ActivityMediaBrowserBinding;
 import eu.siacs.conversations.entities.Account;
@@ -24,6 +33,7 @@ import eu.siacs.conversations.ui.util.Attachment;
 import eu.siacs.conversations.ui.util.GridManager;
 import eu.siacs.conversations.utils.MenuDoubleTabUtil;
 import eu.siacs.conversations.xmpp.Jid;
+import me.drakeet.support.toast.ToastCompat;
 
 
 public class MediaBrowserActivity extends XmppActivity implements OnMediaLoaded {
@@ -37,6 +47,55 @@ public class MediaBrowserActivity extends XmppActivity implements OnMediaLoaded 
     private String mSavedInstanceJid;
     private String account;
     private String jid;
+    private ActionMode actionMode;
+
+    private final ActionMode.Callback selectionActionModeCallback = new ActionMode.Callback() {
+        @Override
+        public boolean onCreateActionMode(final ActionMode mode, final Menu menu) {
+            mode.getMenuInflater().inflate(R.menu.media_browser_selection, menu);
+            return true;
+        }
+
+        @Override
+        public boolean onPrepareActionMode(final ActionMode mode, final Menu menu) {
+            final int count = mMediaAdapter.getSelectedCount();
+            mode.setTitle(getResources().getQuantityString(R.plurals.selected_count, count, count));
+            final boolean single = count == 1;
+            menu.findItem(R.id.action_open_media).setVisible(single);
+            menu.findItem(R.id.action_share_media).setVisible(single);
+            return true;
+        }
+
+        @Override
+        public boolean onActionItemClicked(final ActionMode mode, final MenuItem item) {
+            switch (item.getItemId()) {
+                case R.id.action_save_media:
+                    saveSelectedAttachments();
+                    return true;
+                case R.id.action_delete_media:
+                    confirmDeleteSelected();
+                    return true;
+                case R.id.action_select_all:
+                    mMediaAdapter.selectAll();
+                    return true;
+                case R.id.action_open_media:
+                    final Attachment open = getSingleSelectedAttachment();
+                    if (open != null) mMediaAdapter.open(open);
+                    return true;
+                case R.id.action_share_media:
+                    final Attachment share = getSingleSelectedAttachment();
+                    if (share != null) mMediaAdapter.share(share);
+                    return true;
+            }
+            return false;
+        }
+
+        @Override
+        public void onDestroyActionMode(final ActionMode mode) {
+            actionMode = null;
+            mMediaAdapter.clearSelection();
+        }
+    };
 
     @Override
     protected void onStart() {
@@ -72,6 +131,9 @@ public class MediaBrowserActivity extends XmppActivity implements OnMediaLoaded 
         setSupportActionBar((Toolbar) binding.toolbar.getRoot());
         configureActionBar(getSupportActionBar());
         mMediaAdapter = new MediaAdapter(this, R.dimen.media_size);
+        mMediaAdapter.setSelectionEnabled(true);
+        mMediaAdapter.setOnSelectionChangedListener(this::onSelectionChanged);
+        mMediaAdapter.setOnAttachmentsDeletedListener(this::onAttachmentsDeleted);
         this.binding.media.setAdapter(mMediaAdapter);
         GridManager.setupLayoutManager(this, this.binding.media, R.dimen.browser_media_size);
         this.binding.noMedia.setVisibility(View.GONE);
@@ -202,5 +264,82 @@ public class MediaBrowserActivity extends XmppActivity implements OnMediaLoaded 
         } else {
             loadAttachments(allAttachments);
         }
+    }
+
+    private void onSelectionChanged(final boolean selectionMode, final int count) {
+        if (selectionMode && count > 0) {
+            if (actionMode == null) {
+                actionMode = startSupportActionMode(selectionActionModeCallback);
+            }
+            if (actionMode != null) {
+                actionMode.setTitle(getResources().getQuantityString(R.plurals.selected_count, count, count));
+                actionMode.invalidate();
+            }
+        } else if (actionMode != null) {
+            actionMode.finish();
+            actionMode = null;
+        }
+    }
+
+    private Attachment getSingleSelectedAttachment() {
+        final List<Attachment> selected = mMediaAdapter.getSelectedAttachments();
+        return selected.size() == 1 ? selected.get(0) : null;
+    }
+
+    private void confirmDeleteSelected() {
+        final int count = mMediaAdapter.getSelectedCount();
+        new AlertDialog.Builder(this)
+                .setTitle(R.string.delete_selected_files)
+                .setMessage(getResources().getQuantityString(R.plurals.delete_files_confirm, count, count))
+                .setNegativeButton(R.string.cancel, null)
+                .setPositiveButton(R.string.confirm, (dialog, which) -> {
+                    final List<Attachment> deleted = mMediaAdapter.deleteSelectedAttachments();
+                    ToastCompat.makeText(this,
+                            getString(R.string.files_deleted_result, deleted.size(), count),
+                            ToastCompat.LENGTH_SHORT).show();
+                })
+                .create().show();
+    }
+
+    private void onAttachmentsDeleted(final Collection<Attachment> deleted) {
+        final Set<UUID> ids = new HashSet<>();
+        for (final Attachment attachment : deleted) {
+            ids.add(attachment.getUuid());
+        }
+        allAttachments.removeIf(attachment -> ids.contains(attachment.getUuid()));
+        filteredAttachments.removeIf(attachment -> ids.contains(attachment.getUuid()));
+        filter(OnlyImagesVideos);
+    }
+
+    private void saveSelectedAttachments() {
+        final List<Attachment> selected = mMediaAdapter.getSelectedAttachments();
+        if (selected.isEmpty()) return;
+        new Thread(() -> {
+            int saved = 0;
+            if (xmppConnectionService != null) {
+                for (final Attachment attachment : selected) {
+                    final File file = new File(attachment.getUri().getPath());
+                    try {
+                        if (xmppConnectionService.getFileBackend().saveFileToDownloads(
+                                file, attachment.getUri().getLastPathSegment())) {
+                            saved++;
+                        }
+                    } catch (Exception e) {
+                        Log.e(Config.LOGTAG, "could not save attachment", e);
+                    }
+                }
+            }
+            final int savedCount = saved;
+            runOnUiThread(() -> {
+                ToastCompat.makeText(this,
+                        getString(R.string.files_saved_result, savedCount, selected.size()),
+                        ToastCompat.LENGTH_SHORT).show();
+                if (actionMode != null) {
+                    actionMode.finish();
+                } else {
+                    mMediaAdapter.clearSelection();
+                }
+            });
+        }).start();
     }
 }

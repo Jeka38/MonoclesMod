@@ -655,6 +655,17 @@ public class MessageParser extends AbstractParser implements OnMessagePacketRece
 
         LocalizedContent body = packet.getBody();
 
+        // XEP-0439: <response>/<action> children offer tappable choices. Keep them on the message as
+        // ordinary payloads so they survive reloads; a conforming sender also includes a <body>, but
+        // tolerate a bodyless stanza by falling back to the first label below.
+        final List<Element> quickResponseElements = new ArrayList<>();
+        for (final Element el : packet.getChildren()) {
+            if (Namespace.QUICK_RESPONSE.equals(el.getNamespace())
+                    && ("response".equals(el.getName()) || "action".equals(el.getName()))) {
+                quickResponseElements.add(el);
+            }
+        }
+
         final Element axolotlEncrypted = packet.findChildEnsureSingle(XmppAxolotlMessage.CONTAINERTAG, AxolotlService.PEP_PREFIX);
         int status;
         final Jid counterpart;
@@ -774,7 +785,7 @@ public class MessageParser extends AbstractParser implements OnMessagePacketRece
         final boolean isPrivateMucMessage = mucUserElement != null && !isTypeGroupChat && counterpart.isFullJid();
         final boolean conversationIsProbablyMuc = isTypeGroupChat || (mucUserElement != null || account.getXmppConnection().getMucServersWithholdAccount().contains(counterpart.getDomain().toEscapedString()));
 
-        if ((body != null || pgpEncrypted != null || (axolotlEncrypted != null && axolotlEncrypted.hasChild("payload")) || !attachments.isEmpty() || html != null || (packet.hasChild("subject") && packet.hasChild("thread"))) && !isMucStatusMessage) {
+        if ((body != null || pgpEncrypted != null || (axolotlEncrypted != null && axolotlEncrypted.hasChild("payload")) || !attachments.isEmpty() || html != null || (packet.hasChild("subject") && packet.hasChild("thread")) || !quickResponseElements.isEmpty()) && !isMucStatusMessage) {
             final Conversation conversation;
             if (isPrivateMucMessage) {
                 conversation = mXmppConnectionService.findOrCreateConversation(account, counterpart.asBareJid(), counterpart, true, false, query, false, null);
@@ -890,6 +901,23 @@ public class MessageParser extends AbstractParser implements OnMessagePacketRece
                 }
             } else if (body == null && !attachments.isEmpty()) {
                 message = new Message(conversation, "", Message.ENCRYPTION_NONE, status);
+            } else if (body == null && !quickResponseElements.isEmpty()) {
+                // XEP-0439 §6 says bodies should list the choices too; if a sender omits it anyway,
+                // show the first label as the row text instead of an empty notification.
+                String fallbackBody = "";
+                for (Element el : quickResponseElements) {
+                    final String label = el.getAttribute("label");
+                    final String value = "response".equals(el.getName()) ? el.getAttribute("value") : el.getAttribute("id");
+                    if (label != null && !label.isEmpty()) {
+                        fallbackBody = label;
+                        break;
+                    }
+                    if (value != null && !value.isEmpty()) {
+                        fallbackBody = value;
+                        break;
+                    }
+                }
+                message = new Message(conversation, fallbackBody, Message.ENCRYPTION_NONE, status);
             } else {
                 message = new Message(conversation, body == null ? null : body.content, Message.ENCRYPTION_NONE, status);
                 if (body != null && body.count > 1) {
@@ -961,6 +989,10 @@ public class MessageParser extends AbstractParser implements OnMessagePacketRece
                     }
                 }
                 if (el.getName().equals("attention") && el.getNamespace() != null && el.getNamespace().equals("urn:xmpp:attention:0")) {
+                    message.addPayload(el);
+                }
+                if (Namespace.QUICK_RESPONSE.equals(el.getNamespace())
+                        && ("response".equals(el.getName()) || "action".equals(el.getName()))) {
                     message.addPayload(el);
                 }
             }

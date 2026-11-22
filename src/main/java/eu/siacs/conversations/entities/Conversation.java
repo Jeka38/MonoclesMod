@@ -357,7 +357,8 @@ public class Conversation extends AbstractEntity implements Blockable, Comparabl
         synchronized (this.messages) {
             for(final Message message : Lists.reverse(this.messages)) {
                 if (message.isEditable()) {
-                    if (message.isGeoUri() || message.getType() != Message.TYPE_TEXT) {
+                    // PMs are TYPE_PRIVATE; isTypeText() accepts both regular and private text.
+                    if (message.isGeoUri() || !message.isTypeText()) {
                         return null;
                     }
                     return message;

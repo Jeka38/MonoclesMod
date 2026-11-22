@@ -229,4 +229,13 @@
         android:orientation="horizontal"
         android:visibility="gone" />
 
+    <!-- XEP-0439 quick responses / actions, shown under the message body inside the bubble. -->
+    <com.wefika.flowlayout.FlowLayout
+        android:id="@+id/quick_responses"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:layout_marginTop="4dp"
+        android:orientation="horizontal"
+        android:visibility="gone" />
+
 </merge> 

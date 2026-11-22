@@ -31,7 +31,12 @@ import java.io.File;
 import java.lang.ref.WeakReference;
 import java.util.ArrayList;
 import java.util.Arrays;
+import java.util.Collection;
+import java.util.Collections;
+import java.util.HashSet;
 import java.util.List;
+import java.util.Set;
+import java.util.UUID;
 import java.util.concurrent.RejectedExecutionException;
 
 import eu.siacs.conversations.Config;
@@ -61,6 +66,21 @@ public class MediaAdapter extends RecyclerView.Adapter<MediaAdapter.MediaViewHol
     private final XmppActivity activity;
 
     private int mediaSize = 0;
+
+    /** Selection only makes sense in the full media browser, not in the inline previews. */
+    private boolean selectionEnabled = false;
+    private boolean selectionMode = false;
+    private final Set<UUID> selection = new HashSet<>();
+    private OnSelectionChangedListener selectionListener;
+    private OnAttachmentsDeletedListener deletedListener;
+
+    public interface OnSelectionChangedListener {
+        void onSelectionChanged(boolean selectionMode, int count);
+    }
+
+    public interface OnAttachmentsDeletedListener {
+        void onAttachmentsDeleted(Collection<Attachment> attachments);
+    }
 
     public MediaAdapter(XmppActivity activity, @DimenRes int mediaSize) {
         this.activity = activity;
@@ -161,8 +181,27 @@ public class MediaAdapter extends RecyclerView.Adapter<MediaAdapter.MediaViewHol
             cancelPotentialWork(attachment, holder.binding.media);
             renderPreview(this.activity, attachment, holder.binding.media);
         }
-        holder.binding.getRoot().setOnClickListener(v -> ViewUtil.view(this.activity, attachment));
+        final boolean checked = selection.contains(attachment.getUuid());
+        holder.binding.mediaSelectionOverlay.setVisibility(selectionMode && checked ? View.VISIBLE : View.GONE);
+        holder.binding.mediaSelected.setVisibility(selectionMode && checked ? View.VISIBLE : View.GONE);
+
+        holder.binding.getRoot().setOnClickListener(v -> {
+            if (selectionMode) {
+                toggleSelection(attachment.getUuid());
+            } else {
+                ViewUtil.view(this.activity, attachment);
+            }
+        });
         holder.binding.getRoot().setOnLongClickListener(v -> {
+            if (selectionEnabled) {
+                if (selectionMode) {
+                    toggleSelection(attachment.getUuid());
+                } else {
+                    enterSelection(attachment.getUuid());
+                }
+                return true;
+            }
+            // Inline previews in contact/room details keep the old single-file popup.
             setSelection(v);
             final PopupMenu popupMenu = new PopupMenu(this.activity, v);
             popupMenu.inflate(R.menu.media_viewer);
@@ -187,6 +226,106 @@ public class MediaAdapter extends RecyclerView.Adapter<MediaAdapter.MediaViewHol
         });
     }
 
+    public void setSelectionEnabled(final boolean enabled) {
+        this.selectionEnabled = enabled;
+        if (!enabled) clearSelection();
+    }
+
+    public void setOnSelectionChangedListener(final OnSelectionChangedListener listener) {
+        this.selectionListener = listener;
+    }
+
+    public void setOnAttachmentsDeletedListener(final OnAttachmentsDeletedListener listener) {
+        this.deletedListener = listener;
+    }
+
+    public boolean isSelectionMode() {
+        return selectionMode;
+    }
+
+    public int getSelectedCount() {
+        return selection.size();
+    }
+
+    public List<Attachment> getSelectedAttachments() {
+        final List<Attachment> result = new ArrayList<>();
+        for (final Attachment attachment : attachments) {
+            if (selection.contains(attachment.getUuid())) {
+                result.add(attachment);
+            }
+        }
+        return result;
+    }
+
+    private void enterSelection(final UUID uuid) {
+        selectionMode = true;
+        selection.clear();
+        selection.add(uuid);
+        notifyDataSetChanged();
+        notifySelectionChanged();
+    }
+
+    private void toggleSelection(final UUID uuid) {
+        if (!selection.remove(uuid)) {
+            selection.add(uuid);
+        }
+        if (selection.isEmpty()) {
+            selectionMode = false;
+        }
+        notifyDataSetChanged();
+        notifySelectionChanged();
+    }
+
+    public void selectAll() {
+        if (!selectionEnabled) return;
+        selectionMode = true;
+        for (final Attachment attachment : attachments) {
+            selection.add(attachment.getUuid());
+        }
+        notifyDataSetChanged();
+        notifySelectionChanged();
+    }
+
+    public void clearSelection() {
+        if (!selectionMode && selection.isEmpty()) return;
+        selection.clear();
+        selectionMode = false;
+        notifyDataSetChanged();
+        notifySelectionChanged();
+    }
+
+    private void notifySelectionChanged() {
+        if (selectionListener != null) {
+            selectionListener.onSelectionChanged(selectionMode, selection.size());
+        }
+    }
+
+    /** Deletes only files owned by the app (same guard as the single-file popup). */
+    public List<Attachment> deleteSelectedAttachments() {
+        final List<Attachment> deleted = deleteAttachments(getSelectedAttachments());
+        clearSelection();
+        return deleted;
+    }
+
+    private List<Attachment> deleteAttachments(final Collection<Attachment> targets) {
+        final List<Attachment> deleted = new ArrayList<>();
+        for (final Attachment attachment : targets) {
+            final File file = new File(attachment.getUri().getPath());
+            if (isDeletableFile(file) && activity.xmppConnectionService.getFileBackend().deleteFile(file)) {
+                deleted.add(attachment);
+            }
+        }
+        if (!deleted.isEmpty()) {
+            attachments.removeAll(deleted);
+            notifyDataSetChanged();
+            activity.refreshUi();
+            if (deletedListener != null) {
+                deletedListener.onAttachmentsDeleted(deleted);
+            }
+        }
+        return deleted;
+    }
+
     private void setSelection(final View v) {
         v.setBackgroundColor(StyledAttributes.getColor(this.activity, R.attr.colorAccent));
     }
@@ -195,7 +334,7 @@ public class MediaAdapter extends RecyclerView.Adapter<MediaAdapter.MediaViewHol
         v.setBackgroundColor(0);
     }
 
-    private void share(final Attachment attachment) {
+    public void share(final Attachment attachment) {
         final Intent share = new Intent(Intent.ACTION_SEND);
         final File file = new File(attachment.getUri().getPath());
         share.setType(attachment.getMime());
@@ -209,28 +348,16 @@ public class MediaAdapter extends RecyclerView.Adapter<MediaAdapter.MediaViewHol
     }
 
     private void deleteFile(final Attachment attachment) {
-        final File file = new File(attachment.getUri().getPath());
-        final int hash = attachment.hashCode();
         final AlertDialog.Builder builder = new AlertDialog.Builder(this.activity);
         builder.setNegativeButton(R.string.cancel, null);
         builder.setTitle(R.string.delete_file_dialog);
         builder.setMessage(R.string.delete_file_dialog_msg);
-        builder.setPositiveButton(R.string.confirm, (dialog, which) -> {
-            if (activity.xmppConnectionService.getFileBackend().deleteFile(file)) {
-                for (int i = 0; i < attachments.size(); i++) {
-                    if (hash == attachments.get(i).hashCode()) {
-                        attachments.remove(i);
-                        notifyDataSetChanged();
-                        this.activity.refreshUi();
-                        return;
-                    }
-                }
-            }
-        });
+        builder.setPositiveButton(R.string.confirm, (dialog, which) ->
+                deleteAttachments(Collections.singletonList(attachment)));
         builder.create().show();
     }
 
-    private void open(final Attachment attachment) {
+    public void open(final Attachment attachment) {
         final File file = new File(attachment.getUri().getPath());
         final Uri uri;
         try {
@@ -263,7 +390,10 @@ public class MediaAdapter extends RecyclerView.Adapter<MediaAdapter.MediaViewHol
     public void setAttachments(List<Attachment> attachments) {
         this.attachments.clear();
         this.attachments.addAll(attachments);
+        selection.clear();
+        selectionMode = false;
         notifyDataSetChanged();
+        notifySelectionChanged();
     }
 
     private void setMediaSize(int mediaSize) {

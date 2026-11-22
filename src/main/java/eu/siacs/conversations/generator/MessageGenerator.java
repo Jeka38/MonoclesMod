@@ -161,6 +161,19 @@ public class MessageGenerator extends AbstractGenerator {
         }
     }
 
+    /**
+     * XEP-0439 §5.2 requires a selected quick response to copy the {@code xml:lang} of the
+     * {@code <response/>} onto the outgoing {@code <body/>}.
+     */
+    private void setBodyWithLanguage(final MessagePacket packet, final Message message) {
+        if (message.getRawBody() == null) return;
+        packet.setBody(message.getRawBody());
+        if (message.getBodyLanguage() != null) {
+            final Element body = packet.findChild("body");
+            if (body != null) body.setAttribute("xml:lang", message.getBodyLanguage());
+        }
+    }
+
     public MessagePacket generateChat(Message message) {
         if (message.hasFileOnRemoteHost()) {
             final Message.FileParams fileParams = message.getFileParams();
@@ -193,12 +206,12 @@ public class MessageGenerator extends AbstractGenerator {
             }
             MessagePacket packet = preparePacket(message, false);
             packet.addChild("x", Namespace.OOB).addChild("url").setContent(fileParams.url);
-            if (message.getRawBody() != null) packet.setBody(message.getRawBody());
+            setBodyWithLanguage(packet, message);
             return packet;
         }
         MessagePacket packet = preparePacket(message, false);
         // A XEP-0424 retraction carrier is bodyless (the <retract/> payload is the whole message).
-        if (message.getRawBody() != null && !message.isMessageDeleted()) packet.setBody(message.getRawBody());
+        if (!message.isMessageDeleted()) setBodyWithLanguage(packet, message);
         return packet;
     }
 
