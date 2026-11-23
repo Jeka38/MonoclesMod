@@ -1516,7 +1516,18 @@ public class ConversationFragment extends XmppFragment
                 message.clearReplyReact();
                 message.setBody(hasSubject && body.length() == 0 ? null : body);
             }
-            message.putEdited(message.getUuid(), message.getServerMsgId(), message.getBody(), message.getTimeSent());
+            // Address the correction by the id peers know (XEP-0359 origin-id / stanza-id),
+            // not by our local UUID — otherwise another device can not find the original.
+            // The old UUID is still stored as the DB lookup key of the row being replaced.
+            final String previousUuid = message.getUuid();
+            final String correctedId = message.getCorrectionTargetId();
+            final String correctedServerMsgId = message.getServerMsgId();
+            Log.d(Config.LOGTAG, "sending correction: uuid=" + previousUuid
+                    + " replaceId=" + correctedId
+                    + " serverMsgId=" + correctedServerMsgId
+                    + " remoteMsgId=" + message.getRemoteMsgId()
+                    + " muc=" + (conversation.getMode() == Conversation.MODE_MULTI));
+            message.putEdited(previousUuid, correctedId, correctedServerMsgId, message.getBody(), message.getTimeSent());
             message.setServerMsgId(null);
             message.setUuid(UUID.randomUUID().toString());
         }
@@ -4476,7 +4487,7 @@ public class ConversationFragment extends XmppFragment
                 // is the same rule replyId()/reactionId() use, with the last-resort local UUID.
                 retractmessage.setRetractId(retractedMessage.reactionId());
                 if (retractedMessage.getEditedList().size() > 0) {
-                    retractmessage.setRetractId(retractedMessage.getEditedList().get(0).getEditedId());
+                    retractmessage.setRetractId(retractedMessage.getEditedList().get(0).getCorrectionId());
                 }
 
                 retractedMessage.putEdited(retractedMessage.getUuid(), retractedMessage.getServerMsgId(), retractedMessage.getBody(), retractedMessage.getTimeSent());

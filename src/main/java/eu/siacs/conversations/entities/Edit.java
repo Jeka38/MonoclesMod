@@ -9,13 +9,21 @@ import java.util.List;
 
 public class Edit {
 
+    /** Local UUID of the corrected row; used as the DB lookup key. */
     private final String editedId;
+    /** Id peers know the message by (XEP-0359 origin-id / stanza-id); used in &lt;replace/&gt;. */
+    private final String correctionId;
     private final String serverMsgId;
     private String body;
     private final long timeSent;
 
     Edit(String editedId, String serverMsgId, String body, long timeSent) {
+        this(editedId, editedId, serverMsgId, body, timeSent);
+    }
+
+    Edit(String editedId, String correctionId, String serverMsgId, String body, long timeSent) {
         this.editedId = editedId;
+        this.correctionId = correctionId != null ? correctionId : editedId;
         this.serverMsgId = serverMsgId;
         this.body = body;
         this.timeSent = timeSent;
@@ -31,7 +39,7 @@ public class Edit {
 
     static boolean wasPreviouslyEditedRemoteMsgId(List<Edit> edits, String remoteMsgId) {
         for (Edit edit : edits) {
-            if (edit.editedId != null && edit.editedId.equals(remoteMsgId)) {
+            if (edit.getCorrectionId() != null && edit.getCorrectionId().equals(remoteMsgId)) {
                 return true;
             }
         }
@@ -49,10 +57,11 @@ public class Edit {
 
     private static Edit fromJson(JSONObject jsonObject) throws JSONException {
         String edited = jsonObject.has("edited_id") ? jsonObject.getString("edited_id") : null;
+        String correctionId = jsonObject.has("correction_id") ? jsonObject.getString("correction_id") : edited;
         String serverMsgId = jsonObject.has("server_msg_id") ? jsonObject.getString("server_msg_id") : null;
         String body = jsonObject.has("body") ? jsonObject.getString("body") : null;
         long timeSent = jsonObject.has("timeSent") ? jsonObject.getLong("timeSent") : null;
-        return new Edit(edited, serverMsgId, body, timeSent);
+        return new Edit(edited, correctionId, serverMsgId, body, timeSent);
     }
 
     static List<Edit> fromJson(String input) {
@@ -74,6 +83,7 @@ public class Edit {
     private JSONObject toJson(boolean hidebody) throws JSONException {
         JSONObject jsonObject = new JSONObject();
         jsonObject.put("edited_id", editedId);
+        jsonObject.put("correction_id", correctionId);
         jsonObject.put("server_msg_id", serverMsgId);
         jsonObject.put("body", hidebody ? "" : body);
         jsonObject.put("timeSent", timeSent);
@@ -108,6 +118,8 @@ public class Edit {
     }
 
     public String getEditedId() { return editedId; }
+
+    public String getCorrectionId() { return correctionId != null ? correctionId : editedId; }
 
     public long getTimeSent() {
         return timeSent;

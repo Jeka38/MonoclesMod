@@ -650,7 +650,7 @@ public class Conversation extends AbstractEntity implements Blockable, Comparabl
 
                 if (withedits) {
                     for (Edit itm : message.edits) {
-                        if (id.equals(itm.getEditedId())) {
+                        if (id.equals(itm.getEditedId()) || id.equals(itm.getCorrectionId())) {
                             return message;
                         }
                     }
@@ -742,6 +742,36 @@ public class Conversation extends AbstractEntity implements Blockable, Comparabl
     }
 
     /**
+     * Finds the message a XEP-0308 correction addresses, ignoring the sender's resource. A
+     * correction sent from another device of the same account comes from a different MUC
+     * occupant / resource, so the stricter counterpart-based lookup can not find our copy of the
+     * original. Match every id a peer could have used: local UUID, XEP-0359 origin-id, the
+     * server/MUC stanza-id and ids of previous edits.
+     */
+    public Message findMessageToCorrect(final String id) {
+        if (id == null) {
+            return null;
+        }
+        synchronized (this.messages) {
+            for (int i = this.messages.size() - 1; i >= 0; --i) {
+                final Message message = this.messages.get(i);
+                if (id.equals(message.getUuid())
+                        || id.equals(message.getRemoteMsgId())
+                        || id.equals(message.getServerMsgId())
+                        || message.remoteMsgIdMatchInEdit(id)) {
+                    return message;
+                }
+                for (Edit edit : message.getEditedList()) {
+                    if (id.equals(edit.getEditedId()) || id.equals(edit.getCorrectionId())) {
+                        return message;
+                    }
+                }
+            }
+        }
+        return null;
+    }
+
+    /**
      * Finds the message a XEP-0424 retraction addresses. The retraction's id is matched against
      * every id a peer could legitimately have used:
      * <ul>
@@ -768,7 +798,7 @@ public class Conversation extends AbstractEntity implements Blockable, Comparabl
                     return message;
                 }
                 for (Edit edit : message.getEditedList()) {
-                    if (id.equals(edit.getEditedId())) {
+                    if (id.equals(edit.getEditedId()) || id.equals(edit.getCorrectionId())) {
                         return message;
                     }
                 }

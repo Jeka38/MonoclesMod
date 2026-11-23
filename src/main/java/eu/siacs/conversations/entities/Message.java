@@ -168,9 +168,11 @@ public class Message extends AbstractEntity implements AvatarService.Avatarable 
     protected String relativeFilePath;
     protected boolean read = true;
     protected boolean deleted = false;
+    /** XEP-0359 origin-id (or the stanza id when the sender did not add one). */
     protected String remoteMsgId = null;
 
     private String bodyLanguage = null;
+    /** XEP-0359 stanza-id assigned by the server / MUC service. */
     protected String serverMsgId = null;
     private final Conversational conversation;
     protected Transferable transferable = null;
@@ -480,6 +482,37 @@ public class Message extends AbstractEntity implements AvatarService.Avatarable 
     public String reactionId() {
         final String replyId = replyId();
         return replyId != null ? replyId : getUuid();
+    }
+
+    /**
+     * Id of the message as peers know it, used as the target of a XEP-0308 correction. The local
+     * DB UUID is deliberately only the last resort: editing a message received from another
+     * device must still address the XEP-0359 origin-id / stanza-id, otherwise the correction
+     * cannot be matched to the original anywhere but on the editing device.
+     */
+    public String getCorrectionTargetId() {
+        // XEP-0308 must address the id the receiver knows the original by. For MUC traffic
+        // that is the outer stanza id, which peers keep as the XEP-0359 origin-id: Psi matches
+        // <replace id/> against that id, not against the room's <stanza-id/>. Our own outgoing
+        // messages always carry <origin-id id=local UUID/>, so the local UUID is the right id
+        // for them; received messages keep the sender's origin-id in remoteMsgId.
+        // Check the wire id FIRST. A message reflected from another client of our own account
+        // has status SEND_RECEIVED (> STATUS_RECEIVED) but is NOT one of our own outgoing
+        // messages: its remoteMsgId is the sender's origin-id and must be used in <replace/>.
+        // Only our own sent messages have no remoteMsgId; for them the local UUID is the
+        // origin-id we put on the wire.
+        if (remoteMsgId != null) {
+            return remoteMsgId;
+        }
+        if (getStatus() > Message.STATUS_RECEIVED) {
+            return getUuid();
+        }
+        // Peers without XEP-0359 leave no origin-id; then the MUC-assigned stanza-id is the
+        // outer id the receiver sees.
+        if (conversation.getMode() == Conversation.MODE_MULTI && !isPrivateMessage() && serverMsgId != null) {
+            return serverMsgId;
+        }
+        return getUuid();
     }
 
     public Message reply() {
@@ -1182,7 +1215,16 @@ public class Message extends AbstractEntity implements AvatarService.Avatarable 
     }
 
     public void putEdited(String edited, String serverMsgId, String body, long timeSent) {
-        final Edit edit = new Edit(edited, serverMsgId, body, timeSent);
+        putEdited(edited, edited, serverMsgId, body, timeSent);
+    }
+
+    /**
+     * @param edited       local UUID of the row being corrected (used as the DB lookup key)
+     * @param correctionId id peers know the message by (XEP-0359 origin-id / stanza-id), sent
+     *                     in the XEP-0308 {@code <replace/>} element
+     */
+    public void putEdited(String edited, String correctionId, String serverMsgId, String body, long timeSent) {
+        final Edit edit = new Edit(edited, correctionId, serverMsgId, body, timeSent);
         if (this.edits.size() < 128 && !this.edits.contains(edit)) {
             this.edits.add(edit);
         }
@@ -1190,7 +1232,7 @@ public class Message extends AbstractEntity implements AvatarService.Avatarable 
 
     boolean remoteMsgIdMatchInEdit(String id) {
         for (Edit edit : this.edits) {
-            if (id.equals(edit.getEditedId())) {
+            if (id.equals(edit.getEditedId()) || id.equals(edit.getCorrectionId())) {
                 return true;
             }
         }
@@ -1761,7 +1803,20 @@ public class Message extends AbstractEntity implements AvatarService.Avatarable 
 
     public String getEditedIdWireFormat() {
         if (edits.size() > 0) {
-            return edits.get(Config.USE_LMC_VERSION_1_1 ? 0 : edits.size() - 1).getEditedId();
+            // XEP-0308: always address the original message. The correction id is the id peers
+            // know (origin-id / stanza-id); older local records fall back to the old UUID.
+            final Edit edit = edits.get(Config.USE_LMC_VERSION_1_1 ? 0 : edits.size() - 1);
+            final String correctionId = edit.getCorrectionId();
+            // Repair records where an edit of a message reflected from another client of our own
+            // account was addressed by the local DB UUID instead of the sender's origin-id. Psi
+            // matches <replace id/> against the outer (origin) id and would show such an edit as
+            // a new message. trueCounterpart marks those received own-account messages; our own
+            // outgoing messages have no remoteMsgId and keep their local UUID as origin-id.
+            if (correctionId.equals(edit.getEditedId()) && getTrueCounterpart() != null
+                    && remoteMsgId != null && !remoteMsgId.equals(correctionId)) {
+                return remoteMsgId;
+            }
+            return correctionId;
         } else {
             throw new IllegalStateException("Attempting to store unedited message");
         }

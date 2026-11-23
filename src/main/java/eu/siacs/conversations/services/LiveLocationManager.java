@@ -125,12 +125,14 @@ public class LiveLocationManager {
 
     private void correctMessage(final Message message, final String body) {
         final String previousUuid = message.getUuid();
+        final String correctedId = message.getCorrectionTargetId();
+        final String correctedServerMsgId = message.getServerMsgId();
         final long timeSent = message.getTimeSent();
         final String previousBody = message.getRawBody();
         message.setBody(body);
         message.setServerMsgId(null);
         message.setUuid(java.util.UUID.randomUUID().toString());
-        message.putEdited(previousUuid, null, previousBody != null && !previousBody.isEmpty() ? previousBody : body, timeSent);
+        message.putEdited(previousUuid, correctedId, correctedServerMsgId, previousBody != null && !previousBody.isEmpty() ? previousBody : body, timeSent);
         service.sendMessage(message);
     }
 

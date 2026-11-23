@@ -63,10 +63,14 @@ public class MessageGenerator extends AbstractGenerator {
         }
         packet.setFrom(account.getJid());
         packet.setId(message.getUuid());
-        if (conversation.getMode() == Conversational.MODE_SINGLE || message.isPrivateMessage() || !conversation.getMucOptions().stableId()) {
-            packet.addChild("origin-id", Namespace.STANZA_IDS).setAttribute("id", message.getUuid());
-        }
+        // XEP-0359: the origin-id is preserved by servers/MUCs even when they rewrite the
+        // stanza id. Always send it (including in stable-id rooms) so receivers can address
+        // the original message in corrections and reactions.
+        packet.addChild("origin-id", Namespace.STANZA_IDS).setAttribute("id", message.getUuid());
         if (message.edited() && !message.isMessageDeleted()) {
+            // XEP-0308: every correction of the same message references the original id.
+            // That id is stored as the first edit's target and is a wire id (origin-id or
+            // stanza-id), never a local-only UUID.
             packet.addChild("replace", "urn:xmpp:message-correct:0").setAttribute("id", message.getEditedIdWireFormat());
         }
         else if (message.isMessageDeleted()) {

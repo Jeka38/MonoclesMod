@@ -89,10 +89,8 @@ public class MessageParser extends AbstractParser implements OnMessagePacketRece
 
     private static String extractStanzaId(Element packet, boolean isTypeGroupChat, Conversation conversation) {
         final Jid by;
-        final boolean safeToExtract;
         if (isTypeGroupChat) {
             by = conversation.getJid().asBareJid();
-            safeToExtract = conversation.getMucOptions().hasFeature(Namespace.STANZA_IDS);
         } else {
             Account account = conversation.getAccount();
             if (account == null) {
@@ -100,9 +98,12 @@ public class MessageParser extends AbstractParser implements OnMessagePacketRece
                 return null;
             }
             by = account.getJid().asBareJid();
-            safeToExtract = account.getXmppConnection().getFeatures().stanzaIds();
         }
-        return safeToExtract ? extractStanzaId(packet, by) : null;
+        // XEP-0359 §Discovering Support is only a SHOULD for the *assigning* entity: many
+        // servers and MUC services add <stanza-id/> without advertising the namespace. Accept
+        // it whenever 'by' matches us — corrections from other clients address the original
+        // by this id, and dropping it here made them show up as new messages.
+        return extractStanzaId(packet, by);
     }
 
     private static String extractStanzaId(Account account, Element packet) {
@@ -119,6 +120,27 @@ public class MessageParser extends AbstractParser implements OnMessagePacketRece
             }
         }
         return null;
+    }
+
+    /**
+     * True when a correction came from another client of our own account. In a MUC the stanza
+     * is reflected from the other client's occupant (so neither the counterpart nor the MUC
+     * user match our copy), but the occupant's real JID is still our account.
+     */
+    private boolean isOwnAccountCorrection(Account account, Conversation conversation, Jid counterpart, Message message, boolean fromAccount) {
+        if (account.getJid() == null) {
+            return false;
+        }
+        if (fromAccount) {
+            // Carbon of a correction sent by one of our other clients.
+            return true;
+        }
+        Jid realJid = message.getTrueCounterpart();
+        if (realJid == null && conversation.getMode() == Conversation.MODE_MULTI && counterpart != null) {
+            final MucOptions.User user = conversation.getMucOptions().findUserByFullJid(counterpart);
+            realJid = user == null ? null : user.getRealJid();
+        }
+        return realJid != null && account.getJid().asBareJid().equals(realJid.asBareJid());
     }
 
     private static Jid getTrueCounterpart(Element mucUserElement, Jid fallback) {
@@ -796,6 +818,11 @@ public class MessageParser extends AbstractParser implements OnMessagePacketRece
 
             if (serverMsgId == null) {
                 serverMsgId = extractStanzaId(packet, isTypeGroupChat, conversation);
+                if (serverMsgId == null && isTypeGroupChat && packet.getId() != null) {
+                    // MUC services rewrite <id/> and often omit <stanza-id/> entirely. That
+                    // reflected id is what other clients (e.g. Psi) use in <replace id='...'/>.
+                    serverMsgId = packet.getId();
+                }
             }
 
             if (selfAddressed) {
@@ -1027,29 +1054,42 @@ public class MessageParser extends AbstractParser implements OnMessagePacketRece
             }
 
             if (replacementId != null && mXmppConnectionService.allowMessageCorrection()) {
-                // TEMP DIAG live-location: log correction matching on receiver
-                Log.d(Config.LOGTAG, "RX correct replaceId=" + replacementId + " origin=" + (originId == null ? "null" : originId.getAttribute("id")) + " from=" + (from == null ? "null" : from.toString()));
                 Message replacedMessage = conversation.findMessageWithRemoteIdAndCounterpart(replacementId, counterpart);
 
                 if (replacedMessage == null) {
                     replacedMessage = conversation.findSentMessageWithUuidOrRemoteId(replacementId, true, true);
                 }
+                if (replacedMessage == null) {
+                    // Cross-device correction: the sender is another resource/occupant of our own
+                    // account, so match by the wire id just like the retraction path does.
+                    replacedMessage = conversation.findMessageToCorrect(replacementId);
+                }
+                if (replacedMessage == null) {
+                    Log.d(Config.LOGTAG, account.getJid().asBareJid() + ": correction for unknown id " + replacementId + " from " + counterpart);
+                }
                 if (replacedMessage != null) {
-                    Log.d(Config.LOGTAG, "RX correct -> FOUND uuid=" + replacedMessage.getUuid() + " body=" + replacedMessage.getBody());
-                    final boolean fingerprintsMatch = replacedMessage.getFingerprint() == null
+                    // A correction from another device of the same account has a different OMEMO
+                    // fingerprint and a different MUC occupant, so the normal sender checks all
+                    // fail. Verify the real JID instead and relax those checks in that case only.
+                    final boolean ownAccountCorrection = isOwnAccountCorrection(account, conversation, counterpart, message, packet.fromAccount(account));
+                    final boolean fingerprintsMatch = ownAccountCorrection
+                            || replacedMessage.getFingerprint() == null
                             || replacedMessage.getFingerprint().equals(message.getFingerprint());
                     final boolean trueCountersMatch = replacedMessage.getTrueCounterpart() != null
                             && message.getTrueCounterpart() != null
                             && replacedMessage.getTrueCounterpart().asBareJid().equals(message.getTrueCounterpart().asBareJid());
                     final boolean mucUserMatches = query == null && replacedMessage.sameMucUser(message); //can not be checked when using mam
-                    final boolean duplicate = conversation.hasDuplicateMessage(message);
-                    if (fingerprintsMatch && (trueCountersMatch || !conversationMultiMode || mucUserMatches || counterpart.isBareJid()) && !duplicate) {
+                    final boolean duplicate = !ownAccountCorrection && conversation.hasDuplicateMessage(message);
+                    final boolean senderMatches = trueCountersMatch || !conversationMultiMode || mucUserMatches || counterpart.isBareJid() || ownAccountCorrection;
+                    if (fingerprintsMatch && senderMatches && !duplicate) {
                         Log.d(Config.LOGTAG, "replaced message '" + replacedMessage.getBody() + "' with '" + message.getBody() + "'");
                         synchronized (replacedMessage) {
                             final String uuid = replacedMessage.getUuid();
 
                             final String previousBody = replacedMessage.isGeoUri() ? replacedMessage.getRawBody() : replacedMessage.getBody();
-                            replacedMessage.putEdited(replacedMessage.getRemoteMsgId() != null ? replacedMessage.getRemoteMsgId() : replacedMessage.getUuid(), replacedMessage.getServerMsgId(), previousBody, replacedMessage.getTimeSent());
+                            // Remember the id the peer actually used in <replace/>: that is what
+                            // we must keep referencing in any follow-up correction.
+                            replacedMessage.putEdited(uuid, replacementId, replacedMessage.getServerMsgId(), previousBody, replacedMessage.getTimeSent());
 
                             replacedMessage.setUuid(UUID.randomUUID().toString());
                             replacedMessage.setBody(message.getRawBody());
@@ -1106,9 +1146,6 @@ public class MessageParser extends AbstractParser implements OnMessagePacketRece
                         Log.d(Config.LOGTAG, account.getJid().asBareJid() + ": received message correction but verification didn't check out");
                     }
                 } else if (message.getBody() == null || message.getBody().equals("") || message.getBody().equals(" ")) {
-                    return;
-                }
-                else if (message.getBody() == null || message.getBody().equals("") || message.getBody().equals(" ")) {
                     return;
                 }
             } else if (replacementId != null && !mXmppConnectionService.allowMessageCorrection() && (message.hasDeletedBody())) {
