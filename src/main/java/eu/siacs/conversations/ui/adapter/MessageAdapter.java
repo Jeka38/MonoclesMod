@@ -8,6 +8,7 @@ import static eu.siacs.conversations.entities.Message.DELETED_MESSAGE_BODY_OLD;
 import static eu.siacs.conversations.persistance.FileBackend.formatTime;
 import static eu.siacs.conversations.persistance.FileBackend.safeLongToInt;
 import static eu.siacs.conversations.ui.SettingsActivity.PLAY_GIF_INSIDE;
+import static eu.siacs.conversations.ui.SettingsActivity.SHOW_HTTP_UPLOAD_DESCRIPTION;
 import static eu.siacs.conversations.ui.SettingsActivity.SHOW_LINKS_INSIDE;
 import static eu.siacs.conversations.ui.SettingsActivity.SHOW_MAPS_INSIDE;
 import static eu.siacs.conversations.ui.util.MyLinkify.removeTrackingParameter;
@@ -184,6 +185,7 @@ public class MessageAdapter extends ArrayAdapter<Message> {
     private boolean mPlayGifInside = false;
     private boolean mShowLinksInside = false;
     private boolean mShowMapsInside = false;
+    private boolean mShowHttpUploadDescription = true;
     private boolean mLargeFontForMucStatus = false;
     private boolean mShowMucStatusMessages = true;
     private boolean mShowJoinLeave = false;
@@ -1868,6 +1870,7 @@ public class MessageAdapter extends ArrayAdapter<Message> {
                     } else if (!activity.xmppConnectionService.getBooleanPreference("set_text_collapsable", R.bool.set_text_collapsable)) {
                         viewHolder.messageBody = view.findViewById(R.id.message_body);
                     }
+                    viewHolder.fileDescription = view.findViewById(R.id.message_description);
                     viewHolder.user = view.findViewById(R.id.message_user);
                     viewHolder.time = view.findViewById(R.id.message_time);
                     viewHolder.subject = view.findViewById(R.id.message_subject);
@@ -1904,6 +1907,7 @@ public class MessageAdapter extends ArrayAdapter<Message> {
                     } else if (!activity.xmppConnectionService.getBooleanPreference("set_text_collapsable", R.bool.set_text_collapsable)) {
                         viewHolder.messageBody = view.findViewById(R.id.message_body);
                     }
+                    viewHolder.fileDescription = view.findViewById(R.id.message_description);
                     viewHolder.user = view.findViewById(R.id.message_user);
                     viewHolder.time = view.findViewById(R.id.message_time);
                     viewHolder.subject = view.findViewById(R.id.message_subject);
@@ -1970,6 +1974,19 @@ public class MessageAdapter extends ArrayAdapter<Message> {
         if (viewHolder.avatarLongPressRunnable != null) {
             handler.removeCallbacks(viewHolder.avatarLongPressRunnable);
         }
+        if (viewHolder.fileDescription != null) {
+            // XEP-0385 <desc> carried by HTTP Upload / SIMS messages. Reset on every bind
+            // because list views are recycled for unrelated messages.
+            final String description = mShowHttpUploadDescription && message.isFileOrImage()
+                    ? message.getFileParams().getDescription()
+                    : null;
+            if (description == null || description.trim().isEmpty()) {
+                viewHolder.fileDescription.setVisibility(GONE);
+            } else {
+                viewHolder.fileDescription.setVisibility(View.VISIBLE);
+                viewHolder.fileDescription.setText(description.trim());
+            }
+        }
         final Message boundMessage = message;
         viewHolder.avatarLongPressRunnable = () -> {
             if (!viewHolder.contact_picture.isAttachedToWindow()) {
@@ -1982,6 +1999,9 @@ public class MessageAdapter extends ArrayAdapter<Message> {
         };
 
         boolean darkBackground = activity.isDarkTheme();
+        if (viewHolder.fileDescription != null && viewHolder.fileDescription.getVisibility() == View.VISIBLE) {
+            viewHolder.fileDescription.setTextColor(ThemeHelper.getMessageTextColor(activity, darkBackground, false));
+        }
 
         if (type == DATE_SEPARATOR) {
             if (UIHelper.today(message.getTimeSent())) {
@@ -2526,6 +2546,7 @@ public class MessageAdapter extends ArrayAdapter<Message> {
         this.mPlayGifInside = p.getBoolean(PLAY_GIF_INSIDE, activity.getResources().getBoolean(R.bool.play_gif_inside));
         this.mShowLinksInside = p.getBoolean(SHOW_LINKS_INSIDE, activity.getResources().getBoolean(R.bool.show_links_inside));
         this.mShowMapsInside = p.getBoolean(SHOW_MAPS_INSIDE, activity.getResources().getBoolean(R.bool.show_maps_inside));
+        this.mShowHttpUploadDescription = p.getBoolean(SHOW_HTTP_UPLOAD_DESCRIPTION, activity.getResources().getBoolean(R.bool.show_http_upload_description));
         this.mLargeFontForMucStatus = p.getBoolean("large_font_for_muc_status", activity.getResources().getBoolean(R.bool.large_font_for_muc_status));
         this.mShowMucStatusMessages = p.getBoolean("show_muc_status_messages", activity.getResources().getBoolean(R.bool.show_muc_status_messages));
         this.mShowJoinLeave = p.getBoolean("show_join_leave", activity.getResources().getBoolean(R.bool.show_join_leave));
@@ -2583,6 +2604,7 @@ public class MessageAdapter extends ArrayAdapter<Message> {
         //        protected TextView inReplyTo;
 //        protected LinearLayout inReplyToBox;
         protected TextView messageBody;
+        protected TextView fileDescription;
         protected TextView user;
         protected TextView username;
         protected ImageView contact_picture;

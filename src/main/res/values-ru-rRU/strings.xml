@@ -936,6 +936,8 @@
     <string name="pref_show_intro_summary">Показать ознакомительные экраны еще раз</string>
     <string name="pref_show_links_inside">Предпросмотр ссылок в чате</string>
     <string name="pref_show_links_inside_summary">Предпросмотр ссылок внутри чата (будет устанавливаться соединение с сервером, указанным в ссылке).</string>
+    <string name="pref_show_http_upload_description">Показывать описание HTTP Upload</string>
+    <string name="pref_show_http_upload_description_summary">Отображать описание медиафайла (XEP-0385), полученное вместе с загруженным файлом</string>
     <string name="pref_show_mappreview_inside">Предпросмотр геолокаций в чате</string>
     <string name="pref_show_mappreview_inside_summary">Предпросмотр карты внутри чата (будет устанавливаться соединение с monocles mod-Server).</string>
     <string name="pref_show_own_accounts">Отображение учетных записей</string>

@@ -58,6 +58,7 @@
     <bool name="play_gif_inside">true</bool>
     <bool name="prefer_xmpp_avatar">true</bool>
     <bool name="show_links_inside">false</bool>
+    <bool name="show_http_upload_description">true</bool>
     <bool name="show_maps_inside">false</bool>
     <string name="mappreview_url">https://staticmap.monocles.eu/map.png</string>
     <bool name="show_own_accounts">false</bool>

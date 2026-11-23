@@ -567,6 +567,11 @@
             android:summary="@string/pref_show_links_inside_summary"
             android:title="@string/pref_show_links_inside" />
         <SwitchPreference
+            android:defaultValue="@bool/show_http_upload_description"
+            android:key="show_http_upload_description"
+            android:summary="@string/pref_show_http_upload_description_summary"
+            android:title="@string/pref_show_http_upload_description" />
+        <SwitchPreference
             android:defaultValue="@bool/show_maps_inside"
             android:disableDependentsState="false"
             android:key="show_maps_inside"

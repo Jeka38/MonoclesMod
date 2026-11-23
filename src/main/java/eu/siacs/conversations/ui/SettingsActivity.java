@@ -115,6 +115,7 @@ public class SettingsActivity extends XmppActivity implements OnSharedPreference
     public static final String NUMBER_OF_ACCOUNTS = "number_of_accounts";
     public static final String PLAY_GIF_INSIDE = "play_gif_inside";
     public static final String SHOW_LINKS_INSIDE = "show_links_inside";
+    public static final String SHOW_HTTP_UPLOAD_DESCRIPTION = "show_http_upload_description";
     public static final String SHOW_MAPS_INSIDE = "show_maps_inside";
     public static final String PREFER_XMPP_AVATAR = "prefer_xmpp_avatar";
     public static final String CHAT_STATES = "chat_states";
@@ -1166,7 +1167,7 @@ public class SettingsActivity extends XmppActivity implements OnSharedPreference
             reconnectAccounts();
         } else if (name.equals("play_gif_inside")) {
             reconnectAccounts();
-        } else if (name.equals("show_less_avatars")) {
+        } else if (name.equals("show_less_avatars") || name.equals(SHOW_HTTP_UPLOAD_DESCRIPTION)) {
             refreshUiReal();
         } else if (name.equals("show_record_voice_btn")) {
             recreate();

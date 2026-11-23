@@ -960,6 +960,8 @@
     <string name="autojoin_group_chat">Automatically join this room</string>
     <string name="pref_show_links_inside">Show previews of web links in chat</string>
     <string name="pref_show_links_inside_summary">Show previews of web links directly inside the chat view, a connection to the server specified in the link will be established.</string>
+    <string name="pref_show_http_upload_description">Show HTTP Upload description</string>
+    <string name="pref_show_http_upload_description_summary">Display the media description (XEP-0385) received with an uploaded file</string>
     <string name="pref_play_gif_inside">Directly play animated images</string>
     <string name="pref_play_gif_inside_summary">Directly play animated images for avatars, status messages and image messages.</string>
     <string name="pref_enable_smiles">Enable Smiles</string>
