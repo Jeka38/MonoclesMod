@@ -559,8 +559,12 @@ public abstract class XmppActivity extends ActionBarActivity {
     public void setBubbleColor(final View v, final int backgroundColor, final int borderColor) {
         GradientDrawable shape = (GradientDrawable) v.getBackground();
         shape.setColor(backgroundColor);
+        // Always reset the stroke: list views recycle drawables, so leaving the old
+        // stroke in place would keep a highlight border on an unrelated message.
         if (borderColor != -1) {
             shape.setStroke(2, borderColor);
+        } else {
+            shape.setStroke(0, Color.TRANSPARENT);
         }
         v.setBackground(shape);
     }

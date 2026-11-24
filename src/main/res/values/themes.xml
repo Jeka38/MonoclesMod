@@ -71,6 +71,8 @@
         <item name="color_bubble_date">@color/lightgreen</item>
         <item name="color_bubble_warning">@color/lightred</item>
         <item name="color_border">@color/grey500</item>
+        <item name="color_bubble_mention">@android:color/transparent</item>
+        <item name="color_bubble_border">@android:color/transparent</item>
         <item name="windowActionModeOverlay">true</item>
         <item name="android:actionModeBackground">@color/accent</item>
         <item name="android:homeAsUpIndicator" type="reference">@drawable/ic_arrow_back_black_24dp
@@ -275,6 +277,8 @@
         <item name="color_bubble_date">@color/darkgreen</item>
         <item name="color_bubble_warning">@color/darkred</item>
         <item name="color_border">@color/grey700</item>
+        <item name="color_bubble_mention">@android:color/transparent</item>
+        <item name="color_bubble_border">@android:color/transparent</item>
         <item name="windowActionModeOverlay">true</item>
         <item name="android:navigationBarColor" >@color/darkblack</item>
         <item name="android:actionModeBackground">@color/accent</item>
@@ -825,6 +829,79 @@
         <item name="TextSizeInfo">16sp</item>
         <item name="TextSizeBody">18sp</item>
         <item name="TextSizeHeadline">22sp</item>
+    </style>
+
+    <!-- 2a. Psi-im -->
+    <!-- Psi-im: only the message bubble colors and the incoming bubble outline differ from monocles -->
+    <style name="ConversationsTheme.Psi" parent="ConversationsTheme.Monocles">
+        <item name="color_bubble_light">@color/lightpsi2</item>
+        <item name="color_bubble_dark">@color/lightpsi2</item>
+        <item name="color_bubble_mention">@color/lightpsi</item>
+        <item name="color_bubble_border">@color/lightpsi_border</item>
+    </style>
+
+    <!-- Psi-im - dark -->
+    <style name="ConversationsTheme.Psi.Dark" parent="ConversationsTheme.Monocles.Dark">
+        <item name="color_bubble_light">@color/darkpsi2</item>
+        <item name="color_bubble_dark">@color/darkpsi2</item>
+        <item name="color_bubble_mention">@color/darkpsi</item>
+        <item name="color_bubble_border">@color/darkpsi_border</item>
+    </style>
+
+    <!-- Psi-im - black -->
+    <style name="ConversationsTheme.Psi.Black" parent="ConversationsTheme.Monocles.Black">
+        <item name="color_bubble_light">@color/primary_black</item>
+        <item name="color_bubble_dark">@color/primary_black</item>
+        <item name="color_bubble_mention">@color/darkpsi</item>
+        <item name="color_bubble_border">@color/darkpsi_border</item>
+    </style>
+
+    <!-- Psi-im medium font -->
+    <style name="ConversationsTheme.Psi.Medium" parent="ConversationsTheme.Monocles.Medium">
+        <item name="color_bubble_light">@color/lightpsi2</item>
+        <item name="color_bubble_dark">@color/lightpsi2</item>
+        <item name="color_bubble_mention">@color/lightpsi</item>
+        <item name="color_bubble_border">@color/lightpsi_border</item>
+    </style>
+
+    <!-- Psi-im medium font - dark -->
+    <style name="ConversationsTheme.Psi.Dark.Medium" parent="ConversationsTheme.Monocles.Dark.Medium">
+        <item name="color_bubble_light">@color/darkpsi2</item>
+        <item name="color_bubble_dark">@color/darkpsi2</item>
+        <item name="color_bubble_mention">@color/darkpsi</item>
+        <item name="color_bubble_border">@color/darkpsi_border</item>
+    </style>
+
+    <!-- Psi-im medium font - black -->
+    <style name="ConversationsTheme.Psi.Black.Medium" parent="ConversationsTheme.Monocles.Black.Medium">
+        <item name="color_bubble_light">@color/primary_black</item>
+        <item name="color_bubble_dark">@color/primary_black</item>
+        <item name="color_bubble_mention">@color/darkpsi</item>
+        <item name="color_bubble_border">@color/darkpsi_border</item>
+    </style>
+
+    <!-- Psi-im large font -->
+    <style name="ConversationsTheme.Psi.Large" parent="ConversationsTheme.Monocles.Large">
+        <item name="color_bubble_light">@color/lightpsi2</item>
+        <item name="color_bubble_dark">@color/lightpsi2</item>
+        <item name="color_bubble_mention">@color/lightpsi</item>
+        <item name="color_bubble_border">@color/lightpsi_border</item>
+    </style>
+
+    <!-- Psi-im large font - dark -->
+    <style name="ConversationsTheme.Psi.Dark.Large" parent="ConversationsTheme.Monocles.Dark.Large">
+        <item name="color_bubble_light">@color/darkpsi2</item>
+        <item name="color_bubble_dark">@color/darkpsi2</item>
+        <item name="color_bubble_mention">@color/darkpsi</item>
+        <item name="color_bubble_border">@color/darkpsi_border</item>
+    </style>
+
+    <!-- Psi-im large font - black -->
+    <style name="ConversationsTheme.Psi.Black.Large" parent="ConversationsTheme.Monocles.Black.Large">
+        <item name="color_bubble_light">@color/primary_black</item>
+        <item name="color_bubble_dark">@color/primary_black</item>
+        <item name="color_bubble_mention">@color/darkpsi</item>
+        <item name="color_bubble_border">@color/darkpsi_border</item>
     </style>
 
     <!-- 3. orange -->

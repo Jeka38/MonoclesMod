@@ -2,6 +2,10 @@ package eu.siacs.conversations.xmpp.pep;
 
 import android.util.Base64;
 
+import androidx.annotation.NonNull;
+import androidx.annotation.Nullable;
+
+import java.security.MessageDigest;
 import java.security.NoSuchAlgorithmException;
 
 import eu.siacs.conversations.utils.CryptoHelper;
@@ -24,6 +28,37 @@ public class Avatar {
 
     public byte[] getImageAsBytes() {
         return Base64.decode(image, Base64.DEFAULT);
+    }
+
+    /**
+     * Builds an avatar from a vcard-temp {@code PHOTO/BINVAL} value.
+     *
+     * <p>Unlike XEP-0153 there is no hash in presence to validate against, so the SHA-1 is computed
+     * from the photo itself; {@link eu.siacs.conversations.persistance.FileBackend#save(Avatar)}
+     * verifies the same hash before caching the bytes.
+     */
+    @Nullable
+    public static Avatar fromVCardPhoto(@NonNull final Jid owner, @NonNull final String base64) {
+        final byte[] bytes;
+        try {
+            bytes = Base64.decode(base64, Base64.DEFAULT);
+        } catch (final IllegalArgumentException e) {
+            return null;
+        }
+        if (bytes.length == 0) {
+            return null;
+        }
+        try {
+            final Avatar avatar = new Avatar();
+            avatar.owner = owner;
+            avatar.image = base64;
+            avatar.sha1sum = CryptoHelper.bytesToHex(
+                    MessageDigest.getInstance("SHA-1").digest(bytes));
+            avatar.origin = Origin.VCARD;
+            return avatar;
+        } catch (final NoSuchAlgorithmException e) {
+            return null;
+        }
     }
 
     public String getFilename() {

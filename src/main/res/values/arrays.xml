@@ -14,6 +14,7 @@
     </string-array>
     <string-array name="themecolors">
         <item>@string/pref_theme_monocles</item>
+        <item>@string/pref_theme_psi</item>
         <item>@string/pref_theme_orange</item>
         <item>@string/pref_theme_grey</item>
         <item>@string/pref_theme_pink</item>
@@ -22,6 +23,7 @@
     </string-array>
     <string-array name="themecolor_values">
         <item>monocles</item>
+        <item>psi</item>
         <item>orange</item>
         <item>grey</item>
         <item>pink</item>

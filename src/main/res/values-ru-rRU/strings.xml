@@ -994,6 +994,7 @@
     <string name="pref_theme_grey">Серый</string>
     <string name="pref_theme_light">Светлая</string>
     <string name="pref_theme_monocles">monocles mod</string>
+    <string name="pref_theme_psi">Psi-im</string>
     <string name="pref_theme_options">Тема</string>
     <string name="pref_theme_options_summary">Выберите тему</string>
     <string name="pref_theme_orange">Оранжевый</string>

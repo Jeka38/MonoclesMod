@@ -5553,10 +5553,15 @@ public class XmppConnectionService extends Service {
                     previouslyOmittedPepFetch = mOmittedPepAvatarFetches.remove(KEY);
                 }
                 if (packet.getType() == IqPacket.TYPE.RESULT) {
-                    Element vCard = packet.findChild("vCard", "vcard-temp");
+                    Element vCard = findVCardTemp(packet);
                     Element photo = vCard != null ? vCard.findChild("PHOTO") : null;
                     String image = photo != null ? photo.findChildContent("BINVAL") : null;
-                    if (image != null) {
+                    if (image != null && image.trim().startsWith("data:")) {
+                        image = VCard.parse(vCard).photoBase64;
+                    } else if (image != null) {
+                        image = image.replaceAll("\\s", "");
+                    }
+                    if (image != null && !image.isEmpty()) {
                         avatar.image = image;
                         if (getFileBackend().save(avatar)) {
                             Log.d(Config.LOGTAG, account.getJid().asBareJid()
@@ -5650,8 +5655,8 @@ public class XmppConnectionService extends Service {
 
     /**
      * Fetches a profile card for {@code jid}. Reads the vCard 4 PEP node first (as Psi does) and
-     * falls back to {@code vcard-temp}, which is also where MUC room cards live. A missing card is
-     * not an error: the callback receives an empty {@link VCard}.
+     * then supplements missing fields from {@code vcard-temp}, which is also where MUC room cards
+     * live. A missing card is not an error: the callback receives an empty {@link VCard}.
      */
     public void fetchVCard(
             final Account account,
@@ -5668,9 +5673,25 @@ public class XmppConnectionService extends Service {
                 final Element item = mIqParser.getItem(response);
                 final Element vcard4 = item == null ? null : item.findChild("vcard", Namespace.VCARD4);
                 if (vcard4 != null) {
-                    if (callback != null) {
-                        callback.onVCardReceived(VCard.parse(vcard4));
+                    final VCard card = VCard.parse(vcard4);
+                    if (callback == null) {
+                        return;
                     }
+                    if (card.hasInlinePhoto()) {
+                        applyVCardPhotoAsAvatar(a, jid, card);
+                        callback.onVCardReceived(card);
+                        return;
+                    }
+                    // Psi keeps both stores: the modern card wins, while vcard-temp fills in
+                    // fields it does not have. An inline legacy photo also beats a modern
+                    // URI-only PHOTO, which not every client can display.
+                    fetchVCardTemp(a, jid, temp -> {
+                        if (temp != null) {
+                            card.supplementFrom(temp);
+                        }
+                        applyVCardPhotoAsAvatar(a, jid, card);
+                        callback.onVCardReceived(card);
+                    });
                     return;
                 }
             }
@@ -5703,21 +5724,83 @@ public class XmppConnectionService extends Service {
         fetchVCardTemp(account, nicJid, callback);
     }
 
+    /**
+     * Uses an inline vCard photo as the contact's avatar when no XEP-0153/PEP avatar is cached.
+     *
+     * <p>This keeps the old vcard-temp avatar pipeline authoritative: a hash announced in presence
+     * still wins. It only fills the gap for servers/peers that publish a card but no
+     * {@code vcard-temp:x:update} notification, so the photo appears in chats and the roster too.
+     */
+    private void applyVCardPhotoAsAvatar(
+            final Account account, final Jid jid, final VCard card) {
+        if (account == null || jid == null || card == null || !card.hasInlinePhoto()) {
+            return;
+        }
+        final Jid bare = jid.asBareJid();
+        if (bare.equals(account.getJid().asBareJid())) {
+            return;
+        }
+        final Conversation conversation = find(account, bare);
+        if (conversation != null && conversation.getMode() == Conversation.MODE_MULTI) {
+            // Room and occupant avatars are handled by MucOptions, not by a roster contact.
+            return;
+        }
+        final Contact contact = account.getRoster().getContact(bare);
+        if (contact.getAvatar() != null) {
+            return;
+        }
+        final Avatar avatar = Avatar.fromVCardPhoto(bare, card.photoBase64);
+        if (avatar == null || !getFileBackend().save(avatar)) {
+            return;
+        }
+        contact.setAvatar(avatar);
+        syncRoster(account);
+        getAvatarService().clear(contact);
+        updateRosterUi(UpdateRosterReason.AVATAR, contact);
+        updateConversationUi();
+        Log.d(Config.LOGTAG, account.getJid().asBareJid()
+                + ": using photo from vCard as avatar for " + bare);
+    }
+
+    /** Finds a vcard-temp card, also tolerating servers that answer with an unqualified vCard. */
+    @Nullable
+    private static Element findVCardTemp(@NonNull final Element packet) {
+        final Element namespaced = packet.findChild("vCard", Namespace.VCARD_TEMP);
+        if (namespaced != null) {
+            return namespaced;
+        }
+        for (final Element child : packet.getChildren()) {
+            if ("vCard".equals(child.getName())) {
+                final String namespace = child.getNamespace();
+                if (namespace == null || namespace.isEmpty() || Namespace.VCARD_TEMP.equals(namespace)) {
+                    return child;
+                }
+            }
+        }
+        return null;
+    }
+
     public void fetchVCardTemp(
             final Account account, final Jid jid, @Nullable final VCardCallback callback) {
         final IqPacket request = mIqGenerator.retrieveVcardAvatar(jid);
         sendIqPacket(account, request, (a, response) -> {
             Element vcard = null;
             if (response.getType() == IqPacket.TYPE.RESULT) {
-                vcard = response.findChild("vCard", Namespace.VCARD_TEMP);
+                vcard = findVCardTemp(response);
             } else {
                 final String condition = response.getErrorCondition();
-                if (condition == null || !"item-not-found".equals(condition)) {
+                // XEP-0054 uses service-unavailable for a missing card (to avoid directory
+                // harvesting); older servers use item-not-found.
+                if (condition != null
+                        && !"item-not-found".equals(condition)
+                        && !"service-unavailable".equals(condition)) {
                     Log.d(Config.LOGTAG, a.getJid().asBareJid() + ": could not fetch vcard: " + condition);
                 }
             }
+            final VCard card = VCard.parse(vcard);
+            applyVCardPhotoAsAvatar(a, jid, card);
             if (callback != null) {
-                callback.onVCardReceived(VCard.parse(vcard));
+                callback.onVCardReceived(card);
             }
         });
     }

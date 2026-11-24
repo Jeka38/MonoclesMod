@@ -106,6 +106,14 @@
     <color name="middlepink">#ff7f4972</color> <!-- dark theme other -->
     <color name="darkpink">#ff4c2c44</color> <!-- dark theme me -->
 
+    <!-- Psi-im theme (colors taken from Psi's dark chat window) -->
+    <color name="lightpsi">#fff1e4e6</color> <!-- light theme other -->
+    <color name="lightpsi2">#ffffffff</color> <!-- light theme me -->
+    <color name="lightpsi_border">#ffef9a9a</color> <!-- light theme other border -->
+    <color name="darkpsi">#ff301e1f</color> <!-- dark theme other -->
+    <color name="darkpsi2">#ff15171b</color> <!-- dark theme me -->
+    <color name="darkpsi_border">#ffac5457</color> <!-- dark theme other border -->
+
     <!-- main colors -->
     <color name="realgreen">#ff388e3c</color>  <!-- green 700 -->
     <color name="header_background">#663e5ea2</color>

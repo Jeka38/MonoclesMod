@@ -142,6 +142,33 @@ public class ThemeHelper {
                             return R.style.ConversationsTheme_Monocles;
                         }
                 }
+            case "psi":
+                switch (fontSize) {
+                    case "medium":
+                        if (black) {
+                            return R.style.ConversationsTheme_Psi_Black_Medium;
+                        } else if (dark) {
+                            return R.style.ConversationsTheme_Psi_Dark_Medium;
+                        } else {
+                            return R.style.ConversationsTheme_Psi_Medium;
+                        }
+                    case "large":
+                        if (black) {
+                            return R.style.ConversationsTheme_Psi_Black_Large;
+                        } else if (dark) {
+                            return R.style.ConversationsTheme_Psi_Dark_Large;
+                        } else {
+                            return R.style.ConversationsTheme_Psi_Large;
+                        }
+                    default:
+                        if (black) {
+                            return R.style.ConversationsTheme_Psi_Black;
+                        } else if (dark) {
+                            return R.style.ConversationsTheme_Psi_Dark;
+                        } else {
+                            return R.style.ConversationsTheme_Psi;
+                        }
+                }
             case "orange":
                 switch (fontSize) {
                     case "medium":
@@ -371,6 +398,34 @@ public class ThemeHelper {
                             return R.style.ConversationsTheme_Monocles_Dialog;
                         }
                 }
+            case "psi":
+                // Psi-im changes message bubbles only; dialogs use the monocles palette.
+                switch (fontSize) {
+                    case "medium":
+                        if (black) {
+                            return R.style.ConversationsTheme_Monocles_Black_Dialog_Medium;
+                        } else if (dark) {
+                            return R.style.ConversationsTheme_Monocles_Dark_Dialog_Medium;
+                        } else {
+                            return R.style.ConversationsTheme_Monocles_Dialog_Medium;
+                        }
+                    case "large":
+                        if (black) {
+                            return R.style.ConversationsTheme_Monocles_Black_Dialog_Large;
+                        } else if (dark) {
+                            return R.style.ConversationsTheme_Monocles_Dark_Dialog_Large;
+                        } else {
+                            return R.style.ConversationsTheme_Monocles_Dialog_Large;
+                        }
+                    default:
+                        if (black) {
+                            return R.style.ConversationsTheme_Monocles_Black_Dialog;
+                        } else if (dark) {
+                            return R.style.ConversationsTheme_Monocles_Dark_Dialog;
+                        } else {
+                            return R.style.ConversationsTheme_Monocles_Dialog;
+                        }
+                }
             case "orange":
                 switch (fontSize) {
                     case "medium":
@@ -515,6 +570,13 @@ public class ThemeHelper {
             case R.style.ConversationsTheme_Monocles_Black:
             case R.style.ConversationsTheme_Monocles_Black_Large:
             case R.style.ConversationsTheme_Monocles_Black_Medium:
+                //Psi-im
+            case R.style.ConversationsTheme_Psi_Dark:
+            case R.style.ConversationsTheme_Psi_Dark_Large:
+            case R.style.ConversationsTheme_Psi_Dark_Medium:
+            case R.style.ConversationsTheme_Psi_Black:
+            case R.style.ConversationsTheme_Psi_Black_Large:
+            case R.style.ConversationsTheme_Psi_Black_Medium:
                 //orange
             case R.style.ConversationsTheme_Orange_Dark:
             case R.style.ConversationsTheme_Orange_Dark_Large:
@@ -569,6 +631,8 @@ public class ThemeHelper {
                 return dark ? ContextCompat.getColorStateList(context, R.color.white70) : ContextCompat.getColorStateList(context, R.color.darkblue);
             case "monocles":
                 return dark ? ContextCompat.getColorStateList(context, R.color.white70) : ContextCompat.getColorStateList(context, R.color.darkmonocles);
+            case "psi":
+                return dark ? ContextCompat.getColorStateList(context, R.color.white70) : ContextCompat.getColorStateList(context, R.color.darkpsi);
             case "orange":
                 return dark ? ContextCompat.getColorStateList(context, R.color.white70) : ContextCompat.getColorStateList(context, R.color.darkorange);
             case "grey":
@@ -597,6 +661,8 @@ public class ThemeHelper {
                 return R.color.primary;
             case "monocles":
                 return R.color.primary_monocles;
+            case "psi":
+                return R.color.darkpsi_border;
             case "orange":
                 return R.color.primary_orange;
             case "grey":
@@ -634,6 +700,8 @@ public class ThemeHelper {
                 return dark ? getMessageTextColor(context, dark, false) : ContextCompat.getColor(context, R.color.darkblue);
             case "monocles":
                 return dark ? getMessageTextColor(context, dark, false) : ContextCompat.getColor(context, R.color.darkmonocles);
+            case "psi":
+                return dark ? getMessageTextColor(context, dark, false) : ContextCompat.getColor(context, R.color.darkpsi);
             case "orange":
                 return dark ? getMessageTextColor(context, dark, false) : ContextCompat.getColor(context, R.color.darkorange);
             case "grey":
@@ -699,6 +767,8 @@ public class ThemeHelper {
             case "blue":
                 return dark ? false : false;
             case "monocles":
+                return dark ? true : false;
+            case "psi":
                 return dark ? true : false;
             case "orange":
                 return dark ? true : false;

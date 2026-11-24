@@ -251,14 +251,8 @@ public class VCardActivity extends XmppActivity
 
     @Nullable
     private Uri photoUri() {
-        if (card == null || !card.hasPhoto()) {
-            return null;
-        }
-        if (card.photoBase64 != null) {
-            final String type = card.photoType == null ? "image/*" : card.photoType;
-            return Uri.parse("data:" + type + ";base64," + card.photoBase64);
-        }
-        return Uri.parse(card.photoExternal);
+        final String uri = card == null ? null : card.getPhotoUri();
+        return uri == null ? null : Uri.parse(uri);
     }
 
     private void updatePhotoViews(final VCard vcard) {

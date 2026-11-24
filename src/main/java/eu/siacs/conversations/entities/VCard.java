@@ -62,6 +62,123 @@ public class VCard {
         return isSet(photoBase64) || isSet(photoExternal);
     }
 
+    /** True when the card carries actual image bytes, not just an external reference. */
+    public boolean hasInlinePhoto() {
+        return isSet(photoBase64);
+    }
+
+    /**
+     * Fills fields absent from a vCard 4 card with values from vcard-temp, following Psi's
+     * "modern card wins, legacy card supplements" rule. An inline legacy photo also replaces a
+     * modern URI-only photo, which not every client can display.
+     */
+    public void supplementFrom(@Nullable final VCard legacy) {
+        if (legacy == null) {
+            return;
+        }
+        fullName = firstSet(fullName, legacy.fullName);
+        givenName = firstSet(givenName, legacy.givenName);
+        middleName = firstSet(middleName, legacy.middleName);
+        familyName = firstSet(familyName, legacy.familyName);
+        prefix = firstSet(prefix, legacy.prefix);
+        suffix = firstSet(suffix, legacy.suffix);
+        nickName = firstSet(nickName, legacy.nickName);
+        birthday = firstSet(birthday, legacy.birthday);
+        title = firstSet(title, legacy.title);
+        role = firstSet(role, legacy.role);
+        note = firstSet(note, legacy.note);
+        url = firstSet(url, legacy.url);
+        organization = firstSet(organization, legacy.organization);
+        organizationUnit = firstSet(organizationUnit, legacy.organizationUnit);
+
+        if (!isSet(email)) {
+            email = legacy.email;
+            emailType = legacy.emailType;
+            emailPreferred = legacy.emailPreferred;
+        }
+        if (!isSet(phone)) {
+            phone = legacy.phone;
+            phoneType = legacy.phoneType;
+        }
+        // The UI renders a single postal address; only adopt the legacy one when we have none.
+        if (!hasAddress()) {
+            street = legacy.street;
+            extAddress = legacy.extAddress;
+            city = legacy.city;
+            region = legacy.region;
+            postalCode = legacy.postalCode;
+            country = legacy.country;
+        }
+
+        if (!hasInlinePhoto() && legacy.hasInlinePhoto()) {
+            photoType = legacy.photoType;
+            photoBase64 = legacy.photoBase64;
+            photoExternal = legacy.photoExternal;
+        } else if (!hasPhoto()) {
+            photoType = firstSet(photoType, legacy.photoType);
+            photoBase64 = firstSet(photoBase64, legacy.photoBase64);
+            photoExternal = firstSet(photoExternal, legacy.photoExternal);
+        }
+    }
+
+    private boolean hasAddress() {
+        return isSet(street)
+                || isSet(extAddress)
+                || isSet(city)
+                || isSet(region)
+                || isSet(postalCode)
+                || isSet(country);
+    }
+
+    /**
+     * Returns the photo in a form Glide can display.
+     *
+     * <p>vCard 4 stores a complete {@code data:} URI, but vcard-temp keeps the mime type and the
+     * base64 payload in separate {@code <TYPE/>} and {@code <BINVAL/>} elements. Clients do not
+     * agree on the TYPE spelling ({@code image/jpeg}, {@code JPEG}, {@code JPG}, …), and Glide only
+     * handles data URIs starting with {@code data:image}, so normalise the type here. The actual
+     * image bytes are left untouched — Android decodes them regardless of the declared subtype.
+     */
+    @Nullable
+    public String getPhotoUri() {
+        if (isSet(photoBase64)) {
+            return "data:" + photoMimeType() + ";base64," + stripWhitespace(photoBase64);
+        }
+        return isSet(photoExternal) ? photoExternal.trim() : null;
+    }
+
+    @NonNull
+    private String photoMimeType() {
+        final String type = trim(photoType);
+        if (type == null) {
+            return "image/*";
+        }
+        final String lower = type.toLowerCase(Locale.US);
+        final String mime = lower.split(";", 2)[0].trim();
+        if (mime.startsWith("image/")) {
+            return mime;
+        }
+        switch (mime) {
+            case "jpg":
+            case "jpeg":
+                return "image/jpeg";
+            case "png":
+                return "image/png";
+            case "gif":
+                return "image/gif";
+            case "webp":
+                return "image/webp";
+            case "bmp":
+                return "image/bmp";
+            case "tif":
+            case "tiff":
+                return "image/tiff";
+            default:
+                // Still let Glide decode the bytes if an uncommon type name was used.
+                return "image/*";
+        }
+    }
+
     public boolean isEmpty() {
         return !isSet(fullName)
                 && !isSet(givenName)
@@ -112,7 +229,8 @@ public class VCard {
         if (element == null) {
             return vcard;
         }
-        if ("vcard".equals(element.getName())) {
+        if ("vcard".equals(element.getName())
+                || Namespace.VCARD4.equals(element.getNamespace())) {
             vcard.parseVCard4(element);
         } else {
             vcard.parseVCardTemp(element);
@@ -191,8 +309,18 @@ public class VCard {
             return;
         }
         photoType = trim(photo.findChildContent("TYPE"));
-        photoBase64 = stripWhitespace(photo.findChildContent("BINVAL"));
-        photoExternal = trim(photo.findChildContent("EXTVAL"));
+        final String binval = stripWhitespace(photo.findChildContent("BINVAL"));
+        photoExternal = firstSet(
+                trim(photo.findChildContent("URI")), trim(photo.findChildContent("EXTVAL")));
+        // Some servers put a complete data: URI into BINVAL instead of raw base64 bytes.
+        if (binval != null && binval.startsWith("data:")) {
+            applyPhotoUri(binval);
+            return;
+        }
+        photoBase64 = binval;
+        if (photoExternal != null && photoExternal.startsWith("data:")) {
+            applyPhotoUri(photoExternal);
+        }
     }
 
     private void parseVCard4(@NonNull final Element vcard) {
@@ -266,6 +394,9 @@ public class VCard {
     @NonNull
     public Element toElement() {
         final Element vcard = new Element("vCard", Namespace.VCARD_TEMP);
+        // XEP-0054 §8: the version belongs in an attribute; some servers still expect the
+        // historical <VERSION/> child, so emit both.
+        vcard.setAttribute("version", "3.0");
         addText(vcard, "VERSION", "3.0");
         addText(vcard, "FN", fullName);
         addText(vcard, "NICKNAME", nickName);

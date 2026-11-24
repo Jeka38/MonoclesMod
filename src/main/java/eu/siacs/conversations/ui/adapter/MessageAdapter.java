@@ -2384,11 +2384,11 @@ public class MessageAdapter extends ArrayAdapter<Message> {
             }
             viewHolder.answer_button.setVisibility(GONE);
             if (isInValidSession) {
-                setBubbleBackgroundColor(viewHolder.message_box, type, message.isPrivateMessage(), isInValidSession);
+                setBubbleBackgroundColor(viewHolder.message_box, type, message.isPrivateMessage(), isInValidSession, message);
                 viewHolder.encryption.setVisibility(GONE);
                 viewHolder.encryption.setTextColor(ThemeHelper.getMessageTextColor(activity, darkBackground, false));
             } else {
-                setBubbleBackgroundColor(viewHolder.message_box, type, message.isPrivateMessage(), isInValidSession);
+                setBubbleBackgroundColor(viewHolder.message_box, type, message.isPrivateMessage(), isInValidSession, message);
                 viewHolder.encryption.setVisibility(View.VISIBLE);
                 viewHolder.encryption.setTextColor(ThemeHelper.getWarningTextColor(activity, darkBackground));
                 if (omemoEncryption && !message.isTrusted()) {
@@ -2420,7 +2420,7 @@ public class MessageAdapter extends ArrayAdapter<Message> {
         }
 
         if (type == SENT) {
-            setBubbleBackgroundColor(viewHolder.message_box, type, message.isPrivateMessage(), isInValidSession);
+            setBubbleBackgroundColor(viewHolder.message_box, type, message.isPrivateMessage(), isInValidSession, message);
         }
         displayStatus(viewHolder, message, type, darkBackground);
         bindReactions(viewHolder, message, type);
@@ -2621,15 +2621,62 @@ public class MessageAdapter extends ArrayAdapter<Message> {
         protected FlowLayout quick_responses;
     }
 
+    private boolean mentionsMe(final Message message) {
+        if (message == null || message.getStatus() != Message.STATUS_RECEIVED) {
+            return false;
+        }
+        if (message.isPrivateMessage() || message.isAttention()) {
+            return true;
+        }
+        final String body = message.getBody();
+        if (body == null || body.isEmpty()) {
+            return false;
+        }
+        final Conversational conversation = message.getConversation();
+        if (conversation instanceof Conversation) {
+            final Conversation muc = (Conversation) conversation;
+            final String nick = muc.getMucOptions().getActualNick();
+            if (nick != null && !nick.isEmpty() && NotificationService.generateNickHighlightPattern(nick).matcher(body).find()) {
+                return true;
+            }
+            final String name = muc.getMucOptions().getActualName();
+            if (name != null && !name.isEmpty() && NotificationService.generateNickHighlightPattern(name).matcher(body).find()) {
+                return true;
+            }
+        }
+        // Guard against the account-less window described in AGENTS.md.
+        final Account account = conversation == null ? null : conversation.getAccount();
+        if (account != null) {
+            final String jid = account.getJid().asBareJid().toString();
+            if (!jid.isEmpty() && NotificationService.generateNickHighlightPattern(jid).matcher(body).find()) {
+                return true;
+            }
+            final String local = account.getJid().getLocal();
+            if (local != null && !local.isEmpty() && NotificationService.generateNickHighlightPattern(local).matcher(body).find()) {
+                return true;
+            }
+        }
+        return false;
+    }
+
     public void setBubbleBackgroundColor(final View viewHolder, final int type,
-                                         final boolean isPrivateMessage, final boolean isInValidSession) {
+                                         final boolean isPrivateMessage, final boolean isInValidSession,
+                                         final Message message) {
         if (type == RECEIVED) {
+            // Psi-im highlights only incoming messages that address me. Other palettes
+            // leave color_bubble_mention transparent, so their bubbles are untouched.
+            final int mentionColor = StyledAttributes.getColor(activity, R.attr.color_bubble_mention);
+            final boolean highlightMention = mentionColor != Color.TRANSPARENT && mentionsMe(message);
+            final int borderColor = StyledAttributes.getColor(activity, R.attr.color_bubble_border);
+            final int border = highlightMention && borderColor != Color.TRANSPARENT ? borderColor : -1;
             if (isInValidSession) {
                 viewHolder.setBackgroundResource(R.drawable.message_bubble_received_light);
-                activity.setBubbleColor(viewHolder, StyledAttributes.getColor(activity, R.attr.color_bubble_light), -1);
+                activity.setBubbleColor(viewHolder,
+                        highlightMention ? mentionColor : StyledAttributes.getColor(activity, R.attr.color_bubble_light),
+                        border);
             } else {
                 viewHolder.setBackgroundResource(R.drawable.message_bubble_received_warning);
-                activity.setBubbleColor(viewHolder, StyledAttributes.getColor(activity, R.attr.color_bubble_warning), -1);
+                activity.setBubbleColor(viewHolder, StyledAttributes.getColor(activity, R.attr.color_bubble_warning), border);
             }
         }
 
