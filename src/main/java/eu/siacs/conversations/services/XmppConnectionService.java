@@ -3357,7 +3357,12 @@ public class XmppConnectionService extends Service {
                 if (conversation.getMode() == Conversation.MODE_SINGLE) {
                     mamAvailable = account.getXmppConnection().getFeatures().mam() && !conversation.getContact().isBlocked();
                 } else {
-                    mamAvailable = conversation.getMucOptions().mamSupport();
+                    // PM windows have their own conversation row but no disco results. Their
+                    // history lives in the parent room's MUC archive.
+                    final Conversation mainRoom = conversation.hasPermanentCounterpart()
+                            ? findFirstMuc(conversation.getJid(), account.getJid().asBareJid().toString())
+                            : null;
+                    mamAvailable = (mainRoom == null ? conversation : mainRoom).getMucOptions().mamSupport();
                 }
                 if (mamAvailable) {
                     MessageArchiveService.Query query = getMessageArchiveService().query(conversation, new MamReference(0), timestamp, false);

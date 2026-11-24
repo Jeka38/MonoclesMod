@@ -1344,18 +1344,20 @@ public class MessageAdapter extends ArrayAdapter<Message> {
         List<Element> thumbs = message.getFileParams() != null ? message.getFileParams().getThumbnails() : null;
         if (thumbs != null && !thumbs.isEmpty()) {
             for (Element thumb : thumbs) {
-                Uri uri = Uri.parse(thumb.getAttribute("uri"));
-                if (uri.getScheme().equals("data")) {
+                final String thumbnailUri = thumb.getAttribute("uri");
+                if (thumbnailUri == null) continue;
+                Uri uri = Uri.parse(thumbnailUri);
+                if ("data".equals(uri.getScheme())) {
                     String[] parts = uri.getSchemeSpecificPart().split(",", 2);
                     parts = parts[0].split(";");
                     if (!parts[0].equals("image/blurhash") && !parts[0].equals("image/thumbhash") && !parts[0].equals("image/jpeg") && !parts[0].equals("image/png") && !parts[0].equals("image/webp") && !parts[0].equals("image/gif")) continue;
-                } else if (uri.getScheme().equals("cid")) {
+                } else if ("cid".equals(uri.getScheme())) {
                     Cid cid = BobTransfer.cid(uri);
                     if (cid == null) continue;
                     DownloadableFile f = activity.xmppConnectionService.getFileForCid(cid);
                     if (f == null || !f.canRead()) {
-                        if (!message.trusted() && !message.getConversation().canInferPresence()) continue;
-
+                        // XEP-0385 thumbnails are small, content-addressed Bob payloads. Fetching one
+                        // is safe even from an unknown MUC occupant and makes the preview appear.
                         try {
                             new BobTransfer(BobTransfer.uri(cid), message.getConversation().getAccount(), message.getCounterpart(), activity.xmppConnectionService).start();
                         } catch (final NoSuchAlgorithmException | URISyntaxException e) { }

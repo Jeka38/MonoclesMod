@@ -30,7 +30,14 @@ public class FileTransferDescription extends GenericDescription {
         file.addChild("name").setContent(fileDescription.name);
         file.addChild("size").setContent(Long.toString(fileDescription.size));
         if (fileDescription.mediaType != null) {
-            file.addChild("mediaType").setContent(fileDescription.mediaType);
+            file.addChild("media-type").setContent(fileDescription.mediaType);
+        }
+        for (final Hash hash : fileDescription.hashes) {
+            final Element element = file.addChild("hash", Namespace.HASHES);
+            element.setAttribute(
+                    "algo",
+                    CaseFormat.UPPER_UNDERSCORE.to(CaseFormat.LOWER_HYPHEN, hash.algorithm.toString()));
+            element.setContent(BaseEncoding.base64().encode(hash.hash));
         }
         return description;
     }
@@ -43,7 +50,10 @@ public class FileTransferDescription extends GenericDescription {
         }
         final String name = fileElement.findChildContent("name");
         final String sizeAsString = fileElement.findChildContent("size");
-        final String mediaType = fileElement.findChildContent("mediaType");
+        String mediaType = fileElement.findChildContent("media-type");
+        if (Strings.isNullOrEmpty(mediaType)) {
+            mediaType = fileElement.findChildContent("mediaType");
+        }
         if (Strings.isNullOrEmpty(name) || Strings.isNullOrEmpty(sizeAsString)) {
             throw new IllegalStateException("File definition is missing name and/or size");
         }

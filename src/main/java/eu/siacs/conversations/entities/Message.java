@@ -4,6 +4,7 @@ import android.content.ContentValues;
 import android.database.Cursor;
 import android.graphics.Color;
 import android.graphics.drawable.Drawable;
+import android.net.Uri;
 import android.os.Build;
 import android.text.Html;
 import android.text.SpannableStringBuilder;
@@ -304,6 +305,7 @@ public class Message extends AbstractEntity implements AvatarService.Avatarable 
         this.subject = subject;
         if (payloads != null) this.payloads = payloads;
         if (fileParams != null && getSims().isEmpty()) this.fileParams = new FileParams(fileParams);
+        applySimsTypeFromPayloads();
     }
 
     public static Message fromCursor(Cursor cursor, Conversation conversation) throws IOException {
@@ -1341,6 +1343,19 @@ public class Message extends AbstractEntity implements AvatarService.Avatarable 
     }
 
     boolean similar(Message message) {
+        // Stable IDs are authoritative, including for PM rows whose body is empty (file/reaction
+        // carriers) or whose MUC copy arrived with a rewritten stanza id.
+        if (isPrivateMessage() && message.isPrivateMessage()) {
+            final String otherServerMsgId = message.getServerMsgId();
+            if (otherServerMsgId != null && otherServerMsgId.equals(this.serverMsgId)) {
+                return true;
+            }
+            final String otherRemoteMsgId = message.getRemoteMsgId();
+            if (otherRemoteMsgId != null
+                    && (otherRemoteMsgId.equals(this.remoteMsgId) || otherRemoteMsgId.equals(this.uuid))) {
+                return true;
+            }
+        }
         if (!isPrivateMessage() && this.serverMsgId != null && message.getServerMsgId() != null) {
             return this.serverMsgId.equals(message.getServerMsgId()) || Edit.wasPreviouslyEditedServerMsgId(edits, message.getServerMsgId());
         } else if (Edit.wasPreviouslyEditedServerMsgId(edits, message.getServerMsgId())) {
@@ -1356,7 +1371,10 @@ public class Message extends AbstractEntity implements AvatarService.Avatarable 
                 body = this.body;
                 otherBody = message.body;
             }
-            final boolean matchingCounterpart = this.counterpart.equals(message.getCounterpart());
+            // PM rows are already scoped to their own conversation UUID. A nick/resource change
+            // must not stop an echoed copy from matching the locally stored outgoing message.
+            final boolean matchingCounterpart = this.counterpart.equals(message.getCounterpart())
+                    || (isPrivateMessage() && message.isPrivateMessage());
             if (message.getRemoteMsgId() != null) {
                 final boolean hasUuid = CryptoHelper.UUID_PATTERN.matcher(message.getRemoteMsgId()).matches();
                 if (hasUuid && matchingCounterpart && Edit.wasPreviouslyEditedRemoteMsgId(edits, message.getRemoteMsgId())) {
@@ -1996,6 +2014,28 @@ public class Message extends AbstractEntity implements AvatarService.Avatarable 
         ).collect(Collectors.toList());
     }
 
+    /**
+     * Messages saved before SIMS media-type handling was added are still plain text in the
+     * database. Promote them to file/image rows when loaded so the attachment UI is available
+     * without a database migration or version bump.
+     */
+    private void applySimsTypeFromPayloads() {
+        if (type != TYPE_TEXT && type != TYPE_PRIVATE) return;
+        if (getSims().isEmpty()) return;
+        final FileParams params = getFileParams();
+        final String mediaType = params == null ? null : params.getMediaType();
+        if (Strings.isNullOrEmpty(mediaType)) return;
+        final boolean image = mediaType.startsWith("image/");
+        final boolean file = mediaType.startsWith("audio/")
+                || mediaType.startsWith("video/")
+                || mediaType.startsWith("application/");
+        if (image) {
+            type = isPrivateMessage() ? TYPE_PRIVATE_FILE : TYPE_IMAGE;
+        } else if (file) {
+            type = isPrivateMessage() ? TYPE_PRIVATE_FILE : TYPE_FILE;
+        }
+    }
+
     public synchronized void resetFileParams() {
         this.oob = false;
         this.fileParams = null;
@@ -2168,6 +2208,25 @@ public class Message extends AbstractEntity implements AvatarService.Avatarable 
             return 0;
         }
 
+        /** Extract the full JID from a SIMS {@code xmpp:...?jingle-ft} source. */
+        public static Jid jingleJid(final String uri) {
+            if (uri == null || !uri.toLowerCase(Locale.US).startsWith("xmpp:")) {
+                return null;
+            }
+            final String part = Uri.parse(uri).getSchemeSpecificPart();
+            if (part == null) return null;
+            final String jid = part.split("\\?", 2)[0];
+            if (jid.isEmpty()) return null;
+            try {
+                return Jid.of(jid);
+            } catch (final IllegalArgumentException e) {
+                try {
+                    return Jid.ofEscaped(jid);
+                } catch (final IllegalArgumentException e2) {
+                    return null;
+                }
+            }
+        }
 
         public FileParams(String ser) {
             final String[] parts = ser == null ? new String[0] : ser.split("\\|");
@@ -2349,7 +2408,7 @@ public class Message extends AbstractEntity implements AvatarService.Avatarable 
                     new Element("thumbnail", "urn:xmpp:thumbs:1")
                             .setAttribute("width", Integer.toString(width))
                             .setAttribute("height", Integer.toString(height))
-                            .setAttribute("type", mimeType)
+                            .setAttribute("media-type", mimeType)
                             .setAttribute("uri", uri)
             );
         }

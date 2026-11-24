@@ -1098,7 +1098,7 @@ public class Conversation extends AbstractEntity implements Blockable, Comparabl
                     || (m.getSubject() != null && !m.isOOb() && (m.getRawBody() == null || m.getRawBody().isEmpty()))
                     || (getLockThread() && !extraIds.contains(m.replyId()) && (mthread == null || !mthread.getContent().equals(getThread() == null ? "" : getThread().getContent())));
             if (nextCounterpart != null) {
-                if (!nextCounterpart.equals(m.getCounterpart())) {
+                if (!m.isPrivateMessage() && !nextCounterpart.equals(m.getCounterpart())) {
                     remove = true;
                 }
             } else if (mode == MODE_MULTI && m.isPrivateMessage()) {
@@ -1936,7 +1936,10 @@ public class Conversation extends AbstractEntity implements Blockable, Comparabl
 
     public void add(Message message) {
         if (nextCounterpart != null) {
-            if (!nextCounterpart.equals(message.getCounterpart())) {
+            // A dedicated PM conversation is already scoped by its UUID. Keep private rows even
+            // when the occupant JID changed (nick change/reflected copy) so our own messages do
+            // not disappear from the thread.
+            if (!message.isPrivateMessage() && !nextCounterpart.equals(message.getCounterpart())) {
                 return;
             }
         } else if (mode == MODE_MULTI && message.isPrivateMessage()) {
@@ -1949,7 +1952,7 @@ public class Conversation extends AbstractEntity implements Blockable, Comparabl
 
     public void prepend(int offset, Message message) {
         if (nextCounterpart != null) {
-            if (!nextCounterpart.equals(message.getCounterpart())) {
+            if (!message.isPrivateMessage() && !nextCounterpart.equals(message.getCounterpart())) {
                 return;
             }
         } else if (mode == MODE_MULTI && message.isPrivateMessage()) {
@@ -1964,7 +1967,7 @@ public class Conversation extends AbstractEntity implements Blockable, Comparabl
         ArrayList<Message> filtered = new ArrayList<>();
         for (Message message : messages) {
             if (nextCounterpart != null) {
-                if (nextCounterpart.equals(message.getCounterpart())) {
+                if (message.isPrivateMessage() || nextCounterpart.equals(message.getCounterpart())) {
                     filtered.add(message);
                 }
             } else if (mode == MODE_MULTI) {

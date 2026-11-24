@@ -10,6 +10,7 @@ import com.google.common.base.Throwables;
 import com.google.common.collect.ImmutableList;
 import com.google.common.collect.Iterables;
 import com.google.common.hash.Hashing;
+import com.google.common.io.ByteStreams;
 import com.google.common.primitives.Ints;
 import com.google.common.util.concurrent.FutureCallback;
 import com.google.common.util.concurrent.Futures;
@@ -27,6 +28,7 @@ import eu.siacs.conversations.services.AbstractConnectionManager;
 import eu.siacs.conversations.xml.Namespace;
 import eu.siacs.conversations.xmpp.Jid;
 import eu.siacs.conversations.xmpp.XmppConnection;
+import eu.siacs.conversations.xmpp.jingle.stanzas.Content;
 import eu.siacs.conversations.xmpp.jingle.stanzas.FileTransferDescription;
 import eu.siacs.conversations.xmpp.jingle.stanzas.GenericTransportInfo;
 import eu.siacs.conversations.xmpp.jingle.stanzas.IbbTransportInfo;
@@ -50,6 +52,8 @@ import org.bouncycastle.crypto.params.AEADParameters;
 import org.bouncycastle.crypto.params.KeyParameter;
 import org.webrtc.IceCandidate;
 
+import io.ipfs.cid.Cid;
+
 import java.io.Closeable;
 import java.io.EOFException;
 import java.io.File;
@@ -59,6 +63,7 @@ import java.io.FileOutputStream;
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.OutputStream;
+import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collections;
 import java.util.LinkedList;
@@ -67,6 +72,7 @@ import java.util.Objects;
 import java.util.Optional;
 import java.util.Queue;
 import java.util.concurrent.CountDownLatch;
+import java.util.concurrent.atomic.AtomicBoolean;
 
 public class JingleFileTransferConnection extends AbstractJingleConnection
         implements Transport.Callback, Transferable {
@@ -83,6 +89,12 @@ public class JingleFileTransferConnection extends AbstractJingleConnection
     private final Queue<IceCandidate> pendingIncomingIceCandidates = new LinkedList<>();
     private boolean acceptedAutomatically = false;
 
+    /** True when we initiate the session to request a file offered through SIMS. */
+    private final boolean requestingRemoteFile;
+
+    private List<FileTransferDescription.Hash> expectedHashes = Collections.emptyList();
+    private final AtomicBoolean partialImageAccepted = new AtomicBoolean(false);
+
     public JingleFileTransferConnection(
             final JingleConnectionManager jingleConnectionManager, final Message message) {
         super(
@@ -93,6 +105,7 @@ public class JingleFileTransferConnection extends AbstractJingleConnection
                 message.isFileOrImage(),
                 "only file or images messages can be transported via jingle");
         this.message = message;
+        this.requestingRemoteFile = false;
         this.message.setTransferable(this);
         xmppConnectionService.markMessage(message, Message.STATUS_WAITING);
     }
@@ -102,6 +115,7 @@ public class JingleFileTransferConnection extends AbstractJingleConnection
             final Id id,
             final Jid initiator) {
         super(jingleConnectionManager, id, initiator);
+        this.requestingRemoteFile = false;
         final Conversation conversation =
                 this.xmppConnectionService.findOrCreateConversation(
                         id.account, id.with.asBareJid(), false, false);
@@ -109,6 +123,64 @@ public class JingleFileTransferConnection extends AbstractJingleConnection
         this.message.setStatus(Message.STATUS_RECEIVED);
         this.message.setErrorMessage(null);
         this.message.setTransferable(this);
+    }
+
+    /**
+     * Request a file that was announced with a SIMS {@code xmpp:...?jingle-ft} source. We are the
+     * session initiator, but the peer sends the data (XEP-0234 content with senders='responder').
+     */
+    public JingleFileTransferConnection(
+            final JingleConnectionManager jingleConnectionManager,
+            final Message message,
+            final Jid peer) {
+        super(
+                jingleConnectionManager,
+                AbstractJingleConnection.Id.of(message.getConversation().getAccount(), peer),
+                message.getConversation().getAccount().getJid());
+        // Older SIMS messages can still be stored as plain text; make sure the download receiver
+        // sees a file/image message before setting up the transfer.
+        if (!message.isFileOrImage()) {
+            final Message.FileParams current = message.getFileParams();
+            final String mime = current == null ? null : current.getMediaType();
+            message.setType(
+                    mime != null && mime.startsWith("image/")
+                            ? Message.TYPE_IMAGE
+                            : Message.TYPE_FILE);
+            xmppConnectionService.updateMessage(message);
+        }
+        Preconditions.checkArgument(
+                message.isFileOrImage(),
+                "only file or images messages can be requested via jingle");
+        final Message.FileParams params = message.getFileParams();
+        Preconditions.checkArgument(params != null, "SIMS file params are required for Jingle requests");
+        this.message = message;
+        this.requestingRemoteFile = true;
+        this.message.setTransferable(this);
+        final String filename =
+                Strings.isNullOrEmpty(params.getName())
+                        ? message.getUuid() + ".bin"
+                        : params.getName();
+        xmppConnectionService
+                .getFileBackend()
+                .setupRelativeFilePath(message, filename, message.getMimeType());
+        this.expectedHashes = jingleHashes(params.getCids());
+    }
+
+    private static List<FileTransferDescription.Hash> jingleHashes(final Iterable<Cid> cids) {
+        final List<FileTransferDescription.Hash> hashes = new ArrayList<>();
+        for (final Cid cid : cids) {
+            final String type = cid.getType().name();
+            final FileTransferDescription.Algorithm algorithm;
+            if ("sha1".equals(type)) {
+                algorithm = FileTransferDescription.Algorithm.SHA_1;
+            } else if ("sha2_256".equals(type)) {
+                algorithm = FileTransferDescription.Algorithm.SHA_256;
+            } else {
+                continue;
+            }
+            hashes.add(new FileTransferDescription.Hash(cid.getHash(), algorithm));
+        }
+        return hashes;
     }
 
     @Override
@@ -133,6 +205,10 @@ public class JingleFileTransferConnection extends AbstractJingleConnection
     }
 
     public void sendSessionInitialize() {
+        if (requestingRemoteFile) {
+            sendRemoteFileRequest();
+            return;
+        }
         final ListenableFuture<Optional<XmppAxolotlMessage>> keyTransportMessage;
         if (message.getEncryption() == Message.ENCRYPTION_AXOLOTL) {
             keyTransportMessage =
@@ -156,6 +232,43 @@ public class JingleFileTransferConnection extends AbstractJingleConnection
                     @Override
                     public void onFailure(@NonNull Throwable throwable) {
                         Log.d(Config.LOGTAG, "can not send message");
+                    }
+                },
+                MoreExecutors.directExecutor());
+    }
+
+    private void sendRemoteFileRequest() {
+        this.transport = setupTransport();
+        this.transport.setTransportCallback(this);
+        final Message.FileParams params = message.getFileParams();
+        final String filename =
+                Strings.isNullOrEmpty(params.getName())
+                        ? message.getUuid() + ".bin"
+                        : params.getName();
+        final long size = Math.max(1L, params.getSize());
+        final var fileDescription =
+                new FileTransferDescription.File(
+                        size,
+                        filename,
+                        message.getMimeType(),
+                        expectedHashes);
+        Futures.addCallback(
+                this.transport.asInitialTransportInfo(),
+                new FutureCallback<>() {
+                    @Override
+                    public void onSuccess(final Transport.InitialTransportInfo initialTransportInfo) {
+                        final FileTransferContentMap contentMap =
+                                FileTransferContentMap.of(
+                                        fileDescription,
+                                        initialTransportInfo,
+                                        Content.Senders.RESPONDER);
+                        sendSessionInitialize(null, contentMap);
+                    }
+
+                    @Override
+                    public void onFailure(@NonNull final Throwable throwable) {
+                        Log.d(Config.LOGTAG, "unable to prepare transport for SIMS Jingle request", throwable);
+                        sendSessionTerminate(Reason.FAILED_APPLICATION, throwable.getMessage());
                     }
                 },
                 MoreExecutors.directExecutor());
@@ -223,7 +336,9 @@ public class JingleFileTransferConnection extends AbstractJingleConnection
                     jinglePacket,
                     (a, response) -> {
                         if (response.getType() == IqPacket.TYPE.RESULT) {
-                            xmppConnectionService.markMessage(message, Message.STATUS_OFFERED);
+                            if (!requestingRemoteFile) {
+                                xmppConnectionService.markMessage(message, Message.STATUS_OFFERED);
+                            }
                             return;
                         }
                         if (response.getType() == IqPacket.TYPE.ERROR) {
@@ -295,6 +410,8 @@ public class JingleFileTransferConnection extends AbstractJingleConnection
         } else if (transport instanceof SocksByteStreamsTransport socksBytestreamsTransport
                 && transportInfo
                 instanceof SocksByteStreamsTransportInfo socksBytestreamsTransportInfo) {
+            socksBytestreamsTransport.setTheirDestination(
+                    socksBytestreamsTransportInfo.getDestinationAddress());
             socksBytestreamsTransport.setTheirCandidates(
                     socksBytestreamsTransportInfo.getCandidates());
             return true;
@@ -577,7 +694,7 @@ public class JingleFileTransferConnection extends AbstractJingleConnection
                             + previous);
             return;
         }
-        if (isInitiator()) {
+        if (isInitiator() && !requestingRemoteFile) {
             this.message.setErrorMessage(
                     Strings.isNullOrEmpty(wrapper.text) ? wrapper.reason.toString() : wrapper.text);
         }
@@ -704,7 +821,15 @@ public class JingleFileTransferConnection extends AbstractJingleConnection
             final SocksByteStreamsTransport socksBytestreamsTransport,
             final SocksByteStreamsTransportInfo socksBytestreamsTransportInfo) {
         final var transportInfo = socksBytestreamsTransportInfo.getTransportInfo();
-        if (transportInfo instanceof SocksByteStreamsTransportInfo.CandidateError) {
+        if (transportInfo == null) {
+            final var candidates = socksBytestreamsTransportInfo.getCandidates();
+            if (!candidates.isEmpty()) {
+                socksBytestreamsTransport.setTheirDestination(
+                        socksBytestreamsTransportInfo.getDestinationAddress());
+                socksBytestreamsTransport.addTheirCandidates(candidates);
+                socksBytestreamsTransport.connect();
+            }
+        } else if (transportInfo instanceof SocksByteStreamsTransportInfo.CandidateError) {
             socksBytestreamsTransport.setCandidateError();
         } else if (transportInfo
                 instanceof SocksByteStreamsTransportInfo.CandidateUsed candidateUsed) {
@@ -791,7 +916,7 @@ public class JingleFileTransferConnection extends AbstractJingleConnection
     }
 
     protected void sendSessionTerminate(final Reason reason, final String text) {
-        if (isInitiator()) {
+        if (isInitiator() && !requestingRemoteFile) {
             this.message.setErrorMessage(Strings.isNullOrEmpty(text) ? reason.toString() : text);
         }
         sendSessionTerminate(reason, text, null);
@@ -850,7 +975,7 @@ public class JingleFileTransferConnection extends AbstractJingleConnection
         Log.d(Config.LOGTAG, "on transport established");
         final AbstractFileTransceiver fileTransceiver;
         try {
-            fileTransceiver = setupTransceiver(isResponder());
+            fileTransceiver = setupTransceiver(requestingRemoteFile || isResponder());
         } catch (final Exception e) {
             Log.d(Config.LOGTAG, "failed to set up file transceiver", e);
             sendSessionTerminate(Reason.ofThrowable(e), e.getMessage());
@@ -880,16 +1005,128 @@ public class JingleFileTransferConnection extends AbstractJingleConnection
     }
 
     private void onFileTransmissionComplete(final List<FileTransferDescription.Hash> hashes) {
-        // TODO if we ever support receiving files this should become isSending(); isReceiving()
-        if (isInitiator()) {
+        final boolean receiving = requestingRemoteFile || isResponder();
+        if (!receiving) {
             sendSessionInfoChecksum(hashes);
+            return;
+        }
+        Log.d(Config.LOGTAG, "file transfer complete " + hashes);
+        sendFileSessionInfoReceived();
+        terminateTransport();
+        if (requestingRemoteFile) {
+            if (integrityMatches(hashes)) {
+                messageDownloadedSuccess();
+                sendSessionTerminate(Reason.SUCCESS, null);
+            } else {
+                Log.w(Config.LOGTAG, "SIMS Jingle file did not match the announced hashes");
+                final File file = xmppConnectionService.getFileBackend().getFile(message);
+                if (file.exists() && !file.delete()) {
+                    Log.w(Config.LOGTAG, "unable to delete corrupt file " + file.getAbsolutePath());
+                }
+                message.setRelativeFilePath(null);
+                message.setTransferable(
+                        new TransferablePlaceholder(Transferable.STATUS_FAILED));
+                message.setErrorMessage("Integrity check failed");
+                xmppConnectionService.updateMessage(message);
+                sendSessionTerminate(Reason.FAILED_APPLICATION, "Integrity check failed");
+            }
         } else {
-            Log.d(Config.LOGTAG, "file transfer complete " + hashes);
-            sendFileSessionInfoReceived();
-            terminateTransport();
             messageReceivedSuccess();
             sendSessionTerminate(Reason.SUCCESS, null);
         }
+    }
+
+    private boolean integrityMatches(final List<FileTransferDescription.Hash> received) {
+        if (partialImageAccepted.get()) {
+            // The peer announced a wrong size/hash but delivered a complete image. Keep it.
+            return true;
+        }
+        if (expectedHashes.isEmpty()) {
+            return true; // metadata had no supported hash, nothing to verify against
+        }
+        for (final FileTransferDescription.Hash expected : expectedHashes) {
+            for (final FileTransferDescription.Hash actual : received) {
+                if (expected.algorithm == actual.algorithm
+                        && Arrays.equals(expected.hash, actual.hash)) {
+                    return true;
+                }
+            }
+        }
+        return false;
+    }
+
+    private static List<FileTransferDescription.Hash> hashesOf(final byte[] bytes) {
+        return ImmutableList.of(
+                new FileTransferDescription.Hash(
+                        Hashing.sha1().hashBytes(bytes).asBytes(),
+                        FileTransferDescription.Algorithm.SHA_1),
+                new FileTransferDescription.Hash(
+                        Hashing.sha256().hashBytes(bytes).asBytes(),
+                        FileTransferDescription.Algorithm.SHA_256));
+    }
+
+    /** Return the byte length at which an image is complete, or -1 if it is truncated/unknown. */
+    private static long completeImageLength(final File file, final String mediaType) {
+        if (!file.exists() || file.length() < 8 || file.length() > 64L * 1024 * 1024) {
+            return -1;
+        }
+        try {
+            final byte[] bytes = ByteStreams.toByteArray(new FileInputStream(file));
+            if (mediaType != null && mediaType.startsWith("image/jpeg")) {
+                if ((bytes[0] & 0xff) != 0xff || (bytes[1] & 0xff) != 0xd8) return -1;
+                for (int i = bytes.length - 2; i >= 0; --i) {
+                    if ((bytes[i] & 0xff) == 0xff && (bytes[i + 1] & 0xff) == 0xd9) {
+                        return i + 2L;
+                    }
+                }
+                return -1;
+            }
+            if (mediaType != null && mediaType.startsWith("image/png")) {
+                if (bytes[0] != (byte) 0x89 || bytes[1] != 'P' || bytes[2] != 'N' || bytes[3] != 'G') {
+                    return -1;
+                }
+                for (int i = bytes.length - 12; i >= 0; --i) {
+                    if (bytes[i] == 'I' && bytes[i + 1] == 'E' && bytes[i + 2] == 'N' && bytes[i + 3] == 'D') {
+                        return i + 12L;
+                    }
+                }
+                return -1;
+            }
+            if (mediaType != null && mediaType.startsWith("image/gif")) {
+                if (bytes[0] != 'G' || bytes[1] != 'I' || bytes[2] != 'F' || bytes[3] != '8') return -1;
+                return bytes[bytes.length - 1] == 0x3b ? bytes.length : -1;
+            }
+            if (mediaType != null && mediaType.startsWith("image/webp")) {
+                return bytes.length > 12
+                                && bytes[0] == 'R'
+                                && bytes[1] == 'I'
+                                && bytes[2] == 'F'
+                                && bytes[3] == 'F'
+                                && bytes[8] == 'W'
+                                && bytes[9] == 'E'
+                                && bytes[10] == 'B'
+                                && bytes[11] == 'P'
+                        ? bytes.length
+                        : -1;
+            }
+        } catch (final IOException e) {
+            return -1;
+        }
+        return -1;
+    }
+
+    private static void truncate(final File file, final long length) throws IOException {
+        try (final FileOutputStream out = new FileOutputStream(file, true)) {
+            out.getChannel().truncate(length);
+        }
+    }
+
+    private void messageDownloadedSuccess() {
+        this.message.setTransferable(null);
+        xmppConnectionService.getFileBackend().updateFileParams(message);
+        xmppConnectionService.updateMessage(message);
+        final File file = xmppConnectionService.getFileBackend().getFile(message);
+        xmppConnectionService.getFileBackend().updateMediaScanner(file);
     }
 
     private void messageReceivedSuccess() {
@@ -943,7 +1180,10 @@ public class JingleFileTransferConnection extends AbstractJingleConnection
                     transport.getInputStream(),
                     transport.getTerminationLatch(),
                     fileDescription.size,
-                    updateRunnable);
+                    updateRunnable,
+                    fileDescription.mediaType,
+                    requestingRemoteFile,
+                    partialImageAccepted);
         } else {
             return new FileTransmitter(
                     file,
@@ -1107,7 +1347,7 @@ public class JingleFileTransferConnection extends AbstractJingleConnection
     @Override
     protected boolean transition(final State target, final Runnable runnable) {
         final boolean transitioned = super.transition(target, runnable);
-        if (transitioned && isInitiator()) {
+        if (transitioned && isInitiator() && !requestingRemoteFile) {
             Log.d(Config.LOGTAG, "running mark message hooks");
             if (target == State.SESSION_ACCEPTED) {
                 xmppConnectionService.markMessage(message, Message.STATUS_UNSEND);
@@ -1153,10 +1393,15 @@ public class JingleFileTransferConnection extends AbstractJingleConnection
         // uploading
         // for receiving the message status remains at 'received' but Transferable goes through
         // various status
-        if (isInitiator()) {
+        if (isInitiator() && !requestingRemoteFile) {
             return Transferable.STATUS_UPLOADING;
         }
         final var state = getState();
+        if (requestingRemoteFile
+                && (state == State.SESSION_INITIALIZED
+                        || state == State.SESSION_INITIALIZED_PRE_APPROVED)) {
+            return Transferable.STATUS_WAITING;
+        }
         return switch (state) {
             case NULL, SESSION_INITIALIZED, SESSION_INITIALIZED_PRE_APPROVED -> Transferable
                     .STATUS_OFFER;
@@ -1176,6 +1421,9 @@ public class JingleFileTransferConnection extends AbstractJingleConnection
     @Override
     public boolean start() {
         Log.d(Config.LOGTAG, "user pressed start()");
+        if (requestingRemoteFile) {
+            return true;
+        }
         // TODO there is a 'connected' check apparently?
         if (isInState(State.SESSION_INITIALIZED)) {
             sendSessionAccept();
@@ -1389,6 +1637,9 @@ public class JingleFileTransferConnection extends AbstractJingleConnection
     private static class FileReceiver extends AbstractFileTransceiver {
 
         private final InputStream inputStream;
+        private final String mediaType;
+        private final boolean allowPartialImage;
+        private final AtomicBoolean partialImageAccepted;
 
         private FileReceiver(
                 final File file,
@@ -1396,9 +1647,15 @@ public class JingleFileTransferConnection extends AbstractJingleConnection
                 final InputStream inputStream,
                 final CountDownLatch transportTerminationLatch,
                 final long total,
-                final Runnable updateRunnable) {
+                final Runnable updateRunnable,
+                final String mediaType,
+                final boolean allowPartialImage,
+                final AtomicBoolean partialImageAccepted) {
             super(file, transportSecurity, transportTerminationLatch, total, updateRunnable);
             this.inputStream = inputStream;
+            this.mediaType = mediaType;
+            this.allowPartialImage = allowPartialImage;
+            this.partialImageAccepted = partialImageAccepted;
         }
 
         private OutputStream openFileOutputStream() throws FileNotFoundException {
@@ -1427,13 +1684,14 @@ public class JingleFileTransferConnection extends AbstractJingleConnection
             Log.d(Config.LOGTAG, "file receiver attempting to receive " + total + " bytes");
             final var sha1Hasher = Hashing.sha1().newHasher();
             final var sha256Hasher = Hashing.sha256().newHasher();
+            boolean reachedEof = false;
             try (final var fileOutputStream = openFileOutputStream()) {
-                final var buffer = new byte[4096];
+                final var buffer = new byte[65536];
                 while (total - transmitted > 0) {
                     final int count = inputStream.read(buffer);
                     if (count == -1) {
-                        throw new EOFException(
-                                String.format("reached EOF after %d/%d", transmitted, total));
+                        reachedEof = true;
+                        break;
                     }
                     fileOutputStream.write(buffer, 0, count);
                     sha1Hasher.putBytes(buffer, 0, count);
@@ -1441,24 +1699,47 @@ public class JingleFileTransferConnection extends AbstractJingleConnection
                     transmitted += count;
                     updateProgress();
                 }
-                Log.d(
-                        Config.LOGTAG,
-                        "written " + transmitted + " bytes to " + file.getAbsolutePath());
-                final List<FileTransferDescription.Hash> hashes =
-                        ImmutableList.of(
-                                new FileTransferDescription.Hash(
-                                        sha1Hasher.hash().asBytes(),
-                                        FileTransferDescription.Algorithm.SHA_1),
-                                new FileTransferDescription.Hash(
-                                        sha256Hasher.hash().asBytes(),
-                                        FileTransferDescription.Algorithm.SHA_256));
-                complete.set(hashes);
+                if (!reachedEof) {
+                    Log.d(
+                            Config.LOGTAG,
+                            "written " + transmitted + " bytes to " + file.getAbsolutePath());
+                    complete.set(
+                            ImmutableList.of(
+                                    new FileTransferDescription.Hash(
+                                            sha1Hasher.hash().asBytes(),
+                                            FileTransferDescription.Algorithm.SHA_1),
+                                    new FileTransferDescription.Hash(
+                                            sha256Hasher.hash().asBytes(),
+                                            FileTransferDescription.Algorithm.SHA_256)));
+                } else if (!acceptPartialImage()) {
+                    throw new EOFException(
+                            String.format("reached EOF after %d/%d", transmitted, total));
+                }
             } catch (final Exception e) {
-                complete.setException(e);
+                if (!partialImageAccepted.get()) complete.setException(e);
             }
             Log.d(Config.LOGTAG, "waiting for transport to terminate before stopping thread");
             awaitTransportTermination();
             closeTransport(inputStream);
+        }
+
+        /** Some senders announce a wrong size; keep the image if it is actually complete. */
+        private boolean acceptPartialImage() throws IOException {
+            if (!allowPartialImage || transportSecurity != null) return false;
+            final long imageEnd = completeImageLength(this.file, this.mediaType);
+            if (imageEnd <= 0 || imageEnd > this.file.length()) return false;
+            if (imageEnd < this.file.length()) truncate(this.file, imageEnd);
+            final byte[] bytes;
+            try (final var in = new FileInputStream(this.file)) {
+                bytes = ByteStreams.toByteArray(in);
+            }
+            transmitted = bytes.length;
+            partialImageAccepted.set(true);
+            complete.set(hashesOf(bytes));
+            Log.w(
+                    Config.LOGTAG,
+                    "accepted complete image of " + bytes.length + " bytes (announced " + total + ")");
+            return true;
         }
     }
 

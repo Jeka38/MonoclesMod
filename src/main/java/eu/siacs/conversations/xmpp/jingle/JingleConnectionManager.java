@@ -682,6 +682,22 @@ public class JingleConnectionManager extends AbstractConnectionManager {
         connection.sendSessionInitialize();
     }
 
+    /** Start a Jingle file transfer request for a SIMS {@code xmpp:...?jingle-ft} source. */
+    public boolean startJingleFileRequest(final Message message) {
+        final Message.FileParams params = message.getFileParams();
+        final Jid peer = params == null ? null : Message.FileParams.jingleJid(params.url);
+        if (peer == null) {
+            Log.d(Config.LOGTAG, "unable to parse Jingle file transfer peer from SIMS source");
+            return false;
+        }
+        final JingleFileTransferConnection connection =
+                new JingleFileTransferConnection(this, message, peer);
+        this.connections.put(connection.getId(), connection);
+        connection.sendSessionInitialize();
+        mXmppConnectionService.updateConversationUi();
+        return true;
+    }
+
     public Optional<OngoingRtpSession> getOngoingRtpConnection(final Contact contact) {
         for (final Map.Entry<AbstractJingleConnection.Id, AbstractJingleConnection> entry :
                 this.connections.entrySet()) {

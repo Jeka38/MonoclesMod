@@ -1989,7 +1989,12 @@ public class FileBackend {
         if (fileParams.getName() == null || fileParams.getName().isEmpty()) {
             fileParams.setName(file.getName());
         }
-        fileParams.setMediaType(mime);
+        // A SIMS <media-type> is authoritative when the on-disk name has no usable extension.
+        if (!Strings.isNullOrEmpty(mime)) {
+            fileParams.setMediaType(mime);
+        } else if (!Strings.isNullOrEmpty(message.getMimeType())) {
+            fileParams.setMediaType(message.getMimeType());
+        }
         if (encrypted && !file.exists()) {
             Log.d(Config.LOGTAG, "skipping updateFileParams because file is encrypted");
             final DownloadableFile encryptedFile = getFile(message, false);
@@ -2766,7 +2771,7 @@ public class FileBackend {
                 final var uriS = thumb.getAttribute("uri");
                 if (uriS == null) continue;
                 Uri uri = Uri.parse(uriS);
-                if (uri.getScheme().equals("data")) {
+                if ("data".equals(uri.getScheme())) {
                     String[] parts = uri.getSchemeSpecificPart().split(",", 2);
 
                     final LruCache<String, Drawable> cache = mXmppConnectionService.getDrawableCache();
@@ -2838,7 +2843,7 @@ public class FileBackend {
                         final var uriS = thumb.getAttribute("uri");
                         if (uriS == null) continue;
                         Uri uri = Uri.parse(uriS);
-                        if (uri.getScheme().equals("data")) {
+                        if ("data".equals(uri.getScheme())) {
                             if (android.os.Build.VERSION.SDK_INT < 28) continue;
                             String[] parts = uri.getSchemeSpecificPart().split(",", 2);
 
@@ -2866,7 +2871,7 @@ public class FileBackend {
                                 cache.put(file.getAbsolutePath(), thumbnail);
                                 return thumbnail;
                             }
-                        } else if (uri.getScheme().equals("cid")) {
+                        } else if ("cid".equals(uri.getScheme())) {
                             Cid cid = BobTransfer.cid(uri);
                             if (cid == null) continue;
                             DownloadableFile f = mXmppConnectionService.getFileForCid(cid);

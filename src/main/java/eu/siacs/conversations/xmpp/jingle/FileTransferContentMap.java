@@ -73,13 +73,20 @@ public class FileTransferContentMap
 
     public static FileTransferContentMap of(
             final FileTransferDescription.File file, final Transport.InitialTransportInfo initialTransportInfo) {
+        return of(file, initialTransportInfo, Content.Senders.INITIATOR);
+    }
+
+    public static FileTransferContentMap of(
+            final FileTransferDescription.File file,
+            final Transport.InitialTransportInfo initialTransportInfo,
+            final Content.Senders senders) {
         // TODO copy groups
         final var transportInfo = initialTransportInfo.transportInfo;
         return new FileTransferContentMap(initialTransportInfo.group,
                 Map.of(
                         initialTransportInfo.contentName,
                         new DescriptionTransport<>(
-                                Content.Senders.INITIATOR,
+                                senders,
                                 FileTransferDescription.of(file),
                                 transportInfo)));
     }

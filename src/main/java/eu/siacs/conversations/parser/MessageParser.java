@@ -60,6 +60,7 @@ import eu.siacs.conversations.http.HttpConnectionManager;
 import eu.siacs.conversations.services.MessageArchiveService;
 import eu.siacs.conversations.services.XmppConnectionService;
 import eu.siacs.conversations.utils.CryptoHelper;
+import eu.siacs.conversations.utils.MessageUtils;
 import eu.siacs.conversations.xml.Namespace;
 import eu.siacs.conversations.xml.Element;
 import eu.siacs.conversations.xml.LocalizedContent;
@@ -690,7 +691,7 @@ public class MessageParser extends AbstractParser implements OnMessagePacketRece
 
         final Element axolotlEncrypted = packet.findChildEnsureSingle(XmppAxolotlMessage.CONTAINERTAG, AxolotlService.PEP_PREFIX);
         int status;
-        final Jid counterpart;
+        Jid counterpart;
         final Jid to = packet.getTo();
         final Jid from = packet.getFrom();
         final Element originId = packet.findChild("origin-id", Namespace.STANZA_IDS);
@@ -807,6 +808,43 @@ public class MessageParser extends AbstractParser implements OnMessagePacketRece
         final boolean isPrivateMucMessage = mucUserElement != null && !isTypeGroupChat && counterpart.isFullJid();
         final boolean conversationIsProbablyMuc = isTypeGroupChat || (mucUserElement != null || account.getXmppConnection().getMucServersWithholdAccount().contains(counterpart.getDomain().toEscapedString()));
 
+        // A MUC may reflect our own private message back to us with from=room/ourNick and
+        // to=room/theirNick. Routing that stanza by `from` would create a bogus PM thread with
+        // ourselves and hide our own message in the real thread, so route it by `to` instead.
+        final Conversation mainRoomForPm = isPrivateMucMessage && from != null && from.asBareJid() != null
+                ? mXmppConnectionService.findFirstMuc(from.asBareJid(), account.getJid().asBareJid().toString())
+                : null;
+        final MucOptions.User selfOccupant = mainRoomForPm == null ? null : mainRoomForPm.getMucOptions().getSelf();
+        Jid selfFullJid = selfOccupant == null ? null : selfOccupant.getFullJid();
+        if (selfFullJid == null && from != null) {
+            // During MAM replay the room may not be joined yet, so MucOptions has no self user.
+            // The bookmark still knows the nick we use in this room.
+            final Bookmark bookmark = account.getBookmark(from.asBareJid());
+            final String nick = bookmark == null ? null : bookmark.getNick();
+            if (nick != null && !nick.isEmpty()) {
+                try {
+                    selfFullJid = Jid.of(from.getLocal(), from.getDomain(), nick);
+                } catch (final IllegalArgumentException e) {
+                    try {
+                        selfFullJid = Jid.ofEscaped(from.getLocal(), from.getDomain(), nick);
+                    } catch (final IllegalArgumentException e2) {
+                        selfFullJid = null;
+                    }
+                }
+            }
+        }
+        final boolean ownPrivateMucMessage = isPrivateMucMessage
+                && selfFullJid != null
+                && from.equals(selfFullJid)
+                && to != null
+                && to.isFullJid();
+        if (ownPrivateMucMessage) {
+            counterpart = to;
+            selfAddressed = true;
+            status = Message.STATUS_SEND_RECEIVED;
+            Log.d(Config.LOGTAG, account.getJid().asBareJid() + ": routing reflected MUC PM to " + counterpart);
+        }
+
         if ((body != null || pgpEncrypted != null || (axolotlEncrypted != null && axolotlEncrypted.hasChild("payload")) || !attachments.isEmpty() || html != null || (packet.hasChild("subject") && packet.hasChild("thread")) || !quickResponseElements.isEmpty()) && !isMucStatusMessage) {
             final Conversation conversation;
             if (isPrivateMucMessage) {
@@ -832,6 +870,9 @@ public class MessageParser extends AbstractParser implements OnMessagePacketRece
                 status = Message.STATUS_RECEIVED;
                 if (remoteMsgId != null && conversation.findMessageWithRemoteId(remoteMsgId, counterpart) != null) {
                     return;
+                }
+                if (ownPrivateMucMessage) {
+                    status = Message.STATUS_SEND_RECEIVED;
                 }
             }
 
@@ -1047,7 +1088,7 @@ public class MessageParser extends AbstractParser implements OnMessagePacketRece
                 message.setStatus(status);
                 message.setTrueCounterpart(trueCounterpart);
                 if (!isTypeGroupChat) {
-                    message.setType(Message.TYPE_PRIVATE);
+                    message.setType(message.isFileOrImage() ? Message.TYPE_PRIVATE_FILE : Message.TYPE_PRIVATE);
                 }
             } else {
                 updateLastseen(account, from);
@@ -1340,7 +1381,10 @@ public class MessageParser extends AbstractParser implements OnMessagePacketRece
                     } catch (URISyntaxException e) {
                         Log.d(Config.LOGTAG, "BobTransfer failed to parse URI");
                     }
-                } else {
+                } else if (message.getFileParams() == null
+                        || !MessageUtils.isJingleFtSource(message.getFileParams().url)) {
+                    // A SIMS source with only xmpp:...?jingle-ft needs an explicit Jingle request;
+                    // sending it to the HTTP downloader would silently fail.
                     manager.createNewAutoDownloadConnection(message);
                 }
             } else if (notify) {

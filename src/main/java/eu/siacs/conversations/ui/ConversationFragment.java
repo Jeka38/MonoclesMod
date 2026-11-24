@@ -3745,7 +3745,14 @@ public class ConversationFragment extends XmppFragment
             ToastCompat.makeText(getActivity(), R.string.not_connected_try_again, ToastCompat.LENGTH_SHORT).show();
             return;
         }
-        if (message.getOob() != null && "cid".equalsIgnoreCase(message.getOob().getScheme())) {
+        final Message.FileParams fileParams = message.getFileParams();
+        if (fileParams != null && MessageUtils.isJingleFtSource(fileParams.url)) {
+            if (!activity.xmppConnectionService
+                    .getJingleConnectionManager()
+                    .startJingleFileRequest(message)) {
+                ToastCompat.makeText(getActivity(), R.string.not_connected_try_again, ToastCompat.LENGTH_SHORT).show();
+            }
+        } else if (message.getOob() != null && "cid".equalsIgnoreCase(message.getOob().getScheme())) {
             try {
                 BobTransfer transfer = new BobTransfer.ForMessage(message, activity.xmppConnectionService);
                 message.setTransferable(transfer);
@@ -5805,7 +5812,15 @@ public class ConversationFragment extends XmppFragment
             final XmppConnection connection = c.getAccount().getXmppConnection();
             return connection != null && connection.getFeatures().mam();
         } else {
-            return c.getMucOptions().mamSupport();
+            // A MUC PM window has no disco results of its own; use the parent room's features.
+            final Conversation mainRoom = c.hasPermanentCounterpart()
+                    && c.getAccount() != null
+                    && c.getAccount().getJid() != null
+                    && activity != null
+                    && activity.xmppConnectionService != null
+                    ? activity.xmppConnectionService.findFirstMuc(c.getJid(), c.getAccount().getJid().asBareJid().toString())
+                    : null;
+            return (mainRoom == null ? c : mainRoom).getMucOptions().mamSupport();
         }
     }
 

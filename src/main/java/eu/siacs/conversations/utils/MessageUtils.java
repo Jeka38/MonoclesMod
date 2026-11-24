@@ -33,6 +33,7 @@ import com.google.common.base.Strings;
 
 import java.net.URI;
 import java.net.URISyntaxException;
+import java.util.Locale;
 import java.util.regex.Pattern;
 
 import eu.siacs.conversations.entities.Contact;
@@ -155,5 +156,12 @@ public class MessageUtils {
 
     public static boolean fileWithKnownSize(Message message) {
         return message.getType() == Message.TYPE_TEXT && message.isOOb() && message.getFileParams().size != null && message.getFileParams().size > 0 && message.getFileParams().url != null;
+    }
+
+    /** SIMS sources of the form {@code xmpp:user@host/resource?jingle-ft} need a Jingle request. */
+    public static boolean isJingleFtSource(final String uri) {
+        if (uri == null) return false;
+        final String lower = uri.toLowerCase(Locale.ROOT);
+        return lower.startsWith("xmpp:") && lower.contains("jingle-ft");
     }
 }

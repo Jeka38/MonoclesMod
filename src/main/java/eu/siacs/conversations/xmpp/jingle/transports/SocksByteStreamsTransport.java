@@ -58,6 +58,9 @@ import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.ExecutionException;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
+import java.util.concurrent.ScheduledExecutorService;
+import java.util.concurrent.ScheduledFuture;
+import java.util.concurrent.TimeUnit;
 import java.util.concurrent.TimeoutException;
 import java.util.concurrent.atomic.AtomicBoolean;
 
@@ -73,9 +76,16 @@ public class SocksByteStreamsTransport implements Transport {
     private final String streamId;
 
     private ImmutableList<Candidate> theirCandidates;
-    private final String theirDestination;
+    private String theirDestination;
     private final SettableFuture<Connection> selectedByThemCandidate = SettableFuture.create();
     private final SettableFuture<String> theirProxyActivation = SettableFuture.create();
+    private volatile Connection selectedByUs;
+    private volatile boolean remoteCandidateError;
+    private final AtomicBoolean establishmentCallbackRegistered = new AtomicBoolean(false);
+    private final AtomicBoolean transportEstablished = new AtomicBoolean(false);
+    private final ScheduledExecutorService candidateErrorExecutor =
+            Executors.newSingleThreadScheduledExecutor();
+    private volatile ScheduledFuture<?> pendingCandidateError;
 
     private final CountDownLatch terminationLatch = new CountDownLatch(1);
 
@@ -155,6 +165,7 @@ public class SocksByteStreamsTransport implements Transport {
                 new FutureCallback<>() {
                     @Override
                     public void onSuccess(final Connection connection) {
+                        cancelPendingCandidateError();
                         final Candidate candidate = connection.candidate;
                         transportCallback.onCandidateUsed(streamId, candidate);
                         establishTransport(connection);
@@ -163,7 +174,13 @@ public class SocksByteStreamsTransport implements Transport {
                     @Override
                     public void onFailure(@NonNull final Throwable throwable) {
                         if (throwable instanceof CandidateErrorException) {
-                            transportCallback.onCandidateError(streamId);
+                            // The peer may send additional candidates (a proxy) shortly after the
+                            // initial ones. Do not tell it we gave up until that had a chance.
+                            pendingCandidateError =
+                                    candidateErrorExecutor.schedule(
+                                            () -> transportCallback.onCandidateError(streamId),
+                                            3,
+                                            TimeUnit.SECONDS);
                         }
                         establishTransport(null);
                     }
@@ -172,33 +189,54 @@ public class SocksByteStreamsTransport implements Transport {
     }
 
     private void establishTransport(final Connection selectedByUs) {
-        Futures.addCallback(
-                selectedByThemCandidate,
-                new FutureCallback<>() {
-                    @Override
-                    public void onSuccess(Connection result) {
-                        establishTransport(selectedByUs, result);
-                    }
+        // A proxy candidate can arrive after the initial candidates failed. Keep the latest local
+        // selection and register only one callback so a later retry does not establish twice.
+        this.selectedByUs = selectedByUs;
+        if (transportEstablished.get()) {
+            return;
+        }
+        if (remoteCandidateError) {
+            // The peer rejected our first candidates. If our own connection only succeeded after
+            // that error (a proxy can be slow), establish from it instead of waiting for a
+            // candidate-used stanza that will never arrive for the first attempt.
+            if (selectedByUs != null) {
+                establishTransport(selectedByUs, null);
+            }
+            return;
+        }
+        if (establishmentCallbackRegistered.compareAndSet(false, true)) {
+            Futures.addCallback(
+                    selectedByThemCandidate,
+                    new FutureCallback<>() {
+                        @Override
+                        public void onSuccess(Connection result) {
+                            establishTransport(SocksByteStreamsTransport.this.selectedByUs, result);
+                        }
 
-                    @Override
-                    public void onFailure(@NonNull Throwable throwable) {
-                        establishTransport(selectedByUs, null);
-                    }
-                },
-                MoreExecutors.directExecutor());
+                        @Override
+                        public void onFailure(@NonNull Throwable throwable) {
+                            establishTransport(SocksByteStreamsTransport.this.selectedByUs, null);
+                        }
+                    },
+                    MoreExecutors.directExecutor());
+        }
     }
 
     private void establishTransport(
             final Connection selectedByUs, final Connection selectedByThem) {
         final var selection = selectConnection(selectedByUs, selectedByThem);
         if (selection == null) {
-            transportCallback.onTransportSetupFailed();
+            if (transportEstablished.compareAndSet(false, true)) {
+                transportCallback.onTransportSetupFailed();
+            }
             return;
         }
         if (selection.connection.candidate.type == CandidateType.DIRECT) {
             Log.d(Config.LOGTAG, "final selection " + selection.connection.candidate);
             this.connection = selection.connection;
-            this.transportCallback.onTransportEstablished();
+            if (transportEstablished.compareAndSet(false, true)) {
+                this.transportCallback.onTransportEstablished();
+            }
         } else {
             final ListenableFuture<String> proxyActivation;
             if (selection.owner == Owner.THEIRS) {
@@ -214,7 +252,9 @@ public class SocksByteStreamsTransport implements Transport {
                         public void onSuccess(final String cid) {
                             // TODO compare cid to selection.connection.candidate
                             connection = selection.connection;
-                            transportCallback.onTransportEstablished();
+                            if (transportEstablished.compareAndSet(false, true)) {
+                                transportCallback.onTransportEstablished();
+                            }
                         }
 
                         @Override
@@ -459,6 +499,8 @@ public class SocksByteStreamsTransport implements Transport {
     @Override
     public void terminate() {
         Log.d(Config.LOGTAG, "terminating socks transport");
+        cancelPendingCandidateError();
+        this.candidateErrorExecutor.shutdownNow();
         this.terminationLatch.countDown();
         final var connection = this.connection;
         if (connection != null) {
@@ -487,7 +529,7 @@ public class SocksByteStreamsTransport implements Transport {
         final var proxyConnection =
                 Iterables.tryFind(ourProxyConnections, c -> c.candidate.cid.equals(cid));
         if (proxyConnection.isPresent()) {
-            this.selectedByThemCandidate.set(proxyConnection.get());
+            completeRemoteSelection(proxyConnection.get());
             return true;
         }
 
@@ -496,7 +538,7 @@ public class SocksByteStreamsTransport implements Transport {
 
         final var connection = this.connectionProvider.findPeerConnection(cid);
         if (connection.isPresent()) {
-            this.selectedByThemCandidate.set(connection.get());
+            completeRemoteSelection(connection.get());
             return true;
         } else {
             Log.d(Config.LOGTAG, "none of the connected candidates has cid " + cid);
@@ -505,12 +547,34 @@ public class SocksByteStreamsTransport implements Transport {
     }
 
     public void setCandidateError() {
-        this.selectedByThemCandidate.setException(
-                new CandidateErrorException("Remote could not connect to any of our candidates"));
+        if (this.selectedByThemCandidate.isDone()) {
+            return;
+        }
+        // Do not complete the future with an exception: the peer may send a proxy candidate in a
+        // later transport-info. Establish from our own connection as soon as it is ready instead.
+        this.remoteCandidateError = true;
+        establishTransport(this.selectedByUs);
     }
 
     public void setProxyActivated(final String cid) {
+        if (this.theirProxyActivation.isDone()) {
+            return;
+        }
         this.theirProxyActivation.set(cid);
+        // When the peer provided the proxy we connected to, it confirms with <activated/> instead
+        // of <candidate-used/>. Resolve that future too so transport establishment can continue.
+        final var selected = this.selectedByUs;
+        if (selected != null && selected.candidate.type == CandidateType.PROXY) {
+            completeRemoteSelection(selected);
+        }
+    }
+
+    private synchronized void completeRemoteSelection(final Connection connection) {
+        this.remoteCandidateError = false;
+        if (this.selectedByThemCandidate.isDone()) {
+            return;
+        }
+        this.selectedByThemCandidate.set(connection);
     }
 
     public void setProxyError() {
@@ -524,6 +588,44 @@ public class SocksByteStreamsTransport implements Transport {
                                 (Comparator<Candidate>)
                                         (o1, o2) -> Integer.compare(o2.priority, o1.priority))
                         .immutableSortedCopy(candidates);
+    }
+
+    /** Peer-supplied candidates may arrive after the initial candidates failed (e.g. a proxy). */
+    public void addTheirCandidates(final Collection<Candidate> candidates) {
+        cancelPendingCandidateError();
+        final ImmutableList.Builder<Candidate> merged = ImmutableList.builder();
+        if (this.theirCandidates != null) {
+            merged.addAll(this.theirCandidates);
+        }
+        for (final Candidate candidate : candidates) {
+            final boolean alreadyKnown =
+                    this.theirCandidates != null
+                            && Iterables.any(
+                                    this.theirCandidates,
+                                    known -> known.cid.equals(candidate.cid));
+            if (!alreadyKnown) {
+                merged.add(candidate);
+            }
+        }
+        setTheirCandidates(merged.build());
+    }
+
+    /**
+     * Use the destination advertised by the peer instead of recomputing it from JIDs. This matters
+     * for MUC file transfers where the peer's real JID differs from its room JID.
+     */
+    public void setTheirDestination(final String destination) {
+        if (!Strings.isNullOrEmpty(destination)) {
+            this.theirDestination = destination;
+        }
+    }
+
+    private void cancelPendingCandidateError() {
+        final var pending = this.pendingCandidateError;
+        if (pending != null) {
+            pending.cancel(false);
+            this.pendingCandidateError = null;
+        }
     }
 
     private static void closeSocket(final Socket socket) {
