@@ -843,7 +843,7 @@ public class XmppConnectionService extends Service {
         if (conversation.getReplyTo() == null) {
             message = new Message(conversation, "", conversation.getNextEncryption());
         } else {
-            message = conversation.getReplyTo().reply();
+            message = conversation.getReplyTo().reply(showDateInQuotes());
             message.setEncryption(conversation.getNextEncryption());
         }
 
@@ -895,7 +895,7 @@ public class XmppConnectionService extends Service {
         if (conversation.getReplyTo() == null) {
             message = new Message(conversation, "", conversation.getNextEncryption());
         } else {
-            message = conversation.getReplyTo().reply();
+            message = conversation.getReplyTo().reply(showDateInQuotes());
             message.setEncryption(conversation.getNextEncryption());
         }
 
@@ -1425,7 +1425,7 @@ public class XmppConnectionService extends Service {
             if (Emoticons.isEmoji(body)) {
                 message = inReplyTo.react(body);
             } else {
-                message = inReplyTo.reply();
+                message = inReplyTo.reply(showDateInQuotes());
             }
             message.clearFallbacks("urn:xmpp:reply:0");
             message.setBody(body);
@@ -1502,6 +1502,10 @@ public class XmppConnectionService extends Service {
 
     public boolean colored_muc_names() {
         return getBooleanPreference("colored_muc_names", R.bool.use_colored_muc_names);
+    }
+
+    private boolean showDateInQuotes() {
+        return getBooleanPreference("show_date_in_quotes", R.bool.show_date_in_quotes);
     }
 
     public int getCompressImageResolutionPreference() {

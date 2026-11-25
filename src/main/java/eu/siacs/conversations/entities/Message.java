@@ -30,7 +30,6 @@ import java.util.stream.Collectors;
 import eu.siacs.conversations.xml.Element;
 import eu.siacs.conversations.xml.Tag;
 import eu.siacs.conversations.xml.XmlReader;
-import eu.siacs.conversations.ui.util.QuoteHelper;
 
 import com.google.common.base.Strings;
 import com.google.common.collect.ImmutableSet;
@@ -517,21 +516,14 @@ public class Message extends AbstractEntity implements AvatarService.Avatarable 
         return getUuid();
     }
 
+    public Message reply(final boolean showDate) {
+        // The whole quotation, including its sender/date header, is body text formatted per XEP-0393.
+        final String fullMessage = MessageUtils.quote(this, showDate) + "\n\n";
+        return new Message(conversation, fullMessage, ENCRYPTION_NONE);
+    }
+
     public Message reply() {
-        Message m;
-        String name = getAvatarName();
-        String quotedText = MessageUtils.prepareQuote(this);
-
-        String fullMessage;
-        if (name != null && !name.isEmpty() && conversation != null && conversation.getMode() == Conversational.MODE_MULTI) {
-            fullMessage = name + "\n" + QuoteHelper.quote(quotedText) + "\n\n";
-        } else {
-            fullMessage = QuoteHelper.quote(quotedText) + "\n\n";
-        }
-
-        m = new Message(conversation, fullMessage, ENCRYPTION_NONE);
-
-        return m;
+        return reply(true);
     }
 
 
@@ -541,11 +533,11 @@ public class Message extends AbstractEntity implements AvatarService.Avatarable 
         clearFallbacks("urn:xmpp:reply:0", "urn:xmpp:reactions:0");
     }
 
-    public void updateReplyTo(final Message replyTo, Spanned body) {
+    public void updateReplyTo(final boolean showDate, final Message replyTo, Spanned body) {
         clearReplyReact();
 
         if (body == null) body = new SpannableStringBuilder(getBody(true));
-        setBody(QuoteHelper.quote(MessageUtils.prepareQuote(replyTo)) + "\n");
+        setBody(MessageUtils.quote(replyTo, showDate) + "\n");
 
         final String replyId = replyTo.replyId();
         if (replyId == null) return;
@@ -563,6 +555,10 @@ public class Message extends AbstractEntity implements AvatarService.Avatarable 
 
         appendBody(body);
         setInReplyTo(replyTo);
+    }
+
+    public void updateReplyTo(final Message replyTo, Spanned body) {
+        updateReplyTo(true, replyTo, body);
     }
 
     public Message react(String emoji) {

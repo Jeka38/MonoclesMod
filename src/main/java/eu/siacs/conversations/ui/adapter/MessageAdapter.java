@@ -984,7 +984,11 @@ public class MessageAdapter extends ArrayAdapter<Message> {
             int start,
             int end,
             boolean darkBackground,
-            final boolean makeEdits) {
+            final boolean makeEdits,
+            final int depth) {
+        if (end <= start) {
+            return;
+        }
         if (makeEdits && start > 1 && !"\n\n".equals(body.subSequence(start - 2, start).toString())) {
             body.insert(start++, "\n");
             body.setSpan(
@@ -1000,9 +1004,9 @@ public class MessageAdapter extends ArrayAdapter<Message> {
                     Spannable.SPAN_EXCLUSIVE_EXCLUSIVE
             );
         }
-        int color = ThemeHelper.messageTextColor(activity);
         final DisplayMetrics metrics = getContext().getResources().getDisplayMetrics();
-        body.setSpan(new QuoteSpan(color, metrics), start, end, Spannable.SPAN_EXCLUSIVE_EXCLUSIVE);
+        body.setSpan(new QuoteSpan(StyledAttributes.getColor(activity, R.attr.colorAccent), metrics, depth),
+                start, end, Spannable.SPAN_EXCLUSIVE_EXCLUSIVE);
     }
 
     public boolean handleTextQuotes(final TextView textView, final Editable body) {
@@ -1014,70 +1018,91 @@ public class MessageAdapter extends ArrayAdapter<Message> {
         return handleTextQuotes(textView, body, darkBackground, deleteMarkers);
     }
     /**
-     * Applies QuoteSpan to group of lines which starts with > or » characters. Appends likebreaks
-     * and applies DividerSpan to them to show a padding between quote and text.
+     * Applies one depth-aware QuoteSpan to each group of lines starting with {@code >} or {@code »}.
+     * Nested markers (e.g. {@code >>}) increase the span's depth, so the preview shows the same
+     * card-in-card rendering as the message body.
      */
     public boolean handleTextQuotes(
             final TextView textView,
             final Editable body,
             final boolean darkBackground,
             final boolean deleteMarkers) {
-        boolean startsWithQuote = false;
-        int quoteDepth = 1;
-        while (QuoteHelper.bodyContainsQuoteStart(body) && quoteDepth <= Config.QUOTE_MAX_DEPTH) {
-            char previous = '\n';
-            int lineStart = -1;
-            int lineTextStart = -1;
-            int quoteStart = -1;
-            int skipped = 0;
-            for (int i = 0; i <= body.length(); i++) {
-                if (!deleteMarkers && QuoteHelper.isRelativeSizeSpanned(body, i)) {
-                    skipped++;
-                    continue;
-                }
-                char current = body.length() > i ? body.charAt(i) : '\n';
-                if (lineStart == -1) {
-                    if (previous == '\n') {
-                        if (i < body.length() && QuoteHelper.isPositionQuoteStart(body, i)) {
-                            // Line start with quote
-                            lineStart = i;
-                            if (quoteStart == -1) quoteStart = i - skipped;
-                            if (i == 0) startsWithQuote = true;
-                        } else if (quoteStart >= 0) {
-                            // Line start without quote, apply spans there
-                            applyQuoteSpan(textView, body, quoteStart, i - 1, darkBackground, deleteMarkers);
-                            quoteStart = -1;
-                        }
-                    }
-                } else {
-                    // Remove extra spaces between > and first character in the line
-                    // > character will be removed too
-                    if (current != ' ' && lineTextStart == -1) {
-                        lineTextStart = i;
-                    }
-                    if (current == '\n') {
-                        if (deleteMarkers) {
-                            i -= lineTextStart - lineStart;
-                            body.delete(lineStart, lineTextStart);
-                            if (i == lineStart) {
-                                // Avoid empty lines because span over empty line can be hidden
-                                body.insert(i++, " ");
-                            }
-                        }
-                        lineStart = -1;
-                        lineTextStart = -1;
-                    }
-                }
-                previous = current;
-                skipped = 0;
-            }
-            if (quoteStart >= 0) {
-                // Apply spans to finishing open quote
-                applyQuoteSpan(textView, body, quoteStart, body.length(), darkBackground, deleteMarkers);
-            }
-            quoteDepth++;
+        if (!QuoteHelper.bodyContainsQuoteStart(body)) {
+            QuoteSpan.attach(body, activity);
+            return false;
         }
+        boolean startsWithQuote = false;
+        char previous = '\n';
+        int lineStart = -1;
+        int lineTextStart = -1;
+        int quoteStart = -1;
+        int blockDepth = 0;
+        int skipped = 0;
+        for (int i = 0; i <= body.length(); i++) {
+            if (!deleteMarkers && QuoteHelper.isRelativeSizeSpanned(body, i)) {
+                skipped++;
+                continue;
+            }
+            char current = body.length() > i ? body.charAt(i) : '\n';
+            if (lineStart == -1) {
+                if (previous == '\n') {
+                    if (i < body.length() && QuoteHelper.isPositionQuoteStart(body, i)) {
+                        lineStart = i;
+                        if (quoteStart < 0) quoteStart = i - skipped;
+                        if (i == 0) startsWithQuote = true;
+                    } else if (quoteStart >= 0) {
+                        applyQuoteSpan(textView, body, quoteStart, i - 1, darkBackground,
+                                deleteMarkers, blockDepth);
+                        quoteStart = -1;
+                        blockDepth = 0;
+                    }
+                }
+            } else {
+                if (lineTextStart == -1
+                        && current != ' '
+                        && current != '\t'
+                        && current != QuoteHelper.QUOTE_CHAR
+                        && current != QuoteHelper.QUOTE_ALT_CHAR) {
+                    lineTextStart = i;
+                }
+                if (current == '\n') {
+                    final int markerEnd = lineTextStart < 0 ? i : lineTextStart;
+                    blockDepth = Math.max(blockDepth, quoteMarkerCount(body, lineStart, markerEnd));
+                    if (deleteMarkers && markerEnd > lineStart) {
+                        final int removed = markerEnd - lineStart;
+                        body.delete(lineStart, markerEnd);
+                        i -= removed;
+                        if (i == lineStart) {
+                            // Avoid empty lines because a span over an empty line can be hidden.
+                            body.insert(i++, " ");
+                        }
+                    }
+                    lineStart = -1;
+                    lineTextStart = -1;
+                }
+            }
+            previous = current;
+            skipped = 0;
+        }
+        if (quoteStart >= 0) {
+            applyQuoteSpan(textView, body, quoteStart, body.length(), darkBackground,
+                    deleteMarkers, blockDepth);
+        }
+        QuoteSpan.attach(body, activity);
         return startsWithQuote;
+    }
+
+    private static int quoteMarkerCount(final CharSequence body, final int start, final int end) {
+        int count = 0;
+        for (int i = start; i < end; i++) {
+            final char c = body.charAt(i);
+            if (c == QuoteHelper.QUOTE_CHAR) {
+                count++;
+            } else if (c == QuoteHelper.QUOTE_ALT_CHAR) {
+                count = Math.max(count, 1);
+            }
+        }
+        return count == 0 ? 0 : Math.min(count, Config.QUOTE_MAX_DEPTH);
     }
 
     private SpannableStringBuilder getSpannableBody(final Message message) {
@@ -1117,6 +1142,7 @@ public class MessageAdapter extends ArrayAdapter<Message> {
         // A code block draws a header with a copy glyph; the tap handler needs a Context, which the
         // entity layer does not have (see CodeBlockSpan.attach).
         CodeBlockSpan.attach(spannable, activity);
+        QuoteSpan.attach(spannable, activity);
         return spannable;
     }
 

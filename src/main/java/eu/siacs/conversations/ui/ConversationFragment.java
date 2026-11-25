@@ -351,8 +351,6 @@ public class ConversationFragment extends XmppFragment
         }
     };
 
-    private final SimpleDateFormat df = new SimpleDateFormat("yyyy-MM-dd  hh:mm (z)", Locale.US);
-
     private boolean reInitRequiredOnStart = true;
     private boolean mJustSwitched = false;
     private int identiconWidth = -1;
@@ -1475,7 +1473,7 @@ public class ConversationFragment extends XmppFragment
                 if (attachmentCount == 0 && Emoticons.isEmoji(body.toString().replaceAll("\\s", ""))) {
                     message = conversation.getReplyTo().react(body.toString().replaceAll("\\s", ""));
                 } else {
-                    message = conversation.getReplyTo().reply();
+                    message = conversation.getReplyTo().reply(activity.showDateInQuotes());
                     message.appendBody(body);
                 }
                 message.setEncryption(conversation.getNextEncryption());
@@ -1535,7 +1533,7 @@ public class ConversationFragment extends XmppFragment
                 if (Emoticons.isEmoji(body.toString().replaceAll("\\s", ""))) {
                     message.updateReaction(conversation.getReplyTo(), body.toString().replaceAll("\\s", ""));
                 } else {
-                    message.updateReplyTo(conversation.getReplyTo(), body);
+                    message.updateReplyTo(activity.showDateInQuotes(), conversation.getReplyTo(), body);
                 }
             } else {
                 message.clearReplyReact();
@@ -2315,22 +2313,24 @@ public class ConversationFragment extends XmppFragment
         Message.FileParams params = message.getFileParams();
         String filesize = params.size != null ? UIHelper.filesizeToString(params.size) : null;
         final StringBuilder stringBuilder = new StringBuilder();
-        if (activity.showDateInQuotes()) {
-            stringBuilder.append(df.format(message.getTimeSent())).append(System.getProperty("line.separator"));
+        final String header = MessageUtils.quoteHeader(message, activity.showDateInQuotes());
+        if (!header.isEmpty()) {
+            stringBuilder.append(header).append(System.getProperty("line.separator"));
         }
         stringBuilder.append(MimeUtils.getMimeTypeEmoji(getActivity(), message.getMimeType())).append(" ");
         stringBuilder.append(" \u00B7 ");
         stringBuilder.append(filesize);
-        quoteText(stringBuilder.toString(), user);
+        quoteText(stringBuilder.toString(), null);
     }
 
     private void quoteGeoUri(Message message, @Nullable String user) {
         final StringBuilder stringBuilder = new StringBuilder();
-        if (activity.showDateInQuotes()) {
-            stringBuilder.append(df.format(message.getTimeSent())).append(System.getProperty("line.separator"));
+        final String header = MessageUtils.quoteHeader(message, activity.showDateInQuotes());
+        if (!header.isEmpty()) {
+            stringBuilder.append(header).append(System.getProperty("line.separator"));
         }
         stringBuilder.append("\uD83D\uDDFA"); // map
-        quoteText(stringBuilder.toString(), user);
+        quoteText(stringBuilder.toString(), null);
     }
 
     private void quoteMessage(Message message, @Nullable String user) {
@@ -2361,7 +2361,9 @@ public class ConversationFragment extends XmppFragment
             return;
         }
 
-        SpannableStringBuilder body = message.getSpannableBody(null, null);
+        // Preview the exact XEP-0393 body that will be sent, including the sender/date header.
+        SpannableStringBuilder body = new SpannableStringBuilder(
+                MessageUtils.quote(message, activity.showDateInQuotes()));
         if ((message.isFileOrImage() || message.isOOb()) && binding.imageReplyPreview != null) {
             binding.imageReplyPreview.setVisibility(VISIBLE);
             if (activity.getBooleanPreference("play_gif_inside", R.bool.play_gif_inside)) {

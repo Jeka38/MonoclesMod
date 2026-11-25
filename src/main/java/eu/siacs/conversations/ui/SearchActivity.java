@@ -210,7 +210,7 @@ public class SearchActivity extends XmppActivity implements TextWatcher, OnSearc
 
     private void quote(Message message, String user) {
         Log.d(Config.LOGTAG, "Quote User: " + user);
-        switchToConversationAndQuote(wrap(message.getConversation()), MessageUtils.prepareQuote(message), user);
+        switchToConversationAndQuote(wrap(message.getConversation()), MessageUtils.quote(message, showDateInQuotes()), null);
     }
 
     private void openConversationAtMessage(final Message message) {

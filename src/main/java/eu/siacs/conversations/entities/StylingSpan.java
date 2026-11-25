@@ -1,17 +1,14 @@
 package eu.siacs.conversations.entities;
 
-import android.graphics.Canvas;
-import android.graphics.Paint;
+import android.graphics.Color;
 import android.graphics.Typeface;
-import android.text.Layout;
-import android.text.style.LeadingMarginSpan;
 import android.text.style.StrikethroughSpan;
 import android.text.style.StyleSpan;
 import android.text.style.TypefaceSpan;
 
 import androidx.annotation.NonNull;
-import androidx.annotation.Nullable;
 
+import eu.siacs.conversations.ui.text.QuoteSpan;
 import eu.siacs.conversations.xmpp.styling.MessageStyling;
 
 /**
@@ -44,46 +41,11 @@ public final class StylingSpan {
         }
     }
 
-    /** A quotation: an indent plus a vertical bar in front of each quoted line. */
-    public static class Quote implements LeadingMarginSpan {
-
-        private final int depth;
+    /** A quotation; every nesting level is rendered as its own indented card. */
+    public static class Quote extends QuoteSpan {
 
         public Quote(final int depth) {
-            this.depth = Math.max(1, depth);
+            super(Color.GRAY, android.content.res.Resources.getSystem().getDisplayMetrics(), depth);
         }
-
-        @Override
-        public int getLeadingMargin(final boolean first) {
-            return Math.round(depth * 12 * density());
-        }
-
-        @Override
-        public void drawLeadingMargin(
-                final Canvas c,
-                final Paint p,
-                final int x,
-                final int dir,
-                final int top,
-                final int baseline,
-                final int bottom,
-                final CharSequence text,
-                final int start,
-                final int end,
-                final boolean first,
-                final Layout layout) {
-            final Paint.Style style = p.getStyle();
-            final int color = p.getColor();
-            p.setStyle(Paint.Style.FILL);
-            p.setColor(0xFF808080);
-            final int bar = Math.round(3 * density());
-            c.drawRect(x, top, x + bar, bottom, p);
-            p.setStyle(style);
-            p.setColor(color);
-        }
-    }
-
-    private static float density() {
-        return android.content.res.Resources.getSystem().getDisplayMetrics().density;
     }
 }

@@ -136,10 +136,9 @@ public class QuoteHelper {
     public static String quote(String text) {
         text = replaceAltQuoteCharsInText(text);
         return text
-                // first replace all '>' at the beginning of the line with nice and tidy '>>'
-                // for nested quoting
+                // Existing quote markers gain one level, so quoting a quote creates a nested block.
                 .replaceAll("(^|\n)(" + QUOTE_CHAR + ")", "$1$2$2")
-                // then find all other lines and have them start with a '> '
+                // Every other line becomes the outermost quoted line.
                 .replaceAll("(^|\n)(?!" + QUOTE_CHAR + ")(.*)", "$1> $2")
                 ;
     }

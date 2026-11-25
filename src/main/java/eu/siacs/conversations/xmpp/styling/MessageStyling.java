@@ -129,7 +129,12 @@ public final class MessageStyling {
             } else {
                 final int depth = quoteDepth(line);
                 if (depth > 0) {
-                    if (quoteStart < 0) {
+                    if (quoteStart >= 0 && depth != quoteDepth) {
+                        // A nested quote is a separate block so it can get its own depth-aware card.
+                        flushQuote(result, quoteStart, lineStart, quoteDepth);
+                        quoteStart = lineStart;
+                        quoteDepth = depth;
+                    } else if (quoteStart < 0) {
                         quoteStart = lineStart;
                         quoteDepth = depth;
                     }

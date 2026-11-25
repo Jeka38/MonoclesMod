@@ -33,6 +33,8 @@ import com.google.common.base.Strings;
 
 import java.net.URI;
 import java.net.URISyntaxException;
+import java.text.DateFormat;
+import java.util.Date;
 import java.util.Locale;
 import java.util.regex.Pattern;
 
@@ -42,6 +44,7 @@ import eu.siacs.conversations.entities.Message;
 import eu.siacs.conversations.http.AesGcmURL;
 import eu.siacs.conversations.http.URL;
 import eu.siacs.conversations.ui.util.QuoteHelper;
+import eu.siacs.conversations.xmpp.Jid;
 
 public class MessageUtils {
 
@@ -50,7 +53,7 @@ public class MessageUtils {
 
     public static String prepareQuote(Message message) {
         final StringBuilder builder = new StringBuilder();
-        final String body;
+        String body;
         if (message.hasMeCommand()) {
             final String nick;
             if (message.getStatus() == Message.STATUS_RECEIVED) {
@@ -75,6 +78,9 @@ public class MessageUtils {
         } else {
             body = message.getQuoteableBody();
         }
+        if (body == null) {
+            body = EMPTY_STRING;
+        }
         for (String line : body.split("\n")) {
             if (!(line.length() <= 0) && QuoteHelper.isNestedTooDeeply(line)) {
                 continue;
@@ -85,6 +91,72 @@ public class MessageUtils {
             builder.append(line.trim());
         }
         return builder.toString();
+    }
+
+    /**
+     * Date and time of the message being quoted. Uses the device locale and time zone so the header
+     * matches what the sender sees in the chat bubble.
+     */
+    public static String quoteTimestamp(final Message message) {
+        if (message == null || message.getTimeSent() <= 0) {
+            return "";
+        }
+        return DateFormat.getDateTimeInstance(DateFormat.SHORT, DateFormat.SHORT, Locale.getDefault())
+                .format(new Date(message.getTimeSent()));
+    }
+
+    /** Sender to show in a quote header; MUC nick, own nick, or the peer's JID local part. */
+    public static String quoteSender(final Message message) {
+        if (message == null) {
+            return EMPTY_STRING;
+        }
+        String sender = message.getConversation() == null ? null : message.getAvatarName();
+        if (sender == null || sender.trim().isEmpty()) {
+            final Jid counterpart = message.getCounterpart();
+            if (counterpart != null) {
+                sender = counterpart.getLocal();
+                if (sender == null || sender.isEmpty()) {
+                    sender = counterpart.asBareJid().toString();
+                }
+            }
+        }
+        if (sender == null) {
+            return EMPTY_STRING;
+        }
+        sender = sender.replace('\n', ' ').replace('\r', ' ').trim();
+        // A nick starting with '>' would be eaten as a quotation marker by QuoteHelper.quote().
+        while (sender.startsWith(">")) {
+            sender = sender.substring(1).trim();
+        }
+        return sender;
+    }
+
+    /** Header of the quoted block: sender and, when enabled, the original message's date/time. */
+    public static String quoteHeader(final Message message, final boolean showDate) {
+        final String sender = quoteSender(message);
+        final String timestamp = showDate ? quoteTimestamp(message) : EMPTY_STRING;
+        if (sender.isEmpty()) {
+            return timestamp;
+        }
+        if (timestamp.isEmpty()) {
+            return sender;
+        }
+        return sender + " \u00B7 " + timestamp;
+    }
+
+    /**
+     * Builds an XEP-0393 quotation: every line starts with {@code > } (existing quote markers gain
+     * one level, so a quote-in-quote is preserved), and the first line carries the original sender
+     * plus the original date/time.
+     */
+    public static String quote(final Message message, final boolean showDate) {
+        final StringBuilder builder = new StringBuilder();
+        final String header = quoteHeader(message, showDate);
+        if (!header.isEmpty()) {
+            builder.append(header).append('\n');
+        }
+        builder.append(prepareQuote(message));
+        return QuoteHelper.quote(builder.toString());
     }
 
     public static boolean treatAsDownloadable(final String body, final boolean oob) {
