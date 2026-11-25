@@ -330,6 +330,9 @@ public class ConversationFragment extends XmppFragment
     private String lastMessageUuid = null;
     private Conversation conversation;
     private Toast messageLoaderToast;
+    /** Last load-more anchor; prevents re-querying the same page when nothing was prepended. */
+    private long lastLoadMoreTimestamp = -1;
+    private String lastLoadMoreReference = null;
     private static ConversationsActivity activity;
     private Menu mOptionsMenu;
     //Gifspaths
@@ -450,8 +453,20 @@ public class ConversationFragment extends XmppFragment
         public void onScroll(final AbsListView view, int firstVisibleItem, int visibleItemCount, int totalItemCount) {
             toggleScrollDownButton(view);
             synchronized (ConversationFragment.this.messageList) {
-                if (firstVisibleItem < 5 && conversation != null && conversation.messagesLoaded.compareAndSet(true, false) && messageList.size() > 0) {
-                    long timestamp = conversation.loadMoreTimestamp();
+                if (firstVisibleItem < 5 && conversation != null
+                        && activity != null && activity.xmppConnectionService != null
+                        && !activity.xmppConnectionService.getMessageArchiveService().queryInProgress(conversation)
+                        && conversation.messagesLoaded.compareAndSet(true, false) && messageList.size() > 0) {
+                    final long timestamp = conversation.loadMoreTimestamp();
+                    final String reference = conversation.getFirstMamReference();
+                    if (timestamp == 0 || (timestamp == lastLoadMoreTimestamp && Objects.equals(reference, lastLoadMoreReference))) {
+                        // The previous request did not move the oldest visible message or the
+                        // MAM page anchor. Retrying it with the same keys would loop forever.
+                        conversation.messagesLoaded.set(true);
+                        return;
+                    }
+                    lastLoadMoreTimestamp = timestamp;
+                    lastLoadMoreReference = reference;
                     activity.xmppConnectionService.loadMoreMessages(conversation, timestamp, new XmppConnectionService.OnMoreMessagesLoaded() {
                         @Override
                         public void onMoreMessagesLoaded(final int c, final Conversation conversation) {
@@ -485,6 +500,9 @@ public class ConversationFragment extends XmppFragment
                                     if (messageLoaderToast != null) {
                                         messageLoaderToast.cancel();
                                     }
+                                    if (c == 0) {
+                                        clearLoadMoreGuard();
+                                    }
                                     conversation.messagesLoaded.set(true);
                                 }
                             });
@@ -500,6 +518,7 @@ public class ConversationFragment extends XmppFragment
                                 if (ConversationFragment.this.conversation != conversation) {
                                     return;
                                 }
+                                clearLoadMoreGuard();
                                 messageLoaderToast = ToastCompat.makeText(view.getContext(), resId, ToastCompat.LENGTH_LONG);
                                 messageLoaderToast.show();
                             });
@@ -509,6 +528,12 @@ public class ConversationFragment extends XmppFragment
             }
         }
     };
+
+    private void clearLoadMoreGuard() {
+        lastLoadMoreTimestamp = -1;
+        lastLoadMoreReference = null;
+    }
+
     private final EditMessage.OnCommitContentListener mEditorContentListener = new EditMessage.OnCommitContentListener() {
         @Override
         public boolean onCommitContent(InputContentInfoCompat inputContentInfo, int flags, Bundle opts, String[] contentMimeTypes) {
@@ -4935,6 +4960,7 @@ public class ConversationFragment extends XmppFragment
         messageListAdapter.updatePreferences();
         refresh(false);
         activity.invalidateOptionsMenu();
+        clearLoadMoreGuard();
         this.conversation.messagesLoaded.set(true);
         Log.d(Config.LOGTAG, "scrolledToBottomAndNoPending=" + Boolean.toString(scrolledToBottomAndNoPending));
 
@@ -5802,7 +5828,8 @@ public class ConversationFragment extends XmppFragment
         if (activity == null || activity.xmppConnectionService == null) {
             return false;
         }
-        final boolean mam = hasMamSupport(c) && !c.getContact().isBlocked();
+        final Contact contact = c.getContact();
+        final boolean mam = hasMamSupport(c) && (contact == null || !contact.isBlocked());
         final MessageArchiveService service = activity.xmppConnectionService.getMessageArchiveService();
         return mam && (c.getLastClearHistory().getTimestamp() != 0 || (c.countMessages() == 0 && c.messagesLoaded.get() && c.hasMessagesLeftOnServer() && !service.queryInProgress(c)));
     }

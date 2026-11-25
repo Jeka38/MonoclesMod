@@ -189,23 +189,31 @@ public class MessageArchiveService implements OnAdvancedStreamFeaturesLoaded {
     }
 
     public Query query(Conversation conversation, MamReference start, long end, boolean allowCatchup) {
+        return query(conversation, conversation, start, end, allowCatchup);
+    }
+
+    /**
+     * Query the archive of {@code archiveConversation} (the parent MUC for a PM thread) while
+     * keeping {@code conversation} as the target for the results.
+     */
+    public Query query(Conversation conversation, Conversation archiveConversation, MamReference start, long end, boolean allowCatchup) {
         synchronized (this.queries) {
             final Query query;
             final MamReference startActual = start;
             if (start.getTimestamp() == 0) {
-                query = new Query(conversation, startActual, end, false);
+                query = new Query(conversation, archiveConversation, startActual, end, false);
                 query.reference = conversation.getFirstMamReference();
             } else {
                 if (allowCatchup) {
                     MamReference maxCatchup = MamReference.max(startActual, System.currentTimeMillis() - Config.MAM_MAX_CATCHUP);
                     if (maxCatchup.greaterThan(startActual)) {
-                        Query reverseCatchup = new Query(conversation, startActual, maxCatchup.getTimestamp(), false);
+                        Query reverseCatchup = new Query(conversation, archiveConversation, startActual, maxCatchup.getTimestamp(), false);
                         this.queries.add(reverseCatchup);
                         this.execute(reverseCatchup);
                     }
-                    query = new Query(conversation, maxCatchup, end, true);
+                    query = new Query(conversation, archiveConversation, maxCatchup, end, true);
                 } else {
-                    query = new Query(conversation, startActual, end, false);
+                    query = new Query(conversation, archiveConversation, startActual, end, false);
                 }
             }
             if (end != 0 && start.greaterThan(end)) {
@@ -499,11 +507,21 @@ public class MessageArchiveService implements OnAdvancedStreamFeaturesLoaded {
         private XmppConnectionService.OnMoreMessagesLoaded callback = null;
         private boolean catchup = true;
         public final Version version;
+        /** MUC filter for a dedicated PM thread; the IQ still goes to the parent room. */
+        private Jid mamWith = null;
 
 
         Query(Conversation conversation, MamReference start, long end, boolean catchup) {
-            this(conversation.getAccount(), Version.get(conversation.getAccount(), conversation), catchup ? start : start.timeOnly(), end);
+            this(conversation, conversation, start, end, catchup);
+        }
+
+        Query(Conversation conversation, Conversation archiveConversation, MamReference start, long end, boolean catchup) {
+            this(conversation.getAccount(), Version.get(conversation.getAccount(), archiveConversation), catchup ? start : start.timeOnly(), end);
             this.conversation = conversation;
+            // A PM thread has no disco features of its own. Scope the room archive to the
+            // occupant we are talking to, otherwise every group chat message is counted and
+            // the paging never terminates for this thread.
+            this.mamWith = conversation.hasPermanentCounterpart() ? conversation.getNextCounterpart() : null;
             this.pagingOrder = catchup ? PagingOrder.NORMAL : PagingOrder.REVERSE;
             this.catchup = catchup;
         }
@@ -533,6 +551,7 @@ public class MessageArchiveService implements OnAdvancedStreamFeaturesLoaded {
             query.receiptRequests = receiptRequests;
             query.callback = callback;
             query.catchup = catchup;
+            query.mamWith = mamWith;
             return query;
         }
 
@@ -580,6 +599,10 @@ public class MessageArchiveService implements OnAdvancedStreamFeaturesLoaded {
 
         public Jid getWith() {
             return conversation == null ? null : conversation.getJid().asBareJid();
+        }
+
+        public Jid getMamWith() {
+            return mamWith;
         }
 
         public boolean muc() {

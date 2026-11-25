@@ -168,6 +168,8 @@
          transparent in other palettes. -->
     <attr name="color_bubble_mention" format="reference|color" />
     <attr name="color_bubble_border" format="reference|color" />
+    <!-- General message bubble outline; transparent unless a theme sets it. -->
+    <attr name="color_bubble_outline" format="reference|color" />
 
     <!-- settings -->
     <attr name="ic_settings_ui" format="reference" />

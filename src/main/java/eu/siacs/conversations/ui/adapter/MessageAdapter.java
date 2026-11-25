@@ -1805,7 +1805,8 @@ public class MessageAdapter extends ArrayAdapter<Message> {
             timestamp = System.currentTimeMillis();
         }
         conversation.messagesLoaded.set(true);
-        MessageArchiveService.Query query = activity.xmppConnectionService.getMessageArchiveService().query(conversation, new MamReference(0), timestamp, false);
+        final Conversation archive = activity.xmppConnectionService.findArchiveConversation(conversation);
+        MessageArchiveService.Query query = activity.xmppConnectionService.getMessageArchiveService().query(conversation, archive, new MamReference(0), timestamp, false);
         if (query != null) {
             ToastCompat.makeText(activity, R.string.fetching_history_from_server, ToastCompat.LENGTH_LONG).show();
         } else {
@@ -2057,7 +2058,8 @@ public class MessageAdapter extends ArrayAdapter<Message> {
                     : R.drawable.message_bubble_sent);
             activity.setBubbleColor(viewHolder.message_box,
                     StyledAttributes.getColor(activity,
-                            received ? R.attr.color_bubble_light : R.attr.color_bubble_dark), -1);
+                            received ? R.attr.color_bubble_light : R.attr.color_bubble_dark),
+                    getBubbleOutlineColor());
             viewHolder.status_message.setText(activity.getString(
                     received ? R.string.whiteboard_chat_notice : R.string.whiteboard_chat_notice_self));
             viewHolder.time.setText(UIHelper.readableTimeDifferenceFull(activity, message.getMergedTimeSent()));
@@ -2661,16 +2663,22 @@ public class MessageAdapter extends ArrayAdapter<Message> {
         return false;
     }
 
+    private int getBubbleOutlineColor() {
+        final int outline = StyledAttributes.getColor(activity, R.attr.color_bubble_outline);
+        return outline == Color.TRANSPARENT ? -1 : outline;
+    }
+
     public void setBubbleBackgroundColor(final View viewHolder, final int type,
                                          final boolean isPrivateMessage, final boolean isInValidSession,
                                          final Message message) {
+        final int outline = getBubbleOutlineColor();
         if (type == RECEIVED) {
             // Psi-im highlights only incoming messages that address me. Other palettes
             // leave color_bubble_mention transparent, so their bubbles are untouched.
             final int mentionColor = StyledAttributes.getColor(activity, R.attr.color_bubble_mention);
             final boolean highlightMention = mentionColor != Color.TRANSPARENT && mentionsMe(message);
             final int borderColor = StyledAttributes.getColor(activity, R.attr.color_bubble_border);
-            final int border = highlightMention && borderColor != Color.TRANSPARENT ? borderColor : -1;
+            final int border = highlightMention && borderColor != Color.TRANSPARENT ? borderColor : outline;
             if (isInValidSession) {
                 viewHolder.setBackgroundResource(R.drawable.message_bubble_received_light);
                 activity.setBubbleColor(viewHolder,
@@ -2684,7 +2692,7 @@ public class MessageAdapter extends ArrayAdapter<Message> {
 
         if (type == SENT) {
             viewHolder.setBackgroundResource(R.drawable.message_bubble_sent);
-            activity.setBubbleColor(viewHolder, StyledAttributes.getColor(activity, R.attr.color_bubble_dark), -1);
+            activity.setBubbleColor(viewHolder, StyledAttributes.getColor(activity, R.attr.color_bubble_dark), outline);
         }
     }
 

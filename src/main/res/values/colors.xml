@@ -114,6 +114,13 @@
     <color name="darkpsi2">#ff15171b</color> <!-- dark theme me -->
     <color name="darkpsi_border">#ffac5457</color> <!-- dark theme other border -->
 
+    <!-- Psi-im dark palette (does not reuse the monocles palette) -->
+    <color name="primary_psi">#ffac5457</color>
+    <color name="primary_dark_psi">#ff301e1f</color>
+    <color name="accent_psi">#ffac5457</color>
+    <color name="accent_light_psi">#66ac5457</color>
+    <color name="accent_light_disabled_psi">#1a000000</color>
+
     <!-- main colors -->
     <color name="realgreen">#ff388e3c</color>  <!-- green 700 -->
     <color name="header_background">#663e5ea2</color>

@@ -399,31 +399,31 @@ public class ThemeHelper {
                         }
                 }
             case "psi":
-                // Psi-im changes message bubbles only; dialogs use the monocles palette.
+                // Light and dark Psi have their own palettes; black still uses the neutral monocles dialogs.
                 switch (fontSize) {
                     case "medium":
                         if (black) {
                             return R.style.ConversationsTheme_Monocles_Black_Dialog_Medium;
                         } else if (dark) {
-                            return R.style.ConversationsTheme_Monocles_Dark_Dialog_Medium;
+                            return R.style.ConversationsTheme_Psi_Dark_Dialog_Medium;
                         } else {
-                            return R.style.ConversationsTheme_Monocles_Dialog_Medium;
+                            return R.style.ConversationsTheme_Psi_Dialog_Medium;
                         }
                     case "large":
                         if (black) {
                             return R.style.ConversationsTheme_Monocles_Black_Dialog_Large;
                         } else if (dark) {
-                            return R.style.ConversationsTheme_Monocles_Dark_Dialog_Large;
+                            return R.style.ConversationsTheme_Psi_Dark_Dialog_Large;
                         } else {
-                            return R.style.ConversationsTheme_Monocles_Dialog_Large;
+                            return R.style.ConversationsTheme_Psi_Dialog_Large;
                         }
                     default:
                         if (black) {
                             return R.style.ConversationsTheme_Monocles_Black_Dialog;
                         } else if (dark) {
-                            return R.style.ConversationsTheme_Monocles_Dark_Dialog;
+                            return R.style.ConversationsTheme_Psi_Dark_Dialog;
                         } else {
-                            return R.style.ConversationsTheme_Monocles_Dialog;
+                            return R.style.ConversationsTheme_Psi_Dialog;
                         }
                 }
             case "orange":

@@ -1801,15 +1801,10 @@ public class FileBackend {
             try {
                 ImageDecoder.Source source = ImageDecoder.createSource(mXmppConnectionService.getContentResolver(), image);
                 return ImageDecoder.decodeDrawable(source, (decoder, info, src) -> {
-                    int w = info.getSize().getWidth();
-                    int h = info.getSize().getHeight();
-                    Rect r = rectForSize(w, h, size);
-                    decoder.setTargetSize(r.width(), r.height());
-
-                    int newSize = Math.min(r.width(), r.height());
-                    int left = (r.width() - newSize) / 2;
-                    int top = (r.height() - newSize) / 2;
-                    decoder.setCrop(new Rect(left, top, left + newSize, top + newSize));
+                    final SquareCrop crop = squareCrop(
+                            info.getSize().getWidth(), info.getSize().getHeight(), size);
+                    decoder.setTargetSize(crop.targetWidth, crop.targetHeight);
+                    decoder.setCrop(crop.crop);
                 });
             } catch (final IOException e) {
                 return getSVGSquare(image, size);
@@ -2430,15 +2425,10 @@ public class FileBackend {
             try {
                 ImageDecoder.Source source = ImageDecoder.createSource(getAvatarFile(avatar));
                 return ImageDecoder.decodeDrawable(source, (decoder, info, src) -> {
-                    int w = info.getSize().getWidth();
-                    int h = info.getSize().getHeight();
-                    Rect r = rectForSize(w, h, size);
-                    decoder.setTargetSize(r.width(), r.height());
-
-                    int newSize = Math.min(r.width(), r.height());
-                    int left = (r.width() - newSize) / 2;
-                    int top = (r.height() - newSize) / 2;
-                    decoder.setCrop(new Rect(left, top, left + newSize, top + newSize));
+                    final SquareCrop crop = squareCrop(
+                            info.getSize().getWidth(), info.getSize().getHeight(), size);
+                    decoder.setTargetSize(crop.targetWidth, crop.targetHeight);
+                    decoder.setCrop(crop.crop);
                 });
             } catch (final IOException e) {
                 return null;            //TODO: Temporary fix until animated SVG comes
@@ -2934,6 +2924,46 @@ public class FileBackend {
         if (scalledW > w || scalledH > h) return new Rect(0, 0, w, h);
 
         return new Rect(0, 0, scalledW, scalledH);
+    }
+
+    /**
+     * Center-crop parameters for ImageDecoder. Its crop rect applies to the *target* size, so the
+     * shorter side must become exactly {@code size}; scaling by the longer side would produce an
+     * undersized square that the ImageView then blows up (blurry / stretched avatars).
+     */
+    private static SquareCrop squareCrop(int w, int h, int size) {
+        final int sourceWidth = Math.max(1, w);
+        final int sourceHeight = Math.max(1, h);
+        final int shorter = Math.min(sourceWidth, sourceHeight);
+        final int side = Math.min(size, shorter);
+        final int targetWidth;
+        final int targetHeight;
+        if (shorter <= size) {
+            targetWidth = sourceWidth;
+            targetHeight = sourceHeight;
+        } else if (sourceWidth <= sourceHeight) {
+            targetWidth = side;
+            targetHeight = Math.max(side, (int) Math.round(sourceHeight * ((double) side / sourceWidth)));
+        } else {
+            targetHeight = side;
+            targetWidth = Math.max(side, (int) Math.round(sourceWidth * ((double) side / sourceHeight)));
+        }
+        final int left = (targetWidth - side) / 2;
+        final int top = (targetHeight - side) / 2;
+        return new SquareCrop(targetWidth, targetHeight,
+                new Rect(left, top, left + side, top + side));
+    }
+
+    private static final class SquareCrop {
+        final int targetWidth;
+        final int targetHeight;
+        final Rect crop;
+
+        SquareCrop(int targetWidth, int targetHeight, Rect crop) {
+            this.targetWidth = targetWidth;
+            this.targetHeight = targetHeight;
+            this.crop = crop;
+        }
     }
 
     private Drawable getImagePreview(File file, Resources res, int size, final String mime) throws IOException {

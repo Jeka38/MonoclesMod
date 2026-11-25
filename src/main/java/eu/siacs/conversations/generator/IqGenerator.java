@@ -366,6 +366,10 @@ public class IqGenerator extends AbstractGenerator {
         data.setFormType(mam.version.namespace);
         if (mam.muc()) {
             packet.setTo(mam.getWith());
+            if (mam.getMamWith() != null) {
+                // Dedicated MUC PM thread: filter the room archive by the peer's full JID.
+                data.put("with", mam.getMamWith().toEscapedString());
+            }
         } else if (mam.getWith() != null) {
             data.put("with", mam.getWith().toEscapedString());
         }

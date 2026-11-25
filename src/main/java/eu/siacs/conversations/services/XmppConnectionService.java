@@ -3353,19 +3353,19 @@ public class XmppConnectionService extends Service {
                     && account != null
                     && account.isOnlineAndConnected()
                     && conversation.getLastClearHistory().getTimestamp() == 0) {
+                // PM windows have their own conversation row but no disco results. Their
+                // history lives in the parent room's MUC archive.
+                final Conversation archive = findArchiveConversation(conversation);
                 final boolean mamAvailable;
                 if (conversation.getMode() == Conversation.MODE_SINGLE) {
                     mamAvailable = account.getXmppConnection().getFeatures().mam() && !conversation.getContact().isBlocked();
                 } else {
-                    // PM windows have their own conversation row but no disco results. Their
-                    // history lives in the parent room's MUC archive.
-                    final Conversation mainRoom = conversation.hasPermanentCounterpart()
-                            ? findFirstMuc(conversation.getJid(), account.getJid().asBareJid().toString())
-                            : null;
-                    mamAvailable = (mainRoom == null ? conversation : mainRoom).getMucOptions().mamSupport();
+                    mamAvailable = archive.getMucOptions().mamSupport();
                 }
                 if (mamAvailable) {
-                    MessageArchiveService.Query query = getMessageArchiveService().query(conversation, new MamReference(0), timestamp, false);
+                    // Use the parent room for MAM version/features, but keep the PM thread as the
+                    // result target so archived private messages land in the open conversation.
+                    MessageArchiveService.Query query = getMessageArchiveService().query(conversation, archive, new MamReference(0), timestamp, false);
                     if (query != null) {
                         query.setCallback(callback);
                         callback.informUser(R.string.fetching_history_from_server);
@@ -6784,6 +6784,18 @@ public class XmppConnectionService extends Service {
 
     public Conversation findFirstMuc(Jid jid) {
         return findFirstMuc(jid, null);
+    }
+
+    /** The conversation whose MAM features/archive should be used (parent room for a MUC PM). */
+    public Conversation findArchiveConversation(final Conversation conversation) {
+        final Account account = conversation == null ? null : conversation.getAccount();
+        if (conversation != null && conversation.hasPermanentCounterpart() && account != null && account.getJid() != null) {
+            final Conversation mainRoom = findFirstMuc(conversation.getJid(), account.getJid().asBareJid().toString());
+            if (mainRoom != null) {
+                return mainRoom;
+            }
+        }
+        return conversation;
     }
 
     public Conversation findFirstMuc(Jid jid, String accountJid) {

@@ -832,20 +832,53 @@
     </style>
 
     <!-- 2a. Psi-im -->
-    <!-- Psi-im: only the message bubble colors and the incoming bubble outline differ from monocles -->
-    <style name="ConversationsTheme.Psi" parent="ConversationsTheme.Monocles">
+    <!-- Psi-im - light: own palette, no monocles colors; chat background stays the shared default -->
+    <style name="ConversationsTheme.Psi" parent="ConversationsTheme">
+        <item name="colorPrimary">@color/primary_psi</item>
+        <item name="colorPrimaryDark">@color/primary_dark_psi</item>
+        <item name="colorAccent">@color/accent_psi</item>
+        <item name="colorAccentLight">@color/accent_light_psi</item>
+        <item name="colorAccentLightDisabled">@color/accent_light_disabled_psi</item>
+        <item name="colorOnBackground">@color/realblack</item>
+        <item name="colorSurface">@color/lightpsi2</item>
+        <item name="colorControlNormal">?attr/text_Color_Main</item>
+        <item name="colorControlActivated">@color/accent_psi</item>
+        <item name="color_background_primary">@color/lightpsi2</item>
+        <item name="color_background_secondary">@color/lightpsi2</item>
+        <item name="color_background_tertiary">@color/lightpsi</item>
         <item name="color_bubble_light">@color/lightpsi2</item>
         <item name="color_bubble_dark">@color/lightpsi2</item>
         <item name="color_bubble_mention">@color/lightpsi</item>
         <item name="color_bubble_border">@color/lightpsi_border</item>
+        <item name="color_bubble_outline">@color/realblack</item>
+        <!-- Status bar is tied to the toolbar background, not to colorPrimaryDark. -->
+        <item name="android:statusBarColor">?attr/color_background_secondary</item>
+        <item name="android:windowLightStatusBar">true</item>
+        <item name="android:navigationBarColor">@color/lightpsi2</item>
+        <item name="android:actionModeBackground">@color/accent_psi</item>
     </style>
 
-    <!-- Psi-im - dark -->
-    <style name="ConversationsTheme.Psi.Dark" parent="ConversationsTheme.Monocles.Dark">
+    <!-- Psi-im - dark: own palette, no monocles colors -->
+    <style name="ConversationsTheme.Psi.Dark" parent="ConversationsTheme.Dark">
+        <item name="colorPrimary">@color/primary_psi</item>
+        <item name="colorPrimaryDark">@color/primary_dark_psi</item>
+        <item name="colorAccent">@color/accent_psi</item>
+        <item name="colorAccentLight">@color/accent_light_psi</item>
+        <item name="colorAccentLightDisabled">@color/accent_light_disabled_psi</item>
+        <item name="colorControlNormal">?attr/text_Color_Main</item>
+        <item name="colorControlActivated">@color/accent_psi</item>
+        <item name="color_background_primary">@color/darkpsi</item>
+        <item name="color_background_secondary">@color/darkpsi2</item>
+        <item name="color_background_tertiary">@color/darkpsi2</item>
         <item name="color_bubble_light">@color/darkpsi2</item>
         <item name="color_bubble_dark">@color/darkpsi2</item>
         <item name="color_bubble_mention">@color/darkpsi</item>
         <item name="color_bubble_border">@color/darkpsi_border</item>
+        <!-- Status bar is tied to the toolbar background, not to colorPrimaryDark. -->
+        <item name="android:statusBarColor">?attr/color_background_secondary</item>
+        <item name="android:windowLightStatusBar">false</item>
+        <item name="android:navigationBarColor">@color/darkpsi2</item>
+        <item name="android:actionModeBackground">@color/accent_psi</item>
     </style>
 
     <!-- Psi-im - black -->
@@ -857,19 +890,33 @@
     </style>
 
     <!-- Psi-im medium font -->
-    <style name="ConversationsTheme.Psi.Medium" parent="ConversationsTheme.Monocles.Medium">
-        <item name="color_bubble_light">@color/lightpsi2</item>
-        <item name="color_bubble_dark">@color/lightpsi2</item>
-        <item name="color_bubble_mention">@color/lightpsi</item>
-        <item name="color_bubble_border">@color/lightpsi_border</item>
+    <style name="ConversationsTheme.Psi.Medium" parent="ConversationsTheme.Psi">
+        <item name="TextSizeCaption">14sp</item>
+        <item name="TextSizeBody1">16sp</item>
+        <item name="TextSizeBody2">16sp</item>
+        <item name="TextSizeSubhead">18sp</item>
+        <item name="TextSizeTitle">22sp</item>
+        <item name="TextSizeInput">18sp</item>
+        <item name="TextSeparation">6sp</item>
+        <item name="IconSize">20sp</item>
+        <item name="TextSizeInfo">14sp</item>
+        <item name="TextSizeBody">16sp</item>
+        <item name="TextSizeHeadline">20sp</item>
     </style>
 
     <!-- Psi-im medium font - dark -->
-    <style name="ConversationsTheme.Psi.Dark.Medium" parent="ConversationsTheme.Monocles.Dark.Medium">
-        <item name="color_bubble_light">@color/darkpsi2</item>
-        <item name="color_bubble_dark">@color/darkpsi2</item>
-        <item name="color_bubble_mention">@color/darkpsi</item>
-        <item name="color_bubble_border">@color/darkpsi_border</item>
+    <style name="ConversationsTheme.Psi.Dark.Medium" parent="ConversationsTheme.Psi.Dark">
+        <item name="TextSizeCaption">14sp</item>
+        <item name="TextSizeBody1">16sp</item>
+        <item name="TextSizeBody2">16sp</item>
+        <item name="TextSizeSubhead">18sp</item>
+        <item name="TextSizeTitle">22sp</item>
+        <item name="TextSizeInput">18sp</item>
+        <item name="TextSeparation">6sp</item>
+        <item name="IconSize">20sp</item>
+        <item name="TextSizeInfo">14sp</item>
+        <item name="TextSizeBody">16sp</item>
+        <item name="TextSizeHeadline">20sp</item>
     </style>
 
     <!-- Psi-im medium font - black -->
@@ -881,19 +928,33 @@
     </style>
 
     <!-- Psi-im large font -->
-    <style name="ConversationsTheme.Psi.Large" parent="ConversationsTheme.Monocles.Large">
-        <item name="color_bubble_light">@color/lightpsi2</item>
-        <item name="color_bubble_dark">@color/lightpsi2</item>
-        <item name="color_bubble_mention">@color/lightpsi</item>
-        <item name="color_bubble_border">@color/lightpsi_border</item>
+    <style name="ConversationsTheme.Psi.Large" parent="ConversationsTheme.Psi">
+        <item name="TextSizeCaption">16sp</item>
+        <item name="TextSizeBody1">18sp</item>
+        <item name="TextSizeBody2">18sp</item>
+        <item name="TextSizeSubhead">20sp</item>
+        <item name="TextSizeTitle">24sp</item>
+        <item name="TextSizeInput">20sp</item>
+        <item name="TextSeparation">7sp</item>
+        <item name="IconSize">22sp</item>
+        <item name="TextSizeInfo">16sp</item>
+        <item name="TextSizeBody">18sp</item>
+        <item name="TextSizeHeadline">22sp</item>
     </style>
 
     <!-- Psi-im large font - dark -->
-    <style name="ConversationsTheme.Psi.Dark.Large" parent="ConversationsTheme.Monocles.Dark.Large">
-        <item name="color_bubble_light">@color/darkpsi2</item>
-        <item name="color_bubble_dark">@color/darkpsi2</item>
-        <item name="color_bubble_mention">@color/darkpsi</item>
-        <item name="color_bubble_border">@color/darkpsi_border</item>
+    <style name="ConversationsTheme.Psi.Dark.Large" parent="ConversationsTheme.Psi.Dark">
+        <item name="TextSizeCaption">16sp</item>
+        <item name="TextSizeBody1">18sp</item>
+        <item name="TextSizeBody2">18sp</item>
+        <item name="TextSizeSubhead">20sp</item>
+        <item name="TextSizeTitle">24sp</item>
+        <item name="TextSizeInput">20sp</item>
+        <item name="TextSeparation">7sp</item>
+        <item name="IconSize">22sp</item>
+        <item name="TextSizeInfo">16sp</item>
+        <item name="TextSizeBody">18sp</item>
+        <item name="TextSizeHeadline">22sp</item>
     </style>
 
     <!-- Psi-im large font - black -->
@@ -902,6 +963,50 @@
         <item name="color_bubble_dark">@color/primary_black</item>
         <item name="color_bubble_mention">@color/darkpsi</item>
         <item name="color_bubble_border">@color/darkpsi_border</item>
+    </style>
+
+    <!-- Psi-im light dialog: own palette, no monocles colors -->
+    <style name="ConversationsTheme.Psi.Dialog" parent="ConversationsTheme.Dialog">
+        <item name="colorPrimary">@color/primary_psi</item>
+        <item name="colorPrimaryDark">@color/primary_dark_psi</item>
+        <item name="colorAccent">@color/accent_psi</item>
+        <item name="colorAccentLight">@color/accent_light_psi</item>
+        <item name="colorAccentLightDisabled">@color/accent_light_disabled_psi</item>
+        <item name="color_background_primary">@color/lightpsi2</item>
+    </style>
+
+    <!-- Psi-im light dialog medium font -->
+    <style name="ConversationsTheme.Psi.Dialog.Medium" parent="ConversationsTheme.Psi.Dialog">
+        <item name="TextSizeBody2">16sp</item>
+        <item name="TextSizeDisplay2">51sp</item>
+    </style>
+
+    <!-- Psi-im light dialog large font -->
+    <style name="ConversationsTheme.Psi.Dialog.Large" parent="ConversationsTheme.Psi.Dialog">
+        <item name="TextSizeBody2">18sp</item>
+        <item name="TextSizeTitle">56sp</item>
+    </style>
+
+    <!-- Psi-im dark dialog: own palette, no monocles colors -->
+    <style name="ConversationsTheme.Psi.Dark.Dialog" parent="ConversationsTheme.Dark.Dialog">
+        <item name="colorPrimary">@color/primary_psi</item>
+        <item name="colorPrimaryDark">@color/primary_dark_psi</item>
+        <item name="colorAccent">@color/accent_psi</item>
+        <item name="colorAccentLight">@color/accent_light_psi</item>
+        <item name="colorAccentLightDisabled">@color/accent_light_disabled_psi</item>
+        <item name="color_background_primary">@color/darkpsi</item>
+    </style>
+
+    <!-- Psi-im dark dialog medium font -->
+    <style name="ConversationsTheme.Psi.Dark.Dialog.Medium" parent="ConversationsTheme.Psi.Dark.Dialog">
+        <item name="TextSizeBody2">16sp</item>
+        <item name="TextSizeDisplay2">51sp</item>
+    </style>
+
+    <!-- Psi-im dark dialog large font -->
+    <style name="ConversationsTheme.Psi.Dark.Dialog.Large" parent="ConversationsTheme.Psi.Dark.Dialog">
+        <item name="TextSizeBody2">18sp</item>
+        <item name="TextSizeTitle">56sp</item>
     </style>
 
     <!-- 3. orange -->
