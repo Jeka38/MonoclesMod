@@ -1645,8 +1645,22 @@ public class Message extends AbstractEntity implements AvatarService.Avatarable 
         renderStyling(spannableBody);
 
         if (getInReplyTo() != null && getModerated() == null) {
+            final Message inReplyTo = getInReplyTo();
             final SpannableStringBuilder quote =
-                    new SpannableStringBuilder(getInReplyTo().getSpannableBody(null, null));
+                    new SpannableStringBuilder(inReplyTo.getSpannableBody(null, null));
+            String name = UIHelper.getMessageDisplayName(inReplyTo);
+            if (name == null || name.isEmpty()) {
+                final Contact c = inReplyTo.getContact();
+                if (c != null) {
+                    name = c.getDisplayName();
+                } else if (inReplyTo.getCounterpart() != null) {
+                    name = inReplyTo.getCounterpart().getResource();
+                }
+            }
+            if (name != null && !name.trim().isEmpty()) {
+                quote.insert(0, "\n");
+                quote.insert(0, name.trim());
+            }
             quote.setSpan(new eu.siacs.conversations.ui.text.QuoteSpan(0xFF888888,
                     android.content.res.Resources.getSystem().getDisplayMetrics(), 1), 0, quote.length(),
                     Spanned.SPAN_EXCLUSIVE_EXCLUSIVE);
