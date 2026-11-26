@@ -1647,7 +1647,9 @@ public class Message extends AbstractEntity implements AvatarService.Avatarable 
         if (getInReplyTo() != null && getModerated() == null) {
             final SpannableStringBuilder quote =
                     new SpannableStringBuilder(getInReplyTo().getSpannableBody(null, null));
-            quote.setSpan(new android.text.style.QuoteSpan(), 0, quote.length(), Spanned.SPAN_EXCLUSIVE_EXCLUSIVE);
+            quote.setSpan(new eu.siacs.conversations.ui.text.QuoteSpan(0xFF888888,
+                    android.content.res.Resources.getSystem().getDisplayMetrics(), 1), 0, quote.length(),
+                    Spanned.SPAN_EXCLUSIVE_EXCLUSIVE);
             spannableBody.insert(0, "\n");
             spannableBody.insert(0, quote);
         }
