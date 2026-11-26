@@ -1657,9 +1657,23 @@ public class Message extends AbstractEntity implements AvatarService.Avatarable 
                     name = inReplyTo.getCounterpart().getResource();
                 }
             }
-            if (name != null && !name.trim().isEmpty()) {
+            boolean showDate = true;
+            if (conversation != null && conversation.getAccount() != null
+                    && conversation.getAccount().getXmppConnection() != null
+                    && conversation.getAccount().getXmppConnection().getXmppConnectionService() != null) {
+                showDate = conversation.getAccount().getXmppConnection().getXmppConnectionService()
+                        .getBooleanPreference("show_date_in_quotes", eu.siacs.conversations.R.bool.show_date_in_quotes);
+            }
+            final String timestamp = showDate ? MessageUtils.quoteTimestamp(inReplyTo) : "";
+            String header = name == null ? "" : name.trim();
+            if (header.isEmpty()) {
+                header = timestamp;
+            } else if (!timestamp.isEmpty()) {
+                header = header + " \u00B7 " + timestamp;
+            }
+            if (!header.isEmpty()) {
                 quote.insert(0, "\n");
-                quote.insert(0, name.trim());
+                quote.insert(0, header);
             }
             quote.setSpan(new eu.siacs.conversations.ui.text.QuoteSpan(0xFF888888,
                     android.content.res.Resources.getSystem().getDisplayMetrics(), 1), 0, quote.length(),
