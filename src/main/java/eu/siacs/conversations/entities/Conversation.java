@@ -919,7 +919,6 @@ public class Conversation extends AbstractEntity implements Blockable, Comparabl
             synchronized (this.messages) {
                 for (final Message message : this.messages) {
                     if (!isReactionCarrierFor(message, id)) continue;
-                    if (message.getReactionEmojis().isEmpty()) continue;
                     final String key = reactionReactorKey(message);
                     final Message previous = latestByReactor.get(key);
                     if (previous == null || message.getTimeSent() >= previous.getTimeSent()) {
@@ -928,7 +927,12 @@ public class Conversation extends AbstractEntity implements Blockable, Comparabl
                 }
             }
         }
-        final List<Message> result = new ArrayList<>(latestByReactor.values());
+        final List<Message> result = new ArrayList<>();
+        for (final Message carrier : latestByReactor.values()) {
+            if (!carrier.getReactionEmojis().isEmpty()) {
+                result.add(carrier);
+            }
+        }
         result.sort((a, b) -> Long.compare(b.getTimeSent(), a.getTimeSent()));
         return result;
     }
