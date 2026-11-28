@@ -1,0 +1,24 @@
+<?xml version="1.0" encoding="utf-8"?>
+<menu xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:app="http://schemas.android.com/apk/res-auto">
+    <item
+        android:id="@+id/action_toggle_xml_console"
+        android:title="@string/enable_xml_console"
+        app:showAsAction="never" />
+    <item
+        android:id="@+id/action_copy_xml_console"
+        android:title="@string/copy_xml_console"
+        app:showAsAction="never" />
+    <item
+        android:id="@+id/action_export_xml_console"
+        android:title="@string/export_xml_console"
+        app:showAsAction="never" />
+    <item
+        android:id="@+id/action_share_xml_console"
+        android:title="@string/share_xml_console"
+        app:showAsAction="never" />
+    <item
+        android:id="@+id/action_clear_xml_console"
+        android:title="@string/clear_xml_console"
+        app:showAsAction="never" />
+</menu>

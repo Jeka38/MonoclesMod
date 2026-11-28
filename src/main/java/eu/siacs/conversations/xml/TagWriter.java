@@ -66,6 +66,7 @@ public class TagWriter {
         if (outputStream == null) {
             throw new IOException("output stream was null");
         }
+        eu.siacs.conversations.utils.XmlConsole.logOutgoing(tag.toString());
         outputStream.write(tag.toString());
         if (flush) {
             outputStream.flush();
@@ -77,6 +78,7 @@ public class TagWriter {
         if (outputStream == null) {
             throw new IOException("output stream was null");
         }
+        eu.siacs.conversations.utils.XmlConsole.logOutgoing(element.toString());
         outputStream.write(element.toString());
         outputStream.flush();
 
@@ -87,6 +89,7 @@ public class TagWriter {
             Log.d(Config.LOGTAG, "attempting to write stanza to finished TagWriter");
 
         } else {
+            eu.siacs.conversations.utils.XmlConsole.logOutgoing(stanza.toString());
             if (!asyncStanzaWriter.isAlive()) {
                 try {
                     asyncStanzaWriter.start();

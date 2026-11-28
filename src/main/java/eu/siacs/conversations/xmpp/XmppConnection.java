@@ -694,6 +694,7 @@ public class XmppConnection implements Runnable {
                 switchOverToTls();
             } else if (nextTag.isStart("success")) {
                 final Element success = tagReader.readElement(nextTag);
+                eu.siacs.conversations.utils.XmlConsole.logIncoming(success.toString());
                 if (processSuccess(success)) {
                     break;
                 }
@@ -702,6 +703,7 @@ public class XmppConnection implements Runnable {
                 throw new StateChangingException(Account.State.TLS_ERROR);
             } else if (nextTag.isStart("failure")) {
                 final Element failure = tagReader.readElement(nextTag);
+                eu.siacs.conversations.utils.XmlConsole.logIncoming(failure.toString());
                 processFailure(failure);
             } else if (nextTag.isStart("continue", Namespace.SASL_2)) {
                 // two step sasl2 - we don’t support this yet
@@ -709,6 +711,7 @@ public class XmppConnection implements Runnable {
             } else if (nextTag.isStart("challenge")) {
                 if (isSecure() && this.loginInfo != null) {
                     final Element challenge = tagReader.readElement(nextTag);
+                    eu.siacs.conversations.utils.XmlConsole.logIncoming(challenge.toString());
                     processChallenge(challenge);
                 } else {
                     Log.d(
@@ -721,12 +724,15 @@ public class XmppConnection implements Runnable {
                 throw new StateChangingException(Account.State.INCOMPATIBLE_SERVER);
             } else if (nextTag.isStart("enabled", Namespace.STREAM_MANAGEMENT)) {
                 final Element enabled = tagReader.readElement(nextTag);
+                eu.siacs.conversations.utils.XmlConsole.logIncoming(enabled.toString());
                 processEnabled(enabled);
             } else if (nextTag.isStart("resumed", Namespace.STREAM_MANAGEMENT)) {
                 final Element resumed = tagReader.readElement(nextTag);
+                eu.siacs.conversations.utils.XmlConsole.logIncoming(resumed.toString());
                 processResumed(resumed);
             } else if (nextTag.isStart("r", Namespace.STREAM_MANAGEMENT)) {
-                tagReader.readElement(nextTag);
+                final Element r = tagReader.readElement(nextTag);
+                eu.siacs.conversations.utils.XmlConsole.logIncoming(r.toString());
                 if (Config.EXTENDED_SM_LOGGING) {
                     Log.d(
                             Config.LOGTAG,
@@ -762,6 +768,7 @@ public class XmppConnection implements Runnable {
                     mXmppConnectionService.updateAccountUi();
                 }
                 final Element ack = tagReader.readElement(nextTag);
+                eu.siacs.conversations.utils.XmlConsole.logIncoming(ack.toString());
                 lastPacketReceived = SystemClock.elapsedRealtime();
                 final boolean acknowledgedMessages;
                 synchronized (this.mStanzaQueue) {
@@ -781,6 +788,7 @@ public class XmppConnection implements Runnable {
                 }
             } else if (nextTag.isStart("failed", Namespace.STREAM_MANAGEMENT)) {
                 final Element failed = tagReader.readElement(nextTag);
+                eu.siacs.conversations.utils.XmlConsole.logIncoming(failed.toString());
                 processFailed(failed, true);
             } else if (nextTag.isStart("iq", Namespace.JABBER_CLIENT)) {
                 processIq(nextTag);
@@ -1315,6 +1323,7 @@ public class XmppConnection implements Runnable {
                             + "). Not in smacks session.");
         }
         lastPacketReceived = SystemClock.elapsedRealtime();
+        eu.siacs.conversations.utils.XmlConsole.logIncoming(element.toString());
         if (Config.BACKGROUND_STANZA_LOGGING && mXmppConnectionService.checkListeners()) {
             Log.d(Config.LOGTAG, "[background stanza] " + element);
         }
@@ -1523,6 +1532,7 @@ public class XmppConnection implements Runnable {
 
     private void processStreamFeatures(final Tag currentTag) throws IOException {
         this.streamFeatures = tagReader.readElement(currentTag);
+        eu.siacs.conversations.utils.XmlConsole.logIncoming(this.streamFeatures.toString());
         final boolean isSecure = isSecure();
         final boolean needsBinding = !isBound && !account.isOptionSet(Account.OPTION_REGISTER);
         if (this.quickStartInProgress) {

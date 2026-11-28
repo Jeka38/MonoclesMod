@@ -385,6 +385,11 @@
             android:exported="false"
             android:launchMode="singleTask" />
         <activity
+            android:name=".ui.XmlConsoleActivity"
+            android:label="@string/xml_console"
+            android:exported="false"
+            android:launchMode="singleTop" />
+        <activity
             android:name=".ui.ShareViaAccountActivity"
             android:label="@string/title_activity_share_via_account"
             android:exported="false"

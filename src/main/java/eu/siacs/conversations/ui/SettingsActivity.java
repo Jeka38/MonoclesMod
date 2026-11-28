@@ -838,6 +838,14 @@ public class SettingsActivity extends XmppActivity implements OnSharedPreference
             }
         }
 
+        final Preference openXmlConsole = mSettingsFragment.findPreference("open_xml_console");
+        if (openXmlConsole != null) {
+            openXmlConsole.setOnPreferenceClickListener(preference -> {
+                startActivity(new Intent(this, XmlConsoleActivity.class));
+                return true;
+            });
+        }
+
         final Preference deleteOmemoPreference =
                 mSettingsFragment.findPreference("delete_omemo_identities");
         if (deleteOmemoPreference != null) {

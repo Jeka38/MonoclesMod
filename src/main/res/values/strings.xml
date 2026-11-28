@@ -1755,4 +1755,17 @@
     <string name="whiteboard_not_shared">Local · not synchronized</string>
     <string name="whiteboard_join">Join</string>
     <string name="whiteboard_tools_toggle">Collapse or expand the tools</string>
+    <string name="xml_console">XML Console</string>
+    <string name="enable_xml_console">Enable XML console</string>
+    <string name="disable_xml_console">Disable XML console</string>
+    <string name="copy_xml_console">Copy log</string>
+    <string name="export_xml_console">Export log to file</string>
+    <string name="share_xml_console">Share log</string>
+    <string name="clear_xml_console">Clear log</string>
+    <string name="clear_xml_console_confirm">Clear the XML console log?</string>
+    <string name="xml_console_empty">XML console is empty</string>
+    <string name="xml_console_copied">Copied to clipboard</string>
+    <string name="xml_console_exported">Exported to %1$s</string>
+    <string name="xml_console_export_failed">Could not export XML console log</string>
+    <string name="pref_xml_console_summary">Log incoming and outgoing XMPP XML stanzas to stdout and view them</string>
 </resources>

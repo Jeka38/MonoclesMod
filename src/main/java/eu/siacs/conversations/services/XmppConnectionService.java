@@ -1828,6 +1828,7 @@ public class XmppConnectionService extends Service {
         this.destroyed = false;
         OmemoSetting.load(this);
         ExceptionHelper.init(getApplicationContext());
+        eu.siacs.conversations.utils.XmlConsole.init(getApplicationContext());
         try {
             Security.insertProviderAt(Conscrypt.newProvider(), 1);
         } catch (Throwable throwable) {

@@ -802,6 +802,9 @@
                 android:key="enable_persistent_rooms"
                 android:summary="@string/pref_enable_persistent_rooms_summary"
                 android:title="@string/pref_enable_persistent_rooms_title" />
+            <Preference
+                android:key="open_xml_console"
+                android:title="@string/xml_console" />
         </PreferenceCategory>
     </PreferenceScreen>
     <!--About-->

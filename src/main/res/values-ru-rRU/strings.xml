@@ -1858,4 +1858,17 @@
     <string name="whiteboard_not_shared">Локальная · не синхронизируется</string>
     <string name="whiteboard_join">Присоединиться</string>
     <string name="whiteboard_tools_toggle">Свернуть или развернуть инструменты</string>
+    <string name="xml_console">XML-консоль</string>
+    <string name="enable_xml_console">Включить XML-консоль</string>
+    <string name="disable_xml_console">Отключить XML-консоль</string>
+    <string name="copy_xml_console">Копировать журнал</string>
+    <string name="export_xml_console">Экспортировать журнал в файл</string>
+    <string name="share_xml_console">Поделиться журналом</string>
+    <string name="clear_xml_console">Очистить журнал</string>
+    <string name="clear_xml_console_confirm">Очистить журнал XML-консоли?</string>
+    <string name="xml_console_empty">XML-консоль пуста</string>
+    <string name="xml_console_copied">Скопировано в буфер обмена</string>
+    <string name="xml_console_exported">Экспортировано в %1$s</string>
+    <string name="xml_console_export_failed">Не удалось экспортировать журнал XML-консоли</string>
+    <string name="pref_xml_console_summary">Записывать входящие и исходящие XML-станзы XMPP в stdout и показывать их</string>
 </resources>
